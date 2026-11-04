@@ -418,3 +418,26 @@ COMPASS_3 compass3/三元罗盘(金)/`compass3_min`/true；COMPASS_4 compass4/�
 简易组/综合组的**条目内容**是服务端数据，离线复刻不可能穷举 → 建议登记为
 「等价替代（内置若干常见盘面）」或「有意省略（仅保留常用 5 项）」，二者都要在差距矩阵里写死，
 不能按「27 个」排期。
+
+### R3b MMKV 实读（`run-as`，2026-11-05，包 `space.xinzhi.globe`）
+
+`files/mmkv/` 下 10+ 个库：`AccountManager` / `AppConfig`(16 KB) / `CompassManager`(4 KB) /
+`ComplaintGuidanceManager` / `GuideHelper` 等。逐库导出后按可打印串/UTF-8 串扫描：
+
+1. **盘面目录没有本地缓存**：`CompassManager` 库 4 KB，**0 条可打印字符串**（只有
+   `lastSelected` 之类短键）；`AppConfig` 里也没有任何盘面名/`categoryName`。
+   → 「读缓存数条目」这条路走不通，条目数只能抓 `api/compass/list` 响应或 UI 滚到底。
+   （B 方案下这不影响实现，只影响“将来想加盘面”时的依据。）
+2. **地图配置全在 `AppConfig`（服务端下发 JSON 明文缓存）**，对地图模块是硬证据：
+   - `appMapSourceList`：**12 个底图源**，`中科星图 / 吉林一号-全球 / 吉林一号-全国 / 世纪空间 /
+     天地图卫星 / 天地图地图 / 天地图地形 / 高德卫星 / 高德地图 / 腾讯卫星 / 腾讯地图 / 腾讯地形`，
+     `defaultMapCode = siJi_satellite`（**默认不是天地图**）。
+   - `mapReviewNum`：每个源对应审图号（形如 `GS(2026)xxxx号` + 「数据来自…」），
+     → 地图页必须显示当前源审图号，这是合规项。
+   - `mapToken`：`tianMapTokens`（**16 个天地图 token 明文**）、`mapboxTokens`、`baiduStreetToken`、
+     `xintuTokens{SecretID,SecretKey}` —— 敏感凭据以明文落 MMKV；**值不入库、不进群**，
+     仅记录「存在且字段名如此」，LC 侧一律用自己的 key。
+   - `competeAppPkg`（竞品包名表）、`adCloseConfig`、`payWayConfig`、`functionHideForPassAudit`、
+     图层枚举（水体=water/river/canal/lake/reservoir/basin；植被=forest/meadow/scrub/wetland）。
+3. `AccountManager` 里是登录态明文（id/nickname/phone/token）——去商业原则下 LC 不实现账号体系，
+   仅记录在案，**不复制值**。

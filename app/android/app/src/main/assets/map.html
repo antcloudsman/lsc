@@ -1455,6 +1455,70 @@ if (location.hash.indexOf("in3d") >= 0) {
   }, 50);
 }
 
+/* P0-4 AT 无头自检：map.html#at → 进 3D，等 DEM 就绪后跑 TD-001..TD-014，打 "LCAT ..." / "LCAT-RESULT" */
+function runAT() {
+  var R = [];
+  function ok(id, cond, detail) {
+    R.push((cond ? "PASS" : "FAIL") + " " + id + (detail ? " (" + detail + ")" : ""));
+  }
+  function markCount() { return mapEl.querySelectorAll(".pick3d").length; }
+  __LCBridgeTest.install();
+  __LCBridgeTest.reset();
+  ok("TD-001", !!gl, "webgl");
+  ok("TD-002", !!(patch && patch.mesh && patch.indexCount > 0), "patch");
+  ok("TD-003", !!(patch && patch.tex), "texture");
+  var w = glCanvas.clientWidth, h = glCanvas.clientHeight;
+  pick3D(w * 0.50, h * 0.62);
+  var e1 = __LCBridgeTest.last("pick");
+  ok("TD-004", !!(e1 && e1.type === "pick" && e1.src === "3d"), "type/src");
+  ok("TD-005", !!(e1 && isFinite(e1.lng) && e1.lng >= -180 && e1.lng <= 180 &&
+    isFinite(e1.lat) && e1.lat >= -90 && e1.lat <= 90), "lng/lat range");
+  ok("TD-006", !!(e1 && (e1.elev === null || typeof e1.elev === "number")), "elev " + (e1 && e1.elev));
+  ok("TD-007", !!(e1 && isFinite(e1.heading) && e1.heading >= 0 && e1.heading < 360), "heading");
+  setHeading(90);
+  pick3D(w * 0.45, h * 0.55);
+  var e2 = __LCBridgeTest.last("pick");
+  ok("TD-008", !!(e2 && Math.abs(e2.heading - 90) < 0.11), "heading=90 got " + (e2 && e2.heading));
+  ok("TD-009", markCount() === 1, "single marker " + markCount());
+  var cc = __LCBridgeTest.assertContract();
+  ok("TD-010", cc.pass, cc.pass ? "contract" : JSON.stringify(cc.failures));
+  __LCBridgeTest.reset();
+  clearMarkers();
+  ok("TD-011", !!__LCBridgeTest.last("pick-clear"), "clear emits");
+  __LCBridgeTest.reset();
+  pick3D(w * 0.50, 3);
+  ok("TD-012", __LCBridgeTest.last("pick") === null, "sky miss");
+  __LCBridgeTest.reset();
+  setMode("2d");
+  clearMarkers();
+  ok("TD-013", !!__LCBridgeTest.last("pick-clear"), "2d clear");
+  __LCBridgeTest.uninstall();
+  var thrown = false;
+  try { pick3D(10, 10); } catch (e) { thrown = true; }
+  ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
+  var fails = 0;
+  for (var i = 0; i < R.length; i++) if (R[i].indexOf("FAIL") === 0) fails++;
+  console.log("LCAT " + R.join(" | "));
+  console.log("LCAT-RESULT " + (fails === 0 ? "PASS" : "FAIL") + " total=" + R.length + " fails=" + fails);
+}
+
+if (location.hash.indexOf("at") >= 0 && location.hash.indexOf("selftest") < 0) {
+  setTimeout(function () {
+    var h = location.hash;
+    var mlat = h.match(/lat=(-?[\d.]+)/), mlng = h.match(/lng=(-?[\d.]+)/), mz = h.match(/[&#]z=(\d+)/);
+    setMode("3d");
+    if (mlat || mlng || mz) {
+      debugSetView(mlat ? parseFloat(mlat[1]) : null, mlng ? parseFloat(mlng[1]) : null,
+        mz ? parseInt(mz[1], 10) : null, null, null);
+    }
+    var tries = 0;
+    var iv = setInterval(function () {
+      if (patch && patch.mesh && patch.tex) { clearInterval(iv); setTimeout(runAT, 600); }
+      else if (++tries > 80) { clearInterval(iv); console.log("LCAT TIMEOUT"); runAT(); }
+    }, 500);
+  }, 50);
+}
+
 /* 本地/无真机自测：map.html#selftest → 进 3D，等 DEM 就绪后在屏幕中心偏下做一次点选 */
 if (location.hash.indexOf("selftest") >= 0) {
   setTimeout(function () {

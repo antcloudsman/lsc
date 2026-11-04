@@ -156,6 +156,7 @@ java -cp ".inspect\unpack\apktool.jar;.inspect\tools" BaksmaliLauncher `
 | P2-2 | 地图设置-滤镜/5 参数 | 视觉可配置性缺失 | 地图 | E2/E3 |
 | P3-1 | 3D 真高程 | VM 保护，判等价替代 | 地图 | 已在跑 |
 | P3-2 | 圈层全量配色/字体（原版 artwork 内烘焙） | 不逐像素对齐 | — | 章程风险#2 已裁定不死抠 |
+| 增量 | **记录库（一键留档）未做** | LC 侧的「一键留档/记录库」是**增量功能，不是 1:1 缺口**：Android 侧 `git grep 记录` 0 命中，原版也没有「记录库」这个模块（AT-P0-2 的 P2-09…11 已据此摘除） | 客户端（M2 增量池） | 与下方「轨迹记录」区分：原版有「**轨迹记录**」工具（`MainActivity` 文案 + `TrackSettingActivity`/`TrackModeEnum`），属地图工具集，已由 F2/P2-1 覆盖，**不要混为一谈** |
 
 ## I. 本轮「新证实结论」清单（类/方法/地址 → 建议改动）
 
@@ -169,11 +170,16 @@ java -cp ".inspect\unpack\apktool.jar;.inspect\tools" BaksmaliLauncher `
 8. `MapSettingActivity` 地图滤镜 4 模式 + 5 参数 + webapp 预览 URL → E2/E3。
 9. 原版数据自带瑕疵，1:1 必须保留：TYPE_2 只有 5 个卦带数字；TYPE_1 7/8 条带 U+200C；TYPE_5 错字「戌寅/戌午/巳未/壬坤」；TYPE_6 有「已山」；TYPE_10 干支连写无空格。
 10. `.inspect/tools/BaksmaliLauncher.java`：apktool.jar 内 shaded baksmali 无 main，用 dexlib2 API 直接反汇编内存 dex —— 后续所有 smali 取证复用此脚本（证据链可复现）。
+11. **盘面目录来自服务端**：`net.ApiService.getCompassList()` `@GET "api/compass/list"` → `Call<ApiResult<List<CompassModel>>>`，客户端按 `categoryName` 分组（`CompassListActivity$b$a$a.smali:311`）；9 个组名/条目词在 30 个 dex + `strings.xml` + `assets` 全 0 命中（R3）。
+12. **MMKV 实读（`run-as`）**：盘面目录**无本地缓存**（`CompassManager` 4 KB、0 条字符串）；`AppConfig` 是服务端配置明文——12 底图源（默认 `siJi_satellite`）、每源审图号、`mapToken`（16 个天地图 token/mapbox/百度/星图 SecretKey，**值不入库**）、图层枚举、竞品包名表（R3b）。
+13. **14 类读数渲染在 `ui.compose.CompassReadSheet`**（`CompassReadSheet.kt:54` / `ReadTypeItem:125`）底部弹层：标题「智能读盘」，首两行「向北 X°/坐南 Y° + 坐山/向山」，其后 14 行 `类型名 + 向： + 坐： + 点击查看`；`getFaceText/getBackText` 只被该弹层的 lambda 调用，罗盘页 ring 绘制不调用（R4/R4b）。
+14. **原版付费墙**：`isVip` 的 11 行在读盘弹层只显示 🔒 + 点击查看；LC 按 D-006 全显示，登记「有意解除原版付费墙」（B8）。
+15. **坐向朝北开关是单按钮双标签**：`CompassToolsKt.n0`（`:10531/10542`）`controller.g.x()Z` 真取「坐北朝南」、假取「坐南朝北」，状态在 `g.h:MutableState`（F5）。
 
 ## J. 未确认（不臆造，等证据）
 
 - B6 已关闭：`compass4.png` 目视确认为约 20 圈综合盘（360°/28宿/八煞/64卦+九星/先后天卦/三盘24山/分金/72龙/60龙纳音/指向罗盘），详见 B6 行。
-- 原版「圈层显示开关」是否存在（E6）。
-- 原版截图后的保存/分享路径（D4，仅有权限字符串与 `截屏中...` 文案）。
-- **原版真机 10°/170°/250° 读数截图**：本轮未取。原因：真机 `L2E0222531014833` 本轮归 LC地图；原版为传感器驱动，需注入/模拟方位角才能定位到指定度数。替代证据：按 `getFaceText` 逐指令移植复算（`readings_check.txt` §2），人盘/天盘/地盘三行均为 DEX 数据的确定值；截图作为第二证据，等真机空出后补（预计 Frida hook `getFaceText(F)` 读入参 + 截图）。
+- E6 已关闭：原版**没有**圈层显示开关（真机控件全量清点），桌面 `ShowRings` 是重建自创 → 已按「有意省略」登记。
+- D4 已部分关闭：原版截图链路的界面文案与结果已知（`截屏` → `截图中...` → `已保存到相册`/`截屏失败：`，`CompassToolsKt.smali:322/577/602`），且需 `CAMERA`/`READ_MEDIA_IMAGES`/`READ_EXTERNAL_STORAGE` 权限；**相册路径与分享面板的具体实现仍未取证**（LC 侧按 D-009 自定义 `Pictures/LC/`，属有意差异）。
+- **原版真机 10°/170°/250° 读数截图：已按总监裁决降级**（不再为它排真机）。第二证据改由「智能读盘弹层 h=0 实测」承担：免费三行 `向坤/坐乾`、`向坎/坐离`、`坤 8/乾 1` 与 780 条表逐字一致（R4b）。再次尝试时已知的坑：Frida 17 需 `frida-java-bridge` 打包；`onSensorChanged` 钩子能命中（194 次）但调用原方法报错；点「读盘」按钮的真实坐标是 `(132,2070)`。
 - 原版圈层渲染的精确半径/颜色：artwork 为位图（A12），不存在「代码常量」可抽取，故**不再作为待办**（与章程风险#2 一致）。

@@ -232,13 +232,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setBackgroundColor(Color.argb(200, 24, 20, 16));
 
-        // D5: 5 个盘面改为「盘面列表」入口（四组结构 + 常用 5 项，B 方案）
+        // D5: 盘面列表入口；P0-2: 读盘（14 类全量，与原版弹层同构）
+        LinearLayout nav = new LinearLayout(this);
+        nav.setOrientation(LinearLayout.HORIZONTAL);
         Button dialsBtn = new Button(this);
         dialsBtn.setText("盘面（4 组 · 常用 5）");
         dialsBtn.setTextSize(12f);
         dialsBtn.setOnClickListener(v ->
                 startActivity(new android.content.Intent(this, CompassListActivity.class)));
-        panel.addView(dialsBtn);
+        Button readBtn = new Button(this);
+        readBtn.setText("读盘");
+        readBtn.setTextSize(12f);
+        readBtn.setOnClickListener(v -> {
+            if (compassView != null) CompassReadSheet.show(this, compassView.getHeading());
+        });
+        nav.addView(dialsBtn, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1.6f));
+        nav.addView(readBtn, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        panel.addView(nav);
 
         readingView = new TextView(this);
         readingView.setId(R.id.reading_text);

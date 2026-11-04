@@ -103,3 +103,25 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 3. **历史坑（已修复）**：`1c51e22` 曾把 `url`/`js` 两个命令覆盖掉，表现为「有 `LCDEBUG`、页面无反应」；现已在 develop 上补回。
 4. **`url` 命令的边界**：同文档只改 hash（`#in3d`）不触发重载；`file:///...map.html?t=7` 这种带 query 的变体会加载失败。需要重载时用 `js` 发 `location.reload()`，或让页面初始化时读 hash（地图侧待办）。
 5. **dump 前置**：注入 heading 冻结传感器后再 dump；`rm -f /sdcard/ui.xml` 再 dump，只有出现 `UI hierchary dumped to:` 才 `pull`，并校验包名是 `com.luopan.fengshui`。
+
+## 附C：收官轮一把跑完的实证（LC测试，2026-11-05 05:33）
+
+一条命令：`pwsh -File tests\at\run-final.ps1 -Apk <app-debug.apk>`（18 项，exit 0/1/2/4）。
+
+本轮踩到并已写进脚本的五个坑：
+
+1. **不注入航向就 dump 一定超时**：真机传感器在跑 → `CompassView` 每帧重绘 →
+   `uiautomator dump` 报 `ERROR: could not get idle state.`（约 11 秒后失败，且**不产出文件**）。
+   先发 `--es cmd heading --ef value 0` 冻结，再 dump 就 2 秒成功。
+   所以「dump 失败」的第一嫌疑是「没冻结」，不是「页面不可 dump」。
+2. **`logcat` 环形缓冲会把注册日志刷掉**：`bridge registered` 常被 WebView 日志挤出去，
+   拿它当通道判据会误判「通道死」。判据改成端到端探针：
+   `--es cmd js --es value '1+1'` → 期望 `LCJS ... -> 2`；`bridge registered` 只作辅助证据。
+3. **装完 `am start` 不一定在前台**：本轮 TD-016 一次失败就是华为应用市场的安装风险检查
+   Activity 把我们的任务 `moveTaskToBack` 顶掉，点按全落在桌面（`picks=0`、`fps=0`）。
+   点按前必须 `dumpsys activity activities | grep mResumedActivity` 校验前台，并重试拉起。
+4. **`js` 广播的引号**：宿主机单引号包 JS、`--es value`，JS 内部只用双引号
+   （如 `document.querySelector("[id=srcInfo]")`）；PS 里先把 JS 放单引号变量再拼进命令串，
+   否则 PS 会在 JS 的内层双引号处提前截断（表现为广播发出、页面无反应、无 `LCJS`）。
+5. **读盘弹层第 14 行在首屏外**：`ScrollView` 里的 14 行不会全进 dump，
+   需 `input swipe 614 2000 614 1150 400` 上滑后重拍，两次取并集才 14/14。

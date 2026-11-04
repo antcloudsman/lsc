@@ -232,19 +232,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setBackgroundColor(Color.argb(200, 24, 20, 16));
 
-        LinearLayout dials = new LinearLayout(this);
-        dials.setOrientation(LinearLayout.HORIZONTAL);
-        for (int i = 0; i < CompassData.COMPASS_TYPES.length; i++) {
-            final int idx = i;
-            Button d = new Button(this);
-            d.setText(CompassData.COMPASS_TYPES[i]);
-            d.setTextSize(12f);
-            d.setAllCaps(false);
-            d.setOnClickListener(v -> compassView.setDialType(idx));
-            dials.addView(d, new LinearLayout.LayoutParams(0,
-                    LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        }
-        panel.addView(dials);
+        // D5: 5 个盘面改为「盘面列表」入口（四组结构 + 常用 5 项，B 方案）
+        Button dialsBtn = new Button(this);
+        dialsBtn.setText("盘面（4 组 · 常用 5）");
+        dialsBtn.setTextSize(12f);
+        dialsBtn.setOnClickListener(v ->
+                startActivity(new android.content.Intent(this, CompassListActivity.class)));
+        panel.addView(dialsBtn);
 
         readingView = new TextView(this);
         readingView.setId(R.id.reading_text);
@@ -603,6 +597,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onResume() {
         super.onResume();
         registerDebugBridge();
+        if (compassView != null && prefs != null) {
+            compassView.setDialType(prefs.getInt("dial_index", 1));
+        }
         if (sensorManager != null && rotationVector != null) {
             sensorManager.registerListener(this, rotationVector, SensorManager.SENSOR_DELAY_UI);
         }

@@ -562,12 +562,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         }
 
-        // Push heading + sit/face to the compass-tab WebView (B-17: 坐向 overlay).
-        if (compassMapView != null) {
-            String face = CompassData.MOUNTAINS[r.mountain] + "山";
-            String sit = CompassData.MOUNTAINS[r.sitting] + "山";
-            compassMapView.evaluateJavascript("setHeading(" + r.heading + ")", null);
-            compassMapView.evaluateJavascript("setSitFace('" + face + "','" + sit + "')", null);
+        // Push heading + sit/face to BOTH map WebViews: the compass tab's base map
+        // (B-17) and the map tab. Injection goes through this same path, so
+        // `am broadcast ... heading` must reach the map's bearing (坐南朝北).
+        String face = CompassData.MOUNTAINS[r.mountain] + "山";
+        String sit = CompassData.MOUNTAINS[r.sitting] + "山";
+        for (WebView wv : new WebView[]{compassMapView, mapView}) {
+            if (wv == null) continue;
+            wv.evaluateJavascript("setHeading(" + r.heading + ")", null);
+            wv.evaluateJavascript("setSitFace('" + face + "','" + sit + "')", null);
         }
     }
 

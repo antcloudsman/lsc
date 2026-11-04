@@ -265,6 +265,7 @@ function setSitFace(face, sit) {
 
 /* ---------------- 拖拽 / 缩放 / 标记 ---------------- */
 var dragging = false, lastX = 0, lastY = 0, totalMove = 0;
+var lastTouchTs = 0;          // 触摸后合成的鼠标事件去重，避免一次点选发两次 pick
 
 function pan(dxPx, dyPx) {
   if (mode === "3d") { pan3D(dxPx, dyPx); return; }
@@ -288,6 +289,7 @@ window.addEventListener("mousemove", function (e) {
   lastX = e.clientX; lastY = e.clientY;
 });
 window.addEventListener("mouseup", function () {
+  if (Date.now() - lastTouchTs < 800) { dragging = false; return; }
   if (dragging && totalMove < 6) placeMarker(lastX, lastY);
   dragging = false;
 });
@@ -346,6 +348,7 @@ mapEl.addEventListener("touchmove", function (e) {
   }
 }, { passive: true });
 mapEl.addEventListener("touchend", function () {
+  lastTouchTs = Date.now();
   if (touchStart && touchStart.moved < 8) placeMarker(touchStart.x, touchStart.y);
   touchStart = null;
 });

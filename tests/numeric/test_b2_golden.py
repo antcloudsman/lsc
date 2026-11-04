@@ -1,18 +1,14 @@
-"""B2 换表 golden：四个原版向量（当前教材实现应失败，B2 落地后转红再删 xfail）。
+"""B2 换表回归：14 圈层 780 条文字以 `rings[].labels` 为准。
 
-向量来源：LC逆向 `8368fbd` 换表手册 / `app/mechanics.json` `rings[].labels`
-（780 条 `confirmed_dex`，逐条 code-unit 地址在 `.inspect/derived/ring_label_addrs.json`）：
+来源：LC逆向 `8368fbd` 换表手册（`getTextList` 逐条地址）+ 客户端 `662c006` 落地。
+校验四层：
 
-| 位置 | 表 | 索引 | 原版文字 |
-|---|---|---|---|
-| 60 龙 0° | TYPE_7 | 59 | 壬子 庚子 |
-| 60 龙 170° | TYPE_7 | 28 | 丙午 甲午 |
-| 72 龙 0° | TYPE_5 | 71 | 戊子 |
-| 120 分金 0° | TYPE_6 | 119 | 甲山 戊子 |
+1. mechanics.json 的四个原版向量（数据侧）；
+2. 生成的 `RINGS`（Rust `main.rs` / Java `CompassData.java`）与 mechanics.json **逐条一致**（780 条）；
+3. `ring_text(type, heading)` 按 `(offset, interval)` 取 `labels` 下标（源码语义）；
+4. 读数面板确实调用 `ring_text(1/2/5/6/7/14, h)`（两端），60 龙等文字不再走 `JIAZI[]`。
 
-当前两端仍用 `JIAZI[]` / `wangxiang()` / `borrow_branch()` 推导（教材值），所以
-`test_b2_vectors_use_dex_labels` 现在 expected failure；客户端 B2 换表后它会变成
-unexpected success（红），届时删掉 `@expectedFailure` 即转正常回归。
+四向量：60 龙 0°=`壬子 庚子`、170°=`丙午 甲午`、72 龙 0°=`戊子`、120 分金 0°=`甲山 戊子`。
 """
 import os
 import sys
@@ -30,35 +26,87 @@ VECTORS = {
 }
 
 
-class B2GoldenDataTest(unittest.TestCase):
+def mech_rings() -> dict:
+    doc = O.load_mechanics_doc()
+    return {r["type"]: {"text": r["text"], "interval": r["interval"],
+                        "offset": r["offset"], "labels": r["labels"]}
+            for r in doc["rings"]}
+
+
+class B2VectorsTest(unittest.TestCase):
     def test_vectors_from_mechanics_json(self):
-        """四向量必须与 `rings[].labels` 逐字一致（数据侧，始终绿）。"""
         for name, (ring_type, index, want) in VECTORS.items():
             self.assertEqual(O.dex_labels(ring_type, index), want, name)
 
+    def test_vectors_in_rust_rings(self):
+        rings = SP.parse_rust_rings(SP.read_text(O.MAIN_RS))
+        for name, (ring_type, index, want) in VECTORS.items():
+            self.assertEqual(rings[ring_type]["labels"][index], want, f"Rust {name}")
 
-class B2GoldenConformanceTest(unittest.TestCase):
+    def test_vectors_in_java_rings(self):
+        rings = SP.parse_java_rings(SP.read_text(O.COMPASS_DATA_JAVA))
+        for name, (ring_type, index, want) in VECTORS.items():
+            self.assertEqual(rings[ring_type]["labels"][index], want, f"Java {name}")
+
+
+class B2GeneratedTablesTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.mech = mech_rings()
+        cls.rust = SP.parse_rust_rings(SP.read_text(O.MAIN_RS))
+        cls.java = SP.parse_java_rings(SP.read_text(O.COMPASS_DATA_JAVA))
+
+    def test_rust_rings_match_mechanics(self):
+        self.assertEqual(sorted(self.rust), list(range(1, 15)))
+        for t, want in self.mech.items():
+            got = self.rust[t]
+            self.assertEqual(got["text"], want["text"], f"Rust TYPE_{t} text")
+            self.assertEqual(got["interval"], want["interval"], f"Rust TYPE_{t} interval")
+            self.assertEqual(got["offset"], want["offset"], f"Rust TYPE_{t} offset")
+            self.assertEqual(got["labels"], want["labels"], f"Rust TYPE_{t} labels")
+
+    def test_java_rings_match_mechanics(self):
+        self.assertEqual(sorted(self.java), list(range(1, 15)))
+        for t, want in self.mech.items():
+            got = self.java[t]
+            self.assertEqual(got["text"], want["text"], f"Java TYPE_{t} text")
+            self.assertEqual(got["interval"], want["interval"], f"Java TYPE_{t} interval")
+            self.assertEqual(got["offset"], want["offset"], f"Java TYPE_{t} offset")
+            self.assertEqual(got["labels"], want["labels"], f"Java TYPE_{t} labels")
+
+    def test_both_ends_identical(self):
+        self.assertEqual(self.rust, self.java)
+
+    def test_total_780_labels(self):
+        self.assertEqual(sum(len(r["labels"]) for r in self.mech.values()), 780)
+
+
+class B2RingTextSourceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.main_rs = SP.read_text(O.MAIN_RS)
+        cls.java = SP.read_text(O.COMPASS_DATA_JAVA)
 
-    @unittest.expectedFailure
-    def test_b2_vectors_use_dex_labels(self):
-        """B2 换表前：四处原版文字都还未出现在读/画里 → 预期失败。"""
-        r0 = SP.rust_reading(self.main_rs, 0.0)
-        r170 = SP.rust_reading(self.main_rs, 170.0)
+    def test_ring_text_uses_labels_with_offset_interval(self):
+        body = SP.ring_text_body(self.main_rs)
+        for token in ("labels[", "ring.offset", "ring.interval", "normalize_deg", "% n"):
+            self.assertIn(token, body, f"ring_text 体缺 {token!r}")
+        self.assertIn("ring_text_clean", self.main_rs)
+        self.assertIn("\\u{200c}", self.main_rs, "U+200C 清洗")
 
-        # 60 龙：读数文字
-        self.assertIn(O.dex_labels(7, 59), O.JIAZI[r0["d60"]], "60龙 0° 应含「壬子 庚子」")
-        self.assertIn(O.dex_labels(7, 28), O.JIAZI[r170["d60"]], "60龙 170° 应含「丙午 甲午」")
+    def test_client_unit_vectors_present(self):
+        for ring_type, heading, want in ((7, "0.0", "壬子 庚子"), (7, "170.0", "丙午 甲午"),
+                                         (5, "0.0", "戊子"), (6, "0.0", "甲山 戊子")):
+            pattern = (rf'assert_eq!\(ring_text\({ring_type}, {heading}\), '
+                       rf'"{want}"')
+            self.assertRegex(self.main_rs, pattern, f"main.rs 缺 TYPE_{ring_type} 向量断言")
 
-        # 72 龙：旺相名
-        got72 = O.wangxiang(O.borrow_branch(r0["m"]), r0["d72"])
-        self.assertIn(O.dex_labels(5, 71), got72, "72龙 0° 应含「戊子」")
-
-        # 120 分金：山名 + 干支
-        got120 = O.MOUNTAINS[r0["m"]] + "山 " + O.wangxiang(O.borrow_branch(r0["m"]), r0["fs"])
-        self.assertIn(O.dex_labels(6, 119), got120, "120分金 0° 应含「甲山 戊子」")
+    def test_readout_calls_ring_text(self):
+        for t in (1, 2, 5, 6, 7, 14):
+            self.assertIn(f"ring_text_clean({t}, rd.heading)", self.main_rs,
+                          f"main.rs 读数未用 ring_text_clean({t}, ...)")
+            self.assertIn(f"ringText({t}, h)", self.java,
+                          f"CompassData.java 读数未用 ringText({t}, ...)")
 
 
 if __name__ == "__main__":

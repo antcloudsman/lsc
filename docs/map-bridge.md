@@ -136,6 +136,17 @@ python -m http.server 8765 --bind 127.0.0.1
 
 实测输出：`LCBRIDGE selfTest PASS {"pass":true,"events":3,"failures":[],"picks":2,"markersAfterTwoPicks":1}`（事件 = 2×pick + 1×pick-clear）。
 
+## 5.3 地图页控件（原版 UI 清单对应）
+
+| 按钮 | 行为 | 状态 |
+|---|---|---|
+| `指针` | 显隐 `#needle` 坐向指针（默认开） | 等价替代 |
+| `坐南朝北` | `bearing = heading` 持续跟随，向方恒朝屏幕上方、坐方朝下；关闭恢复原 bearing | **等价替代**（原版确切行为未取证） |
+| `等高线` | 3D 着色器叠 100 m / 500 m 两级等高线（fwidth 抗锯齿）；2D 无 DEM 网格不显示 | 等价替代（原版为 WebView 图层，未取证） |
+| `贴地` | 相机距离 ×0.35 + 俯仰 60°，低机位掠过地形；关闭恢复原俯仰 | **等价替代**（原版确切行为未取证） |
+
+实景（街景）**未实现**：原版 `openStreetView` 是天地图街景还是第三方 SDK 未取证，取证前不做。
+
 ## 6. 截图
 
 - 3D canvas 创建时已设 `preserveDrawingBuffer:true`，页面内 `window.__LC3D.screenshot()` 可返回 `toDataURL('image/png')`。
@@ -153,6 +164,8 @@ python -m http.server 8765 --bind 127.0.0.1
 4. 雾把地形块边缘遮住，**地平线不是无限远**：俯仰 45° 时远处 1/3 会进雾。
 5. `ter`（地形晕渲）贴面会与自研光照叠加，建议 3D 用 `img`；是否改默认属产品决策，未改。
 6. 定速 60 fps 上限受 WebView vsync；实测见 §8。
+7. 等高线只在 3D 生效；2D 平铺瓦片没有高程网格，按钮会先切 3D。
+8. 坐南朝北/贴地是等价实现，原版行为未取证（见 §5.3）。
 
 ## 8. 验收与证据
 

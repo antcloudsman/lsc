@@ -233,3 +233,10 @@ def load_mechanics_doc() -> dict:
 
 def load_mechanics() -> list:
     return load_mechanics_doc()["values"]
+
+
+def dex_labels(ring_type: int, index: int) -> str:
+    """DEX `getTextList()` 还原的第 index 条文字（LC逆向 8368fbd，`rings[].labels`）。"""
+    doc = load_mechanics_doc()
+    ring = next(r for r in doc["rings"] if r["type"] == ring_type)
+    return ring["labels"][index]

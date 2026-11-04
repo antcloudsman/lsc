@@ -1,18 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>天地图</title>
 <style>
-  html, body { margin:0; padding:0; width:100%; height:100%; background:#181410; overflow:hidden; font-family:sans-serif; }
-  #map { position:absolute; inset:0; overflow:hidden; transition:transform .4s; }
-  #map.threed { transform:perspective(1400px) rotateX(45deg); transform-origin:50% 10%; }
+  html, body { margin:0; padding:0; width:100%; height:100%; background:#181410; overflow:hidden;
+    font-family:sans-serif; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; }
+  #map { position:absolute; inset:0; overflow:hidden; }
+  #gl { position:absolute; inset:0; width:100%; height:100%; display:none; }
   .tile { position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none; }
-  #controls { position:absolute; left:12px; top:12px; z-index:10; }
-  #controls button { display:block; margin-bottom:6px; padding:8px 14px; background:#201a14; color:#dcbe82; border:1px solid #5a4a30; border-radius:6px; }
+  #controls { position:absolute; left:10px; top:10px; z-index:10; }
+  #controls button { display:block; width:92px; margin-bottom:5px; padding:7px 4px; background:#201a14;
+    color:#dcbe82; border:1px solid #5a4a30; border-radius:6px; font-size:13px; }
   #controls button.active { background:#5a4a30; color:#fff; }
-  #hint { position:absolute; left:12px; bottom:12px; color:#968268; font-size:12px; z-index:10; }
+  #pitchWrap { display:none; margin:0 0 5px 0; width:92px; }
+  #pitchWrap input { width:92px; }
+  #hint { position:absolute; left:10px; bottom:10px; color:#968268; font-size:11px; z-index:10; max-width:74%; }
+  #hud { position:absolute; right:10px; top:10px; z-index:10; color:#dcbe82; font-size:12px; line-height:1.55;
+    background:#201a14cc; border:1px solid #5a4a30; border-radius:6px; padding:5px 8px;
+    white-space:pre; display:none; }
   #needle { position:absolute; left:50%; top:50%; width:2px; height:34vw; max-height:140px;
     margin-left:-1px; margin-top:-34vw; background:linear-gradient(180deg,#ff4444,transparent);
     transform-origin:50% 100%; z-index:6; pointer-events:none; }
@@ -23,34 +30,54 @@
 </style>
 </head>
 <body>
-<div id="map"></div>
+<div id="map">
+  <canvas id="gl"></canvas>
+</div>
 <div id="controls">
   <button id="btn_vec" onclick="setBase('vec')">矢量</button>
   <button id="btn_img" onclick="setBase('img')">影像</button>
   <button id="btn_ter" class="active" onclick="setBase('ter')">地形</button>
-  <button id="btn_3d" onclick="toggle3D()">3D</button>
-  <button onclick="rotateBearing(-15)">⟲</button>
-  <button onclick="rotateBearing(15)">⟳</button>
-  <button onclick="zoomIn()">+</button>
-  <button onclick="zoomOut()">−</button>
+  <button id="btn_3d" onclick="toggle3D()">3D 地形</button>
+  <button onclick="rotateBearing(-15)">⟲ 旋转</button>
+  <button onclick="rotateBearing(15)">⟳ 旋转</button>
+  <button onclick="zoomIn()">放大 +</button>
+  <button onclick="zoomOut()">缩小 −</button>
+  <button onclick="pitchStep(-10)">俯仰 −</button>
+  <button onclick="pitchStep(10)">俯仰 +</button>
+  <div id="pitchWrap"><input id="pitchRange" type="range" min="0" max="60" step="1" value="45" oninput="setPitch(this.value)"></div>
   <button onclick="toggleFullScreen()">全屏</button>
   <button onclick="clearMarkers()">清除标记</button>
   <button onclick="locate()">定位</button>
 </div>
-<div id="hint">天地图 · 拖动平移，滚轮/按钮缩放 · 罗盘指针显示坐向</div>
+<div id="hud"></div>
+<div id="hint">天地图 · 拖动平移，按钮缩放 · 罗盘指针显示坐向</div>
 <div id="needle"></div>
 <div id="heading-label">向 0°</div>
 
 <script>
+/* ============================================================
+ * 山水罗盘 · map.html
+ * 2D：天地图 WMTS 瓦片（原逻辑保留）
+ * 3D：WebGL 真高程地形（DEM = AWS Terrain Tiles / Terrarium）
+ *     + 天地图底图贴面 + 俯仰 0–60° + 旋转 + 罗盘坐向指针
+ * 桥接口：见 docs/map-bridge.md
+ * ============================================================ */
+
+/* ---------------- 公共状态 ---------------- */
 var KEY = "dd18858b33229f5837ad1d97b8d3105e";
 var SUB = ["t0","t1","t2","t3","t4","t5","t6","t7"];
-var base = "ter";        // vec=矢量 img=影像 ter=地形(默认)
-var anno = "cta";        // 注记层（地形注记）
-var threeD = false;
-var bearing = 0;         // 地图旋转角（对应 onMapRotate）
-var center = { lat: 39.9042, lng: 116.4074 };  // 北京
+var base = "ter";              // vec=矢量 img=影像 ter=地形(默认)
+var anno = "cta";              // 注记层
+var mode = "2d";               // 2d | 3d
+var bearing = 0;               // 地图旋转角
+var pitch = 45;                // 3D 俯仰 0(俯视)–60°
+var center = { lat: 39.9042, lng: 116.4074 };   // 北京
 var zoom = 5;
+var lastHeading = 0;
+
 var mapEl = document.getElementById("map");
+var glCanvas = document.getElementById("gl");
+var hudEl = document.getElementById("hud");
 var baseLayer = document.createElement("div");
 var annoLayer = document.createElement("div");
 baseLayer.style.position = "absolute";
@@ -58,6 +85,7 @@ annoLayer.style.position = "absolute";
 mapEl.appendChild(baseLayer);
 mapEl.appendChild(annoLayer);
 
+/* ---------------- 2D 瓦片 ---------------- */
 function tileUrl(layer, z, x, y) {
   var s = SUB[(((x + y) % 8) + 8) % 8];
   return "https://" + s + ".tianditu.gov.cn/" + layer + "_w/wmts" +
@@ -74,11 +102,17 @@ function lonLatToTile(lng, lat, z) {
   return { x: x, y: y };
 }
 
+function tileYToLat(y, z) {
+  var n = Math.PI - 2 * Math.PI * y / Math.pow(2, z);
+  return 180 / Math.PI * Math.atan(Math.sinh(n));
+}
+
 function render() {
+  if (mode === "3d") return;
   var n = Math.pow(2, zoom);
   var c = lonLatToTile(center.lng, center.lat, zoom);
   var w = mapEl.clientWidth, h = mapEl.clientHeight;
-  var tx = c.x * 256 - w / 2;   // pixel offset of tile (0,0)
+  var tx = c.x * 256 - w / 2;
   var ty = c.y * 256 - h / 2;
   var x0 = Math.floor(tx / 256), x1 = Math.ceil((tx + w) / 256);
   var y0 = Math.floor(ty / 256), y1 = Math.ceil((ty + h) / 256);
@@ -92,7 +126,6 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
   for (var y = y0; y <= y1; y++) {
     for (var x = x0; x <= x1; x++) {
       var xx = x, yy = y;
-      // Wrap horizontally and clamp vertically.
       xx = ((x % n) + n) % n;
       if (yy < 0 || yy >= n) continue;
       var left = x * 256 - tx;
@@ -110,83 +143,153 @@ function setBase(b) {
   document.getElementById("btn_vec").className = (b === "vec") ? "active" : "";
   document.getElementById("btn_img").className = (b === "img") ? "active" : "";
   document.getElementById("btn_ter").className = (b === "ter") ? "active" : "";
-  render();
+  if (mode === "3d") {
+    refreshPatchTexture();
+  } else {
+    render();
+  }
 }
 
+/* ---------------- 模式 / 视角 ---------------- */
 function toggle3D() {
-  threeD = !threeD;
-  applyTransform();
-  document.getElementById("btn_3d").className = threeD ? "active" : "";
+  setMode(mode === "3d" ? "2d" : "3d");
+}
+
+function setMode(m) {
+  mode = (m === "3d") ? "3d" : "2d";
+  var btn = document.getElementById("btn_3d");
+  btn.className = (mode === "3d") ? "active" : "";
+  btn.textContent = (mode === "3d") ? "返回 2D" : "3D 地形";
+  document.getElementById("pitchWrap").style.display = (mode === "3d") ? "block" : "none";
+  hudEl.style.display = (mode === "3d") ? "block" : "none";
+
+  if (mode === "3d") {
+    /* 大陆尺度下真高程起伏相对视距过小，进入 3D 时至少落到 z9（见 docs/map-bridge.md） */
+    if (zoom < 9) zoom = 9;
+    baseLayer.style.display = "none";
+    annoLayer.style.display = "none";
+    glCanvas.style.display = "block";
+    mapEl.style.transform = "";
+    if (!initGL()) {
+      console.log("LC3D ERROR webgl-unavailable");
+      setHud("WebGL 不可用，已退回 2D");
+      setMode("2d");
+      return;
+    }
+    resizeGL();
+    ensurePatch();
+    startLoop();
+    console.log("LC3D mode=3d zoom=" + zoom + " pitch=" + pitch);
+  } else {
+    stopLoop();
+    glCanvas.style.display = "none";
+    baseLayer.style.display = "";
+    annoLayer.style.display = "";
+    applyTransform();
+    render();
+    console.log("LC3D mode=2d");
+  }
+}
+
+function applyTransform() {
+  if (mode === "3d") { mapEl.style.transform = ""; return; }
+  mapEl.style.transform = (bearing === 0) ? "" : "rotateZ(" + bearing + "deg)";
 }
 
 function rotateBearing(delta) {
   bearing = (bearing + delta + 360) % 360;
-  applyTransform();
+  if (mode === "3d") {
+    refreshNeedle();
+  } else {
+    applyTransform();
+  }
+  updateHud();
 }
 
-function applyTransform() {
-  if (threeD) {
-    mapEl.style.transform = "perspective(1400px) rotateX(45deg) rotateZ(" + bearing + "deg)";
-  } else {
-    mapEl.style.transform = "rotateZ(" + bearing + "deg)";
+function pitchStep(d) {
+  if (mode !== "3d") return;
+  setPitch(pitch + d);
+}
+
+function setPitch(v) {
+  pitch = Math.max(0, Math.min(60, Math.round(Number(v) || 0)));
+  var r = document.getElementById("pitchRange");
+  if (r && Number(r.value) !== pitch) r.value = String(pitch);
+  updateHud();
+}
+
+function zoomIn() { zoom = Math.min(18, zoom + 1); if (mode === "3d") ensurePatch(); else render(); updateHud(); }
+function zoomOut() { zoom = Math.max(2, zoom - 1); if (mode === "3d") ensurePatch(); else render(); updateHud(); }
+
+function toggleFullScreen() {
+  var fullScreen = document.getElementById("controls").style.display !== "none";
+  document.getElementById("controls").style.display = fullScreen ? "none" : "";
+  document.getElementById("hint").style.display = fullScreen ? "none" : "";
+  if (mode === "3d") {
+    setTimeout(function () { resizeGL(); }, 60);
   }
 }
 
+/* ---------------- 罗盘坐向指针 ---------------- */
 function setHeading(deg) {
-  var el = document.getElementById("needle");
-  if (el) el.style.transform = "rotate(" + deg + "deg)";
+  lastHeading = Number(deg) || 0;
+  refreshNeedle();
   var lbl = document.getElementById("heading-label");
-  if (lbl) lbl.textContent = "向 " + (Math.round(deg) % 360) + "°";
+  if (lbl && lbl.getAttribute("data-sit") == null) {
+    lbl.textContent = "向 " + (Math.round(lastHeading) % 360) + "°";
+  }
+}
+
+function refreshNeedle() {
+  var el = document.getElementById("needle");
+  if (!el) return;
+  /* 3D 下地图随 bearing 旋转，指针取 heading-bearing 才与屏幕北对齐 */
+  var deg = (mode === "3d") ? (lastHeading - bearing) : lastHeading;
+  el.style.transform = "rotate(" + deg + "deg)";
 }
 
 function setSitFace(face, sit) {
   var lbl = document.getElementById("heading-label");
-  if (lbl) lbl.textContent = "向 " + face + " · 坐 " + sit;
+  if (!lbl) return;
+  lbl.setAttribute("data-sit", "1");
+  lbl.textContent = "向 " + face + " · 坐 " + sit;
 }
 
-var fullScreen = false;
-function toggleFullScreen() {
-  fullScreen = !fullScreen;
-  document.getElementById("controls").style.display = fullScreen ? "none" : "";
-  document.getElementById("hint").style.display = fullScreen ? "none" : "";
-}
-
-function zoomIn() { zoom = Math.min(18, zoom + 1); render(); }
-function zoomOut() { zoom = Math.max(2, zoom - 1); render(); }
+/* ---------------- 拖拽 / 缩放 / 标记 ---------------- */
+var dragging = false, lastX = 0, lastY = 0, totalMove = 0;
 
 function pan(dxPx, dyPx) {
+  if (mode === "3d") { pan3D(dxPx, dyPx); return; }
   var n = Math.pow(2, zoom);
   var c = lonLatToTile(center.lng, center.lat, zoom);
   c.x -= dxPx / 256;
   c.y -= dyPx / 256;
-  var lng = c.x / n * 360 - 180;
+  center.lng = c.x / n * 360 - 180;
   var latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * c.y / n)));
   center.lat = latRad * 180 / Math.PI;
-  center.lng = lng;
   render();
 }
 
-// Mouse drag + tap-to-place-marker.
-var dragging = false, lastX = 0, lastY = 0, downX = 0, downY = 0, totalMove = 0;
-mapEl.addEventListener("mousedown", function(e) {
-  dragging = true; lastX = e.clientX; lastY = e.clientY; downX = e.clientX; downY = e.clientY; totalMove = 0;
+mapEl.addEventListener("mousedown", function (e) {
+  dragging = true; lastX = e.clientX; lastY = e.clientY; totalMove = 0;
 });
-window.addEventListener("mousemove", function(e) {
+window.addEventListener("mousemove", function (e) {
   if (!dragging) return;
   totalMove += Math.abs(e.clientX - lastX) + Math.abs(e.clientY - lastY);
   pan(lastX - e.clientX, lastY - e.clientY);
   lastX = e.clientX; lastY = e.clientY;
 });
-window.addEventListener("mouseup", function() {
+window.addEventListener("mouseup", function () {
   if (dragging && totalMove < 6) placeMarker(lastX, lastY);
   dragging = false;
 });
-mapEl.addEventListener("wheel", function(e) {
+mapEl.addEventListener("wheel", function (e) {
   e.preventDefault();
   if (e.deltaY < 0) zoomIn(); else zoomOut();
 });
 
 function placeMarker(x, y) {
+  if (mode === "3d") return;   /* 3D 立向标记需射线拾取，本轮未实现（见 docs/map-bridge.md 遗留） */
   var rect = mapEl.getBoundingClientRect();
   var mk = document.createElement("div");
   mk.className = "marker";
@@ -204,32 +307,669 @@ function clearMarkers() {
 
 function locate() {
   if (!navigator.geolocation) { alert("此设备不支持定位"); return; }
-  navigator.geolocation.getCurrentPosition(function(pos) {
+  navigator.geolocation.getCurrentPosition(function (pos) {
     center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     zoom = Math.max(zoom, 12);
-    render();
-  }, function(err) {
+    if (mode === "3d") ensurePatch(true); else render();
+    updateHud();
+  }, function (err) {
     alert("定位失败: " + err.message);
   }, { enableHighAccuracy: true, timeout: 10000 });
 }
 
-// Touch.
-var t = null;
-mapEl.addEventListener("touchstart", function(e) {
-  if (e.touches.length === 1) { t = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+/* Touch */
+var touchStart = null;
+mapEl.addEventListener("touchstart", function (e) {
+  if (e.touches.length === 1) {
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, moved: 0 };
+  }
 }, { passive: true });
-mapEl.addEventListener("touchmove", function(e) {
-  if (e.touches.length === 1 && t) {
-    var dx = e.touches[0].clientX - t.x, dy = e.touches[0].clientY - t.y;
-    t = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+mapEl.addEventListener("touchmove", function (e) {
+  if (e.touches.length === 1 && touchStart) {
+    var dx = e.touches[0].clientX - touchStart.x;
+    var dy = e.touches[0].clientY - touchStart.y;
+    touchStart.x = e.touches[0].clientX;
+    touchStart.y = e.touches[0].clientY;
+    touchStart.moved += Math.abs(dx) + Math.abs(dy);
     pan(-dx, -dy);
   }
 }, { passive: true });
-mapEl.addEventListener("touchend", function(e) {
-  if (t) { placeMarker(t.x, t.y); t = null; }
+mapEl.addEventListener("touchend", function () {
+  if (touchStart && touchStart.moved < 8) placeMarker(touchStart.x, touchStart.y);
+  touchStart = null;
 });
 
-window.addEventListener("resize", render);
+window.addEventListener("resize", function () {
+  if (mode === "3d") resizeGL(); else render();
+});
+
+/* ============================================================
+ * 3D 引擎
+ * ============================================================ */
+var TERRARIUM = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/";
+var PATCH_TILES = 3;                 // 每块地形 3×3 个 DEM 瓦片
+var PATCH_PX = PATCH_TILES * 256;    // 768
+var GRID = 96;                       // 网格 96×96 顶点
+var VEXAG = 2.5;                     // 垂直放大（真实高程 × 2.5，见文档）
+var FOV = 50 * Math.PI / 180;
+
+var gl = null, prog = null, loc = {}, buffers = null, placeholderTex = null;
+var patch = null, patchSeq = 0, loadingKey = null;
+var rafId = 0, fpsFrames = 0, fpsT = 0, fps = 0, hudT = 0, logT = 0;
+var visible3D = true;
+var demoElev = 0;
+
+/* ---- DEM 缓存 ---- */
+var DEM = {}, DEM_PENDING = {}, DEM_ORDER = [];
+
+function wrapX(x, n) { return ((x % n) + n) % n; }
+
+function demTile(z, x, y) {
+  var k = z + "/" + x + "/" + y;
+  if (DEM[k]) return Promise.resolve(DEM[k]);
+  if (DEM_PENDING[k]) return DEM_PENDING[k];
+  var p = new Promise(function (resolve, reject) {
+    var tries = 0;
+    function attempt() {
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function () {
+        try {
+          var cv = document.createElement("canvas");
+          cv.width = 256; cv.height = 256;
+          var ctx = cv.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          var d = ctx.getImageData(0, 0, 256, 256).data;
+          var f = new Float32Array(65536);
+          for (var i = 0; i < 65536; i++) {
+            var o = i * 4;
+            f[i] = ((d[o] << 8) | d[o + 1]) + d[o + 2] / 256 - 32768;
+          }
+          DEM[k] = f; DEM_ORDER.push(k);
+          delete DEM_PENDING[k];
+          while (DEM_ORDER.length > 90) {
+            var old = DEM_ORDER.shift();
+            if (!(patch && old.indexOf(patch.z + "/") === 0)) delete DEM[old];
+          }
+          resolve(f);
+        } catch (e) { fail(e); }
+      };
+      img.onerror = function () { fail(new Error("dem-load")); };
+      function fail(e) {
+        if (++tries < 2) { setTimeout(attempt, 600); }
+        else { delete DEM_PENDING[k]; reject(e); }
+      }
+      img.src = TERRARIUM + z + "/" + x + "/" + y + ".png";
+    }
+    attempt();
+  });
+  DEM_PENDING[k] = p;
+  return p;
+}
+
+function demPix(z, px, py) {
+  var n = Math.pow(2, z);
+  if (py < 0 || py >= n * 256) return null;
+  var tx = Math.floor(px / 256), ty = Math.floor(py / 256);
+  tx = wrapX(tx, n);
+  var t = DEM[z + "/" + tx + "/" + ty];
+  if (!t) return null;
+  return t[(py - ty * 256) * 256 + (px - tx * 256)];
+}
+
+function demAt(z, gx, gy) {
+  var x0 = Math.floor(gx), y0 = Math.floor(gy);
+  var fx = gx - x0, fy = gy - y0;
+  var a = demPix(z, x0, y0), b = demPix(z, x0 + 1, y0);
+  var c = demPix(z, x0, y0 + 1), d = demPix(z, x0 + 1, y0 + 1);
+  if (a === null || b === null || c === null || d === null) return 0;
+  return a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) + c * (1 - fx) * fy + d * fx * fy;
+}
+
+/* ---- WebGL 初始化 ---- */
+function initGL() {
+  if (gl) return true;
+  try {
+    var opts = { alpha: false, antialias: false, depth: true, preserveDrawingBuffer: true };
+    gl = glCanvas.getContext("webgl", opts) || glCanvas.getContext("experimental-webgl", opts);
+  } catch (e) { gl = null; }
+  if (!gl) return false;
+
+  var vs = [
+    "attribute vec3 aPos;",
+    "attribute vec3 aNrm;",
+    "attribute float aElev;",
+    "attribute vec2 aUv;",
+    "uniform mat4 uVP;",
+    "uniform vec3 uTarget;",
+    "varying vec3 vNrm;",
+    "varying float vElev;",
+    "varying vec2 vUv;",
+    "varying float vDist;",
+    "void main(){",
+    "  vNrm = aNrm; vElev = aElev; vUv = aUv;",
+    "  vDist = length(aPos.xz - uTarget.xz);",
+    "  gl_Position = uVP * vec4(aPos, 1.0);",
+    "}"
+  ].join("\n");
+
+  var fs = [
+    "precision mediump float;",
+    "precision mediump sampler2D;",
+    "varying vec3 vNrm;",
+    "varying float vElev;",
+    "varying vec2 vUv;",
+    "varying float vDist;",
+    "uniform sampler2D uTex;",
+    "uniform float uUseTex;",
+    "uniform vec3 uLight;",
+    "uniform vec3 uFog;",
+    "uniform float uFogNear;",
+    "uniform float uFogFar;",
+    "vec3 hypo(float e){",
+    "  if (e < 1.0) return vec3(0.10, 0.22, 0.34);",
+    "  if (e < 200.0) return mix(vec3(0.16, 0.32, 0.19), vec3(0.32, 0.48, 0.24), e / 200.0);",
+    "  if (e < 900.0) return mix(vec3(0.32, 0.48, 0.24), vec3(0.58, 0.55, 0.31), (e - 200.0) / 700.0);",
+    "  if (e < 1800.0) return mix(vec3(0.58, 0.55, 0.31), vec3(0.62, 0.52, 0.42), (e - 900.0) / 900.0);",
+    "  if (e < 3000.0) return mix(vec3(0.62, 0.52, 0.42), vec3(0.84, 0.82, 0.78), (e - 1800.0) / 1200.0);",
+    "  return vec3(0.95, 0.95, 0.97);",
+    "}",
+    "void main(){",
+    "  vec3 n = normalize(vNrm);",
+    "  float sh = 0.55 + 0.55 * clamp(dot(n, uLight), 0.0, 1.0);",
+    "  vec3 col = hypo(vElev);",
+    "  if (uUseTex > 0.5) {",
+    "    vec3 t = texture2D(uTex, vUv).rgb;",
+    "    col = mix(col, t, 0.88);",
+    "  }",
+    "  col *= sh;",
+    "  float f = clamp((vDist - uFogNear) / max(1.0, uFogFar - uFogNear), 0.0, 1.0);",
+    "  col = mix(col, uFog, f * 0.9);",
+    "  gl_FragColor = vec4(col, 1.0);",
+    "}"
+  ].join("\n");
+
+  function sh(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(s) || "shader");
+    }
+    return s;
+  }
+
+  try {
+    prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(prog) || "link");
+    }
+  } catch (e) {
+    console.log("LC3D ERROR shader " + e.message);
+    gl = null;
+    return false;
+  }
+
+  loc = {
+    pos: gl.getAttribLocation(prog, "aPos"),
+    nrm: gl.getAttribLocation(prog, "aNrm"),
+    elev: gl.getAttribLocation(prog, "aElev"),
+    uv: gl.getAttribLocation(prog, "aUv"),
+    vp: gl.getUniformLocation(prog, "uVP"),
+    target: gl.getUniformLocation(prog, "uTarget"),
+    tex: gl.getUniformLocation(prog, "uTex"),
+    useTex: gl.getUniformLocation(prog, "uUseTex"),
+    light: gl.getUniformLocation(prog, "uLight"),
+    fog: gl.getUniformLocation(prog, "uFog"),
+    fogNear: gl.getUniformLocation(prog, "uFogNear"),
+    fogFar: gl.getUniformLocation(prog, "uFogFar")
+  };
+
+  buffers = {
+    pos: gl.createBuffer(), nrm: gl.createBuffer(),
+    elev: gl.createBuffer(), uv: gl.createBuffer(), idx: gl.createBuffer()
+  };
+  /* 1×1 占位纹理：避免 uUseTex=0 时驱动报 "no texture bound" */
+  placeholderTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, placeholderTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([58, 74, 52, 255]));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.enable(gl.DEPTH_TEST);
+  gl.disable(gl.CULL_FACE);
+  gl.clearColor(0.47, 0.55, 0.62, 1.0);
+  console.log("LC3D webgl ok " + gl.getParameter(gl.VERSION));
+  return true;
+}
+
+function resizeGL() {
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var w = Math.max(1, Math.round(glCanvas.clientWidth * dpr));
+  var h = Math.max(1, Math.round(glCanvas.clientHeight * dpr));
+  if (glCanvas.width !== w || glCanvas.height !== h) {
+    glCanvas.width = w;
+    glCanvas.height = h;
+  }
+  if (gl) gl.viewport(0, 0, w, h);
+}
+
+/* ---- 地形块 ---- */
+function ensurePatch(force) {
+  if (mode !== "3d") return;
+  var zdem = Math.max(4, Math.min(12, Math.round(zoom) - 1));
+  var t = lonLatToTile(center.lng, center.lat, zdem);
+  var ox = Math.floor(t.x) - 1, oy = Math.floor(t.y) - 1;
+  if (!force && patch && patch.z === zdem &&
+      Math.abs(t.x - (patch.ox + 1.5)) <= 0.6 &&
+      Math.abs(t.y - (patch.oy + 1.5)) <= 0.6) {
+    return;
+  }
+  startPatch(zdem, ox, oy);
+}
+
+function startPatch(z, ox, oy) {
+  var key = z + "/" + ox + "/" + oy;
+  if (loadingKey === key) return;
+  loadingKey = key;
+  var seq = ++patchSeq;
+  var n = Math.pow(2, z);
+  var jobs = [];
+  for (var j = 0; j < PATCH_TILES; j++) {
+    for (var i = 0; i < PATCH_TILES; i++) {
+      var x = wrapX(ox + i, n), y = oy + j;
+      if (y < 0 || y >= n) { jobs.push(Promise.resolve(null)); continue; }
+      jobs.push(demTile(z, x, y).catch(function () { return null; }));
+    }
+  }
+  setHud("DEM 加载中…");
+  Promise.all(jobs).then(function (tiles) {
+    if (seq !== patchSeq) return;
+    for (var i = 0; i < tiles.length; i++) {
+      if (!tiles[i]) {
+        console.log("LC3D ERROR dem-missing");
+        setHud("DEM 加载失败");
+        loadingKey = null;
+        return;
+      }
+    }
+    var mpp = 156543.03392 * Math.cos(tileYToLat(oy + 1.5, z) * Math.PI / 180) / Math.pow(2, z);
+    var p = { z: z, ox: ox, oy: oy, mpp: mpp, mesh: null, tex: null, texCanvas: null, indexCount: 0 };
+    try {
+      p.mesh = buildMesh(p);
+      uploadMesh(p);
+      patch = p;
+      loadingKey = null;
+      console.log("LC3D patch " + z + "/" + ox + "/" + oy + " mpp=" + mpp.toFixed(1) + " verts=" + ((GRID + 1) * (GRID + 1)));
+      buildPatchTexture(p);
+      updateHud();
+    } catch (e) {
+      console.log("LC3D ERROR mesh " + e.message);
+      setHud("地形构建失败");
+      loadingKey = null;
+    }
+  }, function () {
+    if (seq !== patchSeq) return;
+    console.log("LC3D ERROR dem-load");
+    setHud("DEM 加载失败");
+    loadingKey = null;
+  });
+}
+
+function buildMesh(p) {
+  var N = GRID, step = PATCH_PX / N;
+  var vc = (N + 1) * (N + 1);
+  var pos = new Float32Array(vc * 3);
+  var nrm = new Float32Array(vc * 3);
+  var elev = new Float32Array(vc);
+  var uv = new Float32Array(vc * 2);
+  var H = new Float32Array(vc);
+  var i, j;
+  for (j = 0; j <= N; j++) {
+    for (i = 0; i <= N; i++) {
+      H[j * (N + 1) + i] = demAt(p.z, p.ox * 256 + i * step, p.oy * 256 + j * step);
+    }
+  }
+  var dx = step * p.mpp;
+  for (j = 0; j <= N; j++) {
+    for (i = 0; i <= N; i++) {
+      var k = j * (N + 1) + i;
+      var h = H[k] * VEXAG;
+      var hl = H[j * (N + 1) + Math.max(0, i - 1)] * VEXAG;
+      var hr = H[j * (N + 1) + Math.min(N, i + 1)] * VEXAG;
+      var hu = H[Math.max(0, j - 1) * (N + 1) + i] * VEXAG;
+      var hd = H[Math.min(N, j + 1) * (N + 1) + i] * VEXAG;
+      var sx = (hr - hl) / (2 * dx);
+      var sz = (hd - hu) / (2 * dx);
+      var nx = -sx, ny = 1, nz = -sz;
+      var len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+      pos[k * 3] = (i * step - PATCH_PX / 2) * p.mpp;
+      pos[k * 3 + 1] = h;
+      pos[k * 3 + 2] = (j * step - PATCH_PX / 2) * p.mpp;
+      nrm[k * 3] = nx / len; nrm[k * 3 + 1] = ny / len; nrm[k * 3 + 2] = nz / len;
+      elev[k] = H[k];
+      /* 贴面纹理比 DEM 高一级（6×6 瓦片 1536px 正好覆盖整块），UV 与屏幕 1:1 */
+      uv[k * 2] = i * step / PATCH_PX;
+      uv[k * 2 + 1] = j * step / PATCH_PX;
+    }
+  }
+  var idx = new Uint16Array(N * N * 6);
+  var q = 0;
+  for (j = 0; j < N; j++) {
+    for (i = 0; i < N; i++) {
+      var a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1;
+      idx[q++] = a; idx[q++] = c; idx[q++] = b;
+      idx[q++] = b; idx[q++] = c; idx[q++] = d;
+    }
+  }
+  return { pos: pos, nrm: nrm, elev: elev, uv: uv, idx: idx, count: idx.length };
+}
+
+function uploadMesh(p) {
+  var m = p.mesh;
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.pos); gl.bufferData(gl.ARRAY_BUFFER, m.pos, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.nrm); gl.bufferData(gl.ARRAY_BUFFER, m.nrm, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.elev); gl.bufferData(gl.ARRAY_BUFFER, m.elev, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.uv); gl.bufferData(gl.ARRAY_BUFFER, m.uv, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.idx); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.idx, gl.STATIC_DRAW);
+  p.indexCount = m.count;
+}
+
+/* 天地图底图贴面（3×3 瓦片拼成 768×768 纹理） */
+function buildPatchTexture(p) {
+  var seq = patchSeq;
+  var TEX_TILES = 6, TEX_PX = TEX_TILES * 256;   // 1536px
+  var zt = Math.min(p.z + 1, 18);                // 比 DEM 高一级
+  var tx0 = p.ox * 2, ty0 = p.oy * 2;            // 该级别下地形块的左上瓦片
+  var cv = document.createElement("canvas");
+  cv.width = TEX_PX; cv.height = TEX_PX;
+  var ctx = cv.getContext("2d");
+  ctx.fillStyle = "#3a4a34";
+  ctx.fillRect(0, 0, TEX_PX, TEX_PX);
+  var n = Math.pow(2, zt), ok = 0, tasks = [];
+  for (var j = 0; j < TEX_TILES; j++) {
+    for (var i = 0; i < TEX_TILES; i++) {
+      (function (i, j) {
+        var x = wrapX(tx0 + i, n), y = ty0 + j;
+        if (y < 0 || y >= n) return;
+        tasks.push(new Promise(function (res) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = function () { ctx.drawImage(img, i * 256, j * 256, 256, 256); ok++; res(); };
+          img.onerror = function () { res(); };
+          img.src = tileUrl(base, zt, x, y);
+        }));
+      })(i, j);
+    }
+  }
+  Promise.all(tasks).then(function () {
+    if (seq !== patchSeq || patch !== p) return;
+    if (ok >= 30) { p.texCanvas = cv; console.log("LC3D texture ok " + ok + "/36 z" + zt); }
+    else { console.log("LC3D texture fail " + ok + "/36 z" + zt); }
+  });
+}
+
+function refreshPatchTexture() {
+  if (!patch) return;
+  if (patch.tex) { gl.deleteTexture(patch.tex); patch.tex = null; }
+  patch.texCanvas = null;
+  buildPatchTexture(patch);
+}
+
+function uploadTexture(p) {
+  if (p.texCanvas) {
+    var t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, p.texCanvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    p.tex = t;
+    p.texCanvas = null;
+  }
+}
+
+/* ---- 相机 / 矩阵 ---- */
+function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }; }
+function cross(a, b) {
+  return { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x };
+}
+function norm(a) {
+  var l = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z) || 1;
+  return { x: a.x / l, y: a.y / l, z: a.z / l };
+}
+function dot(a, b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+
+function lookAt(eye, target, up) {
+  var f = norm(sub(target, eye));
+  var s = norm(cross(f, up));
+  var u = cross(s, f);
+  return [
+    s.x, u.x, -f.x, 0,
+    s.y, u.y, -f.y, 0,
+    s.z, u.z, -f.z, 0,
+    -dot(s, eye), -dot(u, eye), dot(f, eye), 1
+  ];
+}
+
+function perspective(fovy, aspect, near, far) {
+  var f = 1 / Math.tan(fovy / 2);
+  return [
+    f / aspect, 0, 0, 0,
+    0, f, 0, 0,
+    0, 0, (far + near) / (near - far), -1,
+    0, 0, 2 * far * near / (near - far), 0
+  ];
+}
+
+function mul(a, b) {
+  var o = new Array(16);
+  for (var c = 0; c < 4; c++) {
+    for (var r = 0; r < 4; r++) {
+      o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] +
+        a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+    }
+  }
+  return o;
+}
+
+function pan3D(dx, dy) {
+  if (!patch) return;
+  var w = Math.max(1, glCanvas.clientWidth), h = Math.max(1, glCanvas.clientHeight);
+  var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
+  var D = (h * zMpp) / (2 * Math.tan(FOV / 2));
+  var g = (2 * D * Math.tan(FOV / 2)) / h;   // 屏幕 1px 对应的地面米数
+  var b = bearing * Math.PI / 180;
+  var fx = Math.sin(b), fz = -Math.cos(b);
+  var rx = Math.cos(b), rz = Math.sin(b);
+  /* 拖拽语义：手指向右=看西侧（中心西移），手指向下=看北侧（中心北移） */
+  var mx = rx * dx * g - fx * dy * g;        // 东向
+  var mz = rz * dx * g - fz * dy * g;        // 南向
+  center.lng += mx / (111320 * Math.cos(center.lat * Math.PI / 180));
+  center.lat -= mz / 110540;
+  if (center.lat > 85) center.lat = 85;
+  if (center.lat < -85) center.lat = -85;
+  ensurePatch();
+  updateHud();
+}
+
+/* ---- 渲染 ---- */
+function startLoop() {
+  if (rafId) return;
+  fpsT = 0; fpsFrames = 0;
+  rafId = requestAnimationFrame(loop);
+}
+
+function stopLoop() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = 0;
+  fps = 0;
+}
+
+function loop(ts) {
+  rafId = requestAnimationFrame(loop);
+  if (!visible3D) return;
+  render3D();
+  if (!fpsT) fpsT = ts;
+  fpsFrames++;
+  if (ts - fpsT >= 1000) {
+    fps = Math.round(fpsFrames * 1000 / (ts - fpsT));
+    fpsFrames = 0; fpsT = ts;
+    updateHud();
+    if (ts - logT > 5000) {
+      logT = ts;
+      console.log("LC3D fps=" + fps + " elev=" + Math.round(demoElev) + " pitch=" + pitch +
+        " bearing=" + bearing + " zoom=" + zoom + " z=" + (patch ? patch.z : "-"));
+    }
+  }
+}
+
+function render3D() {
+  if (!gl) { if (!initGL()) return; }
+  if (!patch || !patch.mesh) {
+    gl.clearColor(0.47, 0.55, 0.62, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    return;
+  }
+  var W = glCanvas.width, H = glCanvas.height;
+  if (!W || !H) return;
+  var aspect = W / H;
+  var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
+  var hCss = Math.max(1, glCanvas.clientHeight);
+  var D = (hCss * zMpp) / (2 * Math.tan(FOV / 2));
+
+  var t = lonLatToTile(center.lng, center.lat, patch.z);
+  var gx = t.x * 256, gy = t.y * 256;
+  /* 网格以地形块中心为原点：块中心 = (ox+1.5, oy+1.5) 个瓦片 */
+  var cxPx = (patch.ox + 1.5) * 256, cyPx = (patch.oy + 1.5) * 256;
+  var target = {
+    x: (gx - cxPx) * patch.mpp,
+    y: 0,
+    z: (gy - cyPx) * patch.mpp
+  };
+  demoElev = demAt(patch.z, gx, gy);
+  target.y = demoElev * VEXAG;
+
+  var b = bearing * Math.PI / 180, p = pitch * Math.PI / 180;
+  var fh = { x: Math.sin(b), y: 0, z: -Math.cos(b) };
+  var sp = Math.sin(p), cp = Math.cos(p);
+  var eye = {
+    x: target.x - fh.x * D * sp,
+    y: target.y + D * cp,
+    z: target.z - fh.z * D * sp
+  };
+  var up = (pitch < 0.5) ? { x: Math.sin(b), y: 0, z: -Math.cos(b) } : { x: 0, y: 1, z: 0 };
+  var view = lookAt(eye, target, up);
+
+  var R = (PATCH_PX / 2) * patch.mpp;                 // 地形块半径（米）
+  var near = Math.max(1, D * 0.01);
+  var far = Math.max(D * 6, R * 3);
+  var vp = mul(perspective(FOV, aspect, near, far), view);
+
+  gl.viewport(0, 0, W, H);
+  gl.clearColor(0.47, 0.55, 0.62, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.useProgram(prog);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.pos);
+  gl.enableVertexAttribArray(loc.pos);
+  gl.vertexAttribPointer(loc.pos, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.nrm);
+  gl.enableVertexAttribArray(loc.nrm);
+  gl.vertexAttribPointer(loc.nrm, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.elev);
+  gl.enableVertexAttribArray(loc.elev);
+  gl.vertexAttribPointer(loc.elev, 1, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.uv);
+  gl.enableVertexAttribArray(loc.uv);
+  gl.vertexAttribPointer(loc.uv, 2, gl.FLOAT, false, 0, 0);
+
+  if (patch.texCanvas) uploadTexture(patch);
+
+  gl.uniformMatrix4fv(loc.vp, false, new Float32Array(vp));
+  gl.uniform3f(loc.target, target.x, target.y, target.z);
+  gl.uniform3f(loc.light, -0.45, 0.78, -0.42);
+  gl.uniform3f(loc.fog, 0.47, 0.55, 0.62);
+  gl.uniform1f(loc.fogNear, R * 0.75);
+  gl.uniform1f(loc.fogFar, R * 1.05);
+  gl.uniform1f(loc.useTex, patch.tex ? 1 : 0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, patch.tex || placeholderTex);
+  gl.uniform1i(loc.tex, 0);
+
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.idx);
+  gl.drawElements(gl.TRIANGLES, patch.indexCount, gl.UNSIGNED_SHORT, 0);
+
+  if (!window.__lcDbgDraw) {
+    window.__lcDbgDraw = 1;
+    console.log("LC3D draw W=" + W + " H=" + H + " idx=" + patch.indexCount +
+      " attr=" + loc.pos + "," + loc.nrm + "," + loc.elev + "," + loc.uv +
+      " vp0=" + vp[0].toFixed(3) + " eye=" + Math.round(eye.x) + "," + Math.round(eye.y) + "," + Math.round(eye.z) +
+      " tgt=" + Math.round(target.x) + "," + Math.round(target.y) + "," + Math.round(target.z) +
+      " D=" + Math.round(D) + " err=" + gl.getError());
+  }
+}
+
+/* ---- HUD ---- */
+function setHud(t) {
+  hudEl.textContent = t;
+  hudEl.style.display = (mode === "3d") ? "block" : "none";
+}
+
+function updateHud() {
+  if (mode !== "3d") { hudEl.style.display = "none"; return; }
+  hudEl.style.display = "block";
+  if (!patch || !patch.mesh) { hudEl.textContent = "DEM 加载中…"; return; }
+  hudEl.textContent =
+    "FPS " + fps + "\n" +
+    "海拔 " + Math.round(demoElev) + " m\n" +
+    "z" + zoom + " · 俯仰 " + pitch + "° · " + (Math.round(bearing) % 360) + "°\n" +
+    "垂直放大 " + VEXAG + "×";
+}
+
+/* ---- 可见性：切到别的 Tab 时停渲染，避免双 WebView 抢 GPU ---- */
+if (window.IntersectionObserver) {
+  new IntersectionObserver(function (es) {
+    visible3D = !!(es[0] && es[0].isIntersecting);
+  }, { threshold: 0.01 }).observe(glCanvas);
+}
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "hidden") visible3D = false;
+  else visible3D = true;
+});
+
+/* ---- 对外 / 测试接口 ---- */
+function debugSetView(lat, lng, z, p, b) {
+  if (typeof lat === "number") center.lat = lat;
+  if (typeof lng === "number") center.lng = lng;
+  if (typeof z === "number") zoom = Math.max(2, Math.min(18, z));
+  if (typeof p === "number") setPitch(p);
+  if (typeof b === "number") bearing = ((b % 360) + 360) % 360;
+  if (mode === "3d") { ensurePatch(true); updateHud(); } else { applyTransform(); render(); }
+}
+
+window.__LC3D = {
+  setView: debugSetView,
+  setMode: setMode,
+  state: function () {
+    return {
+      mode: mode, lat: center.lat, lng: center.lng, zoom: zoom, pitch: pitch,
+      bearing: bearing, fps: fps, elev: Math.round(demoElev),
+      demZoom: patch ? patch.z : null, hasTexture: !!(patch && patch.tex)
+    };
+  },
+  fps: function () { return fps; },
+  screenshot: function () {
+    try { return glCanvas.toDataURL("image/png"); } catch (e) { return ""; }
+  }
+};
+
+/* ---- 启动 ---- */
+updateHud();
 render();
 </script>
 </body>

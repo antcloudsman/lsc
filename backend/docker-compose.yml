@@ -1,0 +1,26 @@
+name: lc-backend
+
+services:
+  api:
+    build: .
+    image: lc-backend:local
+    container_name: lc-backend
+    ports:
+      # Local demo only: never expose the unauthenticated API on a public interface.
+      - "127.0.0.1:8787:8787"
+    environment:
+      PORT: "8787"
+      DB_PATH: /data/lc.sqlite
+      PUBLIC_BASE_URL: ${LC_PUBLIC_BASE_URL:-http://127.0.0.1:8787}
+    volumes:
+      - lc-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  lc-data:

@@ -1,0 +1,15 @@
+{
+  "name": "lc-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Landscape Compass (山水罗盘) local backend: case library, settings sync, share links.",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --no-warnings src/server.js",
+    "dev": "node --no-warnings --watch src/server.js",
+    "selfcheck": "node --no-warnings scripts/selfcheck.mjs"
+  }
+}

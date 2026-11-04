@@ -66,13 +66,27 @@ if ($dumpOk) {
     $xml = Get-Content -Raw (Join-Path $OutDir "ui-compass.xml")
     $texts = [regex]::Matches($xml, 'text="([^"]*)"') | ForEach-Object { $_.Groups[1].Value }
 }
+# 健全性：dump 必须在罗盘页（有「度数」行）且航向已冻结到注入值；
+# 否则「没有偏角行」可能是 dump 打到了别的页面/弹窗，不能当成「开关已关」。
+$hasReading = ($texts -match "度数").Count -gt 0
+$reading = ($texts | Where-Object { $_ -match "度数" } | Select-Object -First 1)
+if ($dumpOk -and -not $hasReading) {
+    $dumpOk = $false
+    Add-Content -Encoding UTF8 $result "dump 无「度数」行（可能不在罗盘页/被弹窗遮挡）→ BLOCKED"
+}
 $hasDecl = ($texts -match "偏角").Count -gt 0
 $hasTrueNorth = ($texts -match "磁北").Count -gt 0 -or ($texts -match "真北").Count -gt 0
 
 # 4) 判定
 $failures = @()
 if ($dumpOk) {
-    Add-Content -Encoding UTF8 $result "ui rows: 偏角=$hasDecl 磁北/真北=$hasTrueNorth (dump OK)"
+    Add-Content -Encoding UTF8 $result "ui rows: 偏角=$hasDecl 磁北/真北=$hasTrueNorth 读数=[$reading] (dump OK)"
+    if ($reading -match '([\d.]+)') {
+        $rv = [double]$Matches[1]
+        if ([math]::Abs($rv - $Heading) -gt 0.5) {
+            Add-Content -Encoding UTF8 $result "WARN 读数 $rv 与注入 $Heading 不一致（注入可能未生效，结论需人工复核）"
+        }
+    }
     if ($enabled -and -not $hasDecl) { $failures += "开关=on 但缺「偏角」行" }
     if (-not $enabled -and $hasDecl) { $failures += "开关=off 但仍显示「偏角」行" }
 } else {

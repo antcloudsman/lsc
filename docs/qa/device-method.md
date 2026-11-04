@@ -63,3 +63,13 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 
 - 知识页 dump 在 D5 后失败一次，未收录；需要时按 §1 先清远程文件、在知识页等 2s 再试。
 - AT-P0-0 的「P0-1 总开关全关」变体基线还没拍，等客户端这轮真机验完后补拍罗盘页。
+
+
+## 附：真机调试通道（LC客户端，2026-11-05）
+
+1. **广播要整条加引号**：宿主机 → `adb shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value 'console.log(42)'"`。
+   直接把 `&`/括号放外层，设备 `sh` 会截断或报语法错误；`result=0` 只表示广播发出，**不代表 receiver 收到**。
+2. **可观测标记**：`DebugBridge` 收到任何命令都打 `LCDEBUG cmd=<name>`；`js` 命令带 `ValueCallback`，结果回写 `LCJS mapView -> <返回值>`。先看到 `LCDEBUG`、再看到 `LCJS`，才能说注入生效。
+3. **历史坑（已修复）**：`1c51e22` 曾把 `url`/`js` 两个命令覆盖掉，表现为「有 `LCDEBUG`、页面无反应」；现已在 develop 上补回。
+4. **`url` 命令的边界**：同文档只改 hash（`#in3d`）不触发重载；`file:///...map.html?t=7` 这种带 query 的变体会加载失败。需要重载时用 `js` 发 `location.reload()`，或让页面初始化时读 hash（地图侧待办）。
+5. **dump 前置**：注入 heading 冻结传感器后再 dump；`rm -f /sdcard/ui.xml` 再 dump，只有出现 `UI hierchary dumped to:` 才 `pull`，并校验包名是 `com.luopan.fengshui`。

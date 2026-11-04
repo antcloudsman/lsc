@@ -17,11 +17,17 @@ public class CompassView extends View {
     private float heading = 0f;
     private int dialType = 1; // 0..4 (常用罗盘 default)
 
+    public void setTrustEnabled(boolean enabled) {
+        this.trustEnabled = enabled;
+        invalidate();
+    }
+
     public void setDialType(int t) {
         this.dialType = t;
         invalidate();
     }
     private boolean followSensor = true;
+    private boolean trustEnabled = false;
 
     public interface OnHeadingChangeListener {
         void onHeadingChanged(float heading);
@@ -218,6 +224,16 @@ public class CompassView extends View {
             String name = bagua.labels[i].replace("\u200c", "");
             textPaint.setColor(wuxingColor(guaWuxing(name.substring(0, 1))));
             drawText(canvas, name, p[0], p[1], textPaint);
+        }
+
+        // P0-1: 天池（仅读数可信包开启时）
+        if (trustEnabled) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(1.5f * density());
+            paint.setColor(gold);
+            canvas.drawCircle(cx, cy, r * 0.085f, paint);
+            paint.setStrokeWidth(1f * density());
+            canvas.drawLine(cx, cy - r * 0.085f, cx, cy - r * 0.045f, paint);
         }
 
         // Fixed crosshair + top pointer (screen space).

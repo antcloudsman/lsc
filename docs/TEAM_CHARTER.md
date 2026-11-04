@@ -107,6 +107,6 @@ adb -s L2E0222531014833 shell am start -n com.luopan.fengshui/.MainActivity
 | D-006 | 2026-11-05 | 不收费：无会员/内购/广告 SDK；天地图用个人 key（1 万/日/服务），不自建瓦片服务、不申请商用授权 | 避免触《地图管理条例》测绘资质与派生产品条款 |
 
 
-| D-007 | 2026-11-05 | 提交隔离：成员提交一律在独立 worktree（`E:\APPDetector\wt\<成员>`）完成，禁止在共享工作树切 HEAD 提交 | 共享工作树 HEAD 对 7 人不可见是事故根因；提交前必跑 `scripts\check-staged-paths.ps1 -Branch <自己分支> -OwnedPaths <自己路径>`，FAIL 拒绝提交；禁止 `git commit --amend`（共享仓库任何提交都不许改写历史） |
+| D-007 | 2026-11-05 | 提交隔离：成员提交一律在独立 worktree（`E:\APPDetector\wt\<成员>`）完成，禁止在共享工作树切 HEAD 提交 | 共享工作树 HEAD 对 7 人不可见是事故根因；提交前必跑 `scripts\check-staged-paths.ps1 -Branch <自己分支> -OwnedPaths <自己路径>`，FAIL 拒绝提交；禁止 `git commit --amend`（共享仓库任何提交都不许改写历史）；改动必须以 `git show develop:<path>` 为基线，不从共享工作树取旧版文件做补丁 |
 | D-008 | 2026-11-05 | 文案诚信：源码/UI 不得出现未取证的「已核对」声明 | 分金/72 龙/60 龙/64 卦/八卦现为教材式命名，界面标注「待换原版表」，轮 B2 换表后撤除 |
 | D-009 | 2026-11-05 | 交互口径：无网磁偏角退回手动值（不做离线近似表）；3D 垂直夸张默认 2.5× | HUD 必须常显倍率与贴面类型；2.5× 是显示策略，不做隐藏自动变换 |

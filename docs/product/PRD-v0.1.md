@@ -1,8 +1,8 @@
-# 山水罗盘 LC · PRD v0.8（自用口径）
+# 山水罗盘 LC · PRD v0.9（自用口径）
 
 - 作者：LC产品｜评审：技术总监
 - 日期：2026-11-05
-- 落盘路径沿用 `docs/product/PRD-v0.1.md`（交付路径由技术总监指定，不另开文件）；**内容版本 v0.8**，按 D-001「用户自用」写增量口径。
+- 落盘路径沿用 `docs/product/PRD-v0.1.md`（交付路径由技术总监指定，不另开文件）；**内容版本 v0.9**，按 D-001「用户自用」写增量口径。
 - 上游依据：`docs/TEAM_CHARTER.md`、`app/README.md`、`app/MECHANICS.md`、`app/mechanics.json`、`docs/product/market-scan.md`（v0.2）
 - 代码证据基准：**2026-11-05 02:40 左右的工作树快照**（该时段 LC客户端/LC地图/LC逆向 正在并行改 `CompassData.java`、`map.html`，行号会漂，故证据一律写到「文件 + 方法名」，行号仅作辅助）。
 - 范围：只写文档；`app/` 未做任何改动。
@@ -67,20 +67,20 @@
 | B-01 | 打开 App 直接看到罗盘叠在地图上（不登录、不付费） | `MainActivity.buildCompassTab()`：FrameLayout + 底图 WebView + `CompassView` 覆盖 | `CompassToolsKt.E0` 揭示原版为 WebView 地图 + Compose 罗盘叠层（MECHANICS §CompassToolsKt） | 已对齐 | 高 |
 | B-02 | 手机转动时罗盘跟转、读数实时刷新 | `MainActivity.onSensorChanged()`：ROTATION_VECTOR → azimuth → `setSensorHeading` | 原版传感器驱动（`CompassManager`/`CompassModel`） | 已对齐 | 高 |
 | B-03 | 手指拖动罗盘手动定向 | `CompassView.onTouchEvent()`：拖动改 heading，`followSensor=false` | 原版 Compose 手势（未逐像素还原） | 等价替代 | 中 |
-| B-04 | 切换 5 种盘面 | `CompassView.setDialType()` + `MainActivity` 顶部 5 个按钮；`CompassData.COMPASS_TYPES` 由生成器产出 | `CommonCompassEnum.COMPASS_0..4` | **部分**：仅靠「细环显隐 / 64 卦刻度」区分，盘面视觉差异弱 | 中 |
+| B-04 | 切换 5 种盘面 | `CompassView.setDialType()` + `MainActivity` 顶部 5 个按钮；`CompassData.COMPASS_TYPES` 由生成器产出 | `CommonCompassEnum.COMPASS_0..4` | **部分**：仅靠「细环显隐 / 64 卦刻度」区分，盘面视觉差异弱。**真机实测（LC测试 OBS-001）**：dial1/2/3 截图 **0 px 差异**、dial0 差 3,078 px、dial4 差 679 px——5 盘面实际只有 3 种渲染 | 中 |
 | B-05 | 看到 14 类圈层读数 | `CompassData.Reading` 只算度数/山/五行/正兼向/坐山/分金/72 龙/60 龙/后天卦（约 8 类）；`READ_TYPES` 是描述串，不是逐环文字 | `CompassReadTypeEnum.TYPE_1..14` 全 14 环 | **部分**：缺先天八卦/洛书数/64 卦内外卦/天盘分金/正兼向度数等 6 类；圈层绘制只有 24 山三盘 + 后天卦；**且已有 6 类文字仍是教材值（T-9）** | 高 |
 | B-06 | 读数按原版公式算（取整、三盘偏移、分金/龙、正兼向 9°） | `CompassData.Reading` 构造器：`floor((h+7.5)/15)`、`(h-1.5)/6`、`abs(offset)*2<=9` | `CompassReadTypeEnum.getFaceText/getBackText` | 已对齐（待数值单测锁死） | 高 |
 | B-07 | 一键归北 | `CompassView.reset()`（注意：归北瞬间 heading=0，靠下一帧传感器纠正） | 原版归北行为（未逐项比对） | 等价替代 | 中 |
 | B-08 | 坐向翻转 180° | `MainActivity`「翻坐向」按钮 → `setHeadingManually(h+180)` | `getBackText = face(h+180)` | 已对齐 | 中 |
-| B-09 | 截图保存 | `MainActivity.captureMap()`：截的是 `mapView`（**地图 Tab** 的 WebView），但按钮在罗盘 Tab——此时 `mapView` 为 `GONE`、宽高 0，`createBitmap(0,0)` 抛异常必进 catch | `MapWebApiKt.getScreenshot(..., "compass", ...)` | **部分（代码推断必失败，待真机确认）** | 高 |
-| B-10 | 底图三选一：矢量 / 影像 / 地形（默认地形） | `map.html`：`setBase('vec'/'img'/'ter')` + 注记层 `cva/cia/cta` | 原版多图源 | 等价替代 | 中 |
-| B-11 | 3D 看山势（俯仰、旋转、缩放） | `map.html` 3D 引擎：Terrarium DEM → 96×96 网格 WebGL 渲染，俯仰 0–60°，HUD 显示海拔/FPS | 原版 `on3dChanged`/`Control3d`，真 3D 由 `libterrain.so`（VM 保护，不可静态还原） | 等价替代（**已从 CSS 透视为真高程**；需真机实测） | 高 |
+| B-09 | 截图保存 | `MainActivity.captureMap()`：截的是 `mapView`（**地图 Tab** 的 WebView），但按钮在罗盘 Tab——此时 `mapView` 为 `GONE`、宽高 0，`createBitmap(0,0)` 抛异常必进 catch；`afb8acd` 已改为抓 `compassTab` + PixelCopy 优先（待真机验收） | `MapWebApiKt.getScreenshot(..., "compass", ...)` | **已真机复现（LC测试 轮 B 版）**：不抛异常，生成 1228×2376 / 151,705 B PNG，HUD 在，但**地图与 3D 内容全白**（属「内容空白」而非异常）；`afb8acd` 修复待真机复验 | 高 |
+| B-10 | 底图三选一：矢量 / 影像 / 地形（默认地形） | `map.html`：`setBase('vec'/'img'/'ter')` + 注记层 `cva/cia/cta` | 原版多图源 | 等价替代。**真机实测**：矢量/影像可切；地形与影像截图 **0 px 差异**，ter 按钮未生效或叠加不可见，**未确认** | 中 |
+| B-11 | 3D 看山势（俯仰、旋转、缩放） | `map.html` 3D 引擎：Terrarium DEM → 96×96 网格 WebGL 渲染，俯仰 0–60°，HUD 显示海拔/FPS | 原版 `on3dChanged`/`Control3d`，真 3D 由 `libterrain.so`（VM 保护，不可静态还原） | 等价替代（**已从 CSS 透视为真高程**）；真机已实测：FPS 56–60、俯仰 0/45°、旋转 bearing 变化、无 FATAL | 高 |
 | B-12 | 地图旋转 ±15° | `map.html.rotateBearing()` | `onMapRotate` | 等价替代 | 中 |
 | B-13 | 缩放 / 拖动平移 / 滚轮 | `map.html.render()/pan()/pan3D()` | 原版地图手势 | 等价替代 | 高 |
-| B-14 | 点图打「立向」标记 / 一键清除 | `map.html.placeMarker()`（**3D 模式直接 return，未做射线拾取**）、`clearMarkers()` | `setSitFace`/`onClickMapElement`/`deleteMapElementByType` | **部分**：2D 有，3D 无 | 中 |
-| B-15 | 定位到当前位置 | `map.html.locate()` + `MainActivity` 定位权限 | 原版定位 | 等价替代 | 中 |
+| B-14 | 点图打「立向」标记 / 一键清除 | `map.html.placeMarker()`（2D 有；3D 射线点选 JS 侧已就绪 `ee1330a`）、`clearMarkers()` | `setSitFace`/`onClickMapElement`/`deleteMapElementByType` | **部分**：3D 点选 Java 桥未接（`LCAndroid`），**真机未验** | 中 |
+| B-15 | 定位到当前位置 | `map.html.locate()` + `MainActivity` 定位权限 | 原版定位 | 等价替代。**真机实测**：点击定位后地图无可见变化，**未确认**（geolocation 自动授权，无独立证据） | 中 |
 | B-16 | 全屏 | `map.html.toggleFullScreen()` | `showFullScreen/closeFullScreen` | 等价替代 | 低 |
-| B-17 | 地图上叠加指针与「向 x° / 向某山·坐某山」 | `MainActivity.updateReading()` 只对 `mapView`（地图 Tab）`evaluateJavascript`；罗盘 Tab 的底图 WebView 在 `buildCompassTab()` 里是**局部变量、未保存引用**，收不到 `setHeading/setSitFace` | `setSitFace` + 坐向叠加 | **部分**：罗盘 Tab 的底图指针停在 0° 不动 | 高 |
+| B-17 | 地图上叠加指针与「向 x° / 向某山·坐某山」 | `MainActivity.updateReading()` 原只对 `mapView`（地图 Tab）`evaluateJavascript`；罗盘 Tab 的底图 WebView 未保存引用，收不到 `setHeading/setSitFace`。`afb8acd` 已保存 `compassMapView` 并改推它 | `setSitFace` + 坐向叠加 | **部分（`afb8acd` 已修，待真机）**：修复前罗盘 Tab 指针停在 0° | 高 |
 | B-18 | 知识库：5 盘面 + 14 圈层 + 8 条知识，点开看详情 | `MainActivity.buildKnowledgeTab()`：ListView + AlertDialog | `CompassIntroduceActivity` + `assets/compassIntroduce/*.html` | 等价替代（呈现方式不同） | 中 |
 | B-19 | 底部三 Tab：罗盘 / 地图 / 知识库 | `activity_main.xml` + `showTab()` | 原版主页结构（未逐页比对） | 等价替代 | 低 |
 | B-20 | 地图 Tab 独立浏览 | `MainActivity.buildMapTab()` | 原版地图页 | 等价替代 | 中 |
@@ -101,7 +101,8 @@
 | 项 | 修不修 | 理由 | 归属 |
 |---|---|---|---|
 | B-05 读数面板补 6 类 | **修** | 自用查读数时缺项就是错项；且 P0-1 的「按真北/磁北」要让全部环同步 | LC客户端（数值由 LC逆向 供环文字表） |
-| B-09 + B-27 截图 | **修**（轮 C 归口） | P0-2 留档的前置；现在必失败。截图链路按总监裁决并入轮 C：**PixelCopy 优先**，黑图才退 `toDataURL`；`View.draw` 抓 WebGL 必空 | LC客户端 |
+| B-09 + B-27 截图 | **修**（轮 C 归口） | P0-2 留档的前置。真机复现**不是抛异常而是内容全白**（地图/3D 空白、HUD 在）；`afb8acd` 改抓 `compassTab`+PixelCopy 优先，待复验 | LC客户端 |
+| **OBS-001：5 盘面只 3 种渲染**（dial1/2/3 截图 0 px 差异，真机实测） | 可缓（同 B-04） | 自用可接受；P1-1 双盘同屏或轮 B2 换表排版时一起收 | LC客户端 |
 | B-17 罗盘页底图指针 | **修** | 一眼可见的「指针不动」，会让人怀疑罗盘本身 | LC客户端（保存罗盘 Tab 的 WebView 引用） |
 | B-04 盘面视觉差异 | 可缓 | 自用可接受，若 P1-1 双盘同屏落地再一起做 | LC客户端 |
 | B-22 街景 / B-23 绘制 / B-24 长按 3D | **不修**（改登记为 P2/不做） | 自用频次低；街景依赖第三方可用性 | — |
@@ -322,6 +323,17 @@
 4. **P0-3** 与 P0-4 同属 `map.html`，由 LC地图 串行做，避免同一文件打架。
 5. 每个 P0 合并前必须过：`scripts/build-android.ps1` + 真机冒烟（单机 `L2E0222531014833`）+ `tests/numeric` 全绿 + 全关截图对照；验收用例：`docs/qa/AT-P0-0-feature-switch.md`、`AT-P0-1-reading-trust.md`、`AT-P0-4-3d-probe.md`（LC产品 出、LC测试 执行；未实现前状态为 BLOCKED，实现落地即照跑）。
 
+### 4.3 轮 D 范围（2026-11-05 合并后，按 D-005 排）
+
+| 项 | 内容 | 归属 | 产品口径 |
+|---|---|---|---|
+| D1 | **B2 换表**：6/14 圈层文字换成 `rings[].labels` 原版表（含 120 分金/64 卦 3 环/八卦 3 环/正兼向/72 龙/60 龙） | LC客户端 + Rust 端（表由 LC逆向 R2 手册 `8368fbd` 已交） | golden 以 `rings[].labels` 为准；60 龙 0° = `壬子 庚子`，现 `癸亥` 断言必须改；换表后文字变 3–6 字，压字问题按 R2 的排版提醒处理（不让字压成不可读） |
+| D2 | **P0-1 读数可信包** | LC客户端 | 按 T-10：无网退最后手动值 + 明示，不许静默 0；倍率/口径文案不得新增假声明 |
+| D3 | **3D 桥**：`LCAndroid.onEvent` + `MapMarker` | LC客户端（轮 C 后）+ LC地图 JS 已就绪 | 契约按 T-8；点选不联动罗盘；缺高程传 null |
+| D4 | **截图收口复验**：`afb8acd` 真机点截图 → 相册/分享/EXIF/无 FATAL | LC客户端 | 按 T-11 验收 6/7/8；内容全白必须消失 |
+
+> 前置状态：`develop` = `d13acbe`，四门全绿（desktop/numeric/mech-src/android）；轮 B 的 BUG-001/002 已闭，numeric 75 用例 0 失败。
+
 ---
 
 ## 5. 合规注意点（自用，与 market-scan §4 同口径）
@@ -373,3 +385,4 @@
 | v0.6 | 2026-11-05 | 吸收 LC测试 的 AT 审计：P0-0 增 K5（航向注入，SW-006 前置）与基线对照物；P0-1 增 S8 倾斜注入、S2 注入时效、RT-008 拆 a/b、RT-002 按 BUG-001 修复后（`409ad5f`）更新；P0-4 增 M6 点选契约、demZoom 回报、`target=both`、pick 允许网格步进降级，新增 TD-016…TD-020；三份 AT 统一「设备内截屏 + pull」并接入 `tests/at/run-at.ps1`。§2.1 标 BUG-001/002 已修；§6 增「Android 基线采集」关卡 |
 | v0.7 | 2026-11-05 | 落实 D-008/D-009 三条 P0 口径（T-10）：磁偏角无网退手动值（P0-1 口径/功能点/验收 9/依赖同步）、垂直夸张默认 2.5× 且 HUD 常显倍率与贴面类型（P0-4 功能点/验收 3）、假声明文案改「教材式命名，待换原版表」升级为轮 C blocking（桌面 `main.rs` + Android 知识库同查）；关闭 §7-2/§7-4 |
 | v0.8 | 2026-11-05 | 落实 D-009 三条补充（T-10 改口径、新增 T-11）：磁偏角无网退**最后一次手动值**并提示「未联网，使用手动偏角 X°」、不许静默 0；HUD 常显且**只允许 1.0×/2.5×**、无隐藏自动变换；截图存 `Pictures/LC/`、文件名「坐向_时间」、**不写 GPS EXIF**、无水印角标（P0-2 增功能点 4/5 与验收 6/7/8）；关闭 §7-3。文案诚信归 D-008 |
+| v0.9 | 2026-11-05 | 从 `develop`（`d13acbe`）回填真机证据：B-04 增 OBS-001（dial1/2/3 **0 px**，5 盘面只有 3 种渲染）；B-09 更正为「不抛异常、地图/3D **全白**」并记 `afb8acd` 修复待复验；B-10 地形/影像 **0 px** 未确认；B-11 3D 真机 FPS 56–60；B-14/B-15 未验/未确认；B-17 记 `afb8acd` 已修；新增 §4.3 **轮 D 范围**（B2 换表/P0-1/3D 桥/截图复验）与 develop 四门全绿前置状态 |

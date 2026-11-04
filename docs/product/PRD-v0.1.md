@@ -122,7 +122,7 @@
 > 判据标签：`省一步`＝少一次操作；`省怀疑`＝少一次「读数对不对」；`省跑一趟`＝出门前/现场少返工。
 >
 > **可执行验收用例（LC测试照着跑）**：
-> [AT-P0-0 开关页](../qa/AT-P0-0-feature-switch.md)｜[AT-P0-1 读数可信包](../qa/AT-P0-1-reading-trust.md)｜[AT-P0-4 3D 点读](../qa/AT-P0-4-3d-probe.md)
+> [AT-P0-0 开关页](../qa/AT-P0-0-feature-switch.md)｜[AT-P0-1 读数可信包](../qa/AT-P0-1-reading-trust.md)｜[AT-P0-4 3D 点读](../qa/AT-P0-4-3d-probe.md)｜[AT-B2 圈层文字换表](../qa/AT-B2-ring-labels.md)
 
 ### P0（M2 必须做）
 

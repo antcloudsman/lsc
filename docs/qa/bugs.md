@@ -11,7 +11,7 @@
 |---|---|---|---|---|---|
 | BUG-001 | P0 | 两端读数面板 | 人盘/天盘读数恒等于地盘（三盘永远同一个山） | LC客户端 | **已修复（409ad5f）** |
 | BUG-002 | P2 | 桌面 UI | 60 龙标签环整体偏 4.5°，指针处标签与读数不一致 | LC客户端 | **已修复（409ad5f）** |
-| BUG-003 | P1 | 两端文字 | 圈层文字仍是教材推导，6/14 类与 DEX `rings[].labels` 不等价 | LC客户端（轮 B2） | **新建（2026-11-05 03:00）** |
+| BUG-003 | P1 | 两端文字 | 圈层文字仍是教材推导，6/14 类与 DEX `rings[].labels` 不等价 | LC客户端（轮 B2） | **已修复/关闭（B2 `662c006`+`0bd22f8`，AT-B2 于 2026-11-05 通过）** |
 | OBS-001 | — | Android UI | 5 个盘面按钮只渲染出 3 种不同盘面 | LC客户端 / LC逆向（差距矩阵） | 待归口 |
 | OBS-002 | — | 桌面截图工具 | `--screenshot` 中心读数硬编码「正向」 | LC客户端 | 备忘（当前不触发） |
 | QA-001 | — | 测试资产 | `test_divergences.py:36` 两行被并成一行（IndentationError），套件整体红 | LC测试 | **已修复**（2026-11-05 02:41 拆行，74 PASS） |
@@ -171,9 +171,27 @@ Select-String -Path app\src\main.rs -Pattern 'JIAZI\[rd.dragon60\]|wangxiang\(bo
 - 轮 B 只修了几何（三盘/60 龙落位），文字未换表（LC逆向 02:55 复核结论）。
 
 **影响**：14 类圈层里 6 类文字非 1:1；读数面板与圈层文字「看起来对、其实是教材值」。
-**责任人/状态**：LC客户端（轮 B2），新建；换表后由 LC测试 按 `rings[].labels` 逐条断言。
-**本轮不锁死**：numeric 套件只锁几何 `(interval, offset, index)` 与两端同源，未把教材文字
-固化成 golden（避免把 BUG-003 永久洗成通过）。
+**责任人/状态**：LC客户端（轮 B2），**已修复并关闭**。
+
+**修复与回归（2026-11-05，AT-B2）**
+- 修复：生成器把 14 个 `RingDef{id,text,interval,offset,labels}` 同时生成进两端
+  （Rust `main.rs::RINGS` / Java `CompassData.RINGS`），780 条全部来自 `mechanics.json`；
+  文字落位/读数 `ring_text/ringText` → `labels[i]`，`i=⌊((h−offset+360)%360)/interval⌋`，
+  当前格中心 `offset+(i+0.5)×interval`（高亮用）。提交 `662c006`（换表）、`0bd22f8`（高亮+LCRING）。
+- 单测（`test_b2_golden`）：Rust/Java `RINGS` 与 `rings[].labels` **780 条逐条相等**、四向量
+  （60 龙 0°=壬子 庚子、170°=丙午 甲午、72 龙 0°=戊子、120 分金 0°=甲山 戊子）、
+  `ring_index`/`ring_text` 分层语义、`ring_center` 公式、读数面板确用 `ring_text(1/2/5/6/7/14)`。
+- 真机 AT-B2（`develop f16b755` 构建）：
+  - 桌面 `--dump-rings` 8 方位 × 14 环 = **112 行，0 不符**；
+  - 真机拖拽到 8 个实际航向，`LCRING` **616 行，0 不符**（i/center/text 全对）；
+  - 两端当前格高亮可辨；`FATAL 0 / ANR 0`。
+  - 证据：`checks/qa-atb2/`（含 `compare-desktop.txt`、`compare-device.txt`、高亮截图）。
+- 说明：整圈文字因 r=232、120 格 3° 弧长 10–12px 无法不重叠，按总监裁决改为
+  「只画刻度 + 当前格高亮 + 文字在读数面板」，整幅位图盘面排轮 E（等价替代，未达 1:1）。
+
+**修复前记录（历史）**
+- numeric 套件当时只锁几何 `(interval, offset, index)` 与两端同源，未把教材文字固化成 golden；
+  B2 前用 1 条 xfail 锁四向量（`0b5fa0e`），换表后转正删除（`0615cd8`）。
 
 ## 观测（待归口，未计入缺陷）
 

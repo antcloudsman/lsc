@@ -179,6 +179,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 injectedPitch = it.getFloatExtra("pitch", 0f);
                 injectedRoll = it.getFloatExtra("roll", 0f);
                 break;
+            case "url": {
+                String url = it.getStringExtra("value");
+                if (url != null) {
+                    if (mapView != null) mapView.loadUrl(url);
+                    if (compassMapView != null) compassMapView.loadUrl(url);
+                }
+                break;
+            }
+            case "js": {
+                String code = it.getStringExtra("value");
+                if (code != null) {
+                    if (mapView != null) mapView.evaluateJavascript(code, null);
+                    if (compassMapView != null) compassMapView.evaluateJavascript(code, null);
+                }
+                break;
+            }
             case "reset":
                 injectedHeading = null;
                 injectedPitch = null;

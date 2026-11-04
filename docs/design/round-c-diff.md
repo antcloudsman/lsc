@@ -52,3 +52,13 @@ heading=0.00° 时两张图都包含且一致的元素：
 - `--screenshot` 仍输出 1100×780、非空、三角与读数完整；内容因统一布局而变化（盘面从 600px 缩到与真实窗口一致的 464px），**轮 C 新基线覆盖 `checks/round-c/`，未覆盖 `round-17`/`round-b`**。
 - `--screenshot-ui` 现在与 `software.rs` 共用同一份盘面代码，后续改盘面只需改 `dial.rs` 一处。
 - 数值测试 `tests/numeric` 的解析器需要从 `main.rs` 改读 `dial.rs`（圈层分支已搬到 `dial.rs`），归 LC测试（已同步）。
+
+## 6. P0-3 · Android 截图链路（同轮，代码已落，真机待验）
+
+- **抓取对象改对**：`captureMap()` 原来抓地图 Tab 的 `mapView`（GONE、0×0，必抛异常）；现在抓 `compassTab`（底图 + 罗盘覆盖层 + 读数面板），并保存 `compassMapView` 引用。
+- **PixelCopy 优先**：`PixelCopy.request(window, rect, bitmap, …)` 抓罗盘页矩形；`looksBlank()` 采样左侧地图可见区，整片黑才退 `toDataURL`（WebGL 用 `View.draw` 必空，PixelCopy 是正解）。
+- **退路**：`compassMapView` 的 canvas `toDataURL('image/png')` → Base64 解码；只含地图、不含罗盘覆盖层，属已知降级。
+- **D-009 落点**：APK 29+ 存 `Pictures/LC/`（MediaStore，无 EXIF/GPS，`Bitmap.compress` 不写定位）；文件名 `坐向{坐山}向{面山}_yyyyMMdd_HHmmss.png`；保存后直接拉起系统分享（content URI，无水印、无角标）。29 以下退到应用外部目录并 Toast（不分享）。
+- **B-17 同修**：`updateReading()` 的 `setHeading` / `setSitFace` 从地图 Tab 的 `mapView` 改推 `compassMapView`，罗盘页的坐向指针现在收得到。
+- **构建**：`gradle assembleDebug --no-daemon` → `EXIT=0`，APK 3218077 B。**真机行为未验证**（设备在 LC测试 手上），需在 5 分钟窗口里跑一次截图 + 相册可见 + 分享面板。
+- **已知 backlog（总监记）**：分金/72 龙/60 龙三圈文字在左右两侧互相压字，M2 收口前要分层或缩字。

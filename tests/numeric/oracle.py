@@ -31,6 +31,10 @@ MAIN_ACTIVITY_JAVA = (
     ROOT / "app" / "android" / "app" / "src" / "main" / "java" / "com" / "luopan"
     / "fengshui" / "MainActivity.java"
 )
+SENSOR_MATH_JAVA = (
+    ROOT / "app" / "android" / "app" / "src" / "main" / "java" / "com" / "luopan"
+    / "fengshui" / "SensorMath.java"
+)
 
 DEG = 360.0
 MOUNTAIN_INTERVAL = 15.0

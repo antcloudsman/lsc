@@ -118,7 +118,7 @@ java -cp ".inspect\unpack\apktool.jar;.inspect\tools" BaksmaliLauncher `
 | E3 | 地图设置-自定义参数 | `图层亮度最小值/最大值`、`图层饱和度`、`图层对比度`、`图层色相旋转`、`恢复默认`、`参数`（每条带长说明文字） | 无 | 缺失 | 5 个滑块 + 说明 | 地图：栅格图层滤镜参数 |
 | E4 | 账户设置 | `AccountSettingActivity`（76 KB，登录/销户/隐私） | 无 | 有意省略 | 按「去商业/去账号」不实现 | 无 |
 | E5 | 协议/合规链接 | `https://agreement.yuan9.cn/agreement/swssqjdt/yhxyb.html`（用户协议）、`.../privacy.html`（隐私政策）、`https://cdn.xinzhi.space/doc/policyCompliance/globe/Android/第三方sdk清单.html`、`.../权限清单.html`、帮助中心 `https://xinzhispace.yuque.com/...` | 无 | 缺失 | 原版链接可用但属他人资产；LC 需要自己的协议页（产品/合规给出） | 产品：给 LC 自有协议 URL；客户端接入 |
-| E6 | 罗盘显示开关 | **原版没有「圈层显示开关」**：真机罗盘页控件已全量清点（`win-02-compass.png`/`left-column.png`）——左列仅 截屏/等高线/罗盘复位/罗盘锁定/读盘/贴地，右列仅 地图/实景/坐北朝南/坐南朝北/指针开关，底栏仅 切换/旋转/缩放/透明度/**天支线**；`天支线` 是十二支线圈层，不是圈层开关。盘面切换走「切换」页（B1b） | 桌面 `ShowRings{earth,human,heaven,fenjin,dragon72,dragon60,bagua}`（`main.rs:210-232`）为用户可关；Android 无开关 | 有意省略（1:1 之外的自创功能，保留不影响基线） | 桌面 7 个开关是**重建自创**，原版无对应控件；列入「超出 1:1 的增量」而不是缺口。若要求严格 1:1，默认全开即可（当前默认即全开） | 无（文档口径，勿删功能） |
+| E6 | 罗盘显示开关 | **原版没有「圈层显示开关」**：真机罗盘页控件已全量清点（`win-02-compass.png`/`left-column.png`）——左列仅 截屏/等高线/罗盘复位/罗盘锁定/读盘/贴地，右列仅 地图/实景/**坐向朝北开关（标签在 坐北朝南↔坐南朝北 间切换，见 F5）**/指针开关，底栏仅 切换/旋转/缩放/透明度/**天支线**；`天支线` 是十二支线圈层，不是圈层开关。盘面切换走「切换」页（B1b） | 桌面 `ShowRings{earth,human,heaven,fenjin,dragon72,dragon60,bagua}`（`main.rs:210-232`）为用户可关；Android 无开关 | 有意省略（1:1 之外的自创功能，保留不影响基线） | 桌面 7 个开关是**重建自创**，原版无对应控件；列入「超出 1:1 的增量」而不是缺口。若要求严格 1:1，默认全开即可（当前默认即全开） | 无（文档口径，勿删功能） |
 | E7 | 广告/会员弹窗 | `VIP弹窗0..3`、`7日优惠`、`¥6.9`、`立即解锁`、`免广告` 等（`strings_MainActivity.txt`） | 无 | 有意省略 | 去商业原则 | 无 |
 
 ## F. 地图（占位 · 本轮到 M0 只登记）
@@ -129,6 +129,7 @@ java -cp ".inspect\unpack\apktool.jar;.inspect\tools" BaksmaliLauncher `
 | F2 | 工具集 | `MainActivity` 常量：`图层`、`叠加`、`山脉`、`水系`、`探索`、`3D`、`罗盘工具`、`测量工具`、`画笔`、`收藏点工具`、`钓点`、`街景`、`VR全景`、`超清`、`历史影像`、`地形对比`、`数据叠加`、`定位`、`指北针`、`轨迹记录`、`海拔工具`、`环绕旋转` | `map.html` 仅有缩放/旋转/俯仰/坐向 | 缺失 | 20+ 工具，需按 PRD 取舍 | 产品定 P0 子集后派 LC地图 |
 | F3 | 3D 模式 | `MapWebInterface.on3dChanged` + `MapWebKt$Control3d`，长按进入（`suppressLongPressFor`） | `map.html` 俯仰 0–60°（LC地图 本轮做真高程） | 等价替代 | 原版 3D 是 `libterrain.so` VM 保护字节码 | LC地图 |
 | F4 | 地图↔罗盘桥 | `setSitFace`、`setHeading`、`onMapRotate`、`onMapScroll`、`showFullScreen`、`setDrawBtnState`、`deleteMapElementByType`、`openStreetView` | Android `MainActivity.java:247-248` 已有 `setHeading`/`setSitFace` | 等价替代 | 桥方法名需与 `docs/map-bridge.md`（LC地图 产出）对齐 | LC地图 |
+| F5 | **坐向朝北开关（原版是单按钮双标签）** | `CompassToolsKt.n0` 内（`CompassToolsKt.smali:10531/10542`）：`invoke-virtual controller.g;->x()Z` → **真取「坐北朝南」、假取「坐南朝北」**，同一按钮按状态换标签；`x()` 读 `ui.controller.g.h:MutableState`（smali `g.x()Z` → `iget-object h`）。真机右列实测显示「坐南朝北」 | LC 地图侧 `map.html` 实现「坐南朝北」单一语义（`bearing = heading` 持续跟随，关闭恢复），**没有标签翻转、没有坐北朝南模式** | 等价替代 | 行为主体一致（向方朝上）；缺「坐北朝南」第二态与按钮标签切换。原版两态的确切几何（是否 = bearing±180）未取证 | 地图：按钮改成双标签 toggle，第二态先按 `bearing+180` 实现并标「等价替代」；取证后修正 |
 
 ## G. 3D 地形（占位）
 

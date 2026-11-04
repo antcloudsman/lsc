@@ -74,6 +74,10 @@ var pitch = 45;                // 3D 俯仰 0(俯视)–60°
 var center = { lat: 39.9042, lng: 116.4074 };   // 北京
 var zoom = 5;
 var lastHeading = 0;
+var drape = "img";             // 3D 贴面层（D-005：默认影像；ter 仍可用按钮切）
+var pick = null;               // 3D 立向点 {lng,lat,elev,world,heading}
+var pickEl = null;
+var lastVP = null, lastD = 0, lastR = 0;
 
 var mapEl = document.getElementById("map");
 var glCanvas = document.getElementById("gl");
@@ -144,7 +148,9 @@ function setBase(b) {
   document.getElementById("btn_img").className = (b === "img") ? "active" : "";
   document.getElementById("btn_ter").className = (b === "ter") ? "active" : "";
   if (mode === "3d") {
+    drape = b;
     refreshPatchTexture();
+    updateHud();
   } else {
     render();
   }
@@ -166,6 +172,8 @@ function setMode(m) {
   if (mode === "3d") {
     /* 大陆尺度下真高程起伏相对视距过小，进入 3D 时至少落到 z9（见 docs/map-bridge.md） */
     if (zoom < 9) zoom = 9;
+    /* D-005：3D 贴面默认影像；用户在 3D 里点「地形」仍可切回 ter */
+    drape = (base === "ter") ? "img" : base;
     baseLayer.style.display = "none";
     annoLayer.style.display = "none";
     glCanvas.style.display = "block";
@@ -289,7 +297,7 @@ mapEl.addEventListener("wheel", function (e) {
 });
 
 function placeMarker(x, y) {
-  if (mode === "3d") return;   /* 3D 立向标记需射线拾取，本轮未实现（见 docs/map-bridge.md 遗留） */
+  if (mode === "3d") { pick3D(x, y); return; }
   var rect = mapEl.getBoundingClientRect();
   var mk = document.createElement("div");
   mk.className = "marker";
@@ -303,6 +311,9 @@ function placeMarker(x, y) {
 function clearMarkers() {
   var ms = mapEl.querySelectorAll(".marker");
   for (var i = 0; i < ms.length; i++) ms[i].remove();
+  pickEl = null;                 /* 元素已被 remove，重新创建 */
+  clearPick();
+  emit({ type: "pick-clear" });
 }
 
 function locate() {
@@ -546,7 +557,7 @@ function initGL() {
 }
 
 function resizeGL() {
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
   var w = Math.max(1, Math.round(glCanvas.clientWidth * dpr));
   var h = Math.max(1, Math.round(glCanvas.clientHeight * dpr));
   if (glCanvas.width !== w || glCanvas.height !== h) {
@@ -699,15 +710,15 @@ function buildPatchTexture(p) {
           img.crossOrigin = "anonymous";
           img.onload = function () { ctx.drawImage(img, i * 256, j * 256, 256, 256); ok++; res(); };
           img.onerror = function () { res(); };
-          img.src = tileUrl(base, zt, x, y);
+          img.src = tileUrl(drape, zt, x, y);
         }));
       })(i, j);
     }
   }
   Promise.all(tasks).then(function () {
     if (seq !== patchSeq || patch !== p) return;
-    if (ok >= 30) { p.texCanvas = cv; console.log("LC3D texture ok " + ok + "/36 z" + zt); }
-    else { console.log("LC3D texture fail " + ok + "/36 z" + zt); }
+    if (ok >= 30) { p.texCanvas = cv; console.log("LC3D texture ok " + ok + "/36 " + drape + " z" + zt); }
+    else { console.log("LC3D texture fail " + ok + "/36 " + drape + " z" + zt); }
   });
 }
 
@@ -728,6 +739,13 @@ function uploadTexture(p) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    /* 斜视方向用各向异性过滤，减轻贴面模糊/条纹（不支持则忽略） */
+    var ext = gl.getExtension("EXT_texture_filter_anisotropic") ||
+              gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
+    if (ext) {
+      var maxA = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+      gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(4, maxA));
+    }
     p.tex = t;
     p.texCanvas = null;
   }
@@ -795,6 +813,173 @@ function pan3D(dx, dy) {
   if (center.lat < -85) center.lat = -85;
   ensurePatch();
   updateHud();
+}
+
+/* ---- 3D 点选（P0-4 / D-005） ----------------------------------------------
+ * 屏幕点 → 反投影射线 → 与 DEM 高度场步进求交 → 经纬度/真实海拔 → 立向点
+ * 高程缺失时传 null（绝不传 0）；单点覆盖式；不联动罗盘（D-006）
+ * ------------------------------------------------------------------------ */
+function emit(obj) {
+  try {
+    if (window.LCAndroid && typeof window.LCAndroid.onEvent === "function") {
+      window.LCAndroid.onEvent(JSON.stringify(obj));
+    }
+  } catch (e) { /* 桥未接入时静默 */ }
+}
+
+function ensurePickEl() {
+  if (pickEl) return pickEl;
+  pickEl = document.createElement("div");
+  pickEl.className = "marker pick3d";
+  pickEl.style.display = "none";
+  mapEl.appendChild(pickEl);
+  return pickEl;
+}
+
+function mulMatVec(m, v) {
+  return [
+    m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12] * v[3],
+    m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13] * v[3],
+    m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14] * v[3],
+    m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15] * v[3]
+  ];
+}
+
+function invertMat(m) {
+  var a00 = m[0], a01 = m[1], a02 = m[2], a03 = m[3];
+  var a10 = m[4], a11 = m[5], a12 = m[6], a13 = m[7];
+  var a20 = m[8], a21 = m[9], a22 = m[10], a23 = m[11];
+  var a30 = m[12], a31 = m[13], a32 = m[14], a33 = m[15];
+  var b00 = a00 * a11 - a01 * a10, b01 = a00 * a12 - a02 * a10;
+  var b02 = a00 * a13 - a03 * a10, b03 = a01 * a12 - a02 * a11;
+  var b04 = a01 * a13 - a03 * a11, b05 = a02 * a13 - a03 * a12;
+  var b06 = a20 * a31 - a21 * a30, b07 = a20 * a32 - a22 * a30;
+  var b08 = a20 * a33 - a23 * a30, b09 = a21 * a32 - a22 * a31;
+  var b10 = a21 * a33 - a23 * a31, b11 = a22 * a33 - a23 * a32;
+  var det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+  if (!det) return null;
+  det = 1 / det;
+  return [
+    (a11 * b11 - a12 * b10 + a13 * b09) * det,
+    (a02 * b10 - a01 * b11 - a03 * b09) * det,
+    (a31 * b05 - a32 * b04 + a33 * b03) * det,
+    (a22 * b04 - a21 * b05 - a23 * b03) * det,
+    (a12 * b08 - a10 * b11 - a13 * b07) * det,
+    (a00 * b11 - a02 * b08 + a03 * b07) * det,
+    (a32 * b02 - a30 * b05 - a33 * b01) * det,
+    (a20 * b05 - a22 * b02 + a23 * b01) * det,
+    (a10 * b10 - a11 * b08 + a13 * b06) * det,
+    (a01 * b08 - a00 * b10 - a03 * b06) * det,
+    (a30 * b04 - a31 * b02 + a33 * b00) * det,
+    (a21 * b02 - a20 * b04 - a23 * b00) * det,
+    (a11 * b07 - a10 * b09 - a12 * b06) * det,
+    (a00 * b09 - a01 * b07 + a02 * b06) * det,
+    (a31 * b01 - a30 * b03 - a32 * b00) * det,
+    (a20 * b03 - a21 * b01 + a22 * b00) * det
+  ];
+}
+
+function screenRay(sx, sy) {
+  var w = Math.max(1, glCanvas.clientWidth), h = Math.max(1, glCanvas.clientHeight);
+  var x = sx / w * 2 - 1, y = 1 - sy / h * 2;
+  var inv = invertMat(lastVP);
+  if (!inv) return null;
+  var n = mulMatVec(inv, [x, y, -1, 1]);
+  var f = mulMatVec(inv, [x, y, 1, 1]);
+  if (Math.abs(n[3]) < 1e-9 || Math.abs(f[3]) < 1e-9) return null;
+  var p0 = { x: n[0] / n[3], y: n[1] / n[3], z: n[2] / n[3] };
+  var p1 = { x: f[0] / f[3], y: f[1] / f[3], z: f[2] / f[3] };
+  return { o: p0, d: norm(sub(p1, p0)) };
+}
+
+function worldToDem(x, z) {
+  if (!patch) return null;
+  var gx = x / patch.mpp + (patch.ox + 1.5) * 256;
+  var gy = z / patch.mpp + (patch.oy + 1.5) * 256;
+  if (gx < patch.ox * 256 || gx > (patch.ox + 3) * 256) return null;
+  if (gy < patch.oy * 256 || gy > (patch.oy + 3) * 256) return null;
+  return { gx: gx, gy: gy };
+}
+
+function pick3D(sx, sy) {
+  if (!patch || !patch.mesh || !lastVP) return;
+  var ray = screenRay(sx, sy);
+  if (!ray) return;
+  var maxT = lastD * 4;
+  var step = Math.max(15, patch.mpp * 1.5);
+  var above = -1, below = -1, t;
+  for (t = 0; t <= maxT; t += step) {
+    var px = ray.o.x + ray.d.x * t;
+    var py = ray.o.y + ray.d.y * t;
+    var pz = ray.o.z + ray.d.z * t;
+    var g = worldToDem(px, pz);
+    if (!g) continue;
+    var hh = demAt(patch.z, g.gx, g.gy) * VEXAG;
+    if (py > hh) { above = t; }
+    else { below = t; if (above < 0) above = 0; break; }
+  }
+  if (below < 0) { console.log("LC3D pick miss"); return; }
+  for (var i = 0; i < 24; i++) {
+    var tm = (above + below) / 2;
+    var mx = ray.o.x + ray.d.x * tm;
+    var my = ray.o.y + ray.d.y * tm;
+    var mz = ray.o.z + ray.d.z * tm;
+    var gm = worldToDem(mx, mz);
+    if (!gm) break;
+    var hm = demAt(patch.z, gm.gx, gm.gy) * VEXAG;
+    if (my > hm) above = tm; else below = tm;
+  }
+  var th = (above + below) / 2;
+  var hx = ray.o.x + ray.d.x * th;
+  var hy = ray.o.y + ray.d.y * th;
+  var hz = ray.o.z + ray.d.z * th;
+  var gh = worldToDem(hx, hz);
+  if (!gh) return;
+  var elevRaw = demPix(patch.z, Math.floor(gh.gx), Math.floor(gh.gy));
+  var elev = (elevRaw === null) ? null : demAt(patch.z, gh.gx, gh.gy);
+  var n = Math.pow(2, patch.z);
+  var tx = gh.gx / 256, ty = gh.gy / 256;
+  var lng = tx / n * 360 - 180;
+  var lat = tileYToLat(ty, patch.z);
+  pick = {
+    lng: lng, lat: lat, elev: elev,
+    world: { x: hx, y: (elev === null ? hy : elev * VEXAG), z: hz },
+    heading: lastHeading
+  };
+  updateHud();
+  updatePickMarker(lastVP);
+  var msg = {
+    type: "pick",
+    lng: Math.round(lng * 1e6) / 1e6,
+    lat: Math.round(lat * 1e6) / 1e6,
+    elev: (elev === null) ? null : Math.round(elev * 10) / 10,
+    heading: Math.round(lastHeading * 10) / 10,
+    src: "3d"
+  };
+  console.log("LC3D pick " + JSON.stringify(msg));
+  emit(msg);
+}
+
+function projectPoint(p, vp) {
+  var v = mulMatVec(vp, [p.x, p.y, p.z, 1]);
+  if (v[3] <= 1e-6) return null;
+  return { x: v[0] / v[3], y: v[1] / v[3], z: v[2] / v[3] };
+}
+
+function updatePickMarker(vp) {
+  var el = ensurePickEl();
+  if (!pick || mode !== "3d") { el.style.display = "none"; return; }
+  var v = projectPoint(pick.world, vp);
+  if (!v || v.z < -1 || v.z > 1) { el.style.display = "none"; return; }
+  el.style.display = "block";
+  el.style.left = ((v.x * 0.5 + 0.5) * glCanvas.clientWidth) + "px";
+  el.style.top = ((0.5 - v.y * 0.5) * glCanvas.clientHeight) + "px";
+  el.title = "立向点 海拔 " + (pick.elev === null ? "—" : Math.round(pick.elev) + " m");
+}
+
+function clearPick() {
+  pick = null;
+  if (pickEl) pickEl.style.display = "none";
 }
 
 /* ---- 渲染 ---- */
@@ -869,6 +1054,7 @@ function render3D() {
   var near = Math.max(1, D * 0.01);
   var far = Math.max(D * 6, R * 3);
   var vp = mul(perspective(FOV, aspect, near, far), view);
+  lastVP = vp; lastD = D; lastR = R;
 
   gl.viewport(0, 0, W, H);
   gl.clearColor(0.47, 0.55, 0.62, 1.0);
@@ -912,6 +1098,7 @@ function render3D() {
       " tgt=" + Math.round(target.x) + "," + Math.round(target.y) + "," + Math.round(target.z) +
       " D=" + Math.round(D) + " err=" + gl.getError());
   }
+  updatePickMarker(vp);
 }
 
 /* ---- HUD ---- */
@@ -928,7 +1115,8 @@ function updateHud() {
     "FPS " + fps + "\n" +
     "海拔 " + Math.round(demoElev) + " m\n" +
     "z" + zoom + " · 俯仰 " + pitch + "° · " + (Math.round(bearing) % 360) + "°\n" +
-    "垂直放大 " + VEXAG + "×";
+    "垂直放大 " + VEXAG + "× · 贴面 " + (drape === "img" ? "影像" : (drape === "vec" ? "矢量" : "地形")) +
+    (pick ? "\n立向点 海拔 " + (pick.elev === null ? "—" : Math.round(pick.elev) + " m") : "");
 }
 
 /* ---- 可见性：切到别的 Tab 时停渲染，避免双 WebView 抢 GPU ---- */
@@ -971,6 +1159,16 @@ window.__LC3D = {
 /* ---- 启动 ---- */
 updateHud();
 render();
+
+/* 本地/无真机自测：map.html#selftest → 进 3D，等 DEM 就绪后在屏幕中心偏下做一次点选 */
+if (location.hash.indexOf("selftest") >= 0) {
+  setTimeout(function () { setMode("3d"); }, 100);
+  setTimeout(function () {
+    if (mode !== "3d" || !patch) { console.log("LC3D selftest not-ready"); return; }
+    var w = glCanvas.clientWidth, h = glCanvas.clientHeight;
+    pick3D(w / 2, h * 0.62);
+  }, 12000);
+}
 </script>
 </body>
 </html>

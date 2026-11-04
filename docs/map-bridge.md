@@ -31,6 +31,8 @@
 - 天地图 WMTS：`https://{t0..t7}.tianditu.gov.cn/{layer}_w/wmts?...&tk=<KEY>`
   - `layer`：`vec` 矢量 / `img` 影像 / `ter` 地形晕渲；注记 `cva`/`cia`/`cta`。
 - 3D 贴面取 **DEM 级别 +1** 的瓦片（6×6 = 1536×1536 px，正好覆盖一块地形），UV 与屏幕 1:1。
+- **D-005：3D 默认贴面 = 影像（`img`）**；在 3D 里点「地形」仍可切回 `ter`（晕渲贴面会与自研光照叠加出条纹，不推荐）。2D 的默认底图仍是 `ter`，未改 1:1 基线。
+- 贴面过滤器：`LINEAR` + `EXT_texture_filter_anisotropic`（上限 4×，不支持则忽略）。
 - 天地图瓦片同样返回 `Access-Control-Allow-Origin: *`，可作 WebGL 纹理上传。
 - 3D 贴面失败（断网/配额）时自动退回「高程配色 + 自研光照」，地形结构仍在。
 
@@ -73,7 +75,7 @@
 
 **只有前两个是 MainActivity 当前已在调用的**（`MainActivity.updateReading()` 里 `evaluateJavascript("setHeading(...)")` / `setSitFace(...)`），其余为本次新增、客户端可直接用。
 
-## 5. 页面 → 客户端（回调契约，待客户端接入）
+## 5. 页面 → 客户端（回调契约，D-005 / D-006）
 
 ```js
 if (window.LCAndroid) LCAndroid.onEvent(JSON.stringify({type:"...", ...}));
@@ -85,7 +87,28 @@ if (window.LCAndroid) LCAndroid.onEvent(JSON.stringify({type:"...", ...}));
   webView.addJavascriptInterface(new MapBridge(), "LCAndroid");
   ```
 - 已定义事件：`ready`（WebGL 初始化完成）、`mode`（2D/3D 切换）、`error`（`{code:"dem|webgl|shader|texture"}`）、`fps`（每 5 s）。
-- 立向点/地图点击回调尚未实现（见 §7）。
+
+### 5.1 3D 点选（P0-4，J**S 侧已完成，Java 桥待客户端轮 C 后补**）
+
+点击 3D 地形 → 屏幕反投影射线 → 与 DEM 高度场步进求交（步长 `max(15m, DEM像素×1.5)`，二分 24 次）→ 输出：
+
+```json
+{"type":"pick","lng":116.407400,"lat":39.680162,"elev":33.1,"heading":0.0,"src":"3d"}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `lng`/`lat` | 6 位小数，WGS84（与天地图瓦片同基准） |
+| `elev` | **真实海拔米**（DEM 原始值，未乘 2.5 放大）；取不到时 **`null`，绝不传 0** |
+| `heading` | 点选瞬间的罗盘向（`setHeading` 推入的值）；不联动、不回写罗盘 |
+| `src` | 固定 `"3d"` |
+
+清空：`{"type":"pick-clear"}`（点「清除标记」时发）。
+
+客户端侧模型（D-005）：`MapMarker{lng, lat, elevM?, headingAtPick, src}`，**单点覆盖式**（新 pick 直接替换旧点，不累积）。
+约定：**不联动罗盘**——点选只落标记，不回写方位（D-006）。
+
+3D 标记渲染：页面内单个 DOM 红点，按 `vp` 矩阵逐帧投影到屏幕；`clearMarkers()` 一并清除并 `pick-clear`。
 
 ## 6. 截图
 
@@ -97,8 +120,9 @@ if (window.LCAndroid) LCAndroid.onEvent(JSON.stringify({type:"...", ...}));
 
 ## 7. 已知限制（未确认/未实现，不粉饰）
 
-1. 3D 下点击落「立向点」未实现（`placeMarker` 在 3D 直接 return），需屏幕射线与 DEM 求交；P0-4 预估 4–6 人日。
+1. 3D 点选已可用（§5.1），但 **Java 桥未接**：真机上只有 `console.log("LC3D pick …")`，事件不会到达客户端，等轮 C 后补 `addJavascriptInterface`。
 2. 3D 不支持双指缩放（原 2D 也没有；只有按钮/滚轮）。
+2.1 俯视 0° 近景仍偏软：canvas 渲染上限 `dpr≤2.5`，该机 dpr=3.375 时被上采样 ~1.35×；且贴面为 NPOT（1536²）无法开 mipmap。M2 待办：改 POT 2048 + mipmap，或俯视时把贴面提一档（z+2）。
 3. 3D 地形块固定 3×3 瓦片，转到地块外时重建立块，跨块瞬间可能有 <1 s 空窗（旧块继续渲染直到新块就绪，无白屏）。
 4. 雾把地形块边缘遮住，**地平线不是无限远**：俯仰 45° 时远处 1/3 会进雾。
 5. `ter`（地形晕渲）贴面会与自研光照叠加，建议 3D 用 `img`；是否改默认属产品决策，未改。
@@ -122,6 +146,8 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 
 ## 9. 待办（下一轮）
 
-- 3D 立向点（射线拾取）、双指缩放。
+- Java 侧 `LCAndroid` 桥 + `MapMarker` 模型（客户端，轮 C 后）。
+- 俯视 0° 贴面清晰度：POT 2048 + mipmap，或俯视时贴面提一档（见 §7 2.1）。
+- 双指缩放。
 - 截图链路修复（PixelCopy / toDataURL 回传），归口待技术总监定。
 - DEM 境外源是否换国内源（产品已列为待拍板项），换源只需改 `TERRARIUM` 常量与解码函数。

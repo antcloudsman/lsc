@@ -1,8 +1,9 @@
-"""已知缺陷回归（xfail）：缺陷存在时套件保持绿色；被修好后会变成 unexpected
-success（红），强制同步更新 docs/qa/bugs.md 与本文件。
+"""轮 B 回归：BUG-001（三盘读数）与 BUG-002（60 龙标签落位）。
 
-BUG-001 三盘读数：人盘/天盘恒等于地盘（两端）。
-BUG-002 桌面 60 龙标签环与读数公式相差 4.5°（标签画在 6k，格中心在 4.5+6k）。
+2026-11-05 `409ad5f` 修复后，原先的 5 条 `@expectedFailure` 已转为正常用例：
+- 人盘/天盘读数按 DEX 表旋转（TYPE_8 offset 0.0 + 癸起名单；TYPE_9 offset 0.0 + 子起名单）；
+- 桌面 60 龙标签/刻度落到 (interval 6.0, offset 1.5) 的格中心/格界，读数公式不变。
+若将来又出现同类偏差，按 README「已知缺陷（xfail 机制）」重新加标记。
 """
 import os
 import re
@@ -14,7 +15,7 @@ import oracle as O
 import source_parse as SP
 
 
-class PlatesDivergenceTest(unittest.TestCase):
+class PlatesRegressionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.main_activity = SP.read_text(O.MAIN_ACTIVITY_JAVA)
@@ -24,7 +25,7 @@ class PlatesDivergenceTest(unittest.TestCase):
         cls.rust_tm = SP.rust_plate(cls.main_rs, 0.0, "tm")
 
     def test_source_parse_ok(self):
-        """解析健康检查：确保下面的 xfail 不是因为解析失败而「假失败」。"""
+        """解析健康检查：确保三盘用例不是因为解析失败而「假通过」。"""
         self.assertEqual(len(self.java_exprs), 2, "MainActivity 应有两处 plate(...) 三盘调用")
         for expr in self.java_exprs:
             for h in (0.0, 7.5, 22.5, 359.99):
@@ -32,28 +33,24 @@ class PlatesDivergenceTest(unittest.TestCase):
         self.assertIn(self.rust_hm, range(24))
         self.assertIn(self.rust_tm, range(24))
 
-    @unittest.expectedFailure
     def test_java_human_plate_matches_spec(self):
-        expr = self.java_exprs[0]  # plate(r.heading + 7.5f)
+        expr = self.java_exprs[0]  # plate(r.heading + 15f)
         mismatches = [(h, SP.java_plate(h, expr), O.plate_index(h, "human"))
                       for h in O.CORPUS if SP.java_plate(h, expr) != O.plate_index(h, "human")]
         self.assertEqual(mismatches, [], "人盘读数应为 floor((h+15)/15)%24")
 
-    @unittest.expectedFailure
     def test_java_heaven_plate_matches_spec(self):
         expr = self.java_exprs[1]  # plate(r.heading - 7.5f + 15f)
         mismatches = [(h, SP.java_plate(h, expr), O.plate_index(h, "heaven"))
                       for h in O.CORPUS if SP.java_plate(h, expr) != O.plate_index(h, "heaven")]
         self.assertEqual(mismatches, [], "天盘读数应为 floor(h/15)%24")
 
-    @unittest.expectedFailure
     def test_rust_human_plate_matches_spec(self):
         mismatches = [(h, SP.rust_plate(self.main_rs, h, "hm"), O.plate_index(h, "human"))
                       for h in O.CORPUS
                       if SP.rust_plate(self.main_rs, h, "hm") != O.plate_index(h, "human")]
         self.assertEqual(mismatches, [], "main.rs hm 应为 floor((h+15)/15)%24")
 
-    @unittest.expectedFailure
     def test_rust_heaven_plate_matches_spec(self):
         mismatches = [(h, SP.rust_plate(self.main_rs, h, "tm"), O.plate_index(h, "heaven"))
                       for h in O.CORPUS
@@ -62,7 +59,7 @@ class PlatesDivergenceTest(unittest.TestCase):
 
 
 class RingLabelAlignmentTest(unittest.TestCase):
-    """「指针处标签 == 读数」不变量：分金/72 龙通过，60 龙不通过（BUG-002）。
+    """「指针处标签 == 读数」不变量：分金/72 龙/60 龙全部通过（60 龙随 409ad5f 修复）。
 
     环上标签画在 (m, s) 对应角度，读数给出同一 (m, s)。指针处最近的标签应与读数同名。
     """
@@ -108,7 +105,7 @@ class RingLabelAlignmentTest(unittest.TestCase):
         self.assertEqual(bad, [])
 
 
-class Dragon60LabelDivergenceTest(unittest.TestCase):
+class Dragon60LabelRegressionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.main_rs = SP.read_text(O.MAIN_RS)
@@ -129,7 +126,6 @@ class Dragon60LabelDivergenceTest(unittest.TestCase):
             self.assertAlmostEqual((b - a) % 360.0, 6.0, places=6)
         self.assertAlmostEqual((angles[0] - angles[-1]) % 360.0, 6.0, places=6)
 
-    @unittest.expectedFailure
     def test_label_under_pointer_matches_readout(self):
         bad = []
         for h in self.headings:

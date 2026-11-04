@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""打印两端读数与 oracle 的对照表（缺陷证据收集用，只读）。
+"""打印两端读数与 oracle 的对照表（证据收集/回归用，只读）。
 
-用法：python tests/numeric/tools/dump_readings.py [航向...]
-默认打印 0/3/7.5/10/15/22.5 与 60 龙标签对拍。
+用法：python tests/numeric/tools/dump_readings.py
+打印三盘关键航向对照 + 60 龙「读数 vs 指针处标签」一致性。
 """
 import os
 import sys
@@ -34,12 +34,22 @@ def main():
               f"{O.MOUNTAINS[jh]}{O.MOUNTAINS[jt]} "
               f"{O.MOUNTAINS[rh]}{O.MOUNTAINS[rt]}")
 
-    print("\n60 龙：读数 vs 指针处标签（标签画在 k*6，格中心在 4.5+6k）")
-    for h in (0.0, 0.5, 1.0, 2.0, 3.0, 180.0, 359.0):
+    print("\n60 龙：读数 vs 指针处标签（标签按 (interval 6.0, offset 1.5) 的格中心落位）")
+    label_expr = SP.rust_ring_label_expr(main_rs, "dragon60")
+
+    def label_angle(k):
+        return eval(label_expr, {"__builtins__": {}}, {"k": k}) % 360.0
+
+    for h in (0.0, 1.0, 1.5, 3.0, 4.5, 7.5, 180.0, 352.5, 359.0):
         d = SP.rust_reading(main_rs, h)["d60"]
-        near = min(range(60), key=lambda k: abs(((h - k * 6.0 + 180) % 360) - 180))
+        dists = sorted((abs(((h - label_angle(k) + 180) % 360) - 180), k) for k in range(60))
+        near = dists[0][1]
+        if abs(dists[0][0] - dists[1][0]) < 1e-9:
+            mark = "TIE"  # 正好落在两标签中点，视觉二义，不算错位
+        else:
+            mark = "OK" if near == d else "MISMATCH"
         print(f"h={h:6.2f}  读数={O.JIAZI[d]}(k={d}, 格中心 {O.dragon60_center(d):.1f}°)  "
-              f"指针处标签={O.JIAZI[near]}(k={near}, 画在 {near * 6.0:.1f}°)")
+              f"指针处标签={O.JIAZI[near]}(k={near}, 画在 {label_angle(near):.1f}°)  {mark}")
 
 
 if __name__ == "__main__":

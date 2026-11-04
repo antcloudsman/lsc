@@ -61,15 +61,28 @@ def rust_let_expr(source: str, name: str, consts: dict | None = None) -> str:
 
 
 def rust_ring_label_expr(source: str, ring_key: str) -> str:
-    """取某个环绘制分支里的标签角度表达式（`if self.rings.<ring_key> { ... let deg = ... }`）。"""
-    m = re.search(rf"if self\.rings\.{re.escape(ring_key)}\s*\{{(.{{0,1600}})", source, re.S)
+    """取某个环绘制分支里的标签角度表达式。
+
+    轮 C 把绘制搬到 `app/src/dial.rs`（分支名 `if st.rings.<key> {`），常量仍在
+    `main.rs` 的生成块里；这里两个文件都认，常量也合并，避免因为搬家假红。
+    """
+    pattern = rf"if\s+(?:self|st)\.rings\.{re.escape(ring_key)}\s*\{{(.{{0,1600}})"
+    m = re.search(pattern, source, re.S)
+    text_source = source
     if not m:
-        raise AssertionError(f"main.rs 中找不到 `if self.rings.{ring_key} {{` 分支")
+        try:
+            text_source = read_text(O.DIAL_RS)
+        except FileNotFoundError:
+            raise AssertionError(f"main.rs / dial.rs 中找不到 `rings.{ring_key} {{` 分支")
+        m = re.search(pattern, text_source, re.S)
+    if not m:
+        raise AssertionError(f"找不到 `rings.{ring_key} {{` 分支（main.rs 与 dial.rs 都没有）")
     deg = re.search(r"let deg = (.+?);", m.group(1), re.S)
     if not deg:
         raise AssertionError(f"rings.{ring_key} 分支中找不到 `let deg = ...;`")
-    return rust_expr_to_py(deg.group(1), where=f" (rings.{ring_key} deg)",
-                           consts=rust_consts(source))
+    consts = rust_consts(source)
+    consts.update(rust_consts(text_source))
+    return rust_expr_to_py(deg.group(1), where=f" (rings.{ring_key} deg)", consts=consts)
 
 
 def rust_array(source: str, name: str, length: int) -> list:

@@ -22,6 +22,7 @@ import pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MECHANICS_JSON = ROOT / "app" / "mechanics.json"
 MAIN_RS = ROOT / "app" / "src" / "main.rs"
+DIAL_RS = ROOT / "app" / "src" / "dial.rs"
 COMPASS_DATA_JAVA = (
     ROOT / "app" / "android" / "app" / "src" / "main" / "java" / "com" / "luopan"
     / "fengshui" / "CompassData.java"

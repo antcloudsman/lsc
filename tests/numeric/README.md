@@ -9,7 +9,7 @@ cd E:\APPDetector\output
 python tests\numeric\run_all.py
 ```
 
-- 退出码 `0` = 全绿（含 5 条已知缺陷的 expected failure），`1` = 有失败/错误；
+- 退出码 `0` = 全绿，`1` = 有失败/错误；
 - 输出末行 `RESULT: PASS/FAIL` 与计数（tests / failures / errors / skipped / expected_failures /
   unexpected_successes）；
 - 依赖：Python 3.10+；Java 对拍需要 JDK17（自动从 `JAVA_HOME` 或
@@ -39,7 +39,7 @@ python tests\numeric\tools\dump_readings.py
 | 12 | 14 圈层参数与 `MECHANICS.md` 表格逐行对齐（防手误） | `test_rings.RingTableTest` |
 | 13 | 两端同源：`mechanics.json` 19 项 / 0 估计；7 张表逐项；5 盘面名；`mechanics.json` v2 的 values/rings/dials/tables 四段 | `test_mechanics` |
 | 14 | 真实代码对拍：Java `CompassData.read`（javac 编译执行，40 航向）＋ Rust `reading_for`（表达式从源码解析求值）＋ 两端一致 | `test_ends_parity` |
-| 15 | 环上标签与读数一致性（分金/72 龙通过；60 龙为已知缺陷） | `test_divergences.RingLabelAlignmentTest` |
+| 15 | 环上标签与读数一致性（分金/72/60 龙全部通过） | `test_divergences.RingLabelAlignmentTest` |
 
 ## oracle 依据（不臆造）
 
@@ -51,15 +51,15 @@ python tests\numeric\tools\dump_readings.py
 `oracle.py` 不 import 业务代码；被测代码通过两条独立路径验证（见覆盖 14），
 所以「oracle 写错」不会因为两端同错而静默通过——Java 与 Rust 是两支独立实现。
 
-## 已知缺陷（xfail 机制）
+## 轮 B 回归（原 xfail 已转正）
 
-`test_divergences.py` 用 `@unittest.expectedFailure` 锁定 5 条：
+`409ad5f`（BUG-001/002 修复）后，`test_divergences.py` 的 5 条已去掉
+`@expectedFailure`，现在是正常回归用例：三盘 Java/Rust 各 2 条 + 60 龙 1 条。
+当前 `run_all.py` → 74 tests / 0 expected_failure / 0 unexpected_success。
 
-- **BUG-001**（P0）人盘/天盘读数恒等于地盘 —— Java 2 条、Rust 2 条；
-- **BUG-002**（P2）桌面 60 龙标签环比读数偏 4.5° —— 1 条。
-
-缺陷未修时套件保持绿色；**修好后会变成 unexpected success（红）**，此时必须：
-删掉对应 `@expectedFailure`、更新 `docs/qa/bugs.md` 状态，再提交。
+**以后新增缺陷的惯例**：先写会失败的断言并用 `@unittest.expectedFailure` 锁定（套件保持绿），
+缺陷修好后会变成 unexpected success（红）→ 删标记、更新 `docs/qa/bugs.md`，再提交。
+60 龙读数公式 `(h-1.5)/6` 不许加补偿；标签/刻度按 `4.5+6k` 格中心、`1.5+6k` 格界落位。
 
 ## 目录
 
@@ -73,7 +73,7 @@ tests/numeric/
 ├─ test_plates.py        # 三盘 + 正兼向 + 分金/龙格
 ├─ test_mechanics.py     # 19 项 0 估计 + 两端同源 + v2 四段
 ├─ test_ends_parity.py   # Java 真实代码 / Rust 源码驱动对拍
-├─ test_divergences.py   # 已知缺陷 xfail
+├─ test_divergences.py   # 轮 B 回归（三盘/60 龙，原 xfail）
 ├─ java/CompassProbe.java# 测试探针（不进 APK）
 └─ tools/dump_readings.py# 缺陷证据/读数对照
 ```

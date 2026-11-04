@@ -146,6 +146,18 @@ class SingleSourceTest(unittest.TestCase):
             self.assertEqual(item["offset"], ring["offset"], f"TYPE_{ring['type']} offset")
             self.assertTrue(str(item.get("source", "")).strip(), f"TYPE_{ring['type']} 缺 source")
 
+    def test_rings_labels_complete(self):
+        """LC逆向 118357a：14 张文字表共 780 条，全部 confirmed_dex。"""
+        expected = {1: 8, 2: 8, 3: 8, 4: 24, 5: 72, 6: 120, 7: 60,
+                    8: 24, 9: 24, 10: 120, 11: 64, 12: 64, 13: 64, 14: 120}
+        total = 0
+        for ring in self.doc["rings"]:
+            labels = ring.get("labels", [])
+            self.assertEqual(len(labels), expected[ring["type"]], f"TYPE_{ring['type']}")
+            self.assertEqual(ring.get("labels_status"), "confirmed_dex", f"TYPE_{ring['type']}")
+            total += len(labels)
+        self.assertEqual(total, 780)
+
     def test_tables_section_matches_oracle(self):
         t = self.doc["tables"]
         self.assertEqual(t["mountains"], O.MOUNTAINS)

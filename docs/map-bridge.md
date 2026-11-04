@@ -30,9 +30,9 @@
 
 - 天地图 WMTS：`https://{t0..t7}.tianditu.gov.cn/{layer}_w/wmts?...&tk=<KEY>`
   - `layer`：`vec` 矢量 / `img` 影像 / `ter` 地形晕渲；注记 `cva`/`cia`/`cta`。
-- 3D 贴面取 **DEM 级别 +1** 的瓦片（6×6 = 1536×1536 px，正好覆盖一块地形），UV 与屏幕 1:1。
+- 3D 贴面取 **DEM 级别 +1** 的 6×6 瓦片，拼进 **2048×2048 POT 画布**（341.33px/瓦片，1.33× 上采样），UV 覆盖整块地形；POT 才能 `generateMipmap`。
 - **D-005：3D 默认贴面 = 影像（`img`）**；在 3D 里点「地形」仍可切回 `ter`（晕渲贴面会与自研光照叠加出条纹，不推荐）。2D 的默认底图仍是 `ter`，未改 1:1 基线。
-- 贴面过滤器：`LINEAR` + `EXT_texture_filter_anisotropic`（上限 4×，不支持则忽略）。
+- 贴面过滤器：`MIN=LINEAR_MIPMAP_LINEAR`（三线性）、`MAG=LINEAR`，外加 `EXT_texture_filter_anisotropic`（上限 4×，不支持则忽略）。
 - 天地图瓦片同样返回 `Access-Control-Allow-Origin: *`，可作 WebGL 纹理上传。
 - 3D 贴面失败（断网/配额）时自动退回「高程配色 + 自研光照」，地形结构仍在。
 
@@ -148,7 +148,7 @@ python -m http.server 8765 --bind 127.0.0.1
 
 1. 3D 点选已可用（§5.1），但 **Java 桥未接**：真机上只有 `console.log("LC3D pick …")`，事件不会到达客户端，等轮 C 后补 `addJavascriptInterface`。
 2. 3D 不支持双指缩放（原 2D 也没有；只有按钮/滚轮）。
-2.1 俯视 0° 近景仍偏软：canvas 渲染上限 `dpr≤2.5`，该机 dpr=3.375 时被上采样 ~1.35×；且贴面为 NPOT（1536²）无法开 mipmap。M2 待办：改 POT 2048 + mipmap，或俯视时把贴面提一档（z+2）。
+2.1 俯视 0° 近景：贴面已改 **POT 2048 + mipmap + 三线性**（D-009 画质项），canvas 渲染上限 `dpr≤2.5`（该机 dpr=3.375，仍有 ~1.35× 上采样）；**真机复验待补**（无头 Chrome 已验不破图，dpr 效果需真机）。
 3. 3D 地形块固定 3×3 瓦片，转到地块外时重建立块，跨块瞬间可能有 <1 s 空窗（旧块继续渲染直到新块就绪，无白屏）。
 4. 雾把地形块边缘遮住，**地平线不是无限远**：俯仰 45° 时远处 1/3 会进雾。
 5. `ter`（地形晕渲）贴面会与自研光照叠加，建议 3D 用 `img`；是否改默认属产品决策，未改。
@@ -173,7 +173,7 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 ## 9. 待办（下一轮）
 
 - Java 侧 `LCAndroid` 桥 + `MapMarker` 模型（客户端，轮 C 后）。
-- 俯视 0° 贴面清晰度：POT 2048 + mipmap，或俯视时贴面提一档（见 §7 2.1）。
+- 俯视 0° 贴面清晰度：POT 2048 + mipmap 已落（`d8bc53c` 之后），真机复验待补（见 §7 2.1）。
 - 双指缩放。
 - 截图链路修复（PixelCopy / toDataURL 回传），归口待技术总监定。
 - DEM 境外源是否换国内源（产品已列为待拍板项），换源只需改 `TERRARIUM` 常量与解码函数。

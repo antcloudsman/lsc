@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private CompassView compassView;
     private TextView readingView;
     private WebView mapView;
+    private WebView compassMapView;
     private View knowledgeTab;
 
     private SensorManager sensorManager;
@@ -73,9 +74,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         FrameLayout frame = new FrameLayout(this);
         frame.setBackgroundColor(Color.rgb(24, 20, 16));
 
-        // Base map (底图).
-        WebView map = createMapWebView();
-        frame.addView(map, new FrameLayout.LayoutParams(
+        // Base map (底图). Keep the reference: 轮 C 截图与坐向推送都指向这个 WebView.
+        compassMapView = createMapWebView();
+        frame.addView(compassMapView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
         // Floating compass overlay (罗盘盖在底图上).
@@ -159,23 +160,123 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return webView;
     }
 
-    /** Capture the map WebView (地图+罗盘) as a PNG into the app's files dir. */
+    /**
+     * 截图：罗盘页整屏（底图 + 罗盘 + 面板）。PixelCopy 优先（View.draw 抓 WebGL 必空），
+     * 黑图/失败才退到 WebView canvas 的 toDataURL。D-009：存相册 Pictures/LC/、不写 GPS EXIF、
+     * 文件名「坐向_时间」、保存后走系统分享。
+     */
     private void captureMap() {
-        if (mapView == null) return;
-        try {
-            android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(mapView.getWidth(), mapView.getHeight(), android.graphics.Bitmap.Config.ARGB_8888);
-            android.graphics.Canvas c = new android.graphics.Canvas(bmp);
-            mapView.draw(c);
-            java.io.File dir = new java.io.File(getExternalFilesDir(null), "shots");
-            if (!dir.exists()) dir.mkdirs();
-            java.io.File out = new java.io.File(dir, "map_" + System.currentTimeMillis() + ".png");
-            java.io.FileOutputStream fos = new java.io.FileOutputStream(out);
-            bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, fos);
-            fos.close();
-            android.widget.Toast.makeText(this, "已保存 " + out.getName(), android.widget.Toast.LENGTH_SHORT).show();
-        } catch (Throwable t) {
-            android.widget.Toast.makeText(this, "截图失败: " + t.getMessage(), android.widget.Toast.LENGTH_SHORT).show();
+        final View target = compassTab;
+        if (target == null || target.getWidth() == 0 || target.getHeight() == 0) {
+            toast("截图失败：罗盘页未就绪");
+            return;
         }
+        final int w = target.getWidth();
+        final int h = target.getHeight();
+        final android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888);
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            try {
+                int[] loc = new int[2];
+                target.getLocationInWindow(loc);
+                android.graphics.Rect rect = new android.graphics.Rect(loc[0], loc[1], loc[0] + w, loc[1] + h);
+                android.view.PixelCopy.request(getWindow(), rect, bmp, result -> {
+                    if (result == android.view.PixelCopy.SUCCESS && !looksBlank(bmp)) {
+                        saveCompassShot(bmp);
+                    } else {
+                        captureViaJs();
+                    }
+                }, new android.os.Handler(android.os.Looper.getMainLooper()));
+            } catch (Throwable t) {
+                captureViaJs();
+            }
+        } else {
+            captureViaJs();
+        }
+    }
+
+    /** WebGL 抓不到时 PixelCopy 会得到整片黑；采样地图可见的左侧边缘判断。 */
+    private boolean looksBlank(android.graphics.Bitmap bmp) {
+        int[] xs = {(int) (bmp.getWidth() * 0.03f), (int) (bmp.getWidth() * 0.5f)};
+        int[] ys = {(int) (bmp.getHeight() * 0.35f), (int) (bmp.getHeight() * 0.55f)};
+        for (int x : xs) {
+            for (int y : ys) {
+                int c = bmp.getPixel(x, y);
+                if (((c >> 16) & 0xff) + ((c >> 8) & 0xff) + (c & 0xff) > 24) return false;
+            }
+        }
+        return true;
+    }
+
+    /** 退路：只拿得到地图 canvas（不含罗盘覆盖层），黑图时保证至少有图可存。 */
+    private void captureViaJs() {
+        if (compassMapView == null) {
+            toast("截图失败：底图未就绪");
+            return;
+        }
+        compassMapView.evaluateJavascript(
+                "(function(){var c=document.querySelector('canvas');return c?c.toDataURL('image/png'):'';})()",
+                value -> {
+                    try {
+                        if (value == null || value.length() < 32) {
+                            toast("截图失败：地图未渲染");
+                            return;
+                        }
+                        byte[] raw = android.util.Base64.decode(
+                                value.substring(1, value.length() - 1), android.util.Base64.DEFAULT);
+                        android.graphics.Bitmap map = android.graphics.BitmapFactory.decodeByteArray(raw, 0, raw.length);
+                        if (map == null) {
+                            toast("截图失败：解码图片失败");
+                            return;
+                        }
+                        saveCompassShot(map);
+                    } catch (Throwable t) {
+                        toast("截图失败: " + t.getMessage());
+                    }
+                });
+    }
+
+    private void saveCompassShot(android.graphics.Bitmap bmp) {
+        CompassData.Reading r = CompassData.read(compassView == null ? 0f : compassView.getHeading());
+        String name = "坐向" + CompassData.MOUNTAINS[r.sitting] + "向" + CompassData.MOUNTAINS[r.mountain]
+                + "_" + new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(new java.util.Date());
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                android.content.ContentValues v = new android.content.ContentValues();
+                v.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, name + ".png");
+                v.put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png");
+                v.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH,
+                        android.os.Environment.DIRECTORY_PICTURES + "/LC");
+                android.net.Uri uri = getContentResolver()
+                        .insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+                if (uri == null) throw new java.io.IOException("MediaStore insert failed");
+                try (java.io.OutputStream os = getContentResolver().openOutputStream(uri)) {
+                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os);
+                }
+                shareShot(uri, name);
+            } else {
+                java.io.File dir = new java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES), "LC");
+                if (!dir.exists() && !dir.mkdirs()) throw new java.io.IOException("mkdirs failed");
+                java.io.File out = new java.io.File(dir, name + ".png");
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
+                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, fos);
+                }
+                toast("已保存 " + out.getName());
+            }
+        } catch (Throwable t) {
+            toast("保存失败: " + t.getMessage());
+        }
+    }
+
+    private void shareShot(android.net.Uri uri, String name) {
+        android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_SEND);
+        i.setType("image/png");
+        i.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+        i.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(android.content.Intent.createChooser(i, "分享 " + name));
+    }
+
+    private void toast(String s) {
+        android.widget.Toast.makeText(this, s, android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private WebView buildMapTab() {
@@ -240,12 +341,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         r.dragon60Name, r.dragon60Nayin,
                         CompassData.HOUTIAN[r.mountain]));
 
-        // Push heading + sit/face to the map WebView (坐向 overlay).
-        if (mapView != null) {
+        // Push heading + sit/face to the compass-tab WebView (B-17: 坐向 overlay).
+        if (compassMapView != null) {
             String face = CompassData.MOUNTAINS[r.mountain] + "山";
             String sit = CompassData.MOUNTAINS[r.sitting] + "山";
-            mapView.evaluateJavascript("setHeading(" + r.heading + ")", null);
-            mapView.evaluateJavascript("setSitFace('" + face + "','" + sit + "')", null);
+            compassMapView.evaluateJavascript("setHeading(" + r.heading + ")", null);
+            compassMapView.evaluateJavascript("setSitFace('" + face + "','" + sit + "')", null);
         }
     }
 

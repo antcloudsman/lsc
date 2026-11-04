@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Sensor rotationVector;
     private final float[] rotationMatrix = new float[9];
     private final float[] orientation = new float[3];
+    private long lastRingLog = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -338,6 +339,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         r.fenjinText, r.dragon72Text,
                         r.dragon60Text, r.houtianText, r.xiantianText));
 
+        // AT-B2 §2.4: structured debug line, max 2/s (sensor runs at UI rate).
+        if (isDebuggable() && System.currentTimeMillis() - lastRingLog > 500) {
+            lastRingLog = System.currentTimeMillis();
+            for (int t = 1; t <= 14; t++) {
+                int idx = CompassData.ringIndex(t, r.heading);
+                android.util.Log.d("LCRING", "type=" + t
+                        + " h=" + String.format(java.util.Locale.US, "%.2f", r.heading)
+                        + " i=" + idx
+                        + " center=" + String.format(java.util.Locale.US, "%.2f",
+                                CompassData.ringCenter(t, idx))
+                        + " text=" + CompassData.RINGS[t - 1].labels[idx]);
+            }
+        }
+
         // Push heading + sit/face to the compass-tab WebView (B-17: 坐向 overlay).
         if (compassMapView != null) {
             String face = CompassData.MOUNTAINS[r.mountain] + "山";
@@ -345,6 +360,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             compassMapView.evaluateJavascript("setHeading(" + r.heading + ")", null);
             compassMapView.evaluateJavascript("setSitFace('" + face + "','" + sit + "')", null);
         }
+    }
+
+    private boolean isDebuggable() {
+        return (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
     }
 
     private static int plate(float h) {

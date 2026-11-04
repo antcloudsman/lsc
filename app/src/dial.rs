@@ -84,6 +84,15 @@ fn ring<C: DialCanvas>(cv: &mut C, cx: f32, cy: f32, r: f32, frac0: f32, frac1: 
     cv.circle_stroke(Pos2::new(cx, cy), r * frac1, color, width);
 }
 
+/// B2: 指针下当前格高亮（只画刻度时用户要能看出“哪一格”）。
+fn cell_marker<C: DialCanvas>(cv: &mut C, cx: f32, cy: f32, r: f32, ring_type: usize, heading: f32, outer: f32, inner: f32, color: Color32) {
+    let i = crate::ring_index(ring_type, heading);
+    let ang = crate::ring_center(ring_type, i);
+    let a = screen_pos(cx, cy, r * outer, ang, heading);
+    let b = screen_pos(cx, cy, r * inner, ang, heading);
+    cv.line(a, b, color, 4.0);
+}
+
 fn plate<C: DialCanvas>(cv: &mut C, cx: f32, cy: f32, radius: f32, offset: f32, font: f32, color: Color32, heading: f32) {
     for (m, name) in MOUNTAINS.iter().enumerate() {
         let deg = m as f32 * MOUNTAIN_STEP + offset;
@@ -125,6 +134,7 @@ pub fn draw_dial<C: DialCanvas>(cv: &mut C, st: &DialState<'_>, cx: f32, cy: f32
         ring(cv, cx, cy, r, 0.845, 0.82, Color32::from_rgb(120, 100, 70), 1.0);
         // B2: 120 cells x 5-char labels cannot fit r=232 (3 deg/cell); the table
         // text is shown in the reading panel, the ring keeps ticks for orientation.
+        cell_marker(cv, cx, cy, r, 6, heading, 0.852, 0.813, Color32::from_rgb(255, 216, 120));
     }
 
     // 72 dragons ring (5° ticks) + 龙 labels.
@@ -135,7 +145,8 @@ pub fn draw_dial<C: DialCanvas>(cv: &mut C, st: &DialState<'_>, cx: f32, cy: f32
             cv.line(p0, p1, Color32::from_rgb(120, 140, 100), 1.0);
         }
         ring(cv, cx, cy, r, 0.81, 0.79, Color32::from_rgb(90, 110, 80), 1.0);
-        // B2: 72 labels come from rings[4]; the panel shows the current one.
+        // B2: 72 labels come from rings[5]; the panel shows the current one.
+        cell_marker(cv, cx, cy, r, 5, heading, 0.818, 0.782, Color32::from_rgb(190, 235, 160));
     }
 
     // 60 dragons ring (TYPE_7 = interval 6.0 / offset 1.5):
@@ -149,6 +160,7 @@ pub fn draw_dial<C: DialCanvas>(cv: &mut C, st: &DialState<'_>, cx: f32, cy: f32
         }
         ring(cv, cx, cy, r, 0.78, 0.76, Color32::from_rgb(80, 100, 120), 1.0);
         // B2: 60 labels are 5 chars (山名+干支) -> panel carries the current one.
+        cell_marker(cv, cx, cy, r, 7, heading, 0.788, 0.752, Color32::from_rgb(160, 200, 255));
     }
 
     // 64 hexagrams (六十四卦) ring: 64 × 5.625° = 360°.

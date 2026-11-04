@@ -173,6 +173,10 @@ public class CompassView extends View {
             paint.setColor(Color.rgb(90, 110, 130));
             canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
         }
+        // B2: 当前格高亮（只画刻度时用来标出指针所在格）
+        drawCellMarker(canvas, cx, cy, r, 6, 0.852f, 0.813f, Color.rgb(255, 216, 120));
+        drawCellMarker(canvas, cx, cy, r, 5, 0.818f, 0.782f, Color.rgb(190, 235, 160));
+        drawCellMarker(canvas, cx, cy, r, 7, 0.788f, 0.752f, Color.rgb(160, 200, 255));
         }
 
         // 64 hexagrams (六十四卦) ring: 64 × 5.625° = 360° (综合盘 dial 4 only).
@@ -240,6 +244,19 @@ public class CompassView extends View {
         textPaint.setTextSize(13f * density());
         drawText(canvas, rd.jian + " · " + CompassData.YINYANG[rd.mountain],
                 cx, cy + 34f * density(), textPaint);
+    }
+
+    /** B2: 指针下当前格的高亮刻度。 */
+    private void drawCellMarker(Canvas canvas, float cx, float cy, float r,
+                                int type, float outer, float inner, int color) {
+        int i = CompassData.ringIndex(type, heading);
+        float ang = CompassData.ringCenter(type, i);
+        float[] a = pos(cx, cy, r * outer, ang, heading);
+        float[] b = pos(cx, cy, r * inner, ang, heading);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(4f * density());
+        paint.setColor(color);
+        canvas.drawLine(a[0], a[1], b[0], b[1], paint);
     }
 
     private float density() {

@@ -30,11 +30,30 @@ New-Item -ItemType Directory -Force $OutDir | Out-Null
 $result = Join-Path $OutDir "result.txt"
 "AT-P0-0 run $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" | Set-Content -Encoding UTF8 $result
 
-# 0) 前台 + 冻结传感器（注入 heading，避免 dump idle 超时）
+# 0) 前台 + receiver 注册 + 冻结传感器（注入 heading，避免 dump idle 超时）
 $null = & $adb -s $Device shell am start -n com.luopan.fengshui/.MainActivity 2>&1
 Start-Sleep -Seconds 2
-& $adb -s $Device shell am broadcast -a com.luopan.fengshui.DEBUG --ef heading $Heading | Out-Null
+$resumed = ((& $adb -s $Device shell dumpsys activity activities 2>&1) |
+    Select-String 'mResumedActivity' | Select-Object -First 1)
+Add-Content -Encoding UTF8 $result ("foreground: " + (($resumed -replace '\s+', ' ').Trim()))
+$blockReason = ""
+if ($resumed -notmatch 'com\.luopan\.fengshui') {
+    $blockReason = "App 不在前台（registerDebugBridge 在 onResume，后台收不到广播）"
+}
+$recv = ((& $adb -s $Device shell dumpsys activity broadcasts 2>&1) |
+    Select-String 'com\.luopan\.fengshui\.DEBUG' | Select-Object -First 3) -join " | "
+Add-Content -Encoding UTF8 $result ("receiver: " + $(if ($recv) { $recv } else { "dumpsys 未见 DEBUG receiver（可能未注册）" }))
+& $adb -s $Device logcat -c
+$bc = (& $adb -s $Device shell am broadcast -a com.luopan.fengshui.DEBUG --ef heading $Heading 2>&1) -join "`n"
+Add-Content -Encoding UTF8 $result ("broadcast: " + (($bc -replace '\s+', ' ').Trim()))
 Start-Sleep -Milliseconds 800
+& $adb -s $Device logcat -d | Set-Content -Encoding UTF8 (Join-Path $OutDir "logcat-heading.txt")
+$dbg = ((Get-Content (Join-Path $OutDir "logcat-heading.txt") -ErrorAction SilentlyContinue) |
+    Select-String 'LCDEBUG' | Select-Object -Last 5) -join " | "
+Add-Content -Encoding UTF8 $result ("LCDEBUG: " + $(if ($dbg) { $dbg } else { "none（广播未被接收或分支无日志）" }))
+if (-not $dbg -and -not $blockReason) {
+    $blockReason = "heading 广播后无 LCDEBUG（receiver 未收到/分支未处理）"
+}
 
 # 1) prefs 值
 $prefs = (& $adb -s $Device shell run-as com.luopan.fengshui cat shared_prefs/lc_prefs.xml 2>&1) -join "`n"
@@ -114,8 +133,9 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 if (-not $dumpOk) {
-    Add-Content -Encoding UTF8 $result "BLOCKED: ui dump 不可用（先注入 heading 再 dump；见 docs/qa/device-method.md）"
-    Write-Host "AT-P0-0: BLOCKED — ui dump 不可用"
+    $why = if ($blockReason) { $blockReason } else { "ui dump idle 超时" }
+    Add-Content -Encoding UTF8 $result "BLOCKED: $why；见 docs/qa/device-method.md"
+    Write-Host "AT-P0-0: BLOCKED — $why"
     exit 2
 }
 Add-Content -Encoding UTF8 $result "PASS: ① 行存在性 ② prefs 值均符合（p0_1_enabled=$enabled）"

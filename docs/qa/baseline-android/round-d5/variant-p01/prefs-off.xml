@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <boolean name="calibration_done" value="true" />
+    <boolean name="true_north" value="false" />
+    <float name="declination" value="0.0" />
+    <boolean name="p0_1_enabled" value="false" />
+</map>

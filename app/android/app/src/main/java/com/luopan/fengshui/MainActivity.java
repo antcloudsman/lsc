@@ -36,6 +36,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private long lastRingLog = 0L;
     /** D-005: single 3D pick marker (overwritten on every pick, cleared by pick-clear). */
     private MapMarker mapMarker;
+    /** last raw (un-calibrated) azimuth, for the master-switch recompute. */
+    private float lastRaw = 0f;
 
     // P0-1 reading trust
     private android.widget.TextView statusView;
@@ -106,6 +108,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (statusView != null) statusView.setVisibility(p01Enabled ? View.VISIBLE : View.GONE);
         if (trustRow != null) trustRow.setVisibility(p01Enabled ? View.VISIBLE : View.GONE);
         if (compassView != null) compassView.setTrustEnabled(p01Enabled);
+        // RT-010: master switch off means the raw heading path, exactly the baseline.
+        float raw = injectedHeading != null ? injectedHeading : lastRaw;
+        float h = p01Enabled
+                ? SensorMath.applyDeclination(raw, declination, trueNorth)
+                : SensorMath.normalize(raw);
+        if (compassView != null) compassView.setSensorHeading(h);
     }
 
     /** P0-0 minimal entry: long-press the reading text 7 times opens the switch. */
@@ -159,8 +167,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "heading":
                 injectedHeading = it.getFloatExtra("value", 0f);
                 if (compassView != null) {
-                    compassView.setSensorHeading(
-                            SensorMath.applyDeclination(injectedHeading, declination, trueNorth));
+                    compassView.setSensorHeading(p01Enabled
+                            ? SensorMath.applyDeclination(injectedHeading, declination, trueNorth)
+                            : SensorMath.normalize(injectedHeading));
                 }
                 break;
             case "accuracy":
@@ -616,9 +625,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
             SensorManager.getOrientation(rotationMatrix, orientation);
             float raw = normalize((float) Math.toDegrees(orientation[0]));
+            lastRaw = raw;
             if (injectedHeading != null) raw = injectedHeading;
-            // P0-1 S5: every ring uses H, never the raw value.
-            float h = SensorMath.applyDeclination(raw, declination, trueNorth);
+            // P0-1 S5: every ring uses H; master switch off falls back to raw (RT-010).
+            float h = p01Enabled
+                    ? SensorMath.applyDeclination(raw, declination, trueNorth)
+                    : SensorMath.normalize(raw);
             compassView.setSensorHeading(h);
             updateReading();
         }

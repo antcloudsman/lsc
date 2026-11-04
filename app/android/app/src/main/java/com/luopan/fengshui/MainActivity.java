@@ -179,22 +179,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 injectedPitch = it.getFloatExtra("pitch", 0f);
                 injectedRoll = it.getFloatExtra("roll", 0f);
                 break;
-            case "url": {
-                String url = it.getStringExtra("value");
-                if (url != null) {
-                    if (mapView != null) mapView.loadUrl(url);
-                    if (compassMapView != null) compassMapView.loadUrl(url);
-                }
-                break;
-            }
-            case "js": {
-                String code = it.getStringExtra("value");
-                if (code != null) {
-                    if (mapView != null) mapView.evaluateJavascript(code, null);
-                    if (compassMapView != null) compassMapView.evaluateJavascript(code, null);
-                }
-                break;
-            }
             case "reset":
                 injectedHeading = null;
                 injectedPitch = null;
@@ -629,7 +613,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onResume();
         registerDebugBridge();
         if (compassView != null && prefs != null) {
-            compassView.setDialType(prefs.getInt("dial_index", 1));
+            int dial = prefs.getInt("dial_index", 1);
+            compassView.setDialType(dial);
+            compassView.setArtwork(dial);
         }
         if (sensorManager != null && rotationVector != null) {
             sensorManager.registerListener(this, rotationVector, SensorManager.SENSOR_DELAY_UI);

@@ -81,6 +81,12 @@ $hasTrueNorth = ($texts -match "磁北").Count -gt 0 -or ($texts -match "真北"
 $failures = @()
 if ($dumpOk) {
     Add-Content -Encoding UTF8 $result "ui rows: 偏角=$hasDecl 磁北/真北=$hasTrueNorth 读数=[$reading] (dump OK)"
+    if ($reading -match '([\d.]+)') {
+        $rv = [double]$Matches[1]
+        if ([math]::Abs($rv - $Heading) -gt 0.5) {
+            Add-Content -Encoding UTF8 $result "WARN 读数 $rv 与注入 $Heading 不一致（注入可能未生效，结论需人工复核）"
+        }
+    }
     if ($enabled -and -not $hasDecl) { $failures += "开关=on 但缺「偏角」行" }
     if (-not $enabled -and $hasDecl) { $failures += "开关=off 但仍显示「偏角」行" }
 } else {

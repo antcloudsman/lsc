@@ -79,8 +79,19 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
   不加载。要靠 `url` 一次进 3D，必须让 `map.html` 在初始化时读 hash（地图侧已改）。
 - **`js` 注入可观测性**：当前 `evaluateJavascript` 没带 `ValueCallback`，页面输出不回写，
   「注入到底生没生效」不可观测；客户端正改为带回调回写 logcat。
-- **结论**：receiver 注册本身没问题（33+ 的 `RECEIVER_EXPORTED` 与旧版普通注册都生效），
-  问题在 shell 引号/元字符与「注入无回显」。
+- **`heading` 注入的 extra 键是 `value`，不是 `heading`**：`MainActivity` 用
+  `it.getFloatExtra("value", 0f)`，正确命令是
+  `am broadcast -a com.luopan.fengshui.DEBUG --ef value 90`；`--ef heading 90` 会被忽略。
+- **`dumpsys activity broadcasts` 的两个段落别混**：
+  - `Broadcast Records` 里出现 `act=com.luopan.fengshui.DEBUG` **只说明广播发过/进过历史**，
+    不等于 receiver 已注册；
+  - 要确认注册，看 **`Registered Receivers:`** 段里有没有 `com.luopan`；
+    本轮在 SHA `7CBD3D00…`（`lastUpdateTime 04:47:03`）的包上查到注册列表为空，
+    同时 `--ef value 90` 不改变读数、`LCDEBUG` 零条。
+- **结论修正**：receiver 注册在客户端某次修复的包上生效过，但不能默认所有构建都注册；
+  需要客户端加「注册成功/失败」日志（`LCDEBUG bridge registered` + 异常栈）后，
+  再按「先看 `LCDEBUG`、再看 `LCJS`」判断，别把「广播发出」当「通道活着」。
+
 
 ## 附B：真机调试通道（LC客户端，2026-11-05）
 

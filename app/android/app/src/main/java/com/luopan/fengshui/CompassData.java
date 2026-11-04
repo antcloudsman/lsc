@@ -245,11 +245,20 @@ public final class CompassData {
 
     /** B2: text of RINGS[type-1] for this heading, straight from mechanics.json. */
     public static String ringText(int type, float heading) {
+        return RINGS[type - 1].labels[ringIndex(type, heading)];
+    }
+
+    /** B2: cell index under the pointer, floor(((h-offset+360)%360)/interval). */
+    public static int ringIndex(int type, float heading) {
         RingDef r = RINGS[type - 1];
-        int n = r.labels.length;
         double h = ((heading - r.offset) % 360.0 + 360.0) % 360.0;
-        int idx = ((int) Math.floor(h / r.interval)) % n;
-        return r.labels[idx];
+        return ((int) Math.floor(h / r.interval)) % r.labels.length;
+    }
+
+    /** B2: cell centre = offset + (i + 0.5) * interval. */
+    public static float ringCenter(int type, int index) {
+        RingDef r = RINGS[type - 1];
+        return r.offset + (index + 0.5f) * r.interval;
     }
 
     public static final String[] KNOWLEDGE_TITLES = {

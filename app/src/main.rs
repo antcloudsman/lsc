@@ -422,13 +422,22 @@ impl LuopanApp {
 }
 
 /// B2: text of `rings[type-1]` for this heading, straight from mechanics.json.
-fn ring_text(ring_type: usize, heading: f32) -> &'static str {
+fn ring_index(ring_type: usize, heading: f32) -> usize {
     let ring = &RINGS[ring_type - 1];
     let n = ring.labels.len();
-    let idx = ((((normalize_deg(heading) - ring.offset) % 360.0 + 360.0) % 360.0) / ring.interval)
+    ((((normalize_deg(heading) - ring.offset) % 360.0 + 360.0) % 360.0) / ring.interval)
         .floor() as usize
-        % n;
-    ring.labels[idx]
+        % n
+}
+
+fn ring_text(ring_type: usize, heading: f32) -> &'static str {
+    let ring = &RINGS[ring_type - 1];
+    ring.labels[ring_index(ring_type, heading)]
+}
+
+fn ring_center(ring_type: usize, index: usize) -> f32 {
+    let ring = &RINGS[ring_type - 1];
+    ring.offset + (index as f32 + 0.5) * ring.interval
 }
 
 fn ring_text_clean(ring_type: usize, heading: f32) -> String {
@@ -578,6 +587,20 @@ fn main() -> eframe::Result {
         if args[i] == "--screenshot" && i + 1 < args.len() {
             screenshot = Some(args[i + 1].clone());
             i += 2;
+        } else if args[i] == "--dump-rings" && i + 1 < args.len() {
+            let h: f32 = args[i + 1].parse().unwrap_or(0.0);
+            for t in 1..=14usize {
+                let i = ring_index(t, h);
+                println!(
+                    "LCRING type={} h={:.2} i={} center={:.2} text={}",
+                    t,
+                    normalize_deg(h),
+                    i,
+                    ring_center(t, i),
+                    ring_text(t, h)
+                );
+            }
+            return Ok(());
         } else if args[i] == "--screenshot-ui" && i + 1 < args.len() {
             // Real egui window + deliverable PNG (needs a desktop session).
             screenshot_ui = Some(args[i + 1].clone());

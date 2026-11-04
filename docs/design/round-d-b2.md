@@ -43,3 +43,20 @@ text  = labels[i]
 - `checks/round-d/desktop-software.png`（1100×780）：0.00° 时 分金 `甲山 戊子`、七十二龙 `戊子`、六十龙 `壬子 庚子`、正/兼向 `癸山九度外`、后天卦 坎、先天卦 坤。
 - `cargo test` 4/4（含四向量）。
 - `gradle assembleDebug` EXIT=0（APK 3,226,518 B）；真机本轮未验（设备在 LC地图/LC逆向 队列）。
+
+## 7. 当前格高亮（总监裁决补项）
+
+- 桌面：`dial.rs::cell_marker()`，按 `i=ring_index(type,h)`、`center=ring_center(type,i)` 在圈带上画 4px 径向亮线；分金=金、72 龙=绿、60 龙=蓝。
+- Android：`CompassView.drawCellMarker()` 同公式，4dp。
+- 目的：只画刻度时用户能看出「指针在哪一格」，文字仍以读数面板为准。
+
+## 8. 档案口径（D-008）
+
+原版整圈文字是**整幅位图排版**的结果（`assets/webapp/assets/imgs/compass/`，14 幅 PNG，620–2251px），矢量端在本窗口尺寸（r=232）下**无法 1:1 复现**。因此：
+- 矢量圈层 = **等价替代，未达 1:1**；
+- 整圈文字的正解是 P0-2：直接使用原版位图盘面（轮 E），矢量层只保留指针/读数/当前格高亮。
+
+## 9. AT-B2 需要的结构化日志
+
+- Android debug 构建：`Log.d("LCRING", "type=.. h=.. i=.. center=.. text=..")`，14 环，节流 2 条/秒（传感器在 UI 速率），`isDebuggable()` 判断，不依赖 BuildConfig。
+- 桌面：`luopan.exe --dump-rings <heading>` 输出同样 14 行，便于 6×14 逐字比对。

@@ -1,0 +1,18 @@
+[package]
+name = "luopan"
+version = "0.1.0"
+edition = "2021"
+description = "Feng Shui compass (罗盘) desktop app — rebuild of 三维山水全景地图"
+license = "MIT"
+
+[dependencies]
+eframe = "0.31"
+image = { version = "0.25", default-features = false, features = ["png"] }
+fontdue = "0.9"
+
+[profile.release]
+opt-level = 2
+
+# Smaller/faster debug builds for the dev container.
+[profile.dev]
+opt-level = 0

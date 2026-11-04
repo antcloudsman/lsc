@@ -1,0 +1,35 @@
+{
+  "id": "ev_1a495e944afdb5f3df3c72c4a2dd1a6046e7054ffa20384eb00ac998479ea055",
+  "subject": {
+    "kind": "engine",
+    "name": "apktool"
+  },
+  "operation": "engines_apktool_check",
+  "params": {},
+  "result": {
+    "available": false,
+    "built_in_decoder": true,
+    "default_decoder": "built-in",
+    "error": null,
+    "path": null,
+    "remediation": "Optional: install Apktool and set its path in Settings → Engines.",
+    "version": null
+  },
+  "summary": "Apktool is not installed. That's fine: android_resources_read and android_package_show use Craft Anything's built-in decoders.",
+  "confidence": "observed",
+  "authority": "our-run",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [],
+  "links": []
+}

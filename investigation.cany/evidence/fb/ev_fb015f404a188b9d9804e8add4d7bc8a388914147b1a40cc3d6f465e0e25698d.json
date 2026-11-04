@@ -1,0 +1,177 @@
+{
+  "id": "ev_fb015f404a188b9d9804e8add4d7bc8a388914147b1a40cc3d6f465e0e25698d",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.ui.tools.CompassToolsKt",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "A1",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "public",
+      "static",
+      "final"
+    ],
+    "class": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;",
+    "dex": "classes06.dex",
+    "ins": 13,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0xde",
+        "text": "or-int/lit8 v0, v22, 1",
+        "units": 2
+      },
+      {
+        "offset": "0002",
+        "opcode": "0x71",
+        "text": "invoke-static {v0}, Landroidx/compose/runtime/RecomposeScopeImplKt;->updateChangedFlags(I)I",
+        "units": 3
+      },
+      {
+        "offset": "0005",
+        "opcode": "0x0a",
+        "text": "move-result v11",
+        "units": 1
+      },
+      {
+        "offset": "0006",
+        "opcode": "0x01",
+        "text": "move v1, v13",
+        "units": 1
+      },
+      {
+        "offset": "0007",
+        "opcode": "0x01",
+        "text": "move v2, v14",
+        "units": 1
+      },
+      {
+        "offset": "0008",
+        "opcode": "0x01",
+        "text": "move v3, v15",
+        "units": 1
+      },
+      {
+        "offset": "0009",
+        "opcode": "0x02",
+        "text": "move/from16 v4, v16",
+        "units": 2
+      },
+      {
+        "offset": "000b",
+        "opcode": "0x08",
+        "text": "move-object/from16 v5, v17",
+        "units": 2
+      },
+      {
+        "offset": "000d",
+        "opcode": "0x08",
+        "text": "move-object/from16 v6, v18",
+        "units": 2
+      },
+      {
+        "offset": "000f",
+        "opcode": "0x08",
+        "text": "move-object/from16 v7, v19",
+        "units": 2
+      },
+      {
+        "offset": "0011",
+        "opcode": "0x08",
+        "text": "move-object/from16 v8, v20",
+        "units": 2
+      },
+      {
+        "offset": "0013",
+        "opcode": "0x08",
+        "text": "move-object/from16 v9, v21",
+        "units": 2
+      },
+      {
+        "offset": "0015",
+        "opcode": "0x02",
+        "text": "move/from16 v12, v23",
+        "units": 2
+      },
+      {
+        "offset": "0017",
+        "opcode": "0x08",
+        "text": "move-object/from16 v10, v24",
+        "units": 2
+      },
+      {
+        "offset": "0019",
+        "opcode": "0x77",
+        "text": "invoke-static/range {v1 .. v12}, Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->z1(ZFFFLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)V",
+        "units": 3
+      },
+      {
+        "offset": "001c",
+        "opcode": "0x62",
+        "text": "sget-object v13, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;",
+        "units": 2
+      },
+      {
+        "offset": "001e",
+        "opcode": "0x11",
+        "text": "return-object v13",
+        "units": 1
+      }
+    ],
+    "instructions_total": 17,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: or-int/lit8 v0, v22, 1\n0002: invoke-static {v0}, Landroidx/compose/runtime/RecomposeScopeImplKt;->updateChangedFlags(I)I\n0005: move-result v11\n0006: move v1, v13\n0007: move v2, v14\n0008: move v3, v15\n0009: move/from16 v4, v16\n000b: move-object/from16 v5, v17\n000d: move-object/from16 v6, v18\n000f: move-object/from16 v7, v19\n0011: move-object/from16 v8, v20\n0013: move-object/from16 v9, v21\n0015: move/from16 v12, v23\n0017: move-object/from16 v10, v24\n0019: invoke-static/range {v1 .. v12}, Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->z1(ZFFFLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)V\n001c: sget-object v13, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;\n001e: return-object v13",
+    "method": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->A1(ZFFFLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;IILandroidx/compose/runtime/Composer;I)Lkotlin/Unit;",
+    "outs": 12,
+    "overload_index": 0,
+    "overloads": [
+      "public static final kotlin.Unit A1(boolean, float, float, float, java.lang.String, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, androidx.compose.ui.geometry.Rect, kotlin.jvm.functions.Function0, int, int, androidx.compose.runtime.Composer, int)"
+    ],
+    "registers": 26,
+    "signature": "public static final kotlin.Unit A1(boolean, float, float, float, java.lang.String, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, androidx.compose.ui.geometry.Rect, kotlin.jvm.functions.Function0, int, int, androidx.compose.runtime.Composer, int)",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->A1(ZFFFLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;IILandroidx/compose/runtime/Composer;I)Lkotlin/Unit; (classes06.dex): 17 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 17,
+    "total": 17
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->A1(ZFFFLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;IILandroidx/compose/runtime/Composer;I)Lkotlin/Unit;"
+    }
+  ],
+  "links": []
+}

@@ -1,0 +1,42 @@
+{
+  "id": "ev_3884eb0e25db98d22087173d4280c258edf630385161bb3f2668fd3ff381b679",
+  "subject": {
+    "kind": "elf",
+    "sha256": "00c5be5300aa95607b8e3d551b7372e806ca84aa6f7cf20d577922c16ddd431b",
+    "name": "libshell-super.space.xinzhi.globe.so"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 200,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "classes"
+  },
+  "result": {
+    "matches": [],
+    "total": 0
+  },
+  "summary": "0 strings match \"classes\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [],
+  "links": []
+}

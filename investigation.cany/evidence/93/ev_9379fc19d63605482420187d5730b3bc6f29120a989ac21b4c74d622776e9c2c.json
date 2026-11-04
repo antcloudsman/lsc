@@ -1,0 +1,46 @@
+{
+  "id": "ev_9379fc19d63605482420187d5730b3bc6f29120a989ac21b4c74d622776e9c2c",
+  "subject": {
+    "kind": "dex",
+    "sha256": "3c089807fc5031facc8015dcccac00f95d36156567fe88548fa61f79be331ab6",
+    "name": "00O000ll111l_6.dex"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 100,
+    "offset": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex",
+    "query": "luojing"
+  },
+  "result": {
+    "classes": [],
+    "classes_total": 7698,
+    "dex_files": [
+      "00O000ll111l_6.dex"
+    ],
+    "matches": 0,
+    "query": "luojing"
+  },
+  "summary": "0 of 7698 classes match \"luojing\" in 1 DEX file(s); showing 0.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex"
+    }
+  ],
+  "links": []
+}

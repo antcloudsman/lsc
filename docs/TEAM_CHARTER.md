@@ -1,0 +1,96 @@
+# 山水罗盘 · Landscape Compass（LC）团队章程 v1
+
+> 本文件是 LC 项目的**唯一协作口径**。所有成员（含技术总监）开工前必读；与本文件冲突的口头约定无效，需先改本文件。
+
+## 1. 项目标识
+
+| 项 | 值 |
+|---|---|
+| 中文名 | 山水罗盘 |
+| 英文名 | Landscape Compass |
+| 英文简称 | LC |
+| 内部代号 | swss（沿用 craft 工作区名，勿改） |
+| 源码根 | `E:\APPDetector\output` |
+| 主工程 | `app\`（Rust/egui 桌面版）、`app\android\`（Java/WebView Android 版） |
+| 对照原件 | `E:\APPDetector\input\swss.apk`（`space.xinzhi.globe`，风水罗盘 + 天地图） |
+| 证据目录 | `.inspect\unpack\dex_dump`、`.inspect\unpack\mem_dump`（Frida 内存 dump，方法体真实） |
+| 技术档案 | `app\MECHANICS.md`（人读，带地址）、`app\mechanics.json`（机读，19 项数值） |
+
+## 2. 目标（三层，顺序不可颠倒）
+
+1. **合规 1:1**：功能、菜单、页面、交互、数值、读数逻辑与原版一致；原版的广告/收费/社交直播等商业模块按"去商业"原则不实现，但要在差距矩阵里登记为"有意省略"。
+2. **可工程化**：单条命令可构建、可回归；两端数值同源；无版本控制的裸目录升级为 git 仓库 + 分支流程。
+3. **市场增量**：在不破坏 1:1 基线的前提下，按市场调研结论增量开发（P0 先做），增量功能必须可开关、不影响基线验收。
+
+## 3. 团队与分工
+
+| 成员 | 角色 | 一句话职责 | 主战场（目录所有权） |
+|---|---|---|---|
+| 技术总监 | 统筹/架构 | 定方案、拆任务、裁决技术取舍、验收把关；对用户唯一交付口 | 全局；`docs\` 决策记录 |
+| LC逆向 | 逆向分析 | 反编译证据链、数值/公式/页面/资源清单，输出 1:1 差距矩阵 | `app\MECHANICS.md`、`app\mechanics.json`、`docs\gap-matrix.md` |
+| LC产品 | 产品/市场 | 竞品与市场需求调研、PRD、优先级与验收标准 | `docs\product\` |
+| LC客户端 | 客户端开发 | Android UI/交互 + Rust 桌面版 UI/读数面板/知识库/截图 | `app\src\*.rs`、`app\android\app\src\main\java\**`（不含 map.html）、res |
+| LC地图 | 地图引擎 | 天地图底图/影像/地形、真 3D(DEM/WebGL)、JS 桥、坐向指针、街景、瓦片性能 | `app\android\app\src\main\assets\map.html`、地图相关 Java |
+| LC服务端 | 服务端/基建 | Docker 化本地服务、案例库/分享等增量 API、数据模型、构建脚本、git/CI 基建 | `backend\`（新建）、`scripts\`、`Dockerfile`、CI |
+| LC测试 | 测试/质量 | 自动化回归、真机冒烟、数值边界单测、性能与崩溃监控、bug 台账 | `tests\`、`docs\qa\` |
+
+### 3.1 边界与交接
+
+- 数值口径归 **LC逆向**；两端实现归 **LC客户端**；若实现与档案冲突，以 DEX/so 证据为准，由 LC逆向 更新档案后客户端跟进。
+- 地图相关一切（含 map.html 与 JS 桥）归 **LC地图**；客户端不改 map.html，只调用桥接口。
+- 测试发现的问题按模块指派给责任人，**LC测试 只复现与验证，不代改业务代码**。
+- 任一成员不得越界改他人目录；确需改动先群里说明、由技术总监裁决。
+
+## 4. 协作机制
+
+1. **任务在项目群下发**，一人一条，任务卡含：目标、验收标准、截止顺序、涉及文件。
+2. **改代码前先读** `app\MECHANICS.md` 与相关源码；禁止凭记忆写数值。
+3. **交付必须落盘**（仓库内文件/构建产物/截图/日志），只在聊天里说"做完了"不算交付。
+4. **汇报格式**：做了什么 → 证据（命令+结果/文件路径）→ 遗留问题 → 下一步。
+5. **不臆造**：任何数值、公式、行为结论必须能指向 DEX 反编译输出的类/方法/地址，或原版 APK 的可观测行为；无法证实的写"未确认"。
+
+## 5. 质量红线（每次改动必须过）
+
+### 5.1 桌面版（craft 三关，全部必须绿）
+```powershell
+cd E:\APPDetector\output\app; cargo build
+```
+- 构建成功（0 error）；
+- 程序能启动并绘制，窗口 1100×780（`checks\round-N\screenshot.png`）；
+- `app\mechanics.json` 19 项数值全部有来源、0 项估计。
+
+### 5.2 Android 版
+```powershell
+$env:JAVA_HOME='C:\Users\Administrator\tools\jdk17_tmp\jdk-17.0.21+9'
+$env:PATH="$env:JAVA_HOME\bin;C:\Users\Administrator\tools\gradle_tmp\gradle-8.7\bin;$env:PATH"
+cd E:\APPDetector\output\app\android; gradle assembleDebug --no-daemon
+adb -s L2E0222531014833 install -r app\build\outputs\apk\debug\app-debug.apk
+adb -s L2E0222531014833 shell am start -n com.luopan.fengshui/.MainActivity
+```
+- 构建成功且 APK 安装启动无崩溃（`adb logcat` 无 FATAL）；
+- 罗盘随传感器转动、读数面板数值与原版一致。
+
+### 5.3 数值一致性
+- 两端（Rust / Java）指标常量必须与 `mechanics.json` 同源；新增或修改数值必须同步改档案 + 两端 + 测试。
+
+### 5.4 版本控制
+- 分支：`main`（可构建基线，只合并绿）、`develop`（集成）、`feature/<成员>-<主题>`。
+- 小步提交，提交信息中文，写明「做什么 + 验证结果」。
+- 禁止提交构建产物、APK、日志、`.inspect`、`checks`。
+
+## 6. 里程碑
+
+| 里程碑 | 内容 | 完成判据 |
+|---|---|---|
+| M0 基线固化 | git 基线、章程、差距矩阵初版、双端构建脚本一键化 | `main` 可构建；差距矩阵覆盖全部模块 |
+| M1 1:1 收口 | 差距矩阵中"缺失/等价"项清零或给出不可行结论+理由 | 差距矩阵无"未决"；截图逐页对照 |
+| M2 市场增量 | P0 增量功能（产品出 PRD）开发完成 | 功能可开关；基线三关不回退 |
+| M3 质量与交付 | 自动化回归 + 真机冒烟 + 发布包 | 回归全绿；APK 可交付 |
+
+## 7. 当前已知风险
+
+1. `libterrain.so` 内含 `vmInterpret`（Dalvik VM 解释器），3D 地形为 VM 保护字节码，无法静态还原 → 走"天地图 DEM + WebGL 自研等效引擎"路线，需在差距矩阵登记为"等价替代"而非 1:1。
+2. `CompassToolsKt` 为深度混淆的 Compose（133 方法），逐像素圈层半径/配色抽取成本高、价值低 → 以原版运行截图逐层比对逼近，不必死抠常量。
+3. 天地图 APIKEY 为内置常量：增量开发若涉及商用配额，需 LC产品 与用户确认授权边界。
+4. 桌面版目前只有罗盘、没有地图：**LC 的正式产品线是 Android**，桌面版定位为演示/自动验收载体（craft 检查只认桌面版），故桌面端不追求与 Android 全功能对等，但数值与读数必须一致。
+5. 工程原为 craft 工作区（`craft.json`/`checks`），团队改造需保持三关不被破坏。

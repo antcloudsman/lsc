@@ -1,0 +1,19 @@
+services:
+  build:
+    build: .
+    working_dir: /src
+    # Source stays on the host; only the toolchain/dependencies live in the image.
+    volumes:
+      - .:/src
+      # Keep build artifacts inside Docker so they don't clobber the host's target/.
+      - cargo-target:/src/target
+      - cargo-cache:/usr/local/cargo/registry
+    environment:
+      # Headless GL so the app can render a screenshot without a display.
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - WGPU_BACKEND=gl
+    command: cargo build
+
+volumes:
+  cargo-target:
+  cargo-cache:

@@ -1,0 +1,46 @@
+{
+  "id": "ev_9a7743ef509f4ebf6cff60330326ae006c502d5010aa149ffbde06e63192a148",
+  "subject": {
+    "kind": "dex",
+    "sha256": "3ebd9104445e0655968d8735c018556982e93e8fd12e74c32d98a2d4b446997f",
+    "name": "00O000ll111l_1.dex"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 300,
+    "offset": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_1.dex",
+    "query": "space.xinzhi.globe"
+  },
+  "result": {
+    "classes": [],
+    "classes_total": 8639,
+    "dex_files": [
+      "00O000ll111l_1.dex"
+    ],
+    "matches": 0,
+    "query": "space.xinzhi.globe"
+  },
+  "summary": "0 of 8639 classes match \"space.xinzhi.globe\" in 1 DEX file(s); showing 0.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_1.dex"
+    }
+  ],
+  "links": []
+}

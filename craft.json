@@ -1,0 +1,1584 @@
+{
+  "version": 2,
+  "name": "swss",
+  "request": "深度分析和研究，做一个功能完全相同的应用，本机调试环境和依赖安装在本机docker里进行，源码可以在宿主机上。",
+  "target": {
+    "kind": "local",
+    "path": "E:\\APPDetector\\input\\swss.apk"
+  },
+  "stack": "Rust + egui (eframe)",
+  "status": "ready",
+  "note": "Ready: all 3 checks pass, 16 of 16 claims hold.",
+  "created_ms": 1793801140788,
+  "updated_ms": 1793815356587,
+  "checks": [
+    {
+      "round": 1,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793804520045
+    },
+    {
+      "round": 1,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-1\\screenshot.png"
+      ],
+      "at_ms": 1793804522192
+    },
+    {
+      "round": 1,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 15 values (15 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793804522194,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793805620143
+    },
+    {
+      "round": 2,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-2\\screenshot.png"
+      ],
+      "at_ms": 1793805622162
+    },
+    {
+      "round": 2,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 15 values (15 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793805622221,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793807061341
+    },
+    {
+      "round": 3,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-3\\screenshot.png"
+      ],
+      "at_ms": 1793807063380
+    },
+    {
+      "round": 3,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 15 values (15 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793807063382,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793808687967
+    },
+    {
+      "round": 4,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-4\\screenshot.png"
+      ],
+      "at_ms": 1793808690129
+    },
+    {
+      "round": 4,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 18 values (18 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793808690132,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793809918498
+    },
+    {
+      "round": 5,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-5\\screenshot.png"
+      ],
+      "at_ms": 1793809920867
+    },
+    {
+      "round": 5,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793809920870,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 6,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793810848111
+    },
+    {
+      "round": 6,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-6\\screenshot.png"
+      ],
+      "at_ms": 1793810850746
+    },
+    {
+      "round": 6,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793810850750,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 7,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793811282961
+    },
+    {
+      "round": 7,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-7\\screenshot.png"
+      ],
+      "at_ms": 1793811285174
+    },
+    {
+      "round": 7,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793811285178,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 8,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793811548956
+    },
+    {
+      "round": 8,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-8\\screenshot.png"
+      ],
+      "at_ms": 1793811552332
+    },
+    {
+      "round": 8,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793811552335,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 9,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793812101326
+    },
+    {
+      "round": 9,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-9\\screenshot.png"
+      ],
+      "at_ms": 1793812105252
+    },
+    {
+      "round": 9,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793812105257,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 10,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793812362374
+    },
+    {
+      "round": 10,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-10\\screenshot.png"
+      ],
+      "at_ms": 1793812364548
+    },
+    {
+      "round": 10,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793812364550,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 11,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793813204642
+    },
+    {
+      "round": 11,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-11\\screenshot.png"
+      ],
+      "at_ms": 1793813206451
+    },
+    {
+      "round": 11,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793813206452,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 12,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793813726421
+    },
+    {
+      "round": 12,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-12\\screenshot.png"
+      ],
+      "at_ms": 1793813728255
+    },
+    {
+      "round": 12,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793813728256,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 13,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793813959401
+    },
+    {
+      "round": 13,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-13\\screenshot.png"
+      ],
+      "at_ms": 1793813961665
+    },
+    {
+      "round": 13,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793813961667,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 14,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793814389442
+    },
+    {
+      "round": 14,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-14\\screenshot.png"
+      ],
+      "at_ms": 1793814391302
+    },
+    {
+      "round": 14,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793814391304,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 15,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793814700803
+    },
+    {
+      "round": 15,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-15\\screenshot.png"
+      ],
+      "at_ms": 1793814702755
+    },
+    {
+      "round": 15,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793814702756,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 16,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793815033773
+    },
+    {
+      "round": 16,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-16\\screenshot.png"
+      ],
+      "at_ms": 1793815035783
+    },
+    {
+      "round": 16,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793815035784,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 17,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1793815354643
+    },
+    {
+      "round": 17,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1100×780).",
+      "artifacts": [
+        "checks\\round-17\\screenshot.png"
+      ],
+      "at_ms": 1793815356579
+    },
+    {
+      "round": 17,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 19 values (19 with a source, 0 estimated).",
+      "artifacts": [],
+      "at_ms": 1793815356580,
+      "claims": [
+        {
+          "title": "mountains per circle (24) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "degrees per mountain (15) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "earth plate (地盘正针) offset (0) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "human plate (人盘中针) offset (-7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "heaven plate (天盘缝针) offset (7.5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "120 fenjin divisions (120) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "fenjin degrees each (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons (穿山七十二龙) divisions (72) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "72 dragons degrees each (5) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons (透地平分六十龙) divisions (60) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "60 dragons degrees each (6) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "64 hexagrams degrees each (5.625) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "bagua degrees each (45) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "jian xiang range (兼向) (3) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "zheng xiang range (正向) (9) is used in the code",
+          "passed": true
+        },
+        {
+          "title": "compass dial types (5) is used in the code",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "agent_session": "c9f4a38a-4e00-4da6-9035-cadca109236b",
+  "allowed_actions": [],
+  "last_reply": "反编译已经彻底完成，我明确、如实地回复，不再重复无效动作：\n\n**已反编译并带地址落地（全在 `app/MECHANICS.md`）：**\n- 原生壳 `JNI_OnLoad @ 0x5370`、`sub_1bf8c @ 0x1bf8c`；Java 壳 `space.xinzhi.globe.App`、`0OO00l111l1l`、`.updateIV.dat`。\n- `CompassReadTypeEnum`（14 圈层 interval/offset + `getFaceText`/`getBackText` 公式 + 120 分金名单 + 24 山顺序）、`CommonCompassEnum`（5 盘面）、`CompassToolsKt.B1/E0`、`libterrain.so` 的 `vmInterpret`、`MapWebView extends WebView` + `MapWebController`/`JSAction`。\n\n**这些值已全部用进构建**（60龙偏移 1.5°、正兼向中央 9°、64卦 5.625°、分金/龙「山名+甲子」格式、5 盘面切换、罗盘盖底图、列表→详情导航等），并已通过 `rebuild_check`（构建、1100×780 截图、19 项数值表、0 估计）。\n\n**客观剩余、且已无法再产出「真实数值」的只有**：Compose 逐像素圈层半径（纯 UI、深度混淆，已有等价 Canvas 实现）和 3D 地形引擎（`vmInterpret` VM 保护，已用天地图地形+3D 透视等价替换）。\n\n工程当前状态是「反编译完成 + 功能等价复刻完成 + 可编译可交接」，无需再重复反编译；可直接交给下一个 agent 继续完善（交接说明在 `app/README.md`）。",
+  "asset_budget_usd": 5.0,
+  "generate_assets": false
+}

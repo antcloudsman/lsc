@@ -1,0 +1,51 @@
+{
+  "id": "ev_4a0b7d716c112a4cecf5b4ae7176159c1ef1421a401132949964fd08df97481e",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 50,
+    "offset": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex",
+    "query": "HomeActivity"
+  },
+  "result": {
+    "classes": [],
+    "classes_total": 7698,
+    "dex_files": [
+      "classes06.dex"
+    ],
+    "matches": 0,
+    "query": "HomeActivity"
+  },
+  "summary": "0 of 7698 classes match \"HomeActivity\" in 1 DEX file(s); showing 0.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    }
+  ],
+  "links": []
+}

@@ -1,0 +1,182 @@
+{
+  "id": "ev_2775f6970a10b110268729cd0bc2d74868a89eee1d3b578085f98c577283ccfd",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.common.CompassReadTypeEnum",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "getFaceText",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "public",
+      "final"
+    ],
+    "class": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+    "dex": "classes06.dex",
+    "ins": 2,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x70",
+        "text": "invoke-direct {v2}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String;",
+        "units": 3
+      },
+      {
+        "offset": "0003",
+        "opcode": "0x0c",
+        "text": "move-result-object v0",
+        "units": 1
+      },
+      {
+        "offset": "0004",
+        "opcode": "0x52",
+        "text": "iget v1, v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->offsetDegrees:F",
+        "units": 2
+      },
+      {
+        "offset": "0006",
+        "opcode": "0xc7",
+        "text": "sub-float/2addr v3, v1",
+        "units": 1
+      },
+      {
+        "offset": "0007",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x168",
+        "units": 2
+      },
+      {
+        "offset": "0009",
+        "opcode": "0x82",
+        "text": "int-to-float v1, v1",
+        "units": 1
+      },
+      {
+        "offset": "000a",
+        "opcode": "0xc6",
+        "text": "add-float/2addr v3, v1",
+        "units": 1
+      },
+      {
+        "offset": "000b",
+        "opcode": "0xca",
+        "text": "rem-float/2addr v3, v1",
+        "units": 1
+      },
+      {
+        "offset": "000c",
+        "opcode": "0x52",
+        "text": "iget v1, v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->intervalDegrees:F",
+        "units": 2
+      },
+      {
+        "offset": "000e",
+        "opcode": "0xc9",
+        "text": "div-float/2addr v3, v1",
+        "units": 1
+      },
+      {
+        "offset": "000f",
+        "opcode": "0x87",
+        "text": "float-to-int v3, v3",
+        "units": 1
+      },
+      {
+        "offset": "0010",
+        "opcode": "0x3a",
+        "text": "if-ltz v3, :0018",
+        "units": 2
+      },
+      {
+        "offset": "0012",
+        "opcode": "0x21",
+        "text": "array-length v1, v0",
+        "units": 1
+      },
+      {
+        "offset": "0013",
+        "opcode": "0x35",
+        "text": "if-ge v3, v1, :0018",
+        "units": 2
+      },
+      {
+        "offset": "0015",
+        "opcode": "0x46",
+        "text": "aget-object v3, v0, v3",
+        "units": 2
+      },
+      {
+        "offset": "0017",
+        "opcode": "0x11",
+        "text": "return-object v3",
+        "units": 1
+      },
+      {
+        "offset": "0018",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"未知\"",
+        "units": 2
+      },
+      {
+        "offset": "001a",
+        "opcode": "0x11",
+        "text": "return-object v3",
+        "units": 1
+      }
+    ],
+    "instructions_total": 18,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: invoke-direct {v2}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String;\n0003: move-result-object v0\n0004: iget v1, v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->offsetDegrees:F\n0006: sub-float/2addr v3, v1\n0007: const/16 v1, 0x168\n0009: int-to-float v1, v1\n000a: add-float/2addr v3, v1\n000b: rem-float/2addr v3, v1\n000c: iget v1, v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->intervalDegrees:F\n000e: div-float/2addr v3, v1\n000f: float-to-int v3, v3\n0010: if-ltz v3, :0018\n0012: array-length v1, v0\n0013: if-ge v3, v1, :0018\n0015: aget-object v3, v0, v3\n0017: return-object v3\n0018: const-string v3, \"未知\"\n001a: return-object v3",
+    "method": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getFaceText(F)Ljava/lang/String;",
+    "outs": 1,
+    "overload_index": 0,
+    "overloads": [
+      "public final java.lang.String getFaceText(float)"
+    ],
+    "registers": 4,
+    "signature": "public final java.lang.String getFaceText(float)",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getFaceText(F)Ljava/lang/String; (classes06.dex): 18 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 18,
+    "total": 18
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getFaceText(F)Ljava/lang/String;"
+    }
+  ],
+  "links": []
+}

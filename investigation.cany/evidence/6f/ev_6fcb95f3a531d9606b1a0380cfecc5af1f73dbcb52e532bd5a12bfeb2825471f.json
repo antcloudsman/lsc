@@ -1,0 +1,717 @@
+{
+  "id": "ev_6fcb95f3a531d9606b1a0380cfecc5af1f73dbcb52e532bd5a12bfeb2825471f",
+  "subject": {
+    "kind": "dex",
+    "sha256": "3c089807fc5031facc8015dcccac00f95d36156567fe88548fa61f79be331ab6",
+    "name": "00O000ll111l_6.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.common.CommonCompassEnum",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "<clinit>",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex"
+  },
+  "result": {
+    "access": [
+      "static",
+      "constructor"
+    ],
+    "class": "Lspace/xinzhi/globe/common/CommonCompassEnum;",
+    "dex": "00O000ll111l_6.dex",
+    "ins": 0,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0001",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0002",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0003",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0004",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0005",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0006",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0007",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0008",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0009",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "000a",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "000b",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "000c",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "000d",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "000e",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "000f",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0010",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0011",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0012",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0013",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0014",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0015",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0016",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0017",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0018",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0019",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "001a",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "001b",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "001c",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "001d",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "001e",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "001f",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0020",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0021",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0022",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0023",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0024",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0025",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0026",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0027",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0028",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0029",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "002a",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "002b",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "002c",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "002d",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "002e",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "002f",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0030",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0031",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0032",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0033",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0034",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0035",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0036",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0037",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0038",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0039",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "003a",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "003b",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "003c",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "003d",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "003e",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "003f",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0040",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0041",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0042",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0043",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0044",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0045",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0046",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0047",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0048",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0049",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "004a",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "004b",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "004c",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "004d",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "004e",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "004f",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0050",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0051",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0052",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0053",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0054",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0055",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0056",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0057",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0058",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0059",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "005a",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "005b",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "005c",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "005d",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "005e",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "005f",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0060",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0061",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0062",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0063",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0064",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0065",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0066",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0067",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0068",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "0069",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "006a",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      },
+      {
+        "offset": "006b",
+        "opcode": "0x00",
+        "text": "nop",
+        "units": 1
+      }
+    ],
+    "instructions_total": 108,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: nop\n0001: nop\n0002: nop\n0003: nop\n0004: nop\n0005: nop\n0006: nop\n0007: nop\n0008: nop\n0009: nop\n000a: nop\n000b: nop\n000c: nop\n000d: nop\n000e: nop\n000f: nop\n0010: nop\n0011: nop\n0012: nop\n0013: nop\n0014: nop\n0015: nop\n0016: nop\n0017: nop\n0018: nop\n0019: nop\n001a: nop\n001b: nop\n001c: nop\n001d: nop\n001e: nop\n001f: nop\n0020: nop\n0021: nop\n0022: nop\n0023: nop\n0024: nop\n0025: nop\n0026: nop\n0027: nop\n0028: nop\n0029: nop\n002a: nop\n002b: nop\n002c: nop\n002d: nop\n002e: nop\n002f: nop\n0030: nop\n0031: nop\n0032: nop\n0033: nop\n0034: nop\n0035: nop\n0036: nop\n0037: nop\n0038: nop\n0039: nop\n003a: nop\n003b: nop\n003c: nop\n003d: nop\n003e: nop\n003f: nop\n0040: nop\n0041: nop\n0042: nop\n0043: nop\n0044: nop\n0045: nop\n0046: nop\n0047: nop\n0048: nop\n0049: nop\n004a: nop\n004b: nop\n004c: nop\n004d: nop\n004e: nop\n004f: nop\n0050: nop\n0051: nop\n0052: nop\n0053: nop\n0054: nop\n0055: nop\n0056: nop\n0057: nop\n0058: nop\n0059: nop\n005a: nop\n005b: nop\n005c: nop\n005d: nop\n005e: nop\n005f: nop\n0060: nop\n0061: nop\n0062: nop\n0063: nop\n0064: nop\n0065: nop\n0066: nop\n0067: nop\n0068: nop\n0069: nop\n006a: nop\n006b: nop",
+    "method": "Lspace/xinzhi/globe/common/CommonCompassEnum;-><clinit>()V",
+    "outs": 7,
+    "overload_index": 0,
+    "overloads": [
+      "static void <clinit>()"
+    ],
+    "registers": 11,
+    "signature": "static void <clinit>()",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/common/CommonCompassEnum;-><clinit>()V (00O000ll111l_6.dex): 108 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 108,
+    "total": 108
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/common/CommonCompassEnum;-><clinit>()V"
+    }
+  ],
+  "links": []
+}

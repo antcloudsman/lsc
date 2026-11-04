@@ -1,0 +1,1875 @@
+{
+  "id": "ev_05803e590229a2e9c07df080bcb45af7186056e6d2d1dfa401f4b55a2406b361",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.common.CompassReadTypeEnum",
+    "java_source": false,
+    "limit": 300,
+    "method_name": "getTextList",
+    "offset": 1500,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "private",
+      "final"
+    ],
+    "class": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+    "dex": "classes06.dex",
+    "ins": 1,
+    "instructions": [
+      {
+        "offset": "0bb0",
+        "opcode": "0x1a",
+        "text": "const-string v23, \"甲山 庚子\"",
+        "units": 2
+      },
+      {
+        "offset": "0bb2",
+        "opcode": "0x4d",
+        "text": "aput-object v23, v0, v22",
+        "units": 2
+      },
+      {
+        "offset": "0bb4",
+        "opcode": "0x1a",
+        "text": "const-string v22, \"甲山 壬子\"",
+        "units": 2
+      },
+      {
+        "offset": "0bb6",
+        "opcode": "0x4d",
+        "text": "aput-object v22, v0, v21",
+        "units": 2
+      },
+      {
+        "offset": "0bb8",
+        "opcode": "0x1a",
+        "text": "const-string v21, \"癸山 甲子\"",
+        "units": 2
+      },
+      {
+        "offset": "0bba",
+        "opcode": "0x4d",
+        "text": "aput-object v21, v0, v20",
+        "units": 2
+      },
+      {
+        "offset": "0bbc",
+        "opcode": "0x1a",
+        "text": "const-string v20, \"癸山 丙子\"",
+        "units": 2
+      },
+      {
+        "offset": "0bbe",
+        "opcode": "0x4d",
+        "text": "aput-object v20, v0, v19",
+        "units": 2
+      },
+      {
+        "offset": "0bc0",
+        "opcode": "0x1a",
+        "text": "const-string v19, \"癸山 戊子\"",
+        "units": 2
+      },
+      {
+        "offset": "0bc2",
+        "opcode": "0x4d",
+        "text": "aput-object v19, v0, v18",
+        "units": 2
+      },
+      {
+        "offset": "0bc4",
+        "opcode": "0x1a",
+        "text": "const-string v18, \"癸山 庚子\"",
+        "units": 2
+      },
+      {
+        "offset": "0bc6",
+        "opcode": "0x4d",
+        "text": "aput-object v18, v0, v17",
+        "units": 2
+      },
+      {
+        "offset": "0bc8",
+        "opcode": "0x1a",
+        "text": "const-string v17, \"癸山 壬子\"",
+        "units": 2
+      },
+      {
+        "offset": "0bca",
+        "opcode": "0x4d",
+        "text": "aput-object v17, v0, v16",
+        "units": 2
+      },
+      {
+        "offset": "0bcc",
+        "opcode": "0x1a",
+        "text": "const-string v16, \"丑山 乙丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0bce",
+        "opcode": "0x4d",
+        "text": "aput-object v16, v0, v15",
+        "units": 2
+      },
+      {
+        "offset": "0bd0",
+        "opcode": "0x1a",
+        "text": "const-string v15, \"丑山 丁丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0bd2",
+        "opcode": "0x4d",
+        "text": "aput-object v15, v0, v14",
+        "units": 2
+      },
+      {
+        "offset": "0bd4",
+        "opcode": "0x1a",
+        "text": "const-string v14, \"丑山 己丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0bd6",
+        "opcode": "0x4d",
+        "text": "aput-object v14, v0, v13",
+        "units": 2
+      },
+      {
+        "offset": "0bd8",
+        "opcode": "0x1a",
+        "text": "const-string v13, \"丑山 辛丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0bda",
+        "opcode": "0x4d",
+        "text": "aput-object v13, v0, v12",
+        "units": 2
+      },
+      {
+        "offset": "0bdc",
+        "opcode": "0x1a",
+        "text": "const-string v12, \"丑山 癸丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0bde",
+        "opcode": "0x4d",
+        "text": "aput-object v12, v0, v11",
+        "units": 2
+      },
+      {
+        "offset": "0be0",
+        "opcode": "0x1a",
+        "text": "const-string v11, \"艮山 乙丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0be2",
+        "opcode": "0x4d",
+        "text": "aput-object v11, v0, v10",
+        "units": 2
+      },
+      {
+        "offset": "0be4",
+        "opcode": "0x1a",
+        "text": "const-string v10, \"艮山 丁丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0be6",
+        "opcode": "0x4d",
+        "text": "aput-object v10, v0, v9",
+        "units": 2
+      },
+      {
+        "offset": "0be8",
+        "opcode": "0x1a",
+        "text": "const-string v9, \"艮山 己丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0bea",
+        "opcode": "0x4d",
+        "text": "aput-object v9, v0, v8",
+        "units": 2
+      },
+      {
+        "offset": "0bec",
+        "opcode": "0x1a",
+        "text": "const-string v8, \"艮山 辛丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0bee",
+        "opcode": "0x4d",
+        "text": "aput-object v8, v0, v7",
+        "units": 2
+      },
+      {
+        "offset": "0bf0",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"艮山 癸丑\"",
+        "units": 2
+      },
+      {
+        "offset": "0bf2",
+        "opcode": "0x4d",
+        "text": "aput-object v7, v0, v6",
+        "units": 2
+      },
+      {
+        "offset": "0bf4",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"寅山 甲寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0bf6",
+        "opcode": "0x4d",
+        "text": "aput-object v6, v0, v5",
+        "units": 2
+      },
+      {
+        "offset": "0bf8",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"寅山 丙寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0bfa",
+        "opcode": "0x4d",
+        "text": "aput-object v5, v0, v4",
+        "units": 2
+      },
+      {
+        "offset": "0bfc",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"寅山 戊寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0bfe",
+        "opcode": "0x4d",
+        "text": "aput-object v4, v0, v3",
+        "units": 2
+      },
+      {
+        "offset": "0c00",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"寅山 庚寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0c02",
+        "opcode": "0x4d",
+        "text": "aput-object v3, v0, v2",
+        "units": 2
+      },
+      {
+        "offset": "0c04",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"寅山 壬寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0c06",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c08",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x16",
+        "units": 2
+      },
+      {
+        "offset": "0c0a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山 甲寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0c0c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c0e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x17",
+        "units": 2
+      },
+      {
+        "offset": "0c10",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山 丙寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0c12",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c14",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x18",
+        "units": 2
+      },
+      {
+        "offset": "0c16",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山 戊寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0c18",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c1a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x19",
+        "units": 2
+      },
+      {
+        "offset": "0c1c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山 庚寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0c1e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c20",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1a",
+        "units": 2
+      },
+      {
+        "offset": "0c22",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山 壬寅\"",
+        "units": 2
+      },
+      {
+        "offset": "0c24",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c26",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1b",
+        "units": 2
+      },
+      {
+        "offset": "0c28",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山 乙卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c2a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c2c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1c",
+        "units": 2
+      },
+      {
+        "offset": "0c2e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山 丁卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c30",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c32",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1d",
+        "units": 2
+      },
+      {
+        "offset": "0c34",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山 己卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c36",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c38",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1e",
+        "units": 2
+      },
+      {
+        "offset": "0c3a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山 辛卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c3c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c3e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1f",
+        "units": 2
+      },
+      {
+        "offset": "0c40",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山 癸卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c42",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c44",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x20",
+        "units": 2
+      },
+      {
+        "offset": "0c46",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"已山 乙卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c48",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c4a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x21",
+        "units": 2
+      },
+      {
+        "offset": "0c4c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"已山 丁卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c4e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c50",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x22",
+        "units": 2
+      },
+      {
+        "offset": "0c52",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"已山 己卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c54",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c56",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x23",
+        "units": 2
+      },
+      {
+        "offset": "0c58",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"已山 辛卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c5a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c5c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x24",
+        "units": 2
+      },
+      {
+        "offset": "0c5e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"已山 癸卯\"",
+        "units": 2
+      },
+      {
+        "offset": "0c60",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c62",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x25",
+        "units": 2
+      },
+      {
+        "offset": "0c64",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山 甲辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c66",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c68",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x26",
+        "units": 2
+      },
+      {
+        "offset": "0c6a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山 丙辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c6c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c6e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x27",
+        "units": 2
+      },
+      {
+        "offset": "0c70",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山 戊辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c72",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c74",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x28",
+        "units": 2
+      },
+      {
+        "offset": "0c76",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山 庚辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c78",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c7a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x29",
+        "units": 2
+      },
+      {
+        "offset": "0c7c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山 壬辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c7e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c80",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2a",
+        "units": 2
+      },
+      {
+        "offset": "0c82",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山 甲辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c84",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c86",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2b",
+        "units": 2
+      },
+      {
+        "offset": "0c88",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山 丙辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c8a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c8c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2c",
+        "units": 2
+      },
+      {
+        "offset": "0c8e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山 戊辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c90",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c92",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2d",
+        "units": 2
+      },
+      {
+        "offset": "0c94",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山 庚辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c96",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c98",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2e",
+        "units": 2
+      },
+      {
+        "offset": "0c9a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山 壬辰\"",
+        "units": 2
+      },
+      {
+        "offset": "0c9c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0c9e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2f",
+        "units": 2
+      },
+      {
+        "offset": "0ca0",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山 乙巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0ca2",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0ca4",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x30",
+        "units": 2
+      },
+      {
+        "offset": "0ca6",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山 丁巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0ca8",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0caa",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x31",
+        "units": 2
+      },
+      {
+        "offset": "0cac",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山 己巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0cae",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cb0",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x32",
+        "units": 2
+      },
+      {
+        "offset": "0cb2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山 辛巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0cb4",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cb6",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x33",
+        "units": 2
+      },
+      {
+        "offset": "0cb8",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山 癸巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0cba",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cbc",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x34",
+        "units": 2
+      },
+      {
+        "offset": "0cbe",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山 乙巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0cc0",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cc2",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x35",
+        "units": 2
+      },
+      {
+        "offset": "0cc4",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山 丁巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0cc6",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cc8",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x36",
+        "units": 2
+      },
+      {
+        "offset": "0cca",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山 己巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0ccc",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cce",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x37",
+        "units": 2
+      },
+      {
+        "offset": "0cd0",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山 辛巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0cd2",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cd4",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x38",
+        "units": 2
+      },
+      {
+        "offset": "0cd6",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山 癸巳\"",
+        "units": 2
+      },
+      {
+        "offset": "0cd8",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cda",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x39",
+        "units": 2
+      },
+      {
+        "offset": "0cdc",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山 甲午\"",
+        "units": 2
+      },
+      {
+        "offset": "0cde",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0ce0",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3a",
+        "units": 2
+      },
+      {
+        "offset": "0ce2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山 丙午\"",
+        "units": 2
+      },
+      {
+        "offset": "0ce4",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0ce6",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3b",
+        "units": 2
+      },
+      {
+        "offset": "0ce8",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山 戊午\"",
+        "units": 2
+      },
+      {
+        "offset": "0cea",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cec",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3c",
+        "units": 2
+      },
+      {
+        "offset": "0cee",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山 庚午\"",
+        "units": 2
+      },
+      {
+        "offset": "0cf0",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cf2",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3d",
+        "units": 2
+      },
+      {
+        "offset": "0cf4",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山 壬午\"",
+        "units": 2
+      },
+      {
+        "offset": "0cf6",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cf8",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3e",
+        "units": 2
+      },
+      {
+        "offset": "0cfa",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山 甲午\"",
+        "units": 2
+      },
+      {
+        "offset": "0cfc",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0cfe",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3f",
+        "units": 2
+      },
+      {
+        "offset": "0d00",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山 丙午\"",
+        "units": 2
+      },
+      {
+        "offset": "0d02",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d04",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x40",
+        "units": 2
+      },
+      {
+        "offset": "0d06",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山 戊午\"",
+        "units": 2
+      },
+      {
+        "offset": "0d08",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d0a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x41",
+        "units": 2
+      },
+      {
+        "offset": "0d0c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山 庚午\"",
+        "units": 2
+      },
+      {
+        "offset": "0d0e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d10",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x42",
+        "units": 2
+      },
+      {
+        "offset": "0d12",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山 壬午\"",
+        "units": 2
+      },
+      {
+        "offset": "0d14",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d16",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x43",
+        "units": 2
+      },
+      {
+        "offset": "0d18",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山 乙未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d1a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d1c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x44",
+        "units": 2
+      },
+      {
+        "offset": "0d1e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山 丁未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d20",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d22",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x45",
+        "units": 2
+      },
+      {
+        "offset": "0d24",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山 己未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d26",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d28",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x46",
+        "units": 2
+      },
+      {
+        "offset": "0d2a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山 辛未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d2c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d2e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x47",
+        "units": 2
+      },
+      {
+        "offset": "0d30",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山 癸未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d32",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d34",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x48",
+        "units": 2
+      },
+      {
+        "offset": "0d36",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山 乙未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d38",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d3a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x49",
+        "units": 2
+      },
+      {
+        "offset": "0d3c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山 丁未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d3e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d40",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4a",
+        "units": 2
+      },
+      {
+        "offset": "0d42",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山 己未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d44",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d46",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4b",
+        "units": 2
+      },
+      {
+        "offset": "0d48",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山 辛未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d4a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d4c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4c",
+        "units": 2
+      },
+      {
+        "offset": "0d4e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山 癸未\"",
+        "units": 2
+      },
+      {
+        "offset": "0d50",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d52",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4d",
+        "units": 2
+      },
+      {
+        "offset": "0d54",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山 甲申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d56",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d58",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4e",
+        "units": 2
+      },
+      {
+        "offset": "0d5a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山 丙申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d5c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d5e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4f",
+        "units": 2
+      },
+      {
+        "offset": "0d60",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山 戊申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d62",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d64",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x50",
+        "units": 2
+      },
+      {
+        "offset": "0d66",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山 庚申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d68",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d6a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x51",
+        "units": 2
+      },
+      {
+        "offset": "0d6c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山 壬申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d6e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d70",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x52",
+        "units": 2
+      },
+      {
+        "offset": "0d72",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"庚山 甲申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d74",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d76",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x53",
+        "units": 2
+      },
+      {
+        "offset": "0d78",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"庚山 丙申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d7a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d7c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x54",
+        "units": 2
+      },
+      {
+        "offset": "0d7e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"庚山 戊申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d80",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d82",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x55",
+        "units": 2
+      },
+      {
+        "offset": "0d84",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"庚山 庚申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d86",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d88",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x56",
+        "units": 2
+      },
+      {
+        "offset": "0d8a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"庚山 壬申\"",
+        "units": 2
+      },
+      {
+        "offset": "0d8c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d8e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x57",
+        "units": 2
+      },
+      {
+        "offset": "0d90",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"酉山 乙酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0d92",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d94",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x58",
+        "units": 2
+      },
+      {
+        "offset": "0d96",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"酉山 丁酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0d98",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0d9a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x59",
+        "units": 2
+      },
+      {
+        "offset": "0d9c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"酉山 己酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0d9e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0da0",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x5a",
+        "units": 2
+      },
+      {
+        "offset": "0da2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"酉山 辛酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0da4",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0da6",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x5b",
+        "units": 2
+      },
+      {
+        "offset": "0da8",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"酉山 癸酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0daa",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0dac",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x5c",
+        "units": 2
+      },
+      {
+        "offset": "0dae",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辛山 乙酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0db0",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0db2",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x5d",
+        "units": 2
+      },
+      {
+        "offset": "0db4",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辛山 丁酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0db6",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0db8",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x5e",
+        "units": 2
+      },
+      {
+        "offset": "0dba",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辛山 己酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0dbc",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0dbe",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x5f",
+        "units": 2
+      },
+      {
+        "offset": "0dc0",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辛山 辛酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0dc2",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0dc4",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x60",
+        "units": 2
+      },
+      {
+        "offset": "0dc6",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辛山 癸酉\"",
+        "units": 2
+      },
+      {
+        "offset": "0dc8",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0dca",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x61",
+        "units": 2
+      },
+      {
+        "offset": "0dcc",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"戌山 甲戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0dce",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0dd0",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x62",
+        "units": 2
+      },
+      {
+        "offset": "0dd2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"戌山 丙戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0dd4",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0dd6",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x63",
+        "units": 2
+      },
+      {
+        "offset": "0dd8",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"戌山 戊戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0dda",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0ddc",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x64",
+        "units": 2
+      },
+      {
+        "offset": "0dde",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"戌山 庚戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0de0",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0de2",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x65",
+        "units": 2
+      },
+      {
+        "offset": "0de4",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"戌山 壬戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0de6",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0de8",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x66",
+        "units": 2
+      },
+      {
+        "offset": "0dea",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乾山 甲戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0dec",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0dee",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x67",
+        "units": 2
+      },
+      {
+        "offset": "0df0",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乾山 丙戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0df2",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0df4",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x68",
+        "units": 2
+      },
+      {
+        "offset": "0df6",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乾山 戊戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0df8",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0dfa",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x69",
+        "units": 2
+      },
+      {
+        "offset": "0dfc",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乾山 庚戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0dfe",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0e00",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x6a",
+        "units": 2
+      },
+      {
+        "offset": "0e02",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乾山 壬戌\"",
+        "units": 2
+      },
+      {
+        "offset": "0e04",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0e06",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x6b",
+        "units": 2
+      }
+    ],
+    "instructions_total": 2144,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0bb0: const-string v23, \"甲山 庚子\"\n0bb2: aput-object v23, v0, v22\n0bb4: const-string v22, \"甲山 壬子\"\n0bb6: aput-object v22, v0, v21\n0bb8: const-string v21, \"癸山 甲子\"\n0bba: aput-object v21, v0, v20\n0bbc: const-string v20, \"癸山 丙子\"\n0bbe: aput-object v20, v0, v19\n0bc0: const-string v19, \"癸山 戊子\"\n0bc2: aput-object v19, v0, v18\n0bc4: const-string v18, \"癸山 庚子\"\n0bc6: aput-object v18, v0, v17\n0bc8: const-string v17, \"癸山 壬子\"\n0bca: aput-object v17, v0, v16\n0bcc: const-string v16, \"丑山 乙丑\"\n0bce: aput-object v16, v0, v15\n0bd0: const-string v15, \"丑山 丁丑\"\n0bd2: aput-object v15, v0, v14\n0bd4: const-string v14, \"丑山 己丑\"\n0bd6: aput-object v14, v0, v13\n0bd8: const-string v13, \"丑山 辛丑\"\n0bda: aput-object v13, v0, v12\n0bdc: const-string v12, \"丑山 癸丑\"\n0bde: aput-object v12, v0, v11\n0be0: const-string v11, \"艮山 乙丑\"\n0be2: aput-object v11, v0, v10\n0be4: const-string v10, \"艮山 丁丑\"\n0be6: aput-object v10, v0, v9\n0be8: const-string v9, \"艮山 己丑\"\n0bea: aput-object v9, v0, v8\n0bec: const-string v8, \"艮山 辛丑\"\n0bee: aput-object v8, v0, v7\n0bf0: const-string v7, \"艮山 癸丑\"\n0bf2: aput-object v7, v0, v6\n0bf4: const-string v6, \"寅山 甲寅\"\n0bf6: aput-object v6, v0, v5\n0bf8: const-string v5, \"寅山 丙寅\"\n0bfa: aput-object v5, v0, v4\n0bfc: const-string v4, \"寅山 戊寅\"\n0bfe: aput-object v4, v0, v3\n0c00: const-string v3, \"寅山 庚寅\"\n0c02: aput-object v3, v0, v2\n0c04: const-string v2, \"寅山 壬寅\"\n0c06: aput-object v2, v0, v1\n0c08: const/16 v1, 0x16\n0c0a: const-string v2, \"甲山 甲寅\"\n0c0c: aput-object v2, v0, v1\n0c0e: const/16 v1, 0x17\n0c10: const-string v2, \"甲山 丙寅\"\n0c12: aput-object v2, v0, v1\n0c14: const/16 v1, 0x18\n0c16: const-string v2, \"甲山 戊寅\"\n0c18: aput-object v2, v0, v1\n0c1a: const/16 v1, 0x19\n0c1c: const-string v2, \"甲山 庚寅\"\n0c1e: aput-object v2, v0, v1\n0c20: const/16 v1, 0x1a\n0c22: const-string v2, \"甲山 壬寅\"\n0c24: aput-object v2, v0, v1\n0c26: const/16 v1, 0x1b\n0c28: const-string v2, \"卯山 乙卯\"\n0c2a: aput-object v2, v0, v1\n0c2c: const/16 v1, 0x1c\n0c2e: const-string v2, \"卯山 丁卯\"\n0c30: aput-object v2, v0, v1\n0c32: const/16 v1, 0x1d\n0c34: const-string v2, \"卯山 己卯\"\n0c36: aput-object v2, v0, v1\n0c38: const/16 v1, 0x1e\n0c3a: const-string v2, \"卯山 辛卯\"\n0c3c: aput-object v2, v0, v1\n0c3e: const/16 v1, 0x1f\n0c40: const-string v2, \"卯山 癸卯\"\n0c42: aput-object v2, v0, v1\n0c44: const/16 v1, 0x20\n0c46: const-string v2, \"已山 乙卯\"\n0c48: aput-object v2, v0, v1\n0c4a: const/16 v1, 0x21\n0c4c: const-string v2, \"已山 丁卯\"\n0c4e: aput-object v2, v0, v1\n0c50: const/16 v1, 0x22\n0c52: const-string v2, \"已山 己卯\"\n0c54: aput-object v2, v0, v1\n0c56: const/16 v1, 0x23\n0c58: const-string v2, \"已山 辛卯\"\n0c5a: aput-object v2, v0, v1\n0c5c: const/16 v1, 0x24\n0c5e: const-string v2, \"已山 癸卯\"\n0c60: aput-object v2, v0, v1\n0c62: const/16 v1, 0x25\n0c64: const-string v2, \"辰山 甲辰\"\n0c66: aput-object v2, v0, v1\n0c68: const/16 v1, 0x26\n0c6a: const-string v2, \"辰山 丙辰\"\n0c6c: aput-object v2, v0, v1\n0c6e: const/16 v1, 0x27\n0c70: const-string v2, \"辰山 戊辰\"\n0c72: aput-object v2, v0, v1\n0c74: const/16 v1, 0x28\n0c76: const-string v2, \"辰山 庚辰\"\n0c78: aput-object v2, v0, v1\n0c7a: const/16 v1, 0x29\n0c7c: const-string v2, \"辰山 壬辰\"\n0c7e: aput-object v2, v0, v1\n0c80: const/16 v1, 0x2a\n0c82: const-string v2, \"巽山 甲辰\"\n0c84: aput-object v2, v0, v1\n0c86: const/16 v1, 0x2b\n0c88: const-string v2, \"巽山 丙辰\"\n0c8a: aput-object v2, v0, v1\n0c8c: const/16 v1, 0x2c\n0c8e: const-string v2, \"巽山 戊辰\"\n0c90: aput-object v2, v0, v1\n0c92: const/16 v1, 0x2d\n0c94: const-string v2, \"巽山 庚辰\"\n0c96: aput-object v2, v0, v1\n0c98: const/16 v1, 0x2e\n0c9a: const-string v2, \"巽山 壬辰\"\n0c9c: aput-object v2, v0, v1\n0c9e: const/16 v1, 0x2f\n0ca0: const-string v2, \"巳山 乙巳\"\n0ca2: aput-object v2, v0, v1\n0ca4: const/16 v1, 0x30\n0ca6: const-string v2, \"巳山 丁巳\"\n0ca8: aput-object v2, v0, v1\n0caa: const/16 v1, 0x31\n0cac: const-string v2, \"巳山 己巳\"\n0cae: aput-object v2, v0, v1\n0cb0: const/16 v1, 0x32\n0cb2: const-string v2, \"巳山 辛巳\"\n0cb4: aput-object v2, v0, v1\n0cb6: const/16 v1, 0x33\n0cb8: const-string v2, \"巳山 癸巳\"\n0cba: aput-object v2, v0, v1\n0cbc: const/16 v1, 0x34\n0cbe: const-string v2, \"丙山 乙巳\"\n0cc0: aput-object v2, v0, v1\n0cc2: const/16 v1, 0x35\n0cc4: const-string v2, \"丙山 丁巳\"\n0cc6: aput-object v2, v0, v1\n0cc8: const/16 v1, 0x36\n0cca: const-string v2, \"丙山 己巳\"\n0ccc: aput-object v2, v0, v1\n0cce: const/16 v1, 0x37\n0cd0: const-string v2, \"丙山 辛巳\"\n0cd2: aput-object v2, v0, v1\n0cd4: const/16 v1, 0x38\n0cd6: const-string v2, \"丙山 癸巳\"\n0cd8: aput-object v2, v0, v1\n0cda: const/16 v1, 0x39\n0cdc: const-string v2, \"午山 甲午\"\n0cde: aput-object v2, v0, v1\n0ce0: const/16 v1, 0x3a\n0ce2: const-string v2, \"午山 丙午\"\n0ce4: aput-object v2, v0, v1\n0ce6: const/16 v1, 0x3b\n0ce8: const-string v2, \"午山 戊午\"\n0cea: aput-object v2, v0, v1\n0cec: const/16 v1, 0x3c\n0cee: const-string v2, \"午山 庚午\"\n0cf0: aput-object v2, v0, v1\n0cf2: const/16 v1, 0x3d\n0cf4: const-string v2, \"午山 壬午\"\n0cf6: aput-object v2, v0, v1\n0cf8: const/16 v1, 0x3e\n0cfa: const-string v2, \"丁山 甲午\"\n0cfc: aput-object v2, v0, v1\n0cfe: const/16 v1, 0x3f\n0d00: const-string v2, \"丁山 丙午\"\n0d02: aput-object v2, v0, v1\n0d04: const/16 v1, 0x40\n0d06: const-string v2, \"丁山 戊午\"\n0d08: aput-object v2, v0, v1\n0d0a: const/16 v1, 0x41\n0d0c: const-string v2, \"丁山 庚午\"\n0d0e: aput-object v2, v0, v1\n0d10: const/16 v1, 0x42\n0d12: const-string v2, \"丁山 壬午\"\n0d14: aput-object v2, v0, v1\n0d16: const/16 v1, 0x43\n0d18: const-string v2, \"未山 乙未\"\n0d1a: aput-object v2, v0, v1\n0d1c: const/16 v1, 0x44\n0d1e: const-string v2, \"未山 丁未\"\n0d20: aput-object v2, v0, v1\n0d22: const/16 v1, 0x45\n0d24: const-string v2, \"未山 己未\"\n0d26: aput-object v2, v0, v1\n0d28: const/16 v1, 0x46\n0d2a: const-string v2, \"未山 辛未\"\n0d2c: aput-object v2, v0, v1\n0d2e: const/16 v1, 0x47\n0d30: const-string v2, \"未山 癸未\"\n0d32: aput-object v2, v0, v1\n0d34: const/16 v1, 0x48\n0d36: const-string v2, \"坤山 乙未\"\n0d38: aput-object v2, v0, v1\n0d3a: const/16 v1, 0x49\n0d3c: const-string v2, \"坤山 丁未\"\n0d3e: aput-object v2, v0, v1\n0d40: const/16 v1, 0x4a\n0d42: const-string v2, \"坤山 己未\"\n0d44: aput-object v2, v0, v1\n0d46: const/16 v1, 0x4b\n0d48: const-string v2, \"坤山 辛未\"\n0d4a: aput-object v2, v0, v1\n0d4c: const/16 v1, 0x4c\n0d4e: const-string v2, \"坤山 癸未\"\n0d50: aput-object v2, v0, v1\n0d52: const/16 v1, 0x4d\n0d54: const-string v2, \"申山 甲申\"\n0d56: aput-object v2, v0, v1\n0d58: const/16 v1, 0x4e\n0d5a: const-string v2, \"申山 丙申\"\n0d5c: aput-object v2, v0, v1\n0d5e: const/16 v1, 0x4f\n0d60: const-string v2, \"申山 戊申\"\n0d62: aput-object v2, v0, v1\n0d64: const/16 v1, 0x50\n0d66: const-string v2, \"申山 庚申\"\n0d68: aput-object v2, v0, v1\n0d6a: const/16 v1, 0x51\n0d6c: const-string v2, \"申山 壬申\"\n0d6e: aput-object v2, v0, v1\n0d70: const/16 v1, 0x52\n0d72: const-string v2, \"庚山 甲申\"\n0d74: aput-object v2, v0, v1\n0d76: const/16 v1, 0x53\n0d78: const-string v2, \"庚山 丙申\"\n0d7a: aput-object v2, v0, v1\n0d7c: const/16 v1, 0x54\n0d7e: const-string v2, \"庚山 戊申\"\n0d80: aput-object v2, v0, v1\n0d82: const/16 v1, 0x55\n0d84: const-string v2, \"庚山 庚申\"\n0d86: aput-object v2, v0, v1\n0d88: const/16 v1, 0x56\n0d8a: const-string v2, \"庚山 壬申\"\n0d8c: aput-object v2, v0, v1\n0d8e: const/16 v1, 0x57\n0d90: const-string v2, \"酉山 乙酉\"\n0d92: aput-object v2, v0, v1\n0d94: const/16 v1, 0x58\n0d96: const-string v2, \"酉山 丁酉\"\n0d98: aput-object v2, v0, v1\n0d9a: const/16 v1, 0x59\n0d9c: const-string v2, \"酉山 己酉\"\n0d9e: aput-object v2, v0, v1\n0da0: const/16 v1, 0x5a\n0da2: const-string v2, \"酉山 辛酉\"\n0da4: aput-object v2, v0, v1\n0da6: const/16 v1, 0x5b\n0da8: const-string v2, \"酉山 癸酉\"\n0daa: aput-object v2, v0, v1\n0dac: const/16 v1, 0x5c\n0dae: const-string v2, \"辛山 乙酉\"\n0db0: aput-object v2, v0, v1\n0db2: const/16 v1, 0x5d\n0db4: const-string v2, \"辛山 丁酉\"\n0db6: aput-object v2, v0, v1\n0db8: const/16 v1, 0x5e\n0dba: const-string v2, \"辛山 己酉\"\n0dbc: aput-object v2, v0, v1\n0dbe: const/16 v1, 0x5f\n0dc0: const-string v2, \"辛山 辛酉\"\n0dc2: aput-object v2, v0, v1\n0dc4: const/16 v1, 0x60\n0dc6: const-string v2, \"辛山 癸酉\"\n0dc8: aput-object v2, v0, v1\n0dca: const/16 v1, 0x61\n0dcc: const-string v2, \"戌山 甲戌\"\n0dce: aput-object v2, v0, v1\n0dd0: const/16 v1, 0x62\n0dd2: const-string v2, \"戌山 丙戌\"\n0dd4: aput-object v2, v0, v1\n0dd6: const/16 v1, 0x63\n0dd8: const-string v2, \"戌山 戊戌\"\n0dda: aput-object v2, v0, v1\n0ddc: const/16 v1, 0x64\n0dde: const-string v2, \"戌山 庚戌\"\n0de0: aput-object v2, v0, v1\n0de2: const/16 v1, 0x65\n0de4: const-string v2, \"戌山 壬戌\"\n0de6: aput-object v2, v0, v1\n0de8: const/16 v1, 0x66\n0dea: const-string v2, \"乾山 甲戌\"\n0dec: aput-object v2, v0, v1\n0dee: const/16 v1, 0x67\n0df0: const-string v2, \"乾山 丙戌\"\n0df2: aput-object v2, v0, v1\n0df4: const/16 v1, 0x68\n0df6: const-string v2, \"乾山 戊戌\"\n0df8: aput-object v2, v0, v1\n0dfa: const/16 v1, 0x69\n0dfc: const-string v2, \"乾山 庚戌\"\n0dfe: aput-object v2, v0, v1\n0e00: const/16 v1, 0x6a\n0e02: const-string v2, \"乾山 壬戌\"\n0e04: aput-object v2, v0, v1\n0e06: const/16 v1, 0x6b",
+    "method": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String;",
+    "outs": 1,
+    "overload_index": 0,
+    "overloads": [
+      "private final java.lang.String[] getTextList()"
+    ],
+    "registers": 25,
+    "signature": "private final java.lang.String[] getTextList()",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String; (classes06.dex): 2144 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 300,
+    "total": 2144,
+    "next_offset": 1800
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String;"
+    }
+  ],
+  "links": []
+}

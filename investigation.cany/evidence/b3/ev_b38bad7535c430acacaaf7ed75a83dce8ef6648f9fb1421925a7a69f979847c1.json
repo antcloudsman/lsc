@@ -1,0 +1,403 @@
+{
+  "id": "ev_b38bad7535c430acacaaf7ed75a83dce8ef6648f9fb1421925a7a69f979847c1",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "android_class_show",
+  "params": {
+    "class_name": "com.wrapper.proxyapplication.WrapperProxyApplication",
+    "path": "E:\\APPDetector\\input\\swss.apk"
+  },
+  "result": {
+    "access": [
+      "public",
+      "abstract"
+    ],
+    "annotations": [],
+    "descriptor": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;",
+    "dex": "classes.dex",
+    "fields": [
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "baseContext",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->baseContext:Landroid/content/Context;",
+        "type": "android.content.Context"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "className",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->className:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "counter",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->counter:I",
+        "type": "int"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "dynconfclass",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->dynconfclass:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "dynconfmethod",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->dynconfmethod:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "errormsg",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->errormsg:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "mLoader",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->mLoader:Ljava/lang/ClassLoader;",
+        "type": "java.lang.ClassLoader"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "mtoast",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->mtoast:Landroid/widget/Toast;",
+        "type": "android.widget.Toast"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "pkgName",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->pkgName:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "protectlib",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->protectlib:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "protectlibx86",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->protectlibx86:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "reportapiclass",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->reportapiclass:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "reportapimethod",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->reportapimethod:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "shellApp",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->shellApp:Landroid/app/Application;",
+        "type": "android.app.Application"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "shellsuperversion",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->shellsuperversion:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "tinkerApp",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->tinkerApp:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "waringmsg",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->waringmsg:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "kind": "static",
+        "name": "yaqdate",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->yaqdate:I",
+        "type": "int"
+      },
+      {
+        "access": [],
+        "kind": "instance",
+        "name": "actiontimer",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->actiontimer:Ljava/util/Timer;",
+        "type": "java.util.Timer"
+      },
+      {
+        "access": [],
+        "kind": "instance",
+        "name": "errortoasttask",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->errortoasttask:Ljava/util/TimerTask;",
+        "type": "java.util.TimerTask"
+      },
+      {
+        "access": [],
+        "kind": "instance",
+        "name": "mHandler",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->mHandler:Landroid/os/Handler;",
+        "type": "android.os.Handler"
+      },
+      {
+        "access": [],
+        "kind": "instance",
+        "name": "timer",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->timer:Ljava/util/Timer;",
+        "type": "java.util.Timer"
+      },
+      {
+        "access": [],
+        "kind": "instance",
+        "name": "toasttask",
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->toasttask:Ljava/util/TimerTask;",
+        "type": "java.util.TimerTask"
+      }
+    ],
+    "interfaces": [],
+    "methods": [
+      {
+        "access": [
+          "static",
+          "constructor"
+        ],
+        "code_units": 62,
+        "kind": "direct",
+        "name": "<clinit>",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;-><clinit>()V",
+        "registers": 2,
+        "signature": "static void <clinit>()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "constructor"
+        ],
+        "code_units": 35,
+        "kind": "direct",
+        "name": "<init>",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;-><init>()V",
+        "registers": 2,
+        "signature": "public void <init>()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "declared-synchronized"
+        ],
+        "code_units": 79,
+        "kind": "direct",
+        "name": "Fixappname",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->Fixappname()Z",
+        "registers": 3,
+        "signature": "private declared-synchronized boolean Fixappname()",
+        "try_blocks": 1
+      },
+      {
+        "access": [
+          "public",
+          "static"
+        ],
+        "code_units": 22,
+        "kind": "direct",
+        "name": "fixAndroid",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->fixAndroid(Landroid/content/Context;Landroid/app/Application;)V",
+        "registers": 4,
+        "signature": "public static void fixAndroid(android.content.Context, android.app.Application)",
+        "try_blocks": 1
+      },
+      {
+        "access": [
+          "private",
+          "static"
+        ],
+        "code_units": 23,
+        "kind": "direct",
+        "name": "getVersionCode",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->getVersionCode(Landroid/content/Context;)Ljava/lang/String;",
+        "registers": 4,
+        "signature": "private static java.lang.String getVersionCode(android.content.Context)",
+        "try_blocks": 1
+      },
+      {
+        "access": [
+          "static"
+        ],
+        "code_units": 3,
+        "kind": "direct",
+        "name": "getWrapperProxyAppBaseContext",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->getWrapperProxyAppBaseContext()Landroid/content/Context;",
+        "registers": 1,
+        "signature": "static android.content.Context getWrapperProxyAppBaseContext()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "static",
+          "native"
+        ],
+        "code_units": null,
+        "kind": "direct",
+        "name": "unsetenv",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->unsetenv(Ljava/lang/String;)V",
+        "registers": null,
+        "signature": "static native void unsetenv(java.lang.String)",
+        "try_blocks": null
+      },
+      {
+        "access": [
+          "native"
+        ],
+        "code_units": null,
+        "kind": "virtual",
+        "name": "Ooo0ooO0oO",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->Ooo0ooO0oO()V",
+        "registers": null,
+        "signature": "native void Ooo0ooO0oO()",
+        "try_blocks": null
+      },
+      {
+        "access": [
+          "protected"
+        ],
+        "code_units": 22,
+        "kind": "virtual",
+        "name": "attachBaseContext",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->attachBaseContext(Landroid/content/Context;)V",
+        "registers": 3,
+        "signature": "protected void attachBaseContext(android.content.Context)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "protected",
+          "abstract"
+        ],
+        "code_units": null,
+        "kind": "virtual",
+        "name": "initProxyApplication",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->initProxyApplication(Landroid/content/Context;)V",
+        "registers": null,
+        "signature": "protected abstract void initProxyApplication(android.content.Context)",
+        "try_blocks": null
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "code_units": 44,
+        "kind": "virtual",
+        "name": "onCreate",
+        "overload_index": 0,
+        "reference": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;->onCreate()V",
+        "registers": 14,
+        "signature": "public void onCreate()",
+        "try_blocks": 0
+      }
+    ],
+    "name": "com.wrapper.proxyapplication.WrapperProxyApplication",
+    "source_file": "WrapperProxyApplication.java",
+    "superclass": "Landroid/app/Application;"
+  },
+  "summary": "com.wrapper.proxyapplication.WrapperProxyApplication (classes.dex) extends android.app.Application: 23 fields, 11 methods, from WrapperProxyApplication.java.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\input\\swss.apk"
+    },
+    {
+      "kind": "class",
+      "value": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;"
+    }
+  ],
+  "links": []
+}

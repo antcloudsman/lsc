@@ -1,0 +1,561 @@
+{
+  "id": "ev_f3b45cf14e73cfffa0a6fba06dcbaa591ef1205601e8cd6b6e533e6cacb7b2d8",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_class_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.map.MapWebController",
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "public",
+      "final"
+    ],
+    "annotations": [
+      "Landroidx/compose/runtime/internal/StabilityInferred; (build)",
+      "Ldalvik/annotation/MemberClasses; (system)",
+      "Ldalvik/annotation/SourceDebugExtension; (system)",
+      "Lkotlin/jvm/internal/SourceDebugExtension; (build)"
+    ],
+    "descriptor": "Lspace/xinzhi/globe/map/MapWebController;",
+    "dex": "classes06.dex",
+    "fields": [
+      {
+        "access": [
+          "public",
+          "static",
+          "final"
+        ],
+        "kind": "static",
+        "name": "$stable",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->$stable:I",
+        "type": "int"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final"
+        ],
+        "kind": "static",
+        "name": "Companion",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->Companion:Lspace/xinzhi/globe/map/MapWebController$Companion;",
+        "type": "space.xinzhi.globe.map.MapWebController$Companion"
+      },
+      {
+        "access": [
+          "private",
+          "static",
+          "final"
+        ],
+        "kind": "static",
+        "name": "NOT_PRINT_LOG_API_ACTION",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->NOT_PRINT_LOG_API_ACTION:[Ljava/lang/String;",
+        "type": "java.lang.String[]"
+      },
+      {
+        "access": [
+          "private",
+          "static",
+          "final"
+        ],
+        "kind": "static",
+        "name": "NOT_PRINT_LOG_INTERFACE_ACTION",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->NOT_PRINT_LOG_INTERFACE_ACTION:[Ljava/lang/String;",
+        "type": "java.lang.String[]"
+      },
+      {
+        "access": [
+          "private",
+          "static",
+          "final"
+        ],
+        "kind": "static",
+        "name": "TAG",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->TAG:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "callId",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->callId:I",
+        "type": "int"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "callbackCache",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->callbackCache:Ljava/util/HashMap;",
+        "type": "java.util.HashMap"
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "kind": "instance",
+        "name": "interfaceMethodCache",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->interfaceMethodCache:Ljava/util/HashMap;",
+        "type": "java.util.HashMap"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "mapWebInterface",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->mapWebInterface:Lspace/xinzhi/globe/map/MapWebInterface;",
+        "type": "space.xinzhi.globe.map.MapWebInterface"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "suppressLongPressUntil",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->suppressLongPressUntil:J",
+        "type": "long"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "suppressNextLongPress",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->suppressNextLongPress:Z",
+        "type": "boolean"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "webView",
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->webView:Landroid/webkit/WebView;",
+        "type": "android.webkit.WebView"
+      }
+    ],
+    "interfaces": [],
+    "methods": [
+      {
+        "access": [
+          "static",
+          "constructor"
+        ],
+        "code_units": 28,
+        "kind": "direct",
+        "name": "<clinit>",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;-><clinit>()V",
+        "registers": 2,
+        "signature": "static void <clinit>()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "constructor"
+        ],
+        "code_units": 32,
+        "kind": "direct",
+        "name": "<init>",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;-><init>()V",
+        "registers": 3,
+        "signature": "public void <init>()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "synthetic"
+        ],
+        "code_units": 5,
+        "kind": "direct",
+        "name": "a",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->a(Ljava/lang/String;Lspace/xinzhi/globe/map/MapWebController;)Lkotlin/Unit;",
+        "registers": 2,
+        "signature": "public static synthetic kotlin.Unit a(java.lang.String, space.xinzhi.globe.map.MapWebController)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "synthetic"
+        ],
+        "code_units": 3,
+        "kind": "direct",
+        "name": "access$getWebView$p",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->access$getWebView$p(Lspace/xinzhi/globe/map/MapWebController;)Landroid/webkit/WebView;",
+        "registers": 1,
+        "signature": "public static final synthetic android.webkit.WebView access$getWebView$p(space.xinzhi.globe.map.MapWebController)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "synthetic"
+        ],
+        "code_units": 5,
+        "kind": "direct",
+        "name": "b",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->b(Ljava/lang/Throwable;)Ljava/lang/Throwable;",
+        "registers": 1,
+        "signature": "public static synthetic java.lang.Throwable b(java.lang.Throwable)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "synthetic"
+        ],
+        "code_units": 5,
+        "kind": "direct",
+        "name": "c",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->c(Lkotlin/jvm/internal/Ref$ObjectRef;Ljava/lang/Throwable;Lkotlin/jvm/internal/Ref$ObjectRef;Lorg/json/JSONObject;)Lkotlin/Unit;",
+        "registers": 4,
+        "signature": "public static synthetic kotlin.Unit c(kotlin.jvm.internal.Ref$ObjectRef, java.lang.Throwable, kotlin.jvm.internal.Ref$ObjectRef, org.json.JSONObject)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "synthetic"
+        ],
+        "code_units": 5,
+        "kind": "direct",
+        "name": "d",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->d(Ljava/lang/String;Lspace/xinzhi/globe/map/MapWebController;Lcom/google/gson/JsonElement;Lkotlin/jvm/functions/Function3;)Lkotlin/Unit;",
+        "registers": 4,
+        "signature": "public static synthetic kotlin.Unit d(java.lang.String, space.xinzhi.globe.map.MapWebController, com.google.gson.JsonElement, kotlin.jvm.functions.Function3)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "code_units": 11,
+        "kind": "direct",
+        "name": "getContext",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->getContext()Landroid/content/Context;",
+        "registers": 2,
+        "signature": "private final android.content.Context getContext()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "code_units": 260,
+        "kind": "direct",
+        "name": "handleJSAction",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->handleJSAction(Lspace/xinzhi/globe/map/action/JSAction;)Ljava/lang/String;",
+        "registers": 12,
+        "signature": "private final java.lang.String handleJSAction(space.xinzhi.globe.map.action.JSAction)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "static",
+          "final"
+        ],
+        "code_units": 10,
+        "kind": "direct",
+        "name": "handleJsAction$lambda$0",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->handleJsAction$lambda$0(Ljava/lang/Throwable;)Ljava/lang/Throwable;",
+        "registers": 2,
+        "signature": "private static final java.lang.Throwable handleJsAction$lambda$0(java.lang.Throwable)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "static",
+          "final"
+        ],
+        "code_units": 64,
+        "kind": "direct",
+        "name": "handleJsAction$lambda$5$lambda$4",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->handleJsAction$lambda$5$lambda$4(Lkotlin/jvm/internal/Ref$ObjectRef;Ljava/lang/Throwable;Lkotlin/jvm/internal/Ref$ObjectRef;Lorg/json/JSONObject;)Lkotlin/Unit;",
+        "registers": 5,
+        "signature": "private static final kotlin.Unit handleJsAction$lambda$5$lambda$4(kotlin.jvm.internal.Ref$ObjectRef, java.lang.Throwable, kotlin.jvm.internal.Ref$ObjectRef, org.json.JSONObject)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "static",
+          "final"
+        ],
+        "code_units": 161,
+        "kind": "direct",
+        "name": "handleJsCallback$lambda$9",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->handleJsCallback$lambda$9(Ljava/lang/String;Lspace/xinzhi/globe/map/MapWebController;)Lkotlin/Unit;",
+        "registers": 9,
+        "signature": "private static final kotlin.Unit handleJsCallback$lambda$9(java.lang.String, space.xinzhi.globe.map.MapWebController)",
+        "try_blocks": 1
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "synthetic"
+        ],
+        "code_units": 15,
+        "kind": "direct",
+        "name": "javascript$default",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->javascript$default(Lspace/xinzhi/globe/map/MapWebController;Ljava/lang/String;Lcom/google/gson/JsonElement;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V",
+        "registers": 7,
+        "signature": "public static synthetic void javascript$default(space.xinzhi.globe.map.MapWebController, java.lang.String, com.google.gson.JsonElement, kotlin.jvm.functions.Function3, int, java.lang.Object)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "static",
+          "final"
+        ],
+        "code_units": 99,
+        "kind": "direct",
+        "name": "javascript$lambda$10",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->javascript$lambda$10(Ljava/lang/String;Lspace/xinzhi/globe/map/MapWebController;Lcom/google/gson/JsonElement;Lkotlin/jvm/functions/Function3;)Lkotlin/Unit;",
+        "registers": 7,
+        "signature": "private static final kotlin.Unit javascript$lambda$10(java.lang.String, space.xinzhi.globe.map.MapWebController, com.google.gson.JsonElement, kotlin.jvm.functions.Function3)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "synthetic"
+        ],
+        "code_units": 10,
+        "kind": "direct",
+        "name": "suppressLongPressFor$default",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->suppressLongPressFor$default(Lspace/xinzhi/globe/map/MapWebController;JILjava/lang/Object;)V",
+        "registers": 5,
+        "signature": "public static synthetic void suppressLongPressFor$default(space.xinzhi.globe.map.MapWebController, long, int, java.lang.Object)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 10,
+        "kind": "virtual",
+        "name": "consumeSuppressLongPress",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->consumeSuppressLongPress()Z",
+        "registers": 3,
+        "signature": "public final boolean consumeSuppressLongPress()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 341,
+        "kind": "virtual",
+        "name": "handleJsAction",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->handleJsAction(Ljava/lang/String;)Ljava/lang/String;",
+        "registers": 11,
+        "signature": "public final java.lang.String handleJsAction(java.lang.String)",
+        "try_blocks": 2
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 14,
+        "kind": "virtual",
+        "name": "handleJsCallback",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->handleJsCallback(Ljava/lang/String;)V",
+        "registers": 3,
+        "signature": "public final void handleJsCallback(java.lang.String)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 14,
+        "kind": "virtual",
+        "name": "javascript",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->javascript(Ljava/lang/String;Lcom/google/gson/JsonElement;Lkotlin/jvm/functions/Function3;)V",
+        "registers": 5,
+        "signature": "public final void javascript(java.lang.String, com.google.gson.JsonElement, kotlin.jvm.functions.Function3)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 8,
+        "kind": "virtual",
+        "name": "release",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->release()V",
+        "registers": 2,
+        "signature": "public final void release()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 12,
+        "kind": "virtual",
+        "name": "screenshotHtml",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->screenshotHtml()Landroid/graphics/Bitmap;",
+        "registers": 4,
+        "signature": "public final android.graphics.Bitmap screenshotHtml()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 11,
+        "kind": "virtual",
+        "name": "setInterface",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->setInterface(Lspace/xinzhi/globe/map/MapWebInterface;)V",
+        "registers": 3,
+        "signature": "public final void setInterface(space.xinzhi.globe.map.MapWebInterface)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 8,
+        "kind": "virtual",
+        "name": "setWebView",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->setWebView(Landroid/webkit/WebView;)V",
+        "registers": 3,
+        "signature": "public final void setWebView(android.webkit.WebView)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 14,
+        "kind": "virtual",
+        "name": "shouldSuppressLongPress",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->shouldSuppressLongPress()Z",
+        "registers": 5,
+        "signature": "public final boolean shouldSuppressLongPress()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 14,
+        "kind": "virtual",
+        "name": "suppressLongPressFor",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->suppressLongPressFor(J)V",
+        "registers": 7,
+        "signature": "public final void suppressLongPressFor(long)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 4,
+        "kind": "virtual",
+        "name": "suppressNextLongPress",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/MapWebController;->suppressNextLongPress()V",
+        "registers": 2,
+        "signature": "public final void suppressNextLongPress()",
+        "try_blocks": 0
+      }
+    ],
+    "name": "space.xinzhi.globe.map.MapWebController",
+    "source_file": "SourceFile",
+    "superclass": "Ljava/lang/Object;"
+  },
+  "summary": "space.xinzhi.globe.map.MapWebController (classes06.dex) extends java.lang.Object: 12 fields, 26 methods, from SourceFile.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "class",
+      "value": "Lspace/xinzhi/globe/map/MapWebController;"
+    }
+  ],
+  "links": []
+}

@@ -1,0 +1,117 @@
+{
+  "id": "ev_793eabbd90f1915a7515585d2eacb8bad0913973becd1cbcecf9d1d8658aec3c",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.ui.tools.CompassToolsKt",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "B1",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "public",
+      "static",
+      "final"
+    ],
+    "class": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;",
+    "dex": "classes06.dex",
+    "ins": 2,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x18",
+        "text": "const-wide v0, 0x4076800000000000",
+        "units": 5
+      },
+      {
+        "offset": "0005",
+        "opcode": "0xcf",
+        "text": "rem-double/2addr v4, v0",
+        "units": 1
+      },
+      {
+        "offset": "0006",
+        "opcode": "0x16",
+        "text": "const-wide/16 v2, 0",
+        "units": 2
+      },
+      {
+        "offset": "0008",
+        "opcode": "0x30",
+        "text": "cmpg-double v2, v4, v2",
+        "units": 2
+      },
+      {
+        "offset": "000a",
+        "opcode": "0x3b",
+        "text": "if-gez v2, :000d",
+        "units": 2
+      },
+      {
+        "offset": "000c",
+        "opcode": "0xcb",
+        "text": "add-double/2addr v4, v0",
+        "units": 1
+      },
+      {
+        "offset": "000d",
+        "opcode": "0x10",
+        "text": "return-wide v4",
+        "units": 1
+      }
+    ],
+    "instructions_total": 7,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: const-wide v0, 0x4076800000000000\n0005: rem-double/2addr v4, v0\n0006: const-wide/16 v2, 0\n0008: cmpg-double v2, v4, v2\n000a: if-gez v2, :000d\n000c: add-double/2addr v4, v0\n000d: return-wide v4",
+    "method": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->B1(D)D",
+    "outs": 0,
+    "overload_index": 0,
+    "overloads": [
+      "public static final double B1(double)"
+    ],
+    "registers": 6,
+    "signature": "public static final double B1(double)",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->B1(D)D (classes06.dex): 7 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 7,
+    "total": 7
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->B1(D)D"
+    }
+  ],
+  "links": []
+}

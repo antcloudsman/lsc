@@ -1,0 +1,970 @@
+{
+  "id": "ev_22b3a76d1cfe859a9041e88dfa836a3b231a1098f396eb7f6e889cbd94fe3d4b",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "core_evidence_browse",
+  "params": {
+    "show": {
+      "field_names": true,
+      "kind": "rows",
+      "limit": 60,
+      "list": "methods",
+      "offset": 0
+    },
+    "source": {
+      "evidence_id": "ev_945123cff81783f47ff2a3fcc9e1b2f7ca412e0b6cead55f431d8dfdbe1a61cc",
+      "kind": "saved"
+    }
+  },
+  "result": {
+    "coverage": {
+      "at_end": false,
+      "examined": 60,
+      "next_offset": 60,
+      "status": "page",
+      "total": 133
+    },
+    "from_evidence": "ev_945123cff81783f47ff2a3fcc9e1b2f7ca412e0b6cead55f431d8dfdbe1a61cc",
+    "from_tool": "android_class_show",
+    "shown": {
+      "field_names": [
+        "access",
+        "code_units",
+        "kind",
+        "name",
+        "overload_index",
+        "reference",
+        "registers",
+        "signature",
+        "try_blocks"
+      ],
+      "items": [
+        {
+          "access": [
+            "static",
+            "constructor"
+          ],
+          "code_units": 1,
+          "kind": "direct",
+          "name": "<clinit>",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;-><clinit>()V",
+          "registers": 0,
+          "signature": "static void <clinit>()",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "A",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->A(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit A(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 17,
+          "kind": "direct",
+          "name": "A0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->A0(Lkotlin/jvm/functions/Function0;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit A0(kotlin.jvm.functions.Function0)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 31,
+          "kind": "direct",
+          "name": "A1",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->A1(ZFFFLjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;IILandroidx/compose/runtime/Composer;I)Lkotlin/Unit;",
+          "registers": 26,
+          "signature": "public static final kotlin.Unit A1(boolean, float, float, float, java.lang.String, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, androidx.compose.ui.geometry.Rect, kotlin.jvm.functions.Function0, int, int, androidx.compose.runtime.Composer, int)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "B",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->B(Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit B(space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 35,
+          "kind": "direct",
+          "name": "B0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->B0(Landroidx/compose/runtime/MutableState;Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 6,
+          "signature": "public static final kotlin.Unit B0(androidx.compose.runtime.MutableState, space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 14,
+          "kind": "direct",
+          "name": "B1",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->B1(D)D",
+          "registers": 6,
+          "signature": "public static final double B1(double)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "C",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->C(Landroidx/compose/runtime/MutableState;Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit C(androidx.compose.runtime.MutableState, space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 23,
+          "kind": "direct",
+          "name": "C0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->C0(Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 6,
+          "signature": "public static final kotlin.Unit C0(space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "D",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->D(FFFLjava/lang/String;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/geometry/Rect;Lkotlin/jvm/functions/Function0;IILandroidx/compose/runtime/Composer;I)Lkotlin/Unit;",
+          "registers": 11,
+          "signature": "public static synthetic kotlin.Unit D(float, float, float, java.lang.String, kotlin.jvm.functions.Function1, androidx.compose.ui.geometry.Rect, kotlin.jvm.functions.Function0, int, int, androidx.compose.runtime.Composer, int)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 8,
+          "kind": "direct",
+          "name": "D0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->D0(Landroidx/compose/ui/layout/LayoutCoordinates;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static final kotlin.Unit D0(androidx.compose.ui.layout.LayoutCoordinates)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "E",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->E(Landroidx/compose/ui/graphics/drawscope/ContentDrawScope;Landroidx/compose/ui/graphics/drawscope/DrawScope;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit E(androidx.compose.ui.graphics.drawscope.ContentDrawScope, androidx.compose.ui.graphics.drawscope.DrawScope)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 84,
+          "kind": "direct",
+          "name": "E0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->E0(Lspace/xinzhi/globe/ui/base/BaseActivity;Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;Lkotlinx/coroutines/T;Landroidx/compose/ui/graphics/layer/GraphicsLayer;Landroidx/compose/ui/graphics/layer/GraphicsLayer;)Lkotlin/Unit;",
+          "registers": 16,
+          "signature": "public static final kotlin.Unit E0(space.xinzhi.globe.ui.base.BaseActivity, space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel, kotlinx.coroutines.T, androidx.compose.ui.graphics.layer.GraphicsLayer, androidx.compose.ui.graphics.layer.GraphicsLayer)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "F",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->F(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit F(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 10,
+          "kind": "direct",
+          "name": "F0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->F0(Lkotlin/jvm/internal/Ref$ObjectRef;Ljava/lang/String;)Lkotlin/Unit;",
+          "registers": 3,
+          "signature": "public static final kotlin.Unit F0(kotlin.jvm.internal.Ref$ObjectRef, java.lang.String)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "G",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->G(Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit G(space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 81,
+          "kind": "direct",
+          "name": "G0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->G0(Lspace/xinzhi/globe/ui/base/BaseActivity;ZLjava/lang/Object;Ljava/lang/String;)Lkotlin/Unit;",
+          "registers": 11,
+          "signature": "public static final kotlin.Unit G0(space.xinzhi.globe.ui.base.BaseActivity, boolean, java.lang.Object, java.lang.String)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "H",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->H(FFLandroidx/compose/ui/graphics/drawscope/DrawScope;)Lkotlin/Unit;",
+          "registers": 3,
+          "signature": "public static synthetic kotlin.Unit H(float, float, androidx.compose.ui.graphics.drawscope.DrawScope)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 17,
+          "kind": "direct",
+          "name": "H0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->H0(Lspace/xinzhi/globe/viewmodel/MainViewModel;Lspace/xinzhi/globe/ui/base/BaseActivity;)Lkotlin/Unit;",
+          "registers": 6,
+          "signature": "public static final kotlin.Unit H0(space.xinzhi.globe.viewmodel.MainViewModel, space.xinzhi.globe.ui.base.BaseActivity)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "I",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->I(Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;ILandroidx/compose/runtime/Composer;I)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static synthetic kotlin.Unit I(space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel, int, androidx.compose.runtime.Composer, int)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 17,
+          "kind": "direct",
+          "name": "I0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->I0(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit I0(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "J",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->J(Lspace/xinzhi/globe/ui/controller/g;FLandroidx/compose/ui/geometry/Offset;F)Lkotlin/Unit;",
+          "registers": 4,
+          "signature": "public static synthetic kotlin.Unit J(space.xinzhi.globe.ui.controller.g, float, androidx.compose.ui.geometry.Offset, float)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 17,
+          "kind": "direct",
+          "name": "J0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->J0(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit J0(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "K",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->K(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit K(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 18,
+          "kind": "direct",
+          "name": "K0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->K0(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit K0(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "L",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->L(Lspace/xinzhi/globe/ui/base/BaseActivity;ZLspace/xinzhi/globe/common/CompassReadTypeEnum;)Lkotlin/Unit;",
+          "registers": 3,
+          "signature": "public static synthetic kotlin.Unit L(space.xinzhi.globe.ui.base.BaseActivity, boolean, space.xinzhi.globe.common.CompassReadTypeEnum)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 37,
+          "kind": "direct",
+          "name": "L0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->L0(Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;Lspace/xinzhi/globe/ui/base/BaseActivity;)Lkotlin/Unit;",
+          "registers": 7,
+          "signature": "public static final kotlin.Unit L0(space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel, space.xinzhi.globe.ui.base.BaseActivity)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "M",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->M(Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;Lspace/xinzhi/globe/ui/base/BaseActivity;)Lkotlin/Unit;",
+          "registers": 3,
+          "signature": "public static synthetic kotlin.Unit M(space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel, space.xinzhi.globe.ui.base.BaseActivity)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 17,
+          "kind": "direct",
+          "name": "M0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->M0(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit M0(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "N",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->N(Lspace/xinzhi/globe/ui/controller/g;F)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit N(space.xinzhi.globe.ui.controller.g, float)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 21,
+          "kind": "direct",
+          "name": "N0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->N0(Lspace/xinzhi/globe/ui/base/BaseActivity;Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit N0(space.xinzhi.globe.ui.base.BaseActivity, space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "O",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->O(Lspace/xinzhi/globe/viewmodel/MainViewModel;Lspace/xinzhi/globe/ui/base/BaseActivity;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit O(space.xinzhi.globe.viewmodel.MainViewModel, space.xinzhi.globe.ui.base.BaseActivity)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 8,
+          "kind": "direct",
+          "name": "O0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->O0(Lspace/xinzhi/globe/ui/controller/g;Z)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static final kotlin.Unit O0(space.xinzhi.globe.ui.controller.g, boolean)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "P",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->P()Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit P()",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 64,
+          "kind": "direct",
+          "name": "P0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->P0(Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 14,
+          "signature": "public static final kotlin.Unit P0(space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "Q",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->Q(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit Q(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 12,
+          "kind": "direct",
+          "name": "Q0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->Q0(Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static final kotlin.Unit Q0(space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "R",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->R(Landroidx/compose/ui/layout/LayoutCoordinates;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit R(androidx.compose.ui.layout.LayoutCoordinates)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 21,
+          "kind": "direct",
+          "name": "R0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->R0(Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit R0(space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "S",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->S(Landroidx/compose/ui/graphics/drawscope/ContentDrawScope;Landroidx/compose/ui/graphics/drawscope/DrawScope;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit S(androidx.compose.ui.graphics.drawscope.ContentDrawScope, androidx.compose.ui.graphics.drawscope.DrawScope)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 21,
+          "kind": "direct",
+          "name": "S0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->S0(Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit S0(space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "T",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->T(Lspace/xinzhi/globe/ui/controller/g;Landroidx/compose/ui/graphics/GraphicsLayerScope;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit T(space.xinzhi.globe.ui.controller.g, androidx.compose.ui.graphics.GraphicsLayerScope)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 19,
+          "kind": "direct",
+          "name": "T0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->T0(Lspace/xinzhi/globe/viewmodel/MainViewModel;Lspace/xinzhi/globe/ui/base/BaseActivity;)Lkotlin/Unit;",
+          "registers": 6,
+          "signature": "public static final kotlin.Unit T0(space.xinzhi.globe.viewmodel.MainViewModel, space.xinzhi.globe.ui.base.BaseActivity)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "U",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->U(Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit U(space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 18,
+          "kind": "direct",
+          "name": "U0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->U0(Lspace/xinzhi/globe/viewmodel/MainViewModel;)Lkotlin/Unit;",
+          "registers": 5,
+          "signature": "public static final kotlin.Unit U0(space.xinzhi.globe.viewmodel.MainViewModel)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "V",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->V(Lspace/xinzhi/globe/ui/controller/g;F)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit V(space.xinzhi.globe.ui.controller.g, float)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 19,
+          "kind": "direct",
+          "name": "V0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->V0(Lspace/xinzhi/globe/viewmodel/MainViewModel;Lspace/xinzhi/globe/ui/base/BaseActivity;)Lkotlin/Unit;",
+          "registers": 6,
+          "signature": "public static final kotlin.Unit V0(space.xinzhi.globe.viewmodel.MainViewModel, space.xinzhi.globe.ui.base.BaseActivity)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "W",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->W(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit W(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 15,
+          "kind": "direct",
+          "name": "W0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->W0(Lspace/xinzhi/globe/ui/controller/g;Landroidx/compose/ui/layout/LayoutCoordinates;)Lkotlin/Unit;",
+          "registers": 3,
+          "signature": "public static final kotlin.Unit W0(space.xinzhi.globe.ui.controller.g, androidx.compose.ui.layout.LayoutCoordinates)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "X",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->X(Lspace/xinzhi/globe/ui/base/BaseActivity;Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit X(space.xinzhi.globe.ui.base.BaseActivity, space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 15,
+          "kind": "direct",
+          "name": "X0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->X0(Lspace/xinzhi/globe/ui/controller/g;Landroidx/compose/ui/layout/LayoutCoordinates;)Lkotlin/Unit;",
+          "registers": 3,
+          "signature": "public static final kotlin.Unit X0(space.xinzhi.globe.ui.controller.g, androidx.compose.ui.layout.LayoutCoordinates)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "Y",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->Y(Lspace/xinzhi/globe/ui/base/BaseActivity;ZLjava/lang/Object;Ljava/lang/String;)Lkotlin/Unit;",
+          "registers": 4,
+          "signature": "public static synthetic kotlin.Unit Y(space.xinzhi.globe.ui.base.BaseActivity, boolean, java.lang.Object, java.lang.String)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 15,
+          "kind": "direct",
+          "name": "Y0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->Y0(Lspace/xinzhi/globe/ui/controller/g;Landroidx/compose/ui/layout/LayoutCoordinates;)Lkotlin/Unit;",
+          "registers": 3,
+          "signature": "public static final kotlin.Unit Y0(space.xinzhi.globe.ui.controller.g, androidx.compose.ui.layout.LayoutCoordinates)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "Z",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->Z(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit Z(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 7,
+          "kind": "direct",
+          "name": "Z0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->Z0(Lspace/xinzhi/globe/ui/controller/g;)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static final kotlin.Unit Z0(space.xinzhi.globe.ui.controller.g)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "a",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->a(Lspace/xinzhi/globe/ui/controller/g;F)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit a(space.xinzhi.globe.ui.controller.g, float)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "a0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->a0(Lspace/xinzhi/globe/ui/controller/g;Z)Lkotlin/Unit;",
+          "registers": 2,
+          "signature": "public static synthetic kotlin.Unit a0(space.xinzhi.globe.ui.controller.g, boolean)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "final"
+          ],
+          "code_units": 23,
+          "kind": "direct",
+          "name": "a1",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->a1(Lspace/xinzhi/globe/ui/base/BaseActivity;ZLspace/xinzhi/globe/common/CompassReadTypeEnum;)Lkotlin/Unit;",
+          "registers": 4,
+          "signature": "public static final kotlin.Unit a1(space.xinzhi.globe.ui.base.BaseActivity, boolean, space.xinzhi.globe.common.CompassReadTypeEnum)",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "b",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->b()Lkotlin/Unit;",
+          "registers": 1,
+          "signature": "public static synthetic kotlin.Unit b()",
+          "try_blocks": 0
+        },
+        {
+          "access": [
+            "public",
+            "static",
+            "synthetic"
+          ],
+          "code_units": 5,
+          "kind": "direct",
+          "name": "b0",
+          "overload_index": 0,
+          "reference": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->b0(Lspace/xinzhi/globe/ui/base/BaseActivity;Lspace/xinzhi/globe/viewmodel/MainViewModel;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;IILandroidx/compose/runtime/Composer;I)Lkotlin/Unit;",
+          "registers": 8,
+          "signature": "public static synthetic kotlin.Unit b0(space.xinzhi.globe.ui.base.BaseActivity, space.xinzhi.globe.viewmodel.MainViewModel, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, int, int, androidx.compose.runtime.Composer, int)",
+          "try_blocks": 0
+        }
+      ],
+      "list": "methods",
+      "offset": 0,
+      "total": 133
+    }
+  },
+  "summary": "Part of android_class_show evidence (page).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "partial",
+    "examined": 60,
+    "total": 133,
+    "next_offset": 60
+  },
+  "locations": [],
+  "links": [
+    "ev_945123cff81783f47ff2a3fcc9e1b2f7ca412e0b6cead55f431d8dfdbe1a61cc"
+  ]
+}

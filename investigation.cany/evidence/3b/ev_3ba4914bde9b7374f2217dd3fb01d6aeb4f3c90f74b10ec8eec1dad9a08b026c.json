@@ -1,0 +1,500 @@
+{
+  "id": "ev_3ba4914bde9b7374f2217dd3fb01d6aeb4f3c90f74b10ec8eec1dad9a08b026c",
+  "subject": {
+    "kind": "dex",
+    "sha256": "3c089807fc5031facc8015dcccac00f95d36156567fe88548fa61f79be331ab6",
+    "name": "00O000ll111l_6.dex"
+  },
+  "operation": "android_class_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.common.CompassReadTypeEnum",
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex"
+  },
+  "result": {
+    "access": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "annotations": [
+      "Ldalvik/annotation/MemberClasses; (system)",
+      "Ldalvik/annotation/Signature; (system)"
+    ],
+    "descriptor": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+    "dex": "00O000ll111l_6.dex",
+    "fields": [
+      {
+        "access": [
+          "private",
+          "static",
+          "final",
+          "synthetic"
+        ],
+        "kind": "static",
+        "name": "$ENTRIES",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$ENTRIES:Lkotlin/enums/EnumEntries;",
+        "type": "kotlin.enums.EnumEntries"
+      },
+      {
+        "access": [
+          "private",
+          "static",
+          "final",
+          "synthetic"
+        ],
+        "kind": "static",
+        "name": "$VALUES",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$VALUES:[Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum[]"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_1",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_1:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_10",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_10:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_11",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_11:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_12",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_12:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_13",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_13:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_14",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_14:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_2",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_2:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_3",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_3:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_4",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_4:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_5",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_5:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_6",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_6:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_7",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_7:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_8",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_8:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "public",
+          "static",
+          "final",
+          "enum"
+        ],
+        "kind": "static",
+        "name": "TYPE_9",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_9:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "type": "space.xinzhi.globe.common.CompassReadTypeEnum"
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "kind": "instance",
+        "name": "html",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->html:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "kind": "instance",
+        "name": "intervalDegrees",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->intervalDegrees:F",
+        "type": "float"
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "kind": "instance",
+        "name": "isVip",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->isVip:Z",
+        "type": "boolean"
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "kind": "instance",
+        "name": "offsetDegrees",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->offsetDegrees:F",
+        "type": "float"
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "kind": "instance",
+        "name": "text",
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->text:Ljava/lang/String;",
+        "type": "java.lang.String"
+      }
+    ],
+    "interfaces": [],
+    "methods": [
+      {
+        "access": [
+          "private",
+          "static",
+          "final",
+          "synthetic"
+        ],
+        "code_units": 33,
+        "kind": "direct",
+        "name": "$values",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$values()[Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "registers": 14,
+        "signature": "private static final synthetic space.xinzhi.globe.common.CompassReadTypeEnum[] $values()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "static",
+          "constructor"
+        ],
+        "code_units": 278,
+        "kind": "direct",
+        "name": "<clinit>",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><clinit>()V",
+        "registers": 16,
+        "signature": "static void <clinit>()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "constructor"
+        ],
+        "code_units": 14,
+        "kind": "direct",
+        "name": "<init>",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "registers": 8,
+        "signature": "private void <init>(java.lang.String, int, java.lang.String, float, float, java.lang.String, boolean)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static"
+        ],
+        "code_units": 3,
+        "kind": "direct",
+        "name": "getEntries",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getEntries()Lkotlin/enums/EnumEntries;",
+        "registers": 1,
+        "signature": "public static kotlin.enums.EnumEntries getEntries()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "private",
+          "final"
+        ],
+        "code_units": 4304,
+        "kind": "direct",
+        "name": "getTextList",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String;",
+        "registers": 25,
+        "signature": "private final java.lang.String[] getTextList()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static"
+        ],
+        "code_units": 9,
+        "kind": "direct",
+        "name": "valueOf",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->valueOf(Ljava/lang/String;)Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "registers": 2,
+        "signature": "public static space.xinzhi.globe.common.CompassReadTypeEnum valueOf(java.lang.String)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "static"
+        ],
+        "code_units": 9,
+        "kind": "direct",
+        "name": "values",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->values()[Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "registers": 1,
+        "signature": "public static space.xinzhi.globe.common.CompassReadTypeEnum[] values()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 11,
+        "kind": "virtual",
+        "name": "getBackText",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getBackText(F)Ljava/lang/String;",
+        "registers": 3,
+        "signature": "public final java.lang.String getBackText(float)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 27,
+        "kind": "virtual",
+        "name": "getFaceText",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getFaceText(F)Ljava/lang/String;",
+        "registers": 4,
+        "signature": "public final java.lang.String getFaceText(float)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "getHtml",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getHtml()Ljava/lang/String;",
+        "registers": 2,
+        "signature": "public final java.lang.String getHtml()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "getIntervalDegrees",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getIntervalDegrees()F",
+        "registers": 2,
+        "signature": "public final float getIntervalDegrees()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "getOffsetDegrees",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getOffsetDegrees()F",
+        "registers": 2,
+        "signature": "public final float getOffsetDegrees()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "getText",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getText()Ljava/lang/String;",
+        "registers": 2,
+        "signature": "public final java.lang.String getText()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "isVip",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->isVip()Z",
+        "registers": 2,
+        "signature": "public final boolean isVip()",
+        "try_blocks": 0
+      }
+    ],
+    "name": "space.xinzhi.globe.common.CompassReadTypeEnum",
+    "source_file": "SourceFile",
+    "superclass": "Ljava/lang/Enum;"
+  },
+  "summary": "space.xinzhi.globe.common.CompassReadTypeEnum (00O000ll111l_6.dex) extends java.lang.Enum: 21 fields, 14 methods, from SourceFile.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex"
+    },
+    {
+      "kind": "class",
+      "value": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;"
+    }
+  ],
+  "links": []
+}

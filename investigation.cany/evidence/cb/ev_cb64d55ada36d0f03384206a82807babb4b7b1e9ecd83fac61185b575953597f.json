@@ -1,0 +1,781 @@
+{
+  "id": "ev_cb64d55ada36d0f03384206a82807babb4b7b1e9ecd83fac61185b575953597f",
+  "subject": {
+    "kind": "dex",
+    "sha256": "3c089807fc5031facc8015dcccac00f95d36156567fe88548fa61f79be331ab6",
+    "name": "00O000ll111l_6.dex"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 100,
+    "offset": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex",
+    "query": "compass"
+  },
+  "result": {
+    "classes": [
+      {
+        "access": [
+          "public",
+          "final",
+          "enum"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 13,
+        "methods": 11,
+        "name": "space.xinzhi.globe.common.CommonCompassEnum",
+        "superclass": "java.lang.Enum"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/common/CommonCompassEnum$Companion;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 0,
+        "methods": 4,
+        "name": "space.xinzhi.globe.common.CommonCompassEnum$Companion",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final",
+          "enum"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 21,
+        "methods": 14,
+        "name": "space.xinzhi.globe.common.CompassReadTypeEnum",
+        "superclass": "java.lang.Enum"
+      },
+      {
+        "access": [
+          "public",
+          "final",
+          "synthetic"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/common/CompassReadTypeEnum$WhenMappings;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "space.xinzhi.globe.common.CompassReadTypeEnum$WhenMappings",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/databinding/ActivityCompassIntroduceBinding;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 6,
+        "methods": 6,
+        "name": "space.xinzhi.globe.databinding.ActivityCompassIntroduceBinding",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/manager/CompassManager;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 7,
+        "methods": 14,
+        "name": "space.xinzhi.globe.manager.CompassManager",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/manager/CompassManager$1;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 9,
+        "name": "space.xinzhi.globe.manager.CompassManager$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/model/CompassCategoryModel;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 6,
+        "name": "space.xinzhi.globe.model.CompassCategoryModel",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/model/CompassModel;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 8,
+        "methods": 16,
+        "name": "space.xinzhi.globe.model.CompassModel",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassIntroduceActivity;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 5,
+        "methods": 8,
+        "name": "space.xinzhi.globe.ui.pages.CompassIntroduceActivity",
+        "superclass": "space.xinzhi.globe.ui.base.BaseActivity"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassIntroduceActivity$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 0,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassIntroduceActivity$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassIntroduceActivity$b;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassIntroduceActivity$b",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 13,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity",
+        "superclass": "space.xinzhi.globe.ui.base.BaseActivity"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 0,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 13,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$b;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$b",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$b$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$b$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$c;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$c",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$d;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$d",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$e;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$e",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$e$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$e$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$f;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 4,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$f",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$g;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$g",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$h;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$h",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$i;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$i",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$j;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$j",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$k;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 4,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$k",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$l;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$l",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$m;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$m",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$n;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$n",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$b$a$a$o;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$b$a$a$o",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$c;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$c",
+        "superclass": "kotlin.jvm.internal.Lambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$d;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$d",
+        "superclass": "kotlin.jvm.internal.Lambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/CompassListActivity$e;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.CompassListActivity$e",
+        "superclass": "kotlin.jvm.internal.Lambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 133,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$CompassTools$4$6$7$1$2$1$2;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 4,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$CompassTools$4$6$7$1$2$1$2",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$CompassTools$4$6$7$1$2$1$2$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 5,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$CompassTools$4$6$7$1$2$1$2$a",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$CompassTools$4$6$7$1$2$1$2$a$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 4,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$CompassTools$4$6$7$1$2$1$2$a$a",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$a",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$b;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 4,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$b",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$c;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$c",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$c$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$c$a",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$d;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$d",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$e;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$e",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$f;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$f",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$g;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$g",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$h;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$h",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$i;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 5,
+        "methods": 7,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$i",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$j;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 6,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$j",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$j$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$j$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$j$b;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$j$b",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$k;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 8,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$k",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$k$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$k$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt$k$b;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.tools.CompassToolsKt$k$b",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/viewmodel/CompassListViewModel;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 15,
+        "name": "space.xinzhi.globe.viewmodel.CompassListViewModel",
+        "superclass": "androidx.lifecycle.ViewModel"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/viewmodel/CompassListViewModel$a;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.viewmodel.CompassListViewModel$a",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/viewmodel/CompassListViewModel$b;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.viewmodel.CompassListViewModel$b",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/viewmodel/CompassListViewModel$c;",
+        "dex": "00O000ll111l_6.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.viewmodel.CompassListViewModel$c",
+        "superclass": "java.lang.Object"
+      }
+    ],
+    "classes_total": 7698,
+    "dex_files": [
+      "00O000ll111l_6.dex"
+    ],
+    "matches": 61,
+    "query": "compass"
+  },
+  "summary": "61 of 7698 classes match \"compass\" in 1 DEX file(s); showing 61.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 61,
+    "total": 61
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex"
+    }
+  ],
+  "links": []
+}

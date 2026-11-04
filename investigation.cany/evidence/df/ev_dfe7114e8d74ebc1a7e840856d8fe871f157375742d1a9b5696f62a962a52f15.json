@@ -1,0 +1,49 @@
+{
+  "id": "ev_dfe7114e8d74ebc1a7e840856d8fe871f157375742d1a9b5696f62a962a52f15",
+  "subject": {
+    "kind": "elf",
+    "sha256": "101d4547d499dc8d19bace4a1e7287c97c9270e19f9d92f1647cb46376f3cb66",
+    "name": "libterrain.so"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 200,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "terrain"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0x4c8f",
+        "references": [],
+        "section": ".dynstr",
+        "text": "libterrain.so"
+      }
+    ],
+    "total": 1
+  },
+  "summary": "1 strings match \"terrain\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [],
+  "links": []
+}

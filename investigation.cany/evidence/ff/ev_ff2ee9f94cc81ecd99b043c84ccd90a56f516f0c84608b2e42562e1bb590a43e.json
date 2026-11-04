@@ -1,0 +1,655 @@
+{
+  "id": "ev_ff2ee9f94cc81ecd99b043c84ccd90a56f516f0c84608b2e42562e1bb590a43e",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 50,
+    "offset": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex",
+    "query": "MainActivity"
+  },
+  "result": {
+    "classes": [
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity;",
+        "dex": "classes06.dex",
+        "fields": 35,
+        "methods": 481,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity",
+        "superclass": "space.xinzhi.globe.ui.base.BaseActivity"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$A;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 9,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$A",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$A$a;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$A$a",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$A$b;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$A$b",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$A$c;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$A$c",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$A$d;",
+        "dex": "classes06.dex",
+        "fields": 4,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$A$d",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$A$e;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$A$e",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$A$f;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$A$f",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$B;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$B",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$C;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 9,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$C",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$D;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 9,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$D",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$E;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$E",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$F;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 7,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$F",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$G;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$G",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$H;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 7,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$H",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$I;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 4,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$I",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$J;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$J",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$K;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 4,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$K",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$L;",
+        "dex": "classes06.dex",
+        "fields": 4,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$L",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$M;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$M",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$MainCover$lambda$64$lambda$61$lambda$52$$inlined$ConstraintLayout$2;",
+        "dex": "classes06.dex",
+        "fields": 5,
+        "methods": 2,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$MainCover$lambda$64$lambda$61$lambda$52$$inlined$ConstraintLayout$2",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$MainCover$lambda$64$lambda$61$lambda$52$$inlined$ConstraintLayout$2$a;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$MainCover$lambda$64$lambda$61$lambda$52$$inlined$ConstraintLayout$2$a",
+        "superclass": "kotlin.jvm.internal.Lambda"
+      },
+      {
+        "access": [
+          "public",
+          "final",
+          "synthetic"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$N;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$N",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$O;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 7,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$O",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$P;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$P",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$P$a;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 11,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$P$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$P$a$a;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$P$a$a",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$P$a$b;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$P$a$b",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$P$a$c;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$P$a$c",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$P$a$d;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$P$a$d",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$P$a$d$a;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$P$a$d$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$P$a$e;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$P$a$e",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$Q;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$Q",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$Q$a;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$Q$a",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final",
+          "synthetic"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$R;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$R",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$S;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$S",
+        "superclass": "kotlin.jvm.internal.Lambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$T;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$T",
+        "superclass": "kotlin.jvm.internal.Lambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$U;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$U",
+        "superclass": "kotlin.jvm.internal.Lambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$a;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 11,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$b;",
+        "dex": "classes06.dex",
+        "fields": 0,
+        "methods": 4,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$b",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$c;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 5,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$c",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$d;",
+        "dex": "classes06.dex",
+        "fields": 4,
+        "methods": 4,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$d",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$e;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$e",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$f;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 7,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$f",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$g;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$g",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$g$a;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$g$a",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$h;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 7,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$h",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$i;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 4,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$i",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$j;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$j",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/ui/pages/MainActivity$k;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 3,
+        "name": "space.xinzhi.globe.ui.pages.MainActivity$k",
+        "superclass": "java.lang.Object"
+      }
+    ],
+    "classes_total": 7698,
+    "dex_files": [
+      "classes06.dex"
+    ],
+    "matches": 66,
+    "query": "MainActivity"
+  },
+  "summary": "66 of 7698 classes match \"MainActivity\" in 1 DEX file(s); showing 50.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 50,
+    "total": 66,
+    "next_offset": 50
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    }
+  ],
+  "links": []
+}

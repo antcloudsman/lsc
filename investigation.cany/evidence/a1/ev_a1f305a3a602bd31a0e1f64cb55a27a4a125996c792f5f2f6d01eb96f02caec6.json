@@ -1,0 +1,76 @@
+{
+  "id": "ev_a1f305a3a602bd31a0e1f64cb55a27a4a125996c792f5f2f6d01eb96f02caec6",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 40,
+    "offset": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex",
+    "query": "JSAction"
+  },
+  "result": {
+    "classes": [
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebController$handleJSAction$handler$1;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 4,
+        "name": "space.xinzhi.globe.map.MapWebController$handleJSAction$handler$1",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/action/JSAction;",
+        "dex": "classes06.dex",
+        "fields": 4,
+        "methods": 8,
+        "name": "space.xinzhi.globe.map.action.JSAction",
+        "superclass": "java.lang.Object"
+      }
+    ],
+    "classes_total": 7698,
+    "dex_files": [
+      "classes06.dex"
+    ],
+    "matches": 2,
+    "query": "JSAction"
+  },
+  "summary": "2 of 7698 classes match \"JSAction\" in 1 DEX file(s); showing 2.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 2,
+    "total": 2
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    }
+  ],
+  "links": []
+}

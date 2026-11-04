@@ -1,0 +1,79 @@
+{
+  "id": "ev_e9252cb16d4d4186426a0d5526a81d74007a9570f3a94ff5f57c593ec5c647e2",
+  "subject": {
+    "kind": "elf",
+    "sha256": "00c5be5300aa95607b8e3d551b7372e806ca84aa6f7cf20d577922c16ddd431b",
+    "name": "libshell-super.space.xinzhi.globe.so"
+  },
+  "operation": "core_evidence_browse",
+  "params": {
+    "show": {
+      "kind": "part",
+      "name": "calls"
+    },
+    "source": {
+      "evidence_id": "ev_95ee630fdf92755e9d9e64ed5dde56d62da4bfba5468fee7f273795e051b5cc5",
+      "kind": "saved"
+    }
+  },
+  "result": {
+    "coverage": {
+      "at_end": true,
+      "examined": 1,
+      "next_offset": null,
+      "status": "all-in-view",
+      "total": 1
+    },
+    "from_evidence": "ev_95ee630fdf92755e9d9e64ed5dde56d62da4bfba5468fee7f273795e051b5cc5",
+    "from_tool": "native_function_pseudocode",
+    "shown": {
+      "part": "calls",
+      "value": [
+        "__stack_chk_fail@plt",
+        "__system_property_get@plt",
+        "calloc@plt",
+        "free@plt",
+        "getenv@plt",
+        "memcpy@plt",
+        "mprotect@plt",
+        "snprintf@plt",
+        "sprintf@plt",
+        "srand@plt",
+        "sub_1a50c",
+        "sub_1a688",
+        "sub_1b8bc",
+        "sub_29910",
+        "sub_29c88",
+        "sub_2a55c",
+        "sub_2a5b0",
+        "sub_2a894",
+        "sub_2a8a8",
+        "sub_2bcfc",
+        "sub_32284",
+        "sub_323f0",
+        "sub_32ad4",
+        "sub_3b30c",
+        "time@plt"
+      ]
+    }
+  },
+  "summary": "Part of native_function_pseudocode evidence (all-in-view).",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [],
+  "links": [
+    "ev_95ee630fdf92755e9d9e64ed5dde56d62da4bfba5468fee7f273795e051b5cc5"
+  ]
+}

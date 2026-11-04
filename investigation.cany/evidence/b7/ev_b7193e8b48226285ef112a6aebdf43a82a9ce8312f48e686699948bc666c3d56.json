@@ -1,0 +1,416 @@
+{
+  "id": "ev_b7193e8b48226285ef112a6aebdf43a82a9ce8312f48e686699948bc666c3d56",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.common.CommonCompassEnum",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "<clinit>",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "static",
+      "constructor"
+    ],
+    "class": "Lspace/xinzhi/globe/common/CommonCompassEnum;",
+    "dex": "classes06.dex",
+    "ins": 0,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x22",
+        "text": "new-instance v0, Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0002",
+        "opcode": "0x60",
+        "text": "sget v5, Lspace/xinzhi/globe/R$mipmap;->compass:I",
+        "units": 2
+      },
+      {
+        "offset": "0004",
+        "opcode": "0x12",
+        "text": "const/4 v6, 0",
+        "units": 1
+      },
+      {
+        "offset": "0005",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"COMPASS_0\"",
+        "units": 2
+      },
+      {
+        "offset": "0007",
+        "opcode": "0x12",
+        "text": "const/4 v2, 0",
+        "units": 1
+      },
+      {
+        "offset": "0008",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"compass\"",
+        "units": 2
+      },
+      {
+        "offset": "000a",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"二十四山(阴)\"",
+        "units": 2
+      },
+      {
+        "offset": "000c",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v0 .. v6}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V",
+        "units": 3
+      },
+      {
+        "offset": "000f",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_0:Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0011",
+        "opcode": "0x22",
+        "text": "new-instance v1, Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0013",
+        "opcode": "0x60",
+        "text": "sget v6, Lspace/xinzhi/globe/R$mipmap;->compass1_min:I",
+        "units": 2
+      },
+      {
+        "offset": "0015",
+        "opcode": "0x12",
+        "text": "const/4 v7, 0",
+        "units": 1
+      },
+      {
+        "offset": "0016",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"COMPASS_1\"",
+        "units": 2
+      },
+      {
+        "offset": "0018",
+        "opcode": "0x12",
+        "text": "const/4 v3, 1",
+        "units": 1
+      },
+      {
+        "offset": "0019",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"compass1\"",
+        "units": 2
+      },
+      {
+        "offset": "001b",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"常用罗盘\"",
+        "units": 2
+      },
+      {
+        "offset": "001d",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v1 .. v7}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V",
+        "units": 3
+      },
+      {
+        "offset": "0020",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_1:Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0022",
+        "opcode": "0x22",
+        "text": "new-instance v2, Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0024",
+        "opcode": "0x60",
+        "text": "sget v7, Lspace/xinzhi/globe/R$mipmap;->compass2_min:I",
+        "units": 2
+      },
+      {
+        "offset": "0026",
+        "opcode": "0x12",
+        "text": "const/4 v8, 1",
+        "units": 1
+      },
+      {
+        "offset": "0027",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"COMPASS_2\"",
+        "units": 2
+      },
+      {
+        "offset": "0029",
+        "opcode": "0x12",
+        "text": "const/4 v4, 2",
+        "units": 1
+      },
+      {
+        "offset": "002a",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"compass2\"",
+        "units": 2
+      },
+      {
+        "offset": "002c",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"三合罗盘(白)\"",
+        "units": 2
+      },
+      {
+        "offset": "002e",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v2 .. v8}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V",
+        "units": 3
+      },
+      {
+        "offset": "0031",
+        "opcode": "0x69",
+        "text": "sput-object v2, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_2:Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0033",
+        "opcode": "0x22",
+        "text": "new-instance v3, Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0035",
+        "opcode": "0x60",
+        "text": "sget v8, Lspace/xinzhi/globe/R$mipmap;->compass3_min:I",
+        "units": 2
+      },
+      {
+        "offset": "0037",
+        "opcode": "0x12",
+        "text": "const/4 v9, 1",
+        "units": 1
+      },
+      {
+        "offset": "0038",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"COMPASS_3\"",
+        "units": 2
+      },
+      {
+        "offset": "003a",
+        "opcode": "0x12",
+        "text": "const/4 v5, 3",
+        "units": 1
+      },
+      {
+        "offset": "003b",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"compass3\"",
+        "units": 2
+      },
+      {
+        "offset": "003d",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"三元罗盘(金)\"",
+        "units": 2
+      },
+      {
+        "offset": "003f",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v3 .. v9}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V",
+        "units": 3
+      },
+      {
+        "offset": "0042",
+        "opcode": "0x69",
+        "text": "sput-object v3, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_3:Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0044",
+        "opcode": "0x22",
+        "text": "new-instance v4, Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0046",
+        "opcode": "0x60",
+        "text": "sget v9, Lspace/xinzhi/globe/R$mipmap;->compass4_min:I",
+        "units": 2
+      },
+      {
+        "offset": "0048",
+        "opcode": "0x12",
+        "text": "const/4 v10, 1",
+        "units": 1
+      },
+      {
+        "offset": "0049",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"COMPASS_4\"",
+        "units": 2
+      },
+      {
+        "offset": "004b",
+        "opcode": "0x12",
+        "text": "const/4 v6, 4",
+        "units": 1
+      },
+      {
+        "offset": "004c",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"compass4\"",
+        "units": 2
+      },
+      {
+        "offset": "004e",
+        "opcode": "0x1a",
+        "text": "const-string v8, \"综合罗盘(白)\"",
+        "units": 2
+      },
+      {
+        "offset": "0050",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v4 .. v10}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V",
+        "units": 3
+      },
+      {
+        "offset": "0053",
+        "opcode": "0x69",
+        "text": "sput-object v4, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_4:Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0055",
+        "opcode": "0x71",
+        "text": "invoke-static {}, Lspace/xinzhi/globe/common/CommonCompassEnum;->$values()[Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 3
+      },
+      {
+        "offset": "0058",
+        "opcode": "0x0c",
+        "text": "move-result-object v1",
+        "units": 1
+      },
+      {
+        "offset": "0059",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lspace/xinzhi/globe/common/CommonCompassEnum;->$VALUES:[Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "005b",
+        "opcode": "0x71",
+        "text": "invoke-static {v1}, Lkotlin/enums/EnumEntriesKt;->enumEntries([Ljava/lang/Enum;)Lkotlin/enums/EnumEntries;",
+        "units": 3
+      },
+      {
+        "offset": "005e",
+        "opcode": "0x0c",
+        "text": "move-result-object v1",
+        "units": 1
+      },
+      {
+        "offset": "005f",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lspace/xinzhi/globe/common/CommonCompassEnum;->$ENTRIES:Lkotlin/enums/EnumEntries;",
+        "units": 2
+      },
+      {
+        "offset": "0061",
+        "opcode": "0x22",
+        "text": "new-instance v1, Lspace/xinzhi/globe/common/CommonCompassEnum$Companion;",
+        "units": 2
+      },
+      {
+        "offset": "0063",
+        "opcode": "0x12",
+        "text": "const/4 v2, 0",
+        "units": 1
+      },
+      {
+        "offset": "0064",
+        "opcode": "0x70",
+        "text": "invoke-direct {v1, v2}, Lspace/xinzhi/globe/common/CommonCompassEnum$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V",
+        "units": 3
+      },
+      {
+        "offset": "0067",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lspace/xinzhi/globe/common/CommonCompassEnum;->Companion:Lspace/xinzhi/globe/common/CommonCompassEnum$Companion;",
+        "units": 2
+      },
+      {
+        "offset": "0069",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lspace/xinzhi/globe/common/CommonCompassEnum;->default:Lspace/xinzhi/globe/common/CommonCompassEnum;",
+        "units": 2
+      },
+      {
+        "offset": "006b",
+        "opcode": "0x0e",
+        "text": "return-void",
+        "units": 1
+      }
+    ],
+    "instructions_total": 57,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: new-instance v0, Lspace/xinzhi/globe/common/CommonCompassEnum;\n0002: sget v5, Lspace/xinzhi/globe/R$mipmap;->compass:I\n0004: const/4 v6, 0\n0005: const-string v1, \"COMPASS_0\"\n0007: const/4 v2, 0\n0008: const-string v3, \"compass\"\n000a: const-string v4, \"二十四山(阴)\"\n000c: invoke-direct/range {v0 .. v6}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V\n000f: sput-object v0, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_0:Lspace/xinzhi/globe/common/CommonCompassEnum;\n0011: new-instance v1, Lspace/xinzhi/globe/common/CommonCompassEnum;\n0013: sget v6, Lspace/xinzhi/globe/R$mipmap;->compass1_min:I\n0015: const/4 v7, 0\n0016: const-string v2, \"COMPASS_1\"\n0018: const/4 v3, 1\n0019: const-string v4, \"compass1\"\n001b: const-string v5, \"常用罗盘\"\n001d: invoke-direct/range {v1 .. v7}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V\n0020: sput-object v1, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_1:Lspace/xinzhi/globe/common/CommonCompassEnum;\n0022: new-instance v2, Lspace/xinzhi/globe/common/CommonCompassEnum;\n0024: sget v7, Lspace/xinzhi/globe/R$mipmap;->compass2_min:I\n0026: const/4 v8, 1\n0027: const-string v3, \"COMPASS_2\"\n0029: const/4 v4, 2\n002a: const-string v5, \"compass2\"\n002c: const-string v6, \"三合罗盘(白)\"\n002e: invoke-direct/range {v2 .. v8}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V\n0031: sput-object v2, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_2:Lspace/xinzhi/globe/common/CommonCompassEnum;\n0033: new-instance v3, Lspace/xinzhi/globe/common/CommonCompassEnum;\n0035: sget v8, Lspace/xinzhi/globe/R$mipmap;->compass3_min:I\n0037: const/4 v9, 1\n0038: const-string v4, \"COMPASS_3\"\n003a: const/4 v5, 3\n003b: const-string v6, \"compass3\"\n003d: const-string v7, \"三元罗盘(金)\"\n003f: invoke-direct/range {v3 .. v9}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V\n0042: sput-object v3, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_3:Lspace/xinzhi/globe/common/CommonCompassEnum;\n0044: new-instance v4, Lspace/xinzhi/globe/common/CommonCompassEnum;\n0046: sget v9, Lspace/xinzhi/globe/R$mipmap;->compass4_min:I\n0048: const/4 v10, 1\n0049: const-string v5, \"COMPASS_4\"\n004b: const/4 v6, 4\n004c: const-string v7, \"compass4\"\n004e: const-string v8, \"综合罗盘(白)\"\n0050: invoke-direct/range {v4 .. v10}, Lspace/xinzhi/globe/common/CommonCompassEnum;-><init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ)V\n0053: sput-object v4, Lspace/xinzhi/globe/common/CommonCompassEnum;->COMPASS_4:Lspace/xinzhi/globe/common/CommonCompassEnum;\n0055: invoke-static {}, Lspace/xinzhi/globe/common/CommonCompassEnum;->$values()[Lspace/xinzhi/globe/common/CommonCompassEnum;\n0058: move-result-object v1\n0059: sput-object v1, Lspace/xinzhi/globe/common/CommonCompassEnum;->$VALUES:[Lspace/xinzhi/globe/common/CommonCompassEnum;\n005b: invoke-static {v1}, Lkotlin/enums/EnumEntriesKt;->enumEntries([Ljava/lang/Enum;)Lkotlin/enums/EnumEntries;\n005e: move-result-object v1\n005f: sput-object v1, Lspace/xinzhi/globe/common/CommonCompassEnum;->$ENTRIES:Lkotlin/enums/EnumEntries;\n0061: new-instance v1, Lspace/xinzhi/globe/common/CommonCompassEnum$Companion;\n0063: const/4 v2, 0\n0064: invoke-direct {v1, v2}, Lspace/xinzhi/globe/common/CommonCompassEnum$Companion;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V\n0067: sput-object v1, Lspace/xinzhi/globe/common/CommonCompassEnum;->Companion:Lspace/xinzhi/globe/common/CommonCompassEnum$Companion;\n0069: sput-object v0, Lspace/xinzhi/globe/common/CommonCompassEnum;->default:Lspace/xinzhi/globe/common/CommonCompassEnum;\n006b: return-void",
+    "method": "Lspace/xinzhi/globe/common/CommonCompassEnum;-><clinit>()V",
+    "outs": 7,
+    "overload_index": 0,
+    "overloads": [
+      "static void <clinit>()"
+    ],
+    "registers": 11,
+    "signature": "static void <clinit>()",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/common/CommonCompassEnum;-><clinit>()V (classes06.dex): 57 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 57,
+    "total": 57
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/common/CommonCompassEnum;-><clinit>()V"
+    }
+  ],
+  "links": []
+}

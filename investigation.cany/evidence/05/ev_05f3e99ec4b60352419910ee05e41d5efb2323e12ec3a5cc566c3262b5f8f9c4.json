@@ -1,0 +1,75 @@
+{
+  "id": "ev_05f3e99ec4b60352419910ee05e41d5efb2323e12ec3a5cc566c3262b5f8f9c4",
+  "subject": {
+    "kind": "elf",
+    "sha256": "00c5be5300aa95607b8e3d551b7372e806ca84aa6f7cf20d577922c16ddd431b",
+    "name": "libshell-super.space.xinzhi.globe.so"
+  },
+  "operation": "core_evidence_browse",
+  "params": {
+    "show": {
+      "kind": "part",
+      "name": "strings"
+    },
+    "source": {
+      "evidence_id": "ev_9630f46ce1c740a04ba28747c03c3bc8e489c5986c8c6b2f2b71ba4755e361d5",
+      "kind": "saved"
+    }
+  },
+  "result": {
+    "coverage": {
+      "at_end": true,
+      "examined": 1,
+      "next_offset": null,
+      "status": "all-in-view",
+      "total": 1
+    },
+    "from_evidence": "ev_9630f46ce1c740a04ba28747c03c3bc8e489c5986c8c6b2f2b71ba4755e361d5",
+    "from_tool": "native_function_pseudocode",
+    "shown": {
+      "part": "strings",
+      "value": [
+        "gggg,",
+        ":{%:{%:{4/4////",
+        "r~|>fcpaatc>ac~ihpaa}xrpex~",
+        "vzx:bgteepg:egzmlteey|vta|z{:V`fazxpgVytffYztqpg",
+        "k`j.g`gz.imzvQ?",
+        "F`k|k%fkdm%Y~xcdm1",
+        "{fq|pqy|s~ll",
+        "|av{wv~u}lpw|",
+        ",z&,z",
+        "qjvs`wvljk",
+        "k`j.}kz.}kkj",
+        "rcz3",
+        "doe!mn`e!edy-!sdrtmu!hr!$e",
+        "w``}`",
+        "tcvitrgvoejguu",
+        "ubwhusfwnjbsohc",
+        "xe$h",
+        "eeee)",
+        "rohmct&usvvitr",
+        "ibh,`en,ez,odiog ,~i",
+        "rohmctGvv"
+      ]
+    }
+  },
+  "summary": "Part of native_function_pseudocode evidence (all-in-view).",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [],
+  "links": [
+    "ev_9630f46ce1c740a04ba28747c03c3bc8e489c5986c8c6b2f2b71ba4755e361d5"
+  ]
+}

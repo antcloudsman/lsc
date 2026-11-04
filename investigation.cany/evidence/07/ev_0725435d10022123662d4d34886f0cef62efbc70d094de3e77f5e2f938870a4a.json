@@ -1,0 +1,703 @@
+{
+  "id": "ev_0725435d10022123662d4d34886f0cef62efbc70d094de3e77f5e2f938870a4a",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "android_components_list",
+  "params": {
+    "kind": null,
+    "limit": 50,
+    "offset": 0,
+    "path": "E:\\APPDetector\\input\\swss.apk",
+    "reachable_only": true
+  },
+  "result": {
+    "by_kind": {
+      "activity": {
+        "reachable_from_outside": 13,
+        "total": 148
+      },
+      "provider": {
+        "reachable_from_outside": 1,
+        "total": 24
+      },
+      "receiver": {
+        "reachable_from_outside": 5,
+        "total": 20
+      },
+      "service": {
+        "reachable_from_outside": 6,
+        "total": 33
+      }
+    },
+    "components": [
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "android.intent.action.MAIN"
+            ],
+            "categories": [
+              "android.intent.category.LAUNCHER"
+            ],
+            "data": []
+          }
+        ],
+        "kind": "activity",
+        "name": "space.xinzhi.globe.ui.pages.SplashActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "activity",
+        "name": "space.xinzhi.globe.wxapi.WXEntryActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "activity",
+        "name": "space.xinzhi.globe.wxapi.WXPayEntryActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "activity",
+        "name": "com.bytedance.android.openliveplugin.stub.activity.DouyinAuthorizeActivityProxy",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "activity",
+        "name": "com.bytedance.android.openliveplugin.stub.activity.DouyinAuthorizeActivityLiveProcessProxy",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": true,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "androidx.profileinstaller.action.INSTALL_PROFILE"
+            ],
+            "categories": [],
+            "data": []
+          },
+          {
+            "actions": [
+              "androidx.profileinstaller.action.SKIP_FILE"
+            ],
+            "categories": [],
+            "data": []
+          },
+          {
+            "actions": [
+              "androidx.profileinstaller.action.SAVE_PROFILE"
+            ],
+            "categories": [],
+            "data": []
+          },
+          {
+            "actions": [
+              "androidx.profileinstaller.action.BENCHMARK_OPERATION"
+            ],
+            "categories": [],
+            "data": []
+          }
+        ],
+        "kind": "receiver",
+        "name": "androidx.profileinstaller.ProfileInstallReceiver",
+        "permission": "android.permission.DUMP",
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "activity",
+        "name": "com.bytedance.ads.convert.BDBridgeActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "activity",
+        "name": "com.alipay.sdk.app.PayResultActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "activity",
+        "name": "com.alipay.sdk.app.AlipayResultActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "cn.jpush.android.ui.PopWinActivity"
+            ],
+            "categories": [
+              "android.intent.category.DEFAULT",
+              "space.xinzhi.globe"
+            ],
+            "data": []
+          }
+        ],
+        "kind": "activity",
+        "name": "cn.jpush.android.ui.PopWinActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "cn.jpush.android.ui.PushActivity"
+            ],
+            "categories": [
+              "android.intent.category.DEFAULT",
+              "space.xinzhi.globe"
+            ],
+            "data": []
+          }
+        ],
+        "kind": "activity",
+        "name": "cn.jpush.android.ui.PushActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "cn.jpush.android.intent.JNotifyActivity"
+            ],
+            "categories": [
+              "android.intent.category.DEFAULT",
+              "space.xinzhi.globe"
+            ],
+            "data": []
+          }
+        ],
+        "kind": "activity",
+        "name": "cn.jpush.android.service.JNotifyActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "cn.android.service.JTransitActivity"
+            ],
+            "categories": [
+              "android.intent.category.DEFAULT",
+              "space.xinzhi.globe"
+            ],
+            "data": []
+          }
+        ],
+        "kind": "activity",
+        "name": "cn.android.service.JTransitActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "com.huawei.intent.action.PUSH_DELAY_NOTIFY",
+              "com.huawei.intent.action.PUSH"
+            ],
+            "categories": [],
+            "data": []
+          }
+        ],
+        "kind": "receiver",
+        "name": "com.huawei.hms.support.api.push.PushMsgReceiver",
+        "permission": "space.xinzhi.globe.permission.PROCESS_PUSH_MSG",
+        "permission_from_application": false,
+        "permission_protection_level": "0x2",
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "com.huawei.android.push.intent.REGISTRATION",
+              "com.huawei.android.push.intent.RECEIVE"
+            ],
+            "categories": [],
+            "data": []
+          }
+        ],
+        "kind": "receiver",
+        "name": "com.huawei.hms.support.api.push.PushReceiver",
+        "permission": "space.xinzhi.globe.permission.PROCESS_PUSH_MSG",
+        "permission_from_application": false,
+        "permission_protection_level": "0x2",
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": true,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "com.huawei.push.msg.NOTIFY_MSG",
+              "com.huawei.push.msg.PASSBY_MSG"
+            ],
+            "categories": [],
+            "data": []
+          }
+        ],
+        "kind": "service",
+        "name": "com.huawei.hms.support.api.push.service.HmsMsgService",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": "space.xinzhi.globe.huawei.push.provider",
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "provider",
+        "name": "com.huawei.hms.support.api.push.PushProvider",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": "space.xinzhi.globe.permission.PUSH_PROVIDER",
+        "who_can_reach": "apps_with_permission",
+        "write_permission": "space.xinzhi.globe.permission.PUSH_WRITE_PROVIDER"
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "com.meizu.flyme.push.intent.MESSAGE",
+              "com.meizu.flyme.push.intent.REGISTER.FEEDBACK",
+              "com.meizu.flyme.push.intent.UNREGISTER.FEEDBACK",
+              "com.meizu.c2dm.intent.REGISTRATION",
+              "com.meizu.c2dm.intent.RECEIVE"
+            ],
+            "categories": [
+              "space.xinzhi.globe"
+            ],
+            "data": []
+          }
+        ],
+        "kind": "receiver",
+        "name": "cn.jpush.android.service.PluginMeizuPlatformsReceiver",
+        "permission": "com.meizu.cloud.push.permission.MESSAGE",
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "com.coloros.mcs.action.RECEIVE_MCS_MESSAGE"
+            ],
+            "categories": [],
+            "data": []
+          }
+        ],
+        "kind": "service",
+        "name": "com.heytap.msp.push.service.CompatibleDataMessageCallbackService",
+        "permission": "com.coloros.mcs.permission.SEND_MCS_MESSAGE",
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "com.heytap.mcs.action.RECEIVE_MCS_MESSAGE",
+              "com.heytap.msp.push.RECEIVE_MCS_MESSAGE"
+            ],
+            "categories": [],
+            "data": []
+          }
+        ],
+        "kind": "service",
+        "name": "com.heytap.msp.push.service.DataMessageCallbackService",
+        "permission": "com.heytap.mcs.permission.SEND_PUSH_MESSAGE",
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "com.coloros.mcs.action.RECEIVE_MCS_MESSAGE"
+            ],
+            "categories": [],
+            "data": []
+          }
+        ],
+        "kind": "service",
+        "name": "cn.jpush.android.service.PluginOppoPushService",
+        "permission": "com.coloros.mcs.permission.SEND_MCS_MESSAGE",
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [
+          {
+            "actions": [
+              "com.xiaomi.mipush.RECEIVE_MESSAGE"
+            ],
+            "categories": [],
+            "data": []
+          },
+          {
+            "actions": [
+              "com.xiaomi.mipush.MESSAGE_ARRIVED"
+            ],
+            "categories": [],
+            "data": []
+          },
+          {
+            "actions": [
+              "com.xiaomi.mipush.ERROR"
+            ],
+            "categories": [],
+            "data": []
+          }
+        ],
+        "kind": "receiver",
+        "name": "cn.jpush.android.service.PluginXiaomiPlatformsReceiver",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": null,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "service",
+        "name": "com.vivo.push.sdk.service.CommandClientService",
+        "permission": "com.push.permission.UPSTAGESERVICE",
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": true,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "service",
+        "name": "com.xiaomi.mipush.sdk.PushMessageHandler",
+        "permission": "com.xiaomi.xmsf.permission.MIPUSH_RECEIVE",
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "apps_with_permission",
+        "write_permission": null
+      },
+      {
+        "authorities": null,
+        "disabled_in_manifest": false,
+        "enabled_attribute": true,
+        "export_source": "explicit",
+        "exported": true,
+        "exported_attribute": true,
+        "intent_filters": [],
+        "kind": "activity",
+        "name": "com.xiaomi.mipush.sdk.NotificationClickedActivity",
+        "permission": null,
+        "permission_from_application": false,
+        "permission_protection_level": null,
+        "reachable_from_outside": true,
+        "read_permission": null,
+        "who_can_reach": "any_app",
+        "write_permission": null
+      }
+    ],
+    "matching": 25,
+    "min_sdk": "24",
+    "package": "space.xinzhi.globe",
+    "path": "E:\\APPDetector\\input\\swss.apk",
+    "reachable_from_outside": 25,
+    "reachable_with_no_permission": 15,
+    "target_sdk": "36",
+    "total": 225
+  },
+  "summary": "225 component(s) in the manifest: 25 reachable from outside the app, 15 of those with no permission asked.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "implicit_export_rules",
+      "message": "This app targets SDK 36. With no android:exported value, a component with intent filters is exported below SDK 31 (from 31 on, Android refuses to install such an app), other components aren't, and a provider is exported up to SDK 16 regardless. The rule goes by the app's targetSdk as read here."
+    },
+    {
+      "code": "manifest_only",
+      "message": "This reads the manifest alone: receivers registered while the app runs aren't in it, code can check callers itself, and a declared permission's strength depends on its protection level."
+    },
+    {
+      "code": "disabled_components",
+      "message": "Components the manifest disables are still listed: the app can enable them while it runs."
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 25,
+    "total": 25
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\input\\swss.apk"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

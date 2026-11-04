@@ -1,0 +1,370 @@
+{
+  "id": "ev_cc26ab8137304296328f7efd0417347c439225441200cffd4b95f2de049d29f6",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 40,
+    "offset": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex",
+    "query": "MapWeb"
+  },
+  "result": {
+    "classes": [
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebApiKt;",
+        "dex": "classes06.dex",
+        "fields": 0,
+        "methods": 84,
+        "name": "space.xinzhi.globe.map.MapWebApiKt",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebController;",
+        "dex": "classes06.dex",
+        "fields": 12,
+        "methods": 26,
+        "name": "space.xinzhi.globe.map.MapWebController",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebController$Companion;",
+        "dex": "classes06.dex",
+        "fields": 0,
+        "methods": 2,
+        "name": "space.xinzhi.globe.map.MapWebController$Companion",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebController$handleJSAction$handler$1;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 4,
+        "name": "space.xinzhi.globe.map.MapWebController$handleJSAction$handler$1",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface;",
+        "dex": "classes06.dex",
+        "fields": 4,
+        "methods": 33,
+        "name": "space.xinzhi.globe.map.MapWebInterface",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$MapScrollEvent;",
+        "dex": "classes06.dex",
+        "fields": 5,
+        "methods": 2,
+        "name": "space.xinzhi.globe.map.MapWebInterface$MapScrollEvent",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$closeFullScreen$1;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$closeFullScreen$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$deleteMapElementByType$1;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$deleteMapElementByType$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$fireEvent$1;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$fireEvent$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$on3dChanged$1;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$on3dChanged$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$onClickMapElement$1;",
+        "dex": "classes06.dex",
+        "fields": 4,
+        "methods": 7,
+        "name": "space.xinzhi.globe.map.MapWebInterface$onClickMapElement$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$onLoadFinished$1;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$onLoadFinished$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$onLongPress$1;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$onLongPress$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$onMapRotate$1$1;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$onMapRotate$1$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$onMapScroll$1;",
+        "dex": "classes06.dex",
+        "fields": 10,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$onMapScroll$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$onSingleTapUp$1;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$onSingleTapUp$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$openStreetView$1;",
+        "dex": "classes06.dex",
+        "fields": 6,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$openStreetView$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$setDrawBtnState$1;",
+        "dex": "classes06.dex",
+        "fields": 5,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$setDrawBtnState$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$setSitFace$1;",
+        "dex": "classes06.dex",
+        "fields": 6,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$setSitFace$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebInterface$showFullScreen$1;",
+        "dex": "classes06.dex",
+        "fields": 2,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebInterface$showFullScreen$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebKt;",
+        "dex": "classes06.dex",
+        "fields": 0,
+        "methods": 17,
+        "name": "space.xinzhi.globe.map.MapWebKt",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebKt$Control3d$createLongPressHandler$1;",
+        "dex": "classes06.dex",
+        "fields": 5,
+        "methods": 6,
+        "name": "space.xinzhi.globe.map.MapWebKt$Control3d$createLongPressHandler$1",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebKt$Control3d$createLongPressHandler$1$1$1;",
+        "dex": "classes06.dex",
+        "fields": 3,
+        "methods": 5,
+        "name": "space.xinzhi.globe.map.MapWebKt$Control3d$createLongPressHandler$1$1$1",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebKt$Control3d$createLongPressHandler$1$2;",
+        "dex": "classes06.dex",
+        "fields": 4,
+        "methods": 4,
+        "name": "space.xinzhi.globe.map.MapWebKt$Control3d$createLongPressHandler$1$2",
+        "superclass": "kotlin.coroutines.jvm.internal.SuspendLambda"
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebListener;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 23,
+        "name": "space.xinzhi.globe.map.MapWebListener",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebView;",
+        "dex": "classes06.dex",
+        "fields": 6,
+        "methods": 11,
+        "name": "space.xinzhi.globe.map.MapWebView",
+        "superclass": "android.webkit.WebView"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebView$1;",
+        "dex": "classes06.dex",
+        "fields": 1,
+        "methods": 4,
+        "name": "space.xinzhi.globe.map.MapWebView$1",
+        "superclass": "androidx.webkit.WebViewClientCompat"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/map/MapWebView$Companion;",
+        "dex": "classes06.dex",
+        "fields": 0,
+        "methods": 2,
+        "name": "space.xinzhi.globe.map.MapWebView$Companion",
+        "superclass": "java.lang.Object"
+      }
+    ],
+    "classes_total": 7698,
+    "dex_files": [
+      "classes06.dex"
+    ],
+    "matches": 28,
+    "query": "MapWeb"
+  },
+  "summary": "28 of 7698 classes match \"MapWeb\" in 1 DEX file(s); showing 28.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 28,
+    "total": 28
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    }
+  ],
+  "links": []
+}

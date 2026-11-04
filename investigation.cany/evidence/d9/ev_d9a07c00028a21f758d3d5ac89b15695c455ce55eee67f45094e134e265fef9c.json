@@ -1,0 +1,46 @@
+{
+  "id": "ev_d9a07c00028a21f758d3d5ac89b15695c455ce55eee67f45094e134e265fef9c",
+  "subject": {
+    "kind": "dex",
+    "sha256": "3c089807fc5031facc8015dcccac00f95d36156567fe88548fa61f79be331ab6",
+    "name": "00O000ll111l_6.dex"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 100,
+    "offset": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex",
+    "query": "fengshui"
+  },
+  "result": {
+    "classes": [],
+    "classes_total": 7698,
+    "dex_files": [
+      "00O000ll111l_6.dex"
+    ],
+    "matches": 0,
+    "query": "fengshui"
+  },
+  "summary": "0 of 7698 classes match \"fengshui\" in 1 DEX file(s); showing 0.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\dex_dump\\00O000ll111l_6.dex"
+    }
+  ],
+  "links": []
+}

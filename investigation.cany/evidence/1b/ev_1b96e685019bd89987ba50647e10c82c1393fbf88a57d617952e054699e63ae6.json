@@ -1,0 +1,339 @@
+{
+  "id": "ev_1b96e685019bd89987ba50647e10c82c1393fbf88a57d617952e054699e63ae6",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.ui.tools.CompassToolsKt",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "E0",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "public",
+      "static",
+      "final"
+    ],
+    "class": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;",
+    "dex": "classes06.dex",
+    "ins": 6,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x1a",
+        "text": "const-string v0, \"截图中...\"",
+        "units": 2
+      },
+      {
+        "offset": "0002",
+        "opcode": "0x12",
+        "text": "const/4 v1, 0",
+        "units": 1
+      },
+      {
+        "offset": "0003",
+        "opcode": "0x12",
+        "text": "const/4 v2, 2",
+        "units": 1
+      },
+      {
+        "offset": "0004",
+        "opcode": "0x12",
+        "text": "const/4 v3, 0",
+        "units": 1
+      },
+      {
+        "offset": "0005",
+        "opcode": "0x71",
+        "text": "invoke-static {v10, v0, v1, v2, v3}, Lspace/xinzhi/globe/ui/base/BaseActivity;->V(Lspace/xinzhi/globe/ui/base/BaseActivity;Ljava/lang/String;ZILjava/lang/Object;)V",
+        "units": 3
+      },
+      {
+        "offset": "0008",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v11}, Lspace/xinzhi/globe/ui/controller/g;->p()Z",
+        "units": 3
+      },
+      {
+        "offset": "000b",
+        "opcode": "0x0a",
+        "text": "move-result v0",
+        "units": 1
+      },
+      {
+        "offset": "000c",
+        "opcode": "0x38",
+        "text": "if-eqz v0, :0027",
+        "units": 2
+      },
+      {
+        "offset": "000e",
+        "opcode": "0x22",
+        "text": "new-instance v11, Lkotlin/jvm/internal/Ref$ObjectRef;",
+        "units": 2
+      },
+      {
+        "offset": "0010",
+        "opcode": "0x70",
+        "text": "invoke-direct {v11}, Lkotlin/jvm/internal/Ref$ObjectRef;-><init>()V",
+        "units": 3
+      },
+      {
+        "offset": "0013",
+        "opcode": "0x1a",
+        "text": "const-string v15, \"\"",
+        "units": 2
+      },
+      {
+        "offset": "0015",
+        "opcode": "0x5b",
+        "text": "iput-object v15, v11, Lkotlin/jvm/internal/Ref$ObjectRef;->element:Ljava/lang/Object;",
+        "units": 2
+      },
+      {
+        "offset": "0017",
+        "opcode": "0x22",
+        "text": "new-instance v15, Lspace/xinzhi/globe/ui/tools/j0;",
+        "units": 2
+      },
+      {
+        "offset": "0019",
+        "opcode": "0x70",
+        "text": "invoke-direct {v15, v11}, Lspace/xinzhi/globe/ui/tools/j0;-><init>(Lkotlin/jvm/internal/Ref$ObjectRef;)V",
+        "units": 3
+      },
+      {
+        "offset": "001c",
+        "opcode": "0x22",
+        "text": "new-instance v0, Lspace/xinzhi/globe/ui/tools/CompassToolsKt$CompassTools$4$6$7$1$2$1$2;",
+        "units": 2
+      },
+      {
+        "offset": "001e",
+        "opcode": "0x70",
+        "text": "invoke-direct {v0, v11, v13, v14, v10}, Lspace/xinzhi/globe/ui/tools/CompassToolsKt$CompassTools$4$6$7$1$2$1$2;-><init>(Lkotlin/jvm/internal/Ref$ObjectRef;Lkotlinx/coroutines/T;Landroidx/compose/ui/graphics/layer/GraphicsLayer;Lspace/xinzhi/globe/ui/base/BaseActivity;)V",
+        "units": 3
+      },
+      {
+        "offset": "0021",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v12, v10, v15, v0}, Lspace/xinzhi/globe/viewmodel/MainViewModel;->z3(Landroid/content/Context;Lkotlin/jvm/functions/Function1;Landroidx/camera/core/ImageCapture$OnImageSavedCallback;)V",
+        "units": 3
+      },
+      {
+        "offset": "0024",
+        "opcode": "0x62",
+        "text": "sget-object v10, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;",
+        "units": 2
+      },
+      {
+        "offset": "0026",
+        "opcode": "0x11",
+        "text": "return-object v10",
+        "units": 1
+      },
+      {
+        "offset": "0027",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v11}, Lspace/xinzhi/globe/ui/controller/g;->q()Z",
+        "units": 3
+      },
+      {
+        "offset": "002a",
+        "opcode": "0x0a",
+        "text": "move-result v11",
+        "units": 1
+      },
+      {
+        "offset": "002b",
+        "opcode": "0x39",
+        "text": "if-nez v11, :0040",
+        "units": 2
+      },
+      {
+        "offset": "002d",
+        "opcode": "0x71",
+        "text": "invoke-static {}, Lkotlinx/coroutines/m0;->c()Lkotlinx/coroutines/N;",
+        "units": 3
+      },
+      {
+        "offset": "0030",
+        "opcode": "0x0c",
+        "text": "move-result-object v5",
+        "units": 1
+      },
+      {
+        "offset": "0031",
+        "opcode": "0x22",
+        "text": "new-instance v7, Lspace/xinzhi/globe/ui/tools/CompassToolsKt$c;",
+        "units": 2
+      },
+      {
+        "offset": "0033",
+        "opcode": "0x70",
+        "text": "invoke-direct {v7, v15, v10, v3}, Lspace/xinzhi/globe/ui/tools/CompassToolsKt$c;-><init>(Landroidx/compose/ui/graphics/layer/GraphicsLayer;Lspace/xinzhi/globe/ui/base/BaseActivity;Lkotlin/coroutines/Continuation;)V",
+        "units": 3
+      },
+      {
+        "offset": "0036",
+        "opcode": "0x12",
+        "text": "const/4 v8, 2",
+        "units": 1
+      },
+      {
+        "offset": "0037",
+        "opcode": "0x12",
+        "text": "const/4 v9, 0",
+        "units": 1
+      },
+      {
+        "offset": "0038",
+        "opcode": "0x12",
+        "text": "const/4 v6, 0",
+        "units": 1
+      },
+      {
+        "offset": "0039",
+        "opcode": "0x07",
+        "text": "move-object v4, v13",
+        "units": 1
+      },
+      {
+        "offset": "003a",
+        "opcode": "0x77",
+        "text": "invoke-static/range {v4 .. v9}, Lkotlinx/coroutines/i;->e(Lkotlinx/coroutines/T;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/V;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lkotlinx/coroutines/Q0;",
+        "units": 3
+      },
+      {
+        "offset": "003d",
+        "opcode": "0x62",
+        "text": "sget-object v10, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;",
+        "units": 2
+      },
+      {
+        "offset": "003f",
+        "opcode": "0x11",
+        "text": "return-object v10",
+        "units": 1
+      },
+      {
+        "offset": "0040",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v12}, Lspace/xinzhi/globe/viewmodel/MainViewModel;->j0()Lspace/xinzhi/globe/map/MapWebController;",
+        "units": 3
+      },
+      {
+        "offset": "0043",
+        "opcode": "0x0c",
+        "text": "move-result-object v0",
+        "units": 1
+      },
+      {
+        "offset": "0044",
+        "opcode": "0x22",
+        "text": "new-instance v3, Lspace/xinzhi/globe/ui/tools/k0;",
+        "units": 2
+      },
+      {
+        "offset": "0046",
+        "opcode": "0x70",
+        "text": "invoke-direct {v3, v10}, Lspace/xinzhi/globe/ui/tools/k0;-><init>(Lspace/xinzhi/globe/ui/base/BaseActivity;)V",
+        "units": 3
+      },
+      {
+        "offset": "0049",
+        "opcode": "0x12",
+        "text": "const/4 v4, 1",
+        "units": 1
+      },
+      {
+        "offset": "004a",
+        "opcode": "0x12",
+        "text": "const/4 v5, 0",
+        "units": 1
+      },
+      {
+        "offset": "004b",
+        "opcode": "0x12",
+        "text": "const/4 v1, 0",
+        "units": 1
+      },
+      {
+        "offset": "004c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"compass\"",
+        "units": 2
+      },
+      {
+        "offset": "004e",
+        "opcode": "0x77",
+        "text": "invoke-static/range {v0 .. v5}, Lspace/xinzhi/globe/map/MapWebApiKt;->getScreenshot$default(Lspace/xinzhi/globe/map/MapWebController;[DLjava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V",
+        "units": 3
+      },
+      {
+        "offset": "0051",
+        "opcode": "0x62",
+        "text": "sget-object v10, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;",
+        "units": 2
+      },
+      {
+        "offset": "0053",
+        "opcode": "0x11",
+        "text": "return-object v10",
+        "units": 1
+      }
+    ],
+    "instructions_total": 44,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: const-string v0, \"截图中...\"\n0002: const/4 v1, 0\n0003: const/4 v2, 2\n0004: const/4 v3, 0\n0005: invoke-static {v10, v0, v1, v2, v3}, Lspace/xinzhi/globe/ui/base/BaseActivity;->V(Lspace/xinzhi/globe/ui/base/BaseActivity;Ljava/lang/String;ZILjava/lang/Object;)V\n0008: invoke-virtual {v11}, Lspace/xinzhi/globe/ui/controller/g;->p()Z\n000b: move-result v0\n000c: if-eqz v0, :0027\n000e: new-instance v11, Lkotlin/jvm/internal/Ref$ObjectRef;\n0010: invoke-direct {v11}, Lkotlin/jvm/internal/Ref$ObjectRef;-><init>()V\n0013: const-string v15, \"\"\n0015: iput-object v15, v11, Lkotlin/jvm/internal/Ref$ObjectRef;->element:Ljava/lang/Object;\n0017: new-instance v15, Lspace/xinzhi/globe/ui/tools/j0;\n0019: invoke-direct {v15, v11}, Lspace/xinzhi/globe/ui/tools/j0;-><init>(Lkotlin/jvm/internal/Ref$ObjectRef;)V\n001c: new-instance v0, Lspace/xinzhi/globe/ui/tools/CompassToolsKt$CompassTools$4$6$7$1$2$1$2;\n001e: invoke-direct {v0, v11, v13, v14, v10}, Lspace/xinzhi/globe/ui/tools/CompassToolsKt$CompassTools$4$6$7$1$2$1$2;-><init>(Lkotlin/jvm/internal/Ref$ObjectRef;Lkotlinx/coroutines/T;Landroidx/compose/ui/graphics/layer/GraphicsLayer;Lspace/xinzhi/globe/ui/base/BaseActivity;)V\n0021: invoke-virtual {v12, v10, v15, v0}, Lspace/xinzhi/globe/viewmodel/MainViewModel;->z3(Landroid/content/Context;Lkotlin/jvm/functions/Function1;Landroidx/camera/core/ImageCapture$OnImageSavedCallback;)V\n0024: sget-object v10, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;\n0026: return-object v10\n0027: invoke-virtual {v11}, Lspace/xinzhi/globe/ui/controller/g;->q()Z\n002a: move-result v11\n002b: if-nez v11, :0040\n002d: invoke-static {}, Lkotlinx/coroutines/m0;->c()Lkotlinx/coroutines/N;\n0030: move-result-object v5\n0031: new-instance v7, Lspace/xinzhi/globe/ui/tools/CompassToolsKt$c;\n0033: invoke-direct {v7, v15, v10, v3}, Lspace/xinzhi/globe/ui/tools/CompassToolsKt$c;-><init>(Landroidx/compose/ui/graphics/layer/GraphicsLayer;Lspace/xinzhi/globe/ui/base/BaseActivity;Lkotlin/coroutines/Continuation;)V\n0036: const/4 v8, 2\n0037: const/4 v9, 0\n0038: const/4 v6, 0\n0039: move-object v4, v13\n003a: invoke-static/range {v4 .. v9}, Lkotlinx/coroutines/i;->e(Lkotlinx/coroutines/T;Lkotlin/coroutines/CoroutineContext;Lkotlinx/coroutines/V;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lkotlinx/coroutines/Q0;\n003d: sget-object v10, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;\n003f: return-object v10\n0040: invoke-virtual {v12}, Lspace/xinzhi/globe/viewmodel/MainViewModel;->j0()Lspace/xinzhi/globe/map/MapWebController;\n0043: move-result-object v0\n0044: new-instance v3, Lspace/xinzhi/globe/ui/tools/k0;\n0046: invoke-direct {v3, v10}, Lspace/xinzhi/globe/ui/tools/k0;-><init>(Lspace/xinzhi/globe/ui/base/BaseActivity;)V\n0049: const/4 v4, 1\n004a: const/4 v5, 0\n004b: const/4 v1, 0\n004c: const-string v2, \"compass\"\n004e: invoke-static/range {v0 .. v5}, Lspace/xinzhi/globe/map/MapWebApiKt;->getScreenshot$default(Lspace/xinzhi/globe/map/MapWebController;[DLjava/lang/String;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V\n0051: sget-object v10, Lkotlin/Unit;->INSTANCE:Lkotlin/Unit;\n0053: return-object v10",
+    "method": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->E0(Lspace/xinzhi/globe/ui/base/BaseActivity;Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;Lkotlinx/coroutines/T;Landroidx/compose/ui/graphics/layer/GraphicsLayer;Landroidx/compose/ui/graphics/layer/GraphicsLayer;)Lkotlin/Unit;",
+    "outs": 6,
+    "overload_index": 0,
+    "overloads": [
+      "public static final kotlin.Unit E0(space.xinzhi.globe.ui.base.BaseActivity, space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel, kotlinx.coroutines.T, androidx.compose.ui.graphics.layer.GraphicsLayer, androidx.compose.ui.graphics.layer.GraphicsLayer)"
+    ],
+    "registers": 16,
+    "signature": "public static final kotlin.Unit E0(space.xinzhi.globe.ui.base.BaseActivity, space.xinzhi.globe.ui.controller.g, space.xinzhi.globe.viewmodel.MainViewModel, kotlinx.coroutines.T, androidx.compose.ui.graphics.layer.GraphicsLayer, androidx.compose.ui.graphics.layer.GraphicsLayer)",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->E0(Lspace/xinzhi/globe/ui/base/BaseActivity;Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;Lkotlinx/coroutines/T;Landroidx/compose/ui/graphics/layer/GraphicsLayer;Landroidx/compose/ui/graphics/layer/GraphicsLayer;)Lkotlin/Unit; (classes06.dex): 44 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 44,
+    "total": 44
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/ui/tools/CompassToolsKt;->E0(Lspace/xinzhi/globe/ui/base/BaseActivity;Lspace/xinzhi/globe/ui/controller/g;Lspace/xinzhi/globe/viewmodel/MainViewModel;Lkotlinx/coroutines/T;Landroidx/compose/ui/graphics/layer/GraphicsLayer;Landroidx/compose/ui/graphics/layer/GraphicsLayer;)Lkotlin/Unit;"
+    }
+  ],
+  "links": []
+}

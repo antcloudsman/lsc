@@ -1,0 +1,365 @@
+{
+  "id": "ev_fbb90efae39a8bad547a6282696560a1b21aab63aaa2302fdbf8a1711d3549b2",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.MyWrapperProxyApplication",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "initProxyApplication",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\input\\swss.apk"
+  },
+  "result": {
+    "access": [
+      "protected"
+    ],
+    "class": "Lspace/xinzhi/globe/MyWrapperProxyApplication;",
+    "dex": "classes.dex",
+    "ins": 2,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v5}, Landroid/content/Context;->getApplicationInfo()Landroid/content/pm/ApplicationInfo;",
+        "units": 3
+      },
+      {
+        "offset": "0003",
+        "opcode": "0x0c",
+        "text": "move-result-object v0",
+        "units": 1
+      },
+      {
+        "offset": "0004",
+        "opcode": "0x54",
+        "text": "iget-object v0, v0, Landroid/content/pm/ApplicationInfo;->sourceDir:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0006",
+        "opcode": "0x12",
+        "text": "const/4 v1, 0",
+        "units": 1
+      },
+      {
+        "offset": "0007",
+        "opcode": "0x22",
+        "text": "new-instance v2, Ljava/util/zip/ZipFile;",
+        "units": 2
+      },
+      {
+        "offset": "0009",
+        "opcode": "0x70",
+        "text": "invoke-direct {v2, v0}, Ljava/util/zip/ZipFile;-><init>(Ljava/lang/String;)V",
+        "units": 3
+      },
+      {
+        "offset": "000c",
+        "opcode": "0x07",
+        "text": "move-object v1, v2",
+        "units": 1
+      },
+      {
+        "offset": "000d",
+        "opcode": "0x28",
+        "text": "goto :0012",
+        "units": 1
+      },
+      {
+        "offset": "000e",
+        "opcode": "0x0d",
+        "text": "move-exception v2",
+        "units": 1
+      },
+      {
+        "offset": "000f",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v2}, Ljava/io/IOException;->printStackTrace()V",
+        "units": 3
+      },
+      {
+        "offset": "0012",
+        "opcode": "0x39",
+        "text": "if-nez v1, :001f",
+        "units": 2
+      },
+      {
+        "offset": "0014",
+        "opcode": "0x71",
+        "text": "invoke-static {}, Landroid/os/Process;->myPid()I",
+        "units": 3
+      },
+      {
+        "offset": "0017",
+        "opcode": "0x0a",
+        "text": "move-result v2",
+        "units": 1
+      },
+      {
+        "offset": "0018",
+        "opcode": "0x71",
+        "text": "invoke-static {v2}, Landroid/os/Process;->killProcess(I)V",
+        "units": 3
+      },
+      {
+        "offset": "001b",
+        "opcode": "0x12",
+        "text": "const/4 v2, 0",
+        "units": 1
+      },
+      {
+        "offset": "001c",
+        "opcode": "0x71",
+        "text": "invoke-static {v2}, Ljava/lang/System;->exit(I)V",
+        "units": 3
+      },
+      {
+        "offset": "001f",
+        "opcode": "0x71",
+        "text": "invoke-static {v5, v1}, Lcom/wrapper/proxyapplication/Util;->PrepareSecurefiles(Landroid/content/Context;Ljava/util/zip/ZipFile;)I",
+        "units": 3
+      },
+      {
+        "offset": "0022",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v1}, Ljava/util/zip/ZipFile;->close()V",
+        "units": 3
+      },
+      {
+        "offset": "0025",
+        "opcode": "0x28",
+        "text": "goto :002a",
+        "units": 1
+      },
+      {
+        "offset": "0026",
+        "opcode": "0x0d",
+        "text": "move-exception v2",
+        "units": 1
+      },
+      {
+        "offset": "0027",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v2}, Ljava/io/IOException;->printStackTrace()V",
+        "units": 3
+      },
+      {
+        "offset": "002a",
+        "opcode": "0x62",
+        "text": "sget-object v2, Lcom/wrapper/proxyapplication/Util;->CPUABI:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "002c",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"86\"",
+        "units": 2
+      },
+      {
+        "offset": "002e",
+        "opcode": "0x32",
+        "text": "if-eq v2, v3, :003d",
+        "units": 2
+      },
+      {
+        "offset": "0030",
+        "opcode": "0x62",
+        "text": "sget-object v2, Lcom/wrapper/proxyapplication/Util;->CPUABI:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0032",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"86_64\"",
+        "units": 2
+      },
+      {
+        "offset": "0034",
+        "opcode": "0x33",
+        "text": "if-ne v2, v3, :0037",
+        "units": 2
+      },
+      {
+        "offset": "0036",
+        "opcode": "0x28",
+        "text": "goto :003d",
+        "units": 1
+      },
+      {
+        "offset": "0037",
+        "opcode": "0x62",
+        "text": "sget-object v2, Lcom/wrapper/proxyapplication/Util;->simplelibname:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0039",
+        "opcode": "0x71",
+        "text": "invoke-static {v2}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V",
+        "units": 3
+      },
+      {
+        "offset": "003c",
+        "opcode": "0x28",
+        "text": "goto :005e",
+        "units": 1
+      },
+      {
+        "offset": "003d",
+        "opcode": "0x22",
+        "text": "new-instance v2, Ljava/lang/StringBuilder;",
+        "units": 2
+      },
+      {
+        "offset": "003f",
+        "opcode": "0x70",
+        "text": "invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V",
+        "units": 3
+      },
+      {
+        "offset": "0042",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v5}, Landroid/content/Context;->getFilesDir()Ljava/io/File;",
+        "units": 3
+      },
+      {
+        "offset": "0045",
+        "opcode": "0x0c",
+        "text": "move-result-object v3",
+        "units": 1
+      },
+      {
+        "offset": "0046",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v3}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;",
+        "units": 3
+      },
+      {
+        "offset": "0049",
+        "opcode": "0x0c",
+        "text": "move-result-object v3",
+        "units": 1
+      },
+      {
+        "offset": "004a",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+        "units": 3
+      },
+      {
+        "offset": "004d",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"/prodexdir/\"",
+        "units": 2
+      },
+      {
+        "offset": "004f",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+        "units": 3
+      },
+      {
+        "offset": "0052",
+        "opcode": "0x62",
+        "text": "sget-object v3, Lcom/wrapper/proxyapplication/Util;->libname:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0054",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+        "units": 3
+      },
+      {
+        "offset": "0057",
+        "opcode": "0x6e",
+        "text": "invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;",
+        "units": 3
+      },
+      {
+        "offset": "005a",
+        "opcode": "0x0c",
+        "text": "move-result-object v2",
+        "units": 1
+      },
+      {
+        "offset": "005b",
+        "opcode": "0x71",
+        "text": "invoke-static {v2}, Ljava/lang/System;->load(Ljava/lang/String;)V",
+        "units": 3
+      },
+      {
+        "offset": "005e",
+        "opcode": "0x0e",
+        "text": "return-void",
+        "units": 1
+      }
+    ],
+    "instructions_total": 46,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: invoke-virtual {v5}, Landroid/content/Context;->getApplicationInfo()Landroid/content/pm/ApplicationInfo;\n0003: move-result-object v0\n0004: iget-object v0, v0, Landroid/content/pm/ApplicationInfo;->sourceDir:Ljava/lang/String;\n0006: const/4 v1, 0\n0007: new-instance v2, Ljava/util/zip/ZipFile;\n0009: invoke-direct {v2, v0}, Ljava/util/zip/ZipFile;-><init>(Ljava/lang/String;)V\n000c: move-object v1, v2\n000d: goto :0012\n000e: move-exception v2\n000f: invoke-virtual {v2}, Ljava/io/IOException;->printStackTrace()V\n0012: if-nez v1, :001f\n0014: invoke-static {}, Landroid/os/Process;->myPid()I\n0017: move-result v2\n0018: invoke-static {v2}, Landroid/os/Process;->killProcess(I)V\n001b: const/4 v2, 0\n001c: invoke-static {v2}, Ljava/lang/System;->exit(I)V\n001f: invoke-static {v5, v1}, Lcom/wrapper/proxyapplication/Util;->PrepareSecurefiles(Landroid/content/Context;Ljava/util/zip/ZipFile;)I\n0022: invoke-virtual {v1}, Ljava/util/zip/ZipFile;->close()V\n0025: goto :002a\n0026: move-exception v2\n0027: invoke-virtual {v2}, Ljava/io/IOException;->printStackTrace()V\n002a: sget-object v2, Lcom/wrapper/proxyapplication/Util;->CPUABI:Ljava/lang/String;\n002c: const-string v3, \"86\"\n002e: if-eq v2, v3, :003d\n0030: sget-object v2, Lcom/wrapper/proxyapplication/Util;->CPUABI:Ljava/lang/String;\n0032: const-string v3, \"86_64\"\n0034: if-ne v2, v3, :0037\n0036: goto :003d\n0037: sget-object v2, Lcom/wrapper/proxyapplication/Util;->simplelibname:Ljava/lang/String;\n0039: invoke-static {v2}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V\n003c: goto :005e\n003d: new-instance v2, Ljava/lang/StringBuilder;\n003f: invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V\n0042: invoke-virtual {v5}, Landroid/content/Context;->getFilesDir()Ljava/io/File;\n0045: move-result-object v3\n0046: invoke-virtual {v3}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;\n0049: move-result-object v3\n004a: invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;\n004d: const-string v3, \"/prodexdir/\"\n004f: invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;\n0052: sget-object v3, Lcom/wrapper/proxyapplication/Util;->libname:Ljava/lang/String;\n0054: invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;\n0057: invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;\n005a: move-result-object v2\n005b: invoke-static {v2}, Ljava/lang/System;->load(Ljava/lang/String;)V\n005e: return-void",
+    "method": "Lspace/xinzhi/globe/MyWrapperProxyApplication;->initProxyApplication(Landroid/content/Context;)V",
+    "outs": 2,
+    "overload_index": 0,
+    "overloads": [
+      "protected void initProxyApplication(android.content.Context)"
+    ],
+    "registers": 6,
+    "signature": "protected void initProxyApplication(android.content.Context)",
+    "tries": [
+      {
+        "end": 12,
+        "handlers": [
+          {
+            "address": 14,
+            "exception": "Ljava/io/IOException;"
+          }
+        ],
+        "start": 7
+      },
+      {
+        "end": 37,
+        "handlers": [
+          {
+            "address": 38,
+            "exception": "Ljava/io/IOException;"
+          }
+        ],
+        "start": 34
+      }
+    ]
+  },
+  "summary": "Lspace/xinzhi/globe/MyWrapperProxyApplication;->initProxyApplication(Landroid/content/Context;)V (classes.dex): 46 instructions, 2 try block(s).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 46,
+    "total": 46
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\input\\swss.apk"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/MyWrapperProxyApplication;->initProxyApplication(Landroid/content/Context;)V"
+    }
+  ],
+  "links": []
+}

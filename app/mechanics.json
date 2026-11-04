@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "values": [
+    {"name": "mountains per circle", "group": "compass", "value": 24, "unit": "count", "source": "CompassReadTypeEnum TYPE_4 (decompiled), knowledge base"},
+    {"name": "degrees per mountain", "group": "compass", "value": 15, "unit": "deg", "source": "CompassReadTypeEnum TYPE_4 intervalDegrees 0x41700000 (decompiled)"},
+    {"name": "earth plate (地盘正针) offset", "group": "plates", "value": 0, "unit": "deg", "source": "knowledge base 地盘正针二十四山"},
+    {"name": "human plate (人盘中针) offset", "group": "plates", "value": -7.5, "unit": "deg", "source": "knowledge base 人盘中针二十四山 (counterclockwise)"},
+    {"name": "heaven plate (天盘缝针) offset", "group": "plates", "value": 7.5, "unit": "deg", "source": "knowledge base 天盘缝针二十四山 (clockwise)"},
+    {"name": "120 fenjin divisions", "group": "divisions", "value": 120, "unit": "count", "source": "CompassReadTypeEnum TYPE_6 (decompiled)"},
+    {"name": "fenjin degrees each", "group": "divisions", "value": 3, "unit": "deg", "source": "CompassReadTypeEnum TYPE_6 intervalDegrees 0x40400000 (decompiled)"},
+    {"name": "72 dragons (穿山七十二龙) divisions", "group": "divisions", "value": 72, "unit": "count", "source": "CompassReadTypeEnum TYPE_5 (decompiled)"},
+    {"name": "72 dragons degrees each", "group": "divisions", "value": 5, "unit": "deg", "source": "CompassReadTypeEnum TYPE_5 intervalDegrees 0x40a00000 (decompiled)"},
+    {"name": "60 dragons (透地平分六十龙) divisions", "group": "divisions", "value": 60, "unit": "count", "source": "CompassReadTypeEnum TYPE_7 (decompiled)"},
+    {"name": "60 dragons degrees each", "group": "divisions", "value": 6, "unit": "deg", "source": "CompassReadTypeEnum TYPE_7 intervalDegrees 0x40c00000 (decompiled)"},
+    {"name": "64 hexagrams degrees each", "group": "divisions", "value": 5.625, "unit": "deg", "source": "CompassReadTypeEnum TYPE_11/12/13 intervalDegrees 0x40b40000 (decompiled)"},
+    {"name": "bagua degrees each", "group": "bagua", "value": 45, "unit": "deg", "source": "CompassReadTypeEnum TYPE_1/2/3 intervalDegrees 0x42340000 (decompiled)"},
+    {"name": "jian xiang range (兼向)", "group": "compass", "value": 3, "unit": "deg", "source": "CompassReadTypeEnum getTextList TYPE_14 (九度外 = outer 3°, decompiled)"},
+    {"name": "zheng xiang range (正向)", "group": "compass", "value": 9, "unit": "deg", "source": "CompassReadTypeEnum getTextList TYPE_14 (九度内 = central 9°, decompiled)"},
+    {"name": "magnetic north mountain", "group": "compass", "value": "子", "source": "knowledge base 地盘正针二十四山"},
+    {"name": "24 mountains order", "group": "compass", "value": "子癸丑艮寅甲卯乙辰巽巳丙午丁未坤申庚酉辛戌乾亥壬", "source": "standard sanhe order, knowledge base"},
+    {"name": "bagua five elements", "group": "bagua", "value": "乾兑金 坤艮土 震巽木 坎水 离火", "source": "knowledge base 六十甲配六十四卦五行"},
+    {"name": "compass dial types", "group": "compass", "value": 5, "unit": "count", "source": "CommonCompassEnum COMPASS_0..4 (decompiled): 二十四山(阴)/常用罗盘/三合罗盘(白)/三元罗盘(金)/综合罗盘(白)"}
+  ]
+}

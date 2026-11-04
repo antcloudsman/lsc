@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">罗盘 · 风水</string>
+    <string name="tab_compass">罗盘</string>
+    <string name="tab_map">地图</string>
+    <string name="tab_knowledge">知识</string>
+    <string name="heading">朝向</string>
+    <string name="reading">方位读数</string>
+    <string name="north_reset">复位朝北</string>
+    <string name="sitting_flip">坐向（转180°）</string>
+</resources>

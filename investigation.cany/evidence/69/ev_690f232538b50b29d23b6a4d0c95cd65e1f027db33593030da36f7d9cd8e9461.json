@@ -1,0 +1,913 @@
+{
+  "id": "ev_690f232538b50b29d23b6a4d0c95cd65e1f027db33593030da36f7d9cd8e9461",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 200,
+    "offset": 0,
+    "path": "E:\\APPDetector\\input\\swss.apk",
+    "query": ""
+  },
+  "result": {
+    "classes": [
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/BuildConfig;",
+        "dex": "classes2.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.BuildConfig",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/BuildConfig;",
+        "dex": "classes3.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.BuildConfig",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/BuildConfig;",
+        "dex": "classes4.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.BuildConfig",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/BuildConfig;",
+        "dex": "classes5.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.BuildConfig",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/BuildConfig;",
+        "dex": "classes6.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.BuildConfig",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/BuildConfig;",
+        "dex": "classes7.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.BuildConfig",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R;",
+        "dex": "classes2.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R;",
+        "dex": "classes3.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R;",
+        "dex": "classes4.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R;",
+        "dex": "classes5.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R;",
+        "dex": "classes6.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R;",
+        "dex": "classes7.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$attr;",
+        "dex": "classes2.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R$attr",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$attr;",
+        "dex": "classes3.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R$attr",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$attr;",
+        "dex": "classes4.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R$attr",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$attr;",
+        "dex": "classes5.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R$attr",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$attr;",
+        "dex": "classes6.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R$attr",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$attr;",
+        "dex": "classes7.dex",
+        "fields": 0,
+        "methods": 1,
+        "name": "com.example.helloworld.R$attr",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$dimen;",
+        "dex": "classes2.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$dimen",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$dimen;",
+        "dex": "classes3.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$dimen",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$dimen;",
+        "dex": "classes4.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$dimen",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$dimen;",
+        "dex": "classes5.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$dimen",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$dimen;",
+        "dex": "classes6.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$dimen",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$dimen;",
+        "dex": "classes7.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$dimen",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$drawable;",
+        "dex": "classes2.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$drawable",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$drawable;",
+        "dex": "classes3.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$drawable",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$drawable;",
+        "dex": "classes4.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$drawable",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$drawable;",
+        "dex": "classes5.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$drawable",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$drawable;",
+        "dex": "classes6.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$drawable",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$drawable;",
+        "dex": "classes7.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$drawable",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$id;",
+        "dex": "classes2.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$id",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$id;",
+        "dex": "classes3.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$id",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$id;",
+        "dex": "classes4.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$id",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$id;",
+        "dex": "classes5.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$id",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$id;",
+        "dex": "classes6.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$id",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$id;",
+        "dex": "classes7.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$id",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$menu;",
+        "dex": "classes2.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$menu",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$menu;",
+        "dex": "classes3.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$menu",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$menu;",
+        "dex": "classes4.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$menu",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$menu;",
+        "dex": "classes5.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$menu",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$menu;",
+        "dex": "classes6.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$menu",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$menu;",
+        "dex": "classes7.dex",
+        "fields": 1,
+        "methods": 1,
+        "name": "com.example.helloworld.R$menu",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$string;",
+        "dex": "classes2.dex",
+        "fields": 3,
+        "methods": 1,
+        "name": "com.example.helloworld.R$string",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$string;",
+        "dex": "classes3.dex",
+        "fields": 3,
+        "methods": 1,
+        "name": "com.example.helloworld.R$string",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$string;",
+        "dex": "classes4.dex",
+        "fields": 3,
+        "methods": 1,
+        "name": "com.example.helloworld.R$string",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$string;",
+        "dex": "classes5.dex",
+        "fields": 3,
+        "methods": 1,
+        "name": "com.example.helloworld.R$string",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$string;",
+        "dex": "classes6.dex",
+        "fields": 3,
+        "methods": 1,
+        "name": "com.example.helloworld.R$string",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$string;",
+        "dex": "classes7.dex",
+        "fields": 3,
+        "methods": 1,
+        "name": "com.example.helloworld.R$string",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$style;",
+        "dex": "classes2.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$style",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$style;",
+        "dex": "classes3.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$style",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$style;",
+        "dex": "classes4.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$style",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$style;",
+        "dex": "classes5.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$style",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$style;",
+        "dex": "classes6.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$style",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/example/helloworld/R$style;",
+        "dex": "classes7.dex",
+        "fields": 2,
+        "methods": 1,
+        "name": "com.example.helloworld.R$style",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [],
+        "descriptor": "Lcom/wrapper/proxyapplication/AndroidNClassLoader;",
+        "dex": "classes.dex",
+        "fields": 3,
+        "methods": 6,
+        "name": "com.wrapper.proxyapplication.AndroidNClassLoader",
+        "superclass": "dalvik.system.PathClassLoader"
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/CustomerClassLoader;",
+        "dex": "classes.dex",
+        "fields": 10,
+        "methods": 12,
+        "name": "com.wrapper.proxyapplication.CustomerClassLoader",
+        "superclass": "dalvik.system.PathClassLoader"
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDex;",
+        "dex": "classes.dex",
+        "fields": 10,
+        "methods": 20,
+        "name": "com.wrapper.proxyapplication.MultiDex",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDex$V19;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 6,
+        "name": "com.wrapper.proxyapplication.MultiDex$V19",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDex$V4;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 5,
+        "name": "com.wrapper.proxyapplication.MultiDex$V4",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDexForMemoryDex;",
+        "dex": "classes.dex",
+        "fields": 2,
+        "methods": 13,
+        "name": "com.wrapper.proxyapplication.MultiDexForMemoryDex",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDexForMemoryDex$V26;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 4,
+        "name": "com.wrapper.proxyapplication.MultiDexForMemoryDex$V26",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDexForTinker;",
+        "dex": "classes.dex",
+        "fields": 9,
+        "methods": 20,
+        "name": "com.wrapper.proxyapplication.MultiDexForTinker",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDexForTinker$V19;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 6,
+        "name": "com.wrapper.proxyapplication.MultiDexForTinker$V19",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDexForTinker$V4;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 5,
+        "name": "com.wrapper.proxyapplication.MultiDexForTinker$V4",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDexForTinkerForMemoryDex;",
+        "dex": "classes.dex",
+        "fields": 2,
+        "methods": 13,
+        "name": "com.wrapper.proxyapplication.MultiDexForTinkerForMemoryDex",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "final"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/MultiDexForTinkerForMemoryDex$V26;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 4,
+        "name": "com.wrapper.proxyapplication.MultiDexForTinkerForMemoryDex$V26",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/ShareReflectUtil;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 10,
+        "name": "com.wrapper.proxyapplication.ShareReflectUtil",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/Util;",
+        "dex": "classes.dex",
+        "fields": 27,
+        "methods": 17,
+        "name": "com.wrapper.proxyapplication.Util",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public",
+          "abstract"
+        ],
+        "descriptor": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;",
+        "dex": "classes.dex",
+        "fields": 23,
+        "methods": 11,
+        "name": "com.wrapper.proxyapplication.WrapperProxyApplication",
+        "superclass": "android.app.Application"
+      },
+      {
+        "access": [],
+        "descriptor": "Lcom/wrapper/proxyapplication/WrapperProxyApplication$1;",
+        "dex": "classes.dex",
+        "fields": 1,
+        "methods": 2,
+        "name": "com.wrapper.proxyapplication.WrapperProxyApplication$1",
+        "superclass": "java.util.TimerTask"
+      },
+      {
+        "access": [],
+        "descriptor": "Lcom/wrapper/proxyapplication/WrapperProxyApplication$1$1;",
+        "dex": "classes.dex",
+        "fields": 1,
+        "methods": 2,
+        "name": "com.wrapper.proxyapplication.WrapperProxyApplication$1$1",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [],
+        "descriptor": "Lcom/wrapper/proxyapplication/WrapperProxyApplication$2;",
+        "dex": "classes.dex",
+        "fields": 1,
+        "methods": 2,
+        "name": "com.wrapper.proxyapplication.WrapperProxyApplication$2",
+        "superclass": "java.util.TimerTask"
+      },
+      {
+        "access": [],
+        "descriptor": "Lcom/wrapper/proxyapplication/WrapperProxyApplication$2$1;",
+        "dex": "classes.dex",
+        "fields": 1,
+        "methods": 2,
+        "name": "com.wrapper.proxyapplication.WrapperProxyApplication$2$1",
+        "superclass": "java.lang.Object"
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/MyWrapperProxyApplication;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 3,
+        "name": "space.xinzhi.globe.MyWrapperProxyApplication",
+        "superclass": "com.wrapper.proxyapplication.WrapperProxyApplication"
+      }
+    ],
+    "classes_total": 74,
+    "dex_files": [
+      "classes.dex",
+      "classes2.dex",
+      "classes3.dex",
+      "classes4.dex",
+      "classes5.dex",
+      "classes6.dex",
+      "classes7.dex"
+    ],
+    "matches": 74,
+    "query": ""
+  },
+  "summary": "74 of 74 classes in 7 DEX file(s); showing 74.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 74,
+    "total": 74
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\input\\swss.apk"
+    }
+  ],
+  "links": []
+}

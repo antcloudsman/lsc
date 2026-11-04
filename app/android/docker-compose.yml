@@ -1,0 +1,12 @@
+services:
+  build:
+    build: .
+    working_dir: /src
+    volumes:
+      - .:/src
+      - gradle-cache:/root/.gradle
+    # Point AGP at the in-container SDK, then build.
+    command: sh -c "echo 'sdk.dir=/opt/android-sdk' > local.properties && gradle assembleDebug --no-daemon"
+
+volumes:
+  gradle-cache:

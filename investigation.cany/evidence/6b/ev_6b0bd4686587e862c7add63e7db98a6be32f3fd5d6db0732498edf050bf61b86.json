@@ -1,0 +1,956 @@
+{
+  "id": "ev_6b0bd4686587e862c7add63e7db98a6be32f3fd5d6db0732498edf050bf61b86",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.common.CompassReadTypeEnum",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "<clinit>",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "static",
+      "constructor"
+    ],
+    "class": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+    "dex": "classes06.dex",
+    "ins": 0,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x22",
+        "text": "new-instance v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0002",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"先天八卦_卦位.html\"",
+        "units": 2
+      },
+      {
+        "offset": "0004",
+        "opcode": "0x12",
+        "text": "const/4 v7, 0",
+        "units": 1
+      },
+      {
+        "offset": "0005",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"TYPE_1\"",
+        "units": 2
+      },
+      {
+        "offset": "0007",
+        "opcode": "0x12",
+        "text": "const/4 v2, 0",
+        "units": 1
+      },
+      {
+        "offset": "0008",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"先天八卦_卦位\"",
+        "units": 2
+      },
+      {
+        "offset": "000a",
+        "opcode": "0x15",
+        "text": "const/high16 v4, 0x41b40000",
+        "units": 2
+      },
+      {
+        "offset": "000c",
+        "opcode": "0x15",
+        "text": "const/high16 v5, 0x42340000",
+        "units": 2
+      },
+      {
+        "offset": "000e",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v0 .. v7}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "0011",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_1:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0013",
+        "opcode": "0x22",
+        "text": "new-instance v1, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0015",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"后天八卦_卦位.html\"",
+        "units": 2
+      },
+      {
+        "offset": "0017",
+        "opcode": "0x12",
+        "text": "const/4 v8, 0",
+        "units": 1
+      },
+      {
+        "offset": "0018",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"TYPE_2\"",
+        "units": 2
+      },
+      {
+        "offset": "001a",
+        "opcode": "0x12",
+        "text": "const/4 v3, 1",
+        "units": 1
+      },
+      {
+        "offset": "001b",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"后天八卦_卦位\"",
+        "units": 2
+      },
+      {
+        "offset": "001d",
+        "opcode": "0x15",
+        "text": "const/high16 v5, 0x41b40000",
+        "units": 2
+      },
+      {
+        "offset": "001f",
+        "opcode": "0x15",
+        "text": "const/high16 v6, 0x42340000",
+        "units": 2
+      },
+      {
+        "offset": "0021",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v1 .. v8}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "0024",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_2:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0026",
+        "opcode": "0x22",
+        "text": "new-instance v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0028",
+        "opcode": "0x1a",
+        "text": "const-string v8, \"先天八卦洛书数.html\"",
+        "units": 2
+      },
+      {
+        "offset": "002a",
+        "opcode": "0x12",
+        "text": "const/4 v9, 0",
+        "units": 1
+      },
+      {
+        "offset": "002b",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"TYPE_3\"",
+        "units": 2
+      },
+      {
+        "offset": "002d",
+        "opcode": "0x12",
+        "text": "const/4 v4, 2",
+        "units": 1
+      },
+      {
+        "offset": "002e",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"先天八卦洛书数\"",
+        "units": 2
+      },
+      {
+        "offset": "0030",
+        "opcode": "0x15",
+        "text": "const/high16 v6, 0x41b40000",
+        "units": 2
+      },
+      {
+        "offset": "0032",
+        "opcode": "0x15",
+        "text": "const/high16 v7, 0x42340000",
+        "units": 2
+      },
+      {
+        "offset": "0034",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v2 .. v9}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "0037",
+        "opcode": "0x69",
+        "text": "sput-object v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_3:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0039",
+        "opcode": "0x22",
+        "text": "new-instance v3, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "003b",
+        "opcode": "0x1a",
+        "text": "const-string v9, \"地盘正针二十四山.html\"",
+        "units": 2
+      },
+      {
+        "offset": "003d",
+        "opcode": "0x12",
+        "text": "const/4 v10, 1",
+        "units": 1
+      },
+      {
+        "offset": "003e",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"TYPE_4\"",
+        "units": 2
+      },
+      {
+        "offset": "0040",
+        "opcode": "0x12",
+        "text": "const/4 v5, 3",
+        "units": 1
+      },
+      {
+        "offset": "0041",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"地盘正针二十四山\"",
+        "units": 2
+      },
+      {
+        "offset": "0043",
+        "opcode": "0x15",
+        "text": "const/high16 v7, 0x40f00000",
+        "units": 2
+      },
+      {
+        "offset": "0045",
+        "opcode": "0x15",
+        "text": "const/high16 v8, 0x41700000",
+        "units": 2
+      },
+      {
+        "offset": "0047",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v3 .. v10}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "004a",
+        "opcode": "0x69",
+        "text": "sput-object v3, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_4:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "004c",
+        "opcode": "0x22",
+        "text": "new-instance v4, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "004e",
+        "opcode": "0x1a",
+        "text": "const-string v10, \"穿山七十二龙.html\"",
+        "units": 2
+      },
+      {
+        "offset": "0050",
+        "opcode": "0x12",
+        "text": "const/4 v11, 1",
+        "units": 1
+      },
+      {
+        "offset": "0051",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"TYPE_5\"",
+        "units": 2
+      },
+      {
+        "offset": "0053",
+        "opcode": "0x12",
+        "text": "const/4 v6, 4",
+        "units": 1
+      },
+      {
+        "offset": "0054",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"穿山七十二龙\"",
+        "units": 2
+      },
+      {
+        "offset": "0056",
+        "opcode": "0x15",
+        "text": "const/high16 v8, 0x40200000",
+        "units": 2
+      },
+      {
+        "offset": "0058",
+        "opcode": "0x15",
+        "text": "const/high16 v9, 0x40a00000",
+        "units": 2
+      },
+      {
+        "offset": "005a",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v4 .. v11}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "005d",
+        "opcode": "0x69",
+        "text": "sput-object v4, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_5:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "005f",
+        "opcode": "0x22",
+        "text": "new-instance v5, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0061",
+        "opcode": "0x1a",
+        "text": "const-string v11, \"地盘正针百二十分金.html\"",
+        "units": 2
+      },
+      {
+        "offset": "0063",
+        "opcode": "0x12",
+        "text": "const/4 v12, 1",
+        "units": 1
+      },
+      {
+        "offset": "0064",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"TYPE_6\"",
+        "units": 2
+      },
+      {
+        "offset": "0066",
+        "opcode": "0x12",
+        "text": "const/4 v7, 5",
+        "units": 1
+      },
+      {
+        "offset": "0067",
+        "opcode": "0x1a",
+        "text": "const-string v8, \"地盘正针百二十分金\"",
+        "units": 2
+      },
+      {
+        "offset": "0069",
+        "opcode": "0x15",
+        "text": "const/high16 v9, 0x3fc00000",
+        "units": 2
+      },
+      {
+        "offset": "006b",
+        "opcode": "0x15",
+        "text": "const/high16 v10, 0x40400000",
+        "units": 2
+      },
+      {
+        "offset": "006d",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v5 .. v12}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "0070",
+        "opcode": "0x69",
+        "text": "sput-object v5, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_6:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0072",
+        "opcode": "0x22",
+        "text": "new-instance v6, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0074",
+        "opcode": "0x1a",
+        "text": "const-string v12, \"透地平分六十龙.html\"",
+        "units": 2
+      },
+      {
+        "offset": "0076",
+        "opcode": "0x12",
+        "text": "const/4 v13, 1",
+        "units": 1
+      },
+      {
+        "offset": "0077",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"TYPE_7\"",
+        "units": 2
+      },
+      {
+        "offset": "0079",
+        "opcode": "0x12",
+        "text": "const/4 v8, 6",
+        "units": 1
+      },
+      {
+        "offset": "007a",
+        "opcode": "0x1a",
+        "text": "const-string v9, \"透地平分六十龙\"",
+        "units": 2
+      },
+      {
+        "offset": "007c",
+        "opcode": "0x15",
+        "text": "const/high16 v10, 0x3fc00000",
+        "units": 2
+      },
+      {
+        "offset": "007e",
+        "opcode": "0x15",
+        "text": "const/high16 v11, 0x40c00000",
+        "units": 2
+      },
+      {
+        "offset": "0080",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v6 .. v13}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "0083",
+        "opcode": "0x69",
+        "text": "sput-object v6, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_7:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0085",
+        "opcode": "0x22",
+        "text": "new-instance v7, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0087",
+        "opcode": "0x1a",
+        "text": "const-string v13, \"人盘中针二十四山.html\"",
+        "units": 2
+      },
+      {
+        "offset": "0089",
+        "opcode": "0x12",
+        "text": "const/4 v14, 1",
+        "units": 1
+      },
+      {
+        "offset": "008a",
+        "opcode": "0x1a",
+        "text": "const-string v8, \"TYPE_8\"",
+        "units": 2
+      },
+      {
+        "offset": "008c",
+        "opcode": "0x12",
+        "text": "const/4 v9, 7",
+        "units": 1
+      },
+      {
+        "offset": "008d",
+        "opcode": "0x1a",
+        "text": "const-string v10, \"人盘中针二十四山\"",
+        "units": 2
+      },
+      {
+        "offset": "008f",
+        "opcode": "0x12",
+        "text": "const/4 v11, 0",
+        "units": 1
+      },
+      {
+        "offset": "0090",
+        "opcode": "0x15",
+        "text": "const/high16 v12, 0x41700000",
+        "units": 2
+      },
+      {
+        "offset": "0092",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v7 .. v14}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "0095",
+        "opcode": "0x69",
+        "text": "sput-object v7, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_8:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0097",
+        "opcode": "0x22",
+        "text": "new-instance v8, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0099",
+        "opcode": "0x1a",
+        "text": "const-string v14, \"天盘缝针二十四山.html\"",
+        "units": 2
+      },
+      {
+        "offset": "009b",
+        "opcode": "0x12",
+        "text": "const/4 v15, 1",
+        "units": 1
+      },
+      {
+        "offset": "009c",
+        "opcode": "0x1a",
+        "text": "const-string v9, \"TYPE_9\"",
+        "units": 2
+      },
+      {
+        "offset": "009e",
+        "opcode": "0x13",
+        "text": "const/16 v10, 8",
+        "units": 2
+      },
+      {
+        "offset": "00a0",
+        "opcode": "0x1a",
+        "text": "const-string v11, \"天盘缝针二十四山\"",
+        "units": 2
+      },
+      {
+        "offset": "00a2",
+        "opcode": "0x12",
+        "text": "const/4 v12, 0",
+        "units": 1
+      },
+      {
+        "offset": "00a3",
+        "opcode": "0x15",
+        "text": "const/high16 v13, 0x41700000",
+        "units": 2
+      },
+      {
+        "offset": "00a5",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v8 .. v15}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "00a8",
+        "opcode": "0x69",
+        "text": "sput-object v8, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_9:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00aa",
+        "opcode": "0x22",
+        "text": "new-instance v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00ac",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"天盘缝针百二十分金.html\"",
+        "units": 2
+      },
+      {
+        "offset": "00ae",
+        "opcode": "0x12",
+        "text": "const/4 v7, 1",
+        "units": 1
+      },
+      {
+        "offset": "00af",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"TYPE_10\"",
+        "units": 2
+      },
+      {
+        "offset": "00b1",
+        "opcode": "0x13",
+        "text": "const/16 v2, 9",
+        "units": 2
+      },
+      {
+        "offset": "00b3",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"天盘缝针百二十分金\"",
+        "units": 2
+      },
+      {
+        "offset": "00b5",
+        "opcode": "0x12",
+        "text": "const/4 v4, 0",
+        "units": 1
+      },
+      {
+        "offset": "00b6",
+        "opcode": "0x15",
+        "text": "const/high16 v5, 0x40400000",
+        "units": 2
+      },
+      {
+        "offset": "00b8",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v0 .. v7}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "00bb",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_10:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00bd",
+        "opcode": "0x22",
+        "text": "new-instance v1, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00bf",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"先天方图六十四卦内卦.html\"",
+        "units": 2
+      },
+      {
+        "offset": "00c1",
+        "opcode": "0x12",
+        "text": "const/4 v8, 1",
+        "units": 1
+      },
+      {
+        "offset": "00c2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"TYPE_11\"",
+        "units": 2
+      },
+      {
+        "offset": "00c4",
+        "opcode": "0x13",
+        "text": "const/16 v3, 0xa",
+        "units": 2
+      },
+      {
+        "offset": "00c6",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"先天方图六十四卦内卦\"",
+        "units": 2
+      },
+      {
+        "offset": "00c8",
+        "opcode": "0x12",
+        "text": "const/4 v5, 0",
+        "units": 1
+      },
+      {
+        "offset": "00c9",
+        "opcode": "0x15",
+        "text": "const/high16 v6, 0x40b40000",
+        "units": 2
+      },
+      {
+        "offset": "00cb",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v1 .. v8}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "00ce",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_11:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00d0",
+        "opcode": "0x22",
+        "text": "new-instance v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00d2",
+        "opcode": "0x1a",
+        "text": "const-string v8, \"先天圆图六十四卦外卦.html\"",
+        "units": 2
+      },
+      {
+        "offset": "00d4",
+        "opcode": "0x12",
+        "text": "const/4 v9, 1",
+        "units": 1
+      },
+      {
+        "offset": "00d5",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"TYPE_12\"",
+        "units": 2
+      },
+      {
+        "offset": "00d7",
+        "opcode": "0x13",
+        "text": "const/16 v4, 0xb",
+        "units": 2
+      },
+      {
+        "offset": "00d9",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"先天圆图六十四卦外卦\"",
+        "units": 2
+      },
+      {
+        "offset": "00db",
+        "opcode": "0x12",
+        "text": "const/4 v6, 0",
+        "units": 1
+      },
+      {
+        "offset": "00dc",
+        "opcode": "0x15",
+        "text": "const/high16 v7, 0x40b40000",
+        "units": 2
+      },
+      {
+        "offset": "00de",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v2 .. v9}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "00e1",
+        "opcode": "0x69",
+        "text": "sput-object v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_12:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00e3",
+        "opcode": "0x22",
+        "text": "new-instance v3, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00e5",
+        "opcode": "0x1a",
+        "text": "const-string v9, \"六十甲配六十四卦五行.html\"",
+        "units": 2
+      },
+      {
+        "offset": "00e7",
+        "opcode": "0x12",
+        "text": "const/4 v10, 1",
+        "units": 1
+      },
+      {
+        "offset": "00e8",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"TYPE_13\"",
+        "units": 2
+      },
+      {
+        "offset": "00ea",
+        "opcode": "0x13",
+        "text": "const/16 v5, 0xc",
+        "units": 2
+      },
+      {
+        "offset": "00ec",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"六十甲配六十四卦五行\"",
+        "units": 2
+      },
+      {
+        "offset": "00ee",
+        "opcode": "0x12",
+        "text": "const/4 v7, 0",
+        "units": 1
+      },
+      {
+        "offset": "00ef",
+        "opcode": "0x15",
+        "text": "const/high16 v8, 0x40b40000",
+        "units": 2
+      },
+      {
+        "offset": "00f1",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v3 .. v10}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "00f4",
+        "opcode": "0x69",
+        "text": "sput-object v3, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_13:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00f6",
+        "opcode": "0x22",
+        "text": "new-instance v4, Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "00f8",
+        "opcode": "0x1a",
+        "text": "const-string v10, \"正兼向度数指标.html\"",
+        "units": 2
+      },
+      {
+        "offset": "00fa",
+        "opcode": "0x12",
+        "text": "const/4 v11, 1",
+        "units": 1
+      },
+      {
+        "offset": "00fb",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"TYPE_14\"",
+        "units": 2
+      },
+      {
+        "offset": "00fd",
+        "opcode": "0x13",
+        "text": "const/16 v6, 0xd",
+        "units": 2
+      },
+      {
+        "offset": "00ff",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"正兼向度数指标\"",
+        "units": 2
+      },
+      {
+        "offset": "0101",
+        "opcode": "0x12",
+        "text": "const/4 v8, 0",
+        "units": 1
+      },
+      {
+        "offset": "0102",
+        "opcode": "0x15",
+        "text": "const/high16 v9, 0x40400000",
+        "units": 2
+      },
+      {
+        "offset": "0104",
+        "opcode": "0x76",
+        "text": "invoke-direct/range {v4 .. v11}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V",
+        "units": 3
+      },
+      {
+        "offset": "0107",
+        "opcode": "0x69",
+        "text": "sput-object v4, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_14:Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "0109",
+        "opcode": "0x71",
+        "text": "invoke-static {}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$values()[Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 3
+      },
+      {
+        "offset": "010c",
+        "opcode": "0x0c",
+        "text": "move-result-object v0",
+        "units": 1
+      },
+      {
+        "offset": "010d",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$VALUES:[Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+        "units": 2
+      },
+      {
+        "offset": "010f",
+        "opcode": "0x71",
+        "text": "invoke-static {v0}, Lkotlin/enums/EnumEntriesKt;->enumEntries([Ljava/lang/Enum;)Lkotlin/enums/EnumEntries;",
+        "units": 3
+      },
+      {
+        "offset": "0112",
+        "opcode": "0x0c",
+        "text": "move-result-object v0",
+        "units": 1
+      },
+      {
+        "offset": "0113",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$ENTRIES:Lkotlin/enums/EnumEntries;",
+        "units": 2
+      },
+      {
+        "offset": "0115",
+        "opcode": "0x0e",
+        "text": "return-void",
+        "units": 1
+      }
+    ],
+    "instructions_total": 147,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: new-instance v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0002: const-string v6, \"先天八卦_卦位.html\"\n0004: const/4 v7, 0\n0005: const-string v1, \"TYPE_1\"\n0007: const/4 v2, 0\n0008: const-string v3, \"先天八卦_卦位\"\n000a: const/high16 v4, 0x41b40000\n000c: const/high16 v5, 0x42340000\n000e: invoke-direct/range {v0 .. v7}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n0011: sput-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_1:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0013: new-instance v1, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0015: const-string v7, \"后天八卦_卦位.html\"\n0017: const/4 v8, 0\n0018: const-string v2, \"TYPE_2\"\n001a: const/4 v3, 1\n001b: const-string v4, \"后天八卦_卦位\"\n001d: const/high16 v5, 0x41b40000\n001f: const/high16 v6, 0x42340000\n0021: invoke-direct/range {v1 .. v8}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n0024: sput-object v1, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_2:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0026: new-instance v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0028: const-string v8, \"先天八卦洛书数.html\"\n002a: const/4 v9, 0\n002b: const-string v3, \"TYPE_3\"\n002d: const/4 v4, 2\n002e: const-string v5, \"先天八卦洛书数\"\n0030: const/high16 v6, 0x41b40000\n0032: const/high16 v7, 0x42340000\n0034: invoke-direct/range {v2 .. v9}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n0037: sput-object v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_3:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0039: new-instance v3, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n003b: const-string v9, \"地盘正针二十四山.html\"\n003d: const/4 v10, 1\n003e: const-string v4, \"TYPE_4\"\n0040: const/4 v5, 3\n0041: const-string v6, \"地盘正针二十四山\"\n0043: const/high16 v7, 0x40f00000\n0045: const/high16 v8, 0x41700000\n0047: invoke-direct/range {v3 .. v10}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n004a: sput-object v3, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_4:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n004c: new-instance v4, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n004e: const-string v10, \"穿山七十二龙.html\"\n0050: const/4 v11, 1\n0051: const-string v5, \"TYPE_5\"\n0053: const/4 v6, 4\n0054: const-string v7, \"穿山七十二龙\"\n0056: const/high16 v8, 0x40200000\n0058: const/high16 v9, 0x40a00000\n005a: invoke-direct/range {v4 .. v11}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n005d: sput-object v4, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_5:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n005f: new-instance v5, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0061: const-string v11, \"地盘正针百二十分金.html\"\n0063: const/4 v12, 1\n0064: const-string v6, \"TYPE_6\"\n0066: const/4 v7, 5\n0067: const-string v8, \"地盘正针百二十分金\"\n0069: const/high16 v9, 0x3fc00000\n006b: const/high16 v10, 0x40400000\n006d: invoke-direct/range {v5 .. v12}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n0070: sput-object v5, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_6:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0072: new-instance v6, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0074: const-string v12, \"透地平分六十龙.html\"\n0076: const/4 v13, 1\n0077: const-string v7, \"TYPE_7\"\n0079: const/4 v8, 6\n007a: const-string v9, \"透地平分六十龙\"\n007c: const/high16 v10, 0x3fc00000\n007e: const/high16 v11, 0x40c00000\n0080: invoke-direct/range {v6 .. v13}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n0083: sput-object v6, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_7:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0085: new-instance v7, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0087: const-string v13, \"人盘中针二十四山.html\"\n0089: const/4 v14, 1\n008a: const-string v8, \"TYPE_8\"\n008c: const/4 v9, 7\n008d: const-string v10, \"人盘中针二十四山\"\n008f: const/4 v11, 0\n0090: const/high16 v12, 0x41700000\n0092: invoke-direct/range {v7 .. v14}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n0095: sput-object v7, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_8:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0097: new-instance v8, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0099: const-string v14, \"天盘缝针二十四山.html\"\n009b: const/4 v15, 1\n009c: const-string v9, \"TYPE_9\"\n009e: const/16 v10, 8\n00a0: const-string v11, \"天盘缝针二十四山\"\n00a2: const/4 v12, 0\n00a3: const/high16 v13, 0x41700000\n00a5: invoke-direct/range {v8 .. v15}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n00a8: sput-object v8, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_9:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00aa: new-instance v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00ac: const-string v6, \"天盘缝针百二十分金.html\"\n00ae: const/4 v7, 1\n00af: const-string v1, \"TYPE_10\"\n00b1: const/16 v2, 9\n00b3: const-string v3, \"天盘缝针百二十分金\"\n00b5: const/4 v4, 0\n00b6: const/high16 v5, 0x40400000\n00b8: invoke-direct/range {v0 .. v7}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n00bb: sput-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_10:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00bd: new-instance v1, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00bf: const-string v7, \"先天方图六十四卦内卦.html\"\n00c1: const/4 v8, 1\n00c2: const-string v2, \"TYPE_11\"\n00c4: const/16 v3, 0xa\n00c6: const-string v4, \"先天方图六十四卦内卦\"\n00c8: const/4 v5, 0\n00c9: const/high16 v6, 0x40b40000\n00cb: invoke-direct/range {v1 .. v8}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n00ce: sput-object v1, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_11:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00d0: new-instance v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00d2: const-string v8, \"先天圆图六十四卦外卦.html\"\n00d4: const/4 v9, 1\n00d5: const-string v3, \"TYPE_12\"\n00d7: const/16 v4, 0xb\n00d9: const-string v5, \"先天圆图六十四卦外卦\"\n00db: const/4 v6, 0\n00dc: const/high16 v7, 0x40b40000\n00de: invoke-direct/range {v2 .. v9}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n00e1: sput-object v2, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_12:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00e3: new-instance v3, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00e5: const-string v9, \"六十甲配六十四卦五行.html\"\n00e7: const/4 v10, 1\n00e8: const-string v4, \"TYPE_13\"\n00ea: const/16 v5, 0xc\n00ec: const-string v6, \"六十甲配六十四卦五行\"\n00ee: const/4 v7, 0\n00ef: const/high16 v8, 0x40b40000\n00f1: invoke-direct/range {v3 .. v10}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n00f4: sput-object v3, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_13:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00f6: new-instance v4, Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n00f8: const-string v10, \"正兼向度数指标.html\"\n00fa: const/4 v11, 1\n00fb: const-string v5, \"TYPE_14\"\n00fd: const/16 v6, 0xd\n00ff: const-string v7, \"正兼向度数指标\"\n0101: const/4 v8, 0\n0102: const/high16 v9, 0x40400000\n0104: invoke-direct/range {v4 .. v11}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V\n0107: sput-object v4, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->TYPE_14:Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n0109: invoke-static {}, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$values()[Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n010c: move-result-object v0\n010d: sput-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$VALUES:[Lspace/xinzhi/globe/common/CompassReadTypeEnum;\n010f: invoke-static {v0}, Lkotlin/enums/EnumEntriesKt;->enumEntries([Ljava/lang/Enum;)Lkotlin/enums/EnumEntries;\n0112: move-result-object v0\n0113: sput-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum;->$ENTRIES:Lkotlin/enums/EnumEntries;\n0115: return-void",
+    "method": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><clinit>()V",
+    "outs": 8,
+    "overload_index": 0,
+    "overloads": [
+      "static void <clinit>()"
+    ],
+    "registers": 16,
+    "signature": "static void <clinit>()",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><clinit>()V (classes06.dex): 147 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 147,
+    "total": 147
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;-><clinit>()V"
+    }
+  ],
+  "links": []
+}

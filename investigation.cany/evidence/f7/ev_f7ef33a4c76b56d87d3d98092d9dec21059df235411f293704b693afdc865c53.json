@@ -1,0 +1,213 @@
+{
+  "id": "ev_f7ef33a4c76b56d87d3d98092d9dec21059df235411f293704b693afdc865c53",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_class_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.map.action.JSAction",
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "public",
+      "final"
+    ],
+    "annotations": [
+      "Landroidx/compose/runtime/internal/StabilityInferred; (build)"
+    ],
+    "descriptor": "Lspace/xinzhi/globe/map/action/JSAction;",
+    "dex": "classes06.dex",
+    "fields": [
+      {
+        "access": [
+          "public",
+          "static",
+          "final"
+        ],
+        "kind": "static",
+        "name": "$stable",
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->$stable:I",
+        "type": "int"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "action",
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->action:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "callbackName",
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->callbackName:Ljava/lang/String;",
+        "type": "java.lang.String"
+      },
+      {
+        "access": [
+          "private"
+        ],
+        "kind": "instance",
+        "name": "linkPar",
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->linkPar:Lcom/google/gson/JsonElement;",
+        "type": "com.google.gson.JsonElement"
+      }
+    ],
+    "interfaces": [],
+    "methods": [
+      {
+        "access": [
+          "static",
+          "constructor"
+        ],
+        "code_units": 1,
+        "kind": "direct",
+        "name": "<clinit>",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;-><clinit>()V",
+        "registers": 0,
+        "signature": "static void <clinit>()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "constructor"
+        ],
+        "code_units": 4,
+        "kind": "direct",
+        "name": "<init>",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;-><init>()V",
+        "registers": 1,
+        "signature": "public void <init>()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "getAction",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->getAction()Ljava/lang/String;",
+        "registers": 2,
+        "signature": "public final java.lang.String getAction()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "getCallbackName",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->getCallbackName()Ljava/lang/String;",
+        "registers": 2,
+        "signature": "public final java.lang.String getCallbackName()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "getLinkPar",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->getLinkPar()Lcom/google/gson/JsonElement;",
+        "registers": 2,
+        "signature": "public final com.google.gson.JsonElement getLinkPar()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "setAction",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->setAction(Ljava/lang/String;)V",
+        "registers": 2,
+        "signature": "public final void setAction(java.lang.String)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "setCallbackName",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->setCallbackName(Ljava/lang/String;)V",
+        "registers": 2,
+        "signature": "public final void setCallbackName(java.lang.String)",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "public",
+          "final"
+        ],
+        "code_units": 3,
+        "kind": "virtual",
+        "name": "setLinkPar",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/map/action/JSAction;->setLinkPar(Lcom/google/gson/JsonElement;)V",
+        "registers": 2,
+        "signature": "public final void setLinkPar(com.google.gson.JsonElement)",
+        "try_blocks": 0
+      }
+    ],
+    "name": "space.xinzhi.globe.map.action.JSAction",
+    "source_file": "SourceFile",
+    "superclass": "Ljava/lang/Object;"
+  },
+  "summary": "space.xinzhi.globe.map.action.JSAction (classes06.dex) extends java.lang.Object: 4 fields, 8 methods, from SourceFile.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "class",
+      "value": "Lspace/xinzhi/globe/map/action/JSAction;"
+    }
+  ],
+  "links": []
+}

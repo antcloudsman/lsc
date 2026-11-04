@@ -1,0 +1,261 @@
+{
+  "id": "ev_5bc0d74e88dd15886d486817a37bbf472eafcc4f8aa8fa4c5a10a7a28e5693d5",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "com.wrapper.proxyapplication.WrapperProxyApplication",
+    "java_source": false,
+    "limit": 2000,
+    "method_name": "<clinit>",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\input\\swss.apk"
+  },
+  "result": {
+    "access": [
+      "static",
+      "constructor"
+    ],
+    "class": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;",
+    "dex": "classes.dex",
+    "ins": 0,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x12",
+        "text": "const/4 v0, 0",
+        "units": 1
+      },
+      {
+        "offset": "0001",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->shellApp:Landroid/app/Application;",
+        "units": 2
+      },
+      {
+        "offset": "0003",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"space.xinzhi.globe\"",
+        "units": 2
+      },
+      {
+        "offset": "0005",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->pkgName:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0007",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"space.xinzhi.globe.App\"",
+        "units": 2
+      },
+      {
+        "offset": "0009",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->className:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "000b",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"tinker not support\"",
+        "units": 2
+      },
+      {
+        "offset": "000d",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->tinkerApp:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "000f",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->mLoader:Ljava/lang/ClassLoader;",
+        "units": 2
+      },
+      {
+        "offset": "0011",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"libshell-super.space.xinzhi.globe.so\"",
+        "units": 2
+      },
+      {
+        "offset": "0013",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->protectlib:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0015",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"libshellx-super.space.xinzhi.globe.so\"",
+        "units": 2
+      },
+      {
+        "offset": "0017",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->protectlibx86:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0019",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"4.6.2.2\"",
+        "units": 2
+      },
+      {
+        "offset": "001b",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->shellsuperversion:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "001d",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"Your protected app is trial version\"",
+        "units": 2
+      },
+      {
+        "offset": "001f",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->waringmsg:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0021",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->errormsg:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0023",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"xxxx1\"",
+        "units": 2
+      },
+      {
+        "offset": "0025",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->reportapiclass:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0027",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"xxxx2\"",
+        "units": 2
+      },
+      {
+        "offset": "0029",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->reportapimethod:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "002b",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"xxxx3\"",
+        "units": 2
+      },
+      {
+        "offset": "002d",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->dynconfclass:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "002f",
+        "opcode": "0x1a",
+        "text": "const-string v1, \"xxxx4\"",
+        "units": 2
+      },
+      {
+        "offset": "0031",
+        "opcode": "0x69",
+        "text": "sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->dynconfmethod:Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0033",
+        "opcode": "0x14",
+        "text": "const v1, 0",
+        "units": 3
+      },
+      {
+        "offset": "0036",
+        "opcode": "0x67",
+        "text": "sput v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->yaqdate:I",
+        "units": 2
+      },
+      {
+        "offset": "0038",
+        "opcode": "0x69",
+        "text": "sput-object v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->mtoast:Landroid/widget/Toast;",
+        "units": 2
+      },
+      {
+        "offset": "003a",
+        "opcode": "0x12",
+        "text": "const/4 v0, 0",
+        "units": 1
+      },
+      {
+        "offset": "003b",
+        "opcode": "0x67",
+        "text": "sput v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->counter:I",
+        "units": 2
+      },
+      {
+        "offset": "003d",
+        "opcode": "0x0e",
+        "text": "return-void",
+        "units": 1
+      }
+    ],
+    "instructions_total": 32,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: const/4 v0, 0\n0001: sput-object v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->shellApp:Landroid/app/Application;\n0003: const-string v1, \"space.xinzhi.globe\"\n0005: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->pkgName:Ljava/lang/String;\n0007: const-string v1, \"space.xinzhi.globe.App\"\n0009: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->className:Ljava/lang/String;\n000b: const-string v1, \"tinker not support\"\n000d: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->tinkerApp:Ljava/lang/String;\n000f: sput-object v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->mLoader:Ljava/lang/ClassLoader;\n0011: const-string v1, \"libshell-super.space.xinzhi.globe.so\"\n0013: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->protectlib:Ljava/lang/String;\n0015: const-string v1, \"libshellx-super.space.xinzhi.globe.so\"\n0017: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->protectlibx86:Ljava/lang/String;\n0019: const-string v1, \"4.6.2.2\"\n001b: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->shellsuperversion:Ljava/lang/String;\n001d: const-string v1, \"Your protected app is trial version\"\n001f: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->waringmsg:Ljava/lang/String;\n0021: sput-object v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->errormsg:Ljava/lang/String;\n0023: const-string v1, \"xxxx1\"\n0025: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->reportapiclass:Ljava/lang/String;\n0027: const-string v1, \"xxxx2\"\n0029: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->reportapimethod:Ljava/lang/String;\n002b: const-string v1, \"xxxx3\"\n002d: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->dynconfclass:Ljava/lang/String;\n002f: const-string v1, \"xxxx4\"\n0031: sput-object v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->dynconfmethod:Ljava/lang/String;\n0033: const v1, 0\n0036: sput v1, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->yaqdate:I\n0038: sput-object v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->mtoast:Landroid/widget/Toast;\n003a: const/4 v0, 0\n003b: sput v0, Lcom/wrapper/proxyapplication/WrapperProxyApplication;->counter:I\n003d: return-void",
+    "method": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;-><clinit>()V",
+    "outs": 0,
+    "overload_index": 0,
+    "overloads": [
+      "static void <clinit>()"
+    ],
+    "registers": 2,
+    "signature": "static void <clinit>()",
+    "tries": []
+  },
+  "summary": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;-><clinit>()V (classes.dex): 32 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 32,
+    "total": 32
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\input\\swss.apk"
+    },
+    {
+      "kind": "method",
+      "value": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;-><clinit>()V"
+    }
+  ],
+  "links": []
+}

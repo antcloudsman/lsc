@@ -1,0 +1,94 @@
+{
+  "id": "ev_d4aa7ed92836ee852079b4a845986b00b71e75b9d62925e34fe00d18644a0196",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "android_class_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.MyWrapperProxyApplication",
+    "path": "E:\\APPDetector\\input\\swss.apk"
+  },
+  "result": {
+    "access": [
+      "public"
+    ],
+    "annotations": [],
+    "descriptor": "Lspace/xinzhi/globe/MyWrapperProxyApplication;",
+    "dex": "classes.dex",
+    "fields": [],
+    "interfaces": [],
+    "methods": [
+      {
+        "access": [
+          "public",
+          "constructor"
+        ],
+        "code_units": 4,
+        "kind": "direct",
+        "name": "<init>",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/MyWrapperProxyApplication;-><init>()V",
+        "registers": 1,
+        "signature": "public void <init>()",
+        "try_blocks": 0
+      },
+      {
+        "access": [
+          "protected"
+        ],
+        "code_units": 95,
+        "kind": "virtual",
+        "name": "initProxyApplication",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/MyWrapperProxyApplication;->initProxyApplication(Landroid/content/Context;)V",
+        "registers": 6,
+        "signature": "protected void initProxyApplication(android.content.Context)",
+        "try_blocks": 2
+      },
+      {
+        "access": [
+          "public"
+        ],
+        "code_units": 4,
+        "kind": "virtual",
+        "name": "onCreate",
+        "overload_index": 0,
+        "reference": "Lspace/xinzhi/globe/MyWrapperProxyApplication;->onCreate()V",
+        "registers": 1,
+        "signature": "public void onCreate()",
+        "try_blocks": 0
+      }
+    ],
+    "name": "space.xinzhi.globe.MyWrapperProxyApplication",
+    "source_file": "MyWrapperProxyApplication.java",
+    "superclass": "Lcom/wrapper/proxyapplication/WrapperProxyApplication;"
+  },
+  "summary": "space.xinzhi.globe.MyWrapperProxyApplication (classes.dex) extends com.wrapper.proxyapplication.WrapperProxyApplication: 0 fields, 3 methods, from MyWrapperProxyApplication.java.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\input\\swss.apk"
+    },
+    {
+      "kind": "class",
+      "value": "Lspace/xinzhi/globe/MyWrapperProxyApplication;"
+    }
+  ],
+  "links": []
+}

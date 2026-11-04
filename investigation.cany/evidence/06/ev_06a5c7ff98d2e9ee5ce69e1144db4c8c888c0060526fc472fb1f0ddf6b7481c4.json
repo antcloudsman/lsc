@@ -1,0 +1,3535 @@
+{
+  "id": "ev_06a5c7ff98d2e9ee5ce69e1144db4c8c888c0060526fc472fb1f0ddf6b7481c4",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "android_package_show",
+  "params": {
+    "include_manifest_xml": true,
+    "path": "E:\\APPDetector\\input\\swss.apk"
+  },
+  "result": {
+    "assets": 431,
+    "dex": [
+      {
+        "bytes": 70852,
+        "checksum_ok": true,
+        "classes": 20,
+        "fields": 94,
+        "methods": 336,
+        "name": "classes.dex",
+        "sha256": "e1cdc4cf89e6a0042817d609453d657f88dbc9832879629caafb9cdfde549dc0",
+        "strings": 694,
+        "version": "037"
+      },
+      {
+        "bytes": 2432,
+        "checksum_ok": true,
+        "classes": 9,
+        "fields": 11,
+        "methods": 10,
+        "name": "classes2.dex",
+        "sha256": "c85e1c4f791efe30fe2790999161c68f849e204c5c6e2d928f073ab7feeb47dc",
+        "strings": 39,
+        "version": "037"
+      },
+      {
+        "bytes": 2432,
+        "checksum_ok": true,
+        "classes": 9,
+        "fields": 11,
+        "methods": 10,
+        "name": "classes3.dex",
+        "sha256": "c85e1c4f791efe30fe2790999161c68f849e204c5c6e2d928f073ab7feeb47dc",
+        "strings": 39,
+        "version": "037"
+      },
+      {
+        "bytes": 2432,
+        "checksum_ok": true,
+        "classes": 9,
+        "fields": 11,
+        "methods": 10,
+        "name": "classes4.dex",
+        "sha256": "c85e1c4f791efe30fe2790999161c68f849e204c5c6e2d928f073ab7feeb47dc",
+        "strings": 39,
+        "version": "037"
+      },
+      {
+        "bytes": 2432,
+        "checksum_ok": true,
+        "classes": 9,
+        "fields": 11,
+        "methods": 10,
+        "name": "classes5.dex",
+        "sha256": "c85e1c4f791efe30fe2790999161c68f849e204c5c6e2d928f073ab7feeb47dc",
+        "strings": 39,
+        "version": "037"
+      },
+      {
+        "bytes": 2432,
+        "checksum_ok": true,
+        "classes": 9,
+        "fields": 11,
+        "methods": 10,
+        "name": "classes6.dex",
+        "sha256": "c85e1c4f791efe30fe2790999161c68f849e204c5c6e2d928f073ab7feeb47dc",
+        "strings": 39,
+        "version": "037"
+      },
+      {
+        "bytes": 2432,
+        "checksum_ok": true,
+        "classes": 9,
+        "fields": 11,
+        "methods": 10,
+        "name": "classes7.dex",
+        "sha256": "c85e1c4f791efe30fe2790999161c68f849e204c5c6e2d928f073ab7feeb47dc",
+        "strings": 39,
+        "version": "037"
+      }
+    ],
+    "entries": 3878,
+    "has_resources_arsc": true,
+    "manifest": {
+      "application": {
+        "allow_backup": true,
+        "debuggable": null,
+        "enabled": null,
+        "extract_native_libs": true,
+        "label": "@0x7f1200a2",
+        "name": "space.xinzhi.globe.MyWrapperProxyApplication",
+        "network_security_config": "@0x7f15000a",
+        "permission": null,
+        "test_only": null,
+        "uses_cleartext_traffic": true
+      },
+      "components": [
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.GeographicImageryActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.OpenVipActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.guide.GuideActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.CompassListActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.LoginActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.MapSettingActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.SettingActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.NotifyTrampolineActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.PhoneUpdateActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.MeasureProveActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.AccountSettingActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.feedback.ComplaintFeedbackActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.feedback.MyFeedbackActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.feedback.BugFeedbackActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.setting.feedback.OrderFeedbackActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.VrActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.interest.SaveInterestActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.track.TrackListActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.track.TrackSettingActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.track.TrackReplayVideoActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.interest.InterestListActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.MapDemoActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.WaterActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.MountainActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.PopulationActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.PopulationIntroActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.HistoryImageActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.StreetDiscoveryActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.DiscoveryActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.GlobalLiveActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.LiveActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.StreetDetailActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.EarthDiscoveryActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.discovery.DiscoveryDetailActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.WeatherActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.AboutActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.SearchActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.WebActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.VideoPlayActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.SuperMapListActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.SuperMapPreviewActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.bill.BillApplyActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.bill.BillDetailActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.bill.BillOrderListActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.bill.BillRecordActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.ToolsManagerActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.CompassIntroduceActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.MainActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "android.intent.action.MAIN"
+              ],
+              "categories": [
+                "android.intent.category.LAUNCHER"
+              ],
+              "data": []
+            }
+          ],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.ui.pages.SplashActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.wxapi.WXEntryActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "space.xinzhi.globe.wxapi.WXPayEntryActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.tencent.connect.common.AssistActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.fileProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "androidx.core.content.FileProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.TTFileProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.bytedance.sdk.openadsdk.TTFileProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.TTMultiProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.bytedance.sdk.openadsdk.multipro.TTMultiProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.gdt.fileprovider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.qq.e.comm.GDTFileProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.amap.api.location.APSService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "cn.jiguang.user.service.action"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "space.xinzhi.globe.service.MyJPushService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "space.xinzhi.globe.service.TrackForegroundService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "cn.jpush.android.intent.RECEIVE_MESSAGE"
+              ],
+              "categories": [
+                "space.xinzhi.globe"
+              ],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "space.xinzhi.globe.receiver.MyJPushReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.GDTInitProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.qq.gdt.action.GDTInitProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "xyz.adscope.amps.tool.downloadinfo.AMPSDownloadAppInfoActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.beizi.ad.AdActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.beizi.ad.v2.activity.BeiZiNewInterstitialActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.beizi.ad.v2.activity.BeiZiNewRewardVideoActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.beizi.ad.internal.activity.DownloadAppInfoActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.beizi.ad.internal.activity.BeiZiDownloadDialogActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.beizi.ad.DownloadService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.qq.e.comm.DownloadService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.qq.e.ads.ADActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.qq.e.ads.PortraitADActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.qq.e.ads.LandscapeADActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.qq.e.ads.RewardvideoPortraitADActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.qq.e.ads.RewardvideoLandscapeADActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.qq.e.ads.DialogActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "com.bytedance.embedapplog.collector.Collector",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.ss.android.downloadlib.addownload.compliance.AppPrivacyPolicyActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.ss.android.downloadlib.addownload.compliance.AppDetailInfoActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.ss.android.downloadlib.activity.TTDelegateActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.ss.android.downloadlib.activity.JumpKllkActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "com.ss.android.downloadlib.core.download.DownloadReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.ss.android.socialbase.appdownloader.view.DownloadHandleNotificationActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.ss.android.socialbase.appdownloader.DownloadHandlerService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.ss.android.socialbase.appdownloader.view.DownloadTaskDeleteActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.ss.android.socialbase.appdownloader.view.JumpUnknownSourceActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.ss.android.socialbase.appdownloader.RetryJobSchedulerService",
+          "permission": "android.permission.BIND_JOB_SERVICE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.ss.android.socialbase.downloader.remote"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "com.ss.android.socialbase.downloader.downloader.CSJIndependentProcessDownloadService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.ss.android.socialbase.downloader.notification.DownloadNotificationService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.ss.android.socialbase.downloader.downloader.CSJDownloadService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.ss.android.socialbase.downloader.impls.DownloadHandleService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.ss.android.socialbase.downloader.downloader.SqlDownloadCacheService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.activity.base.TTNativePageActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.activity.base.TTWebPageActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.activity.base.TTVideoWebPageActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.activity.base.TTVideoScrollWebPageActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.activity.base.TTDelegateActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.component.reward.activity.TTRewardVideoActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.component.reward.activity.TTFullScreenVideoActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.component.reward.activity.TTRewardVideoLandscapeActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.core.component.reward.activity.TTFullScreenVideoLandscapeActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.bytedance.sdk.openadsdk.core.multipro.aidl.BinderPoolService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.stub.activity.Stub_Standard_Activity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.stub.activity.Stub_Standard_Portrait_Activity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.stub.activity.Stub_Standard_Activity_T",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.stub.activity.Stub_Standard_Landscape_Activity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.stub.activity.Stub_Activity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.stub.activity.Stub_SingleTask_Activity_T",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.stub.activity.Stub_SingleTask_Activity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.pangle.servermanager.downloader.com.bytedance.sdk.openadsdk.adhost",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.bytedance.sdk.openadsdk.stub.server.DownloaderServerManager",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.pangle.servermanager.main",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.bytedance.sdk.openadsdk.stub.server.MainServerManager",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.bytedance.sdk.openadsdk.downloadnew.ApiDownloadHandlerService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.sdk.openadsdk.downloadnew.ApiDownloadHandleNotificationActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.pangle.provider.proxy.main",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.bytedance.pangle.provider.MainProcessProviderProxy",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.pangle.fileprovider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.bytedance.pangle.FileProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.android.openliveplugin.stub.activity.DouyinAuthorizeActivityProxy",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.android.openliveplugin.stub.activity.DouyinAuthorizeActivityLiveProcessProxy",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.bytedance.android.openliveplugin.process.server.LiveServerManager",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.bytedance.android.openliveplugin.process.server.LiveServerManager",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait2",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait3",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait4",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait5",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTask4",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTop3",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTop2",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTop5",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTop4",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_standard",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTop1",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTask1",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTop6",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTask2",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleTask3",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTask1",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTask2",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTask3",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTask4",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_standard",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTop1",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTop2",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleInstance1",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTop5",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTop6",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTop3",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_main_singleTop4",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.byted.live.lite.Activity_bytelive_singleInstance1",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.pangle.servermanager.bytelive.com.byted.live.lite",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.byted.live.lite.ServerManager_bytelive",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.pangle.servermanager.push.com.byted.live.lite",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.byted.live.lite.ServerManager_push",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.pangle.servermanager.downloader.com.byted.live.lite",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.byted.live.lite.ServerManager_downloader",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.msdk.api.activity.TTDelegateActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.msdk.api.activity.TTTransparentActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.msdk.core.admanager.reward.rewardagain.GMRewardAgainDialogActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.lxj.xpopup.util.XPermission$PermissionActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.luckProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.luck.picture.lib.basic.PictureFileProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.luck.picture.lib.service.ForegroundService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.luck.picture.lib.basic.PictureSelectorSupporterActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.luck.picture.lib.basic.PictureSelectorTransparentActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.blankj.utilcode.util.UtilsTransActivity4MainProcess",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.blankj.utilcode.util.UtilsTransActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.utilcode.fileprovider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.blankj.utilcode.util.UtilsFileProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "space.xinzhi.globe.messenger"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "com.blankj.utilcode.util.MessengerUtils$ServerService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "com.google.android.gms.cast.framework.media.MediaIntentReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.google.android.gms.cast.framework.ReconnectionService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": false,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "androidx.camera.core.impl.MetadataHolderService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.google.android.gms.common.api.GoogleApiActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.androidx-startup",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "androidx.startup.InitializationProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "androidx.profileinstaller.action.INSTALL_PROFILE"
+              ],
+              "categories": [],
+              "data": []
+            },
+            {
+              "actions": [
+                "androidx.profileinstaller.action.SKIP_FILE"
+              ],
+              "categories": [],
+              "data": []
+            },
+            {
+              "actions": [
+                "androidx.profileinstaller.action.SAVE_PROFILE"
+              ],
+              "categories": [],
+              "data": []
+            },
+            {
+              "actions": [
+                "androidx.profileinstaller.action.BENCHMARK_OPERATION"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "androidx.profileinstaller.ProfileInstallReceiver",
+          "permission": "android.permission.DUMP",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.google.android.datatransport.runtime.backends.TransportBackendDiscovery",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService",
+          "permission": "android.permission.BIND_JOB_SERVICE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.applog.migrate.MigrateDetectorActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "com.bytedance.applog.collector.Collector",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.bytedance.ads.convert.BDBridgeActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.autosize-init-provider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "me.jessyan.autosize.InitProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.efs.sdk.memleaksdk.monitor.UMonitorService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.mobile.auth.gatewayauth.LoginAuthActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.mobile.auth.gatewayauth.PrivacyDialogActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.mobile.auth.gatewayauth.activity.AuthWebVeiwActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": false,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "cn.thinkingdata.analytics.utils.broadcast.TDReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.alipay.sdk.app.H5PayActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.alipay.sdk.app.H5AuthActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.alipay.sdk.app.PayResultActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.alipay.sdk.app.AlipayResultActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.alipay.sdk.app.H5OpenAuthActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.alipay.sdk.app.APayEntranceActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "com.github.razerdp.space.xinzhi.globe.BasePopupInitializer",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "razerdp.basepopup.BasePopupInitializer",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": false,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "cn.gravity.android.GEReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.huawei.hms.hmsscankit.ScanKitActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "cn.jpush.android.ui.PopWinActivity"
+              ],
+              "categories": [
+                "android.intent.category.DEFAULT",
+                "space.xinzhi.globe"
+              ],
+              "data": []
+            }
+          ],
+          "kind": "activity",
+          "name": "cn.jpush.android.ui.PopWinActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "cn.jpush.android.ui.PushActivity"
+              ],
+              "categories": [
+                "android.intent.category.DEFAULT",
+                "space.xinzhi.globe"
+              ],
+              "data": []
+            }
+          ],
+          "kind": "activity",
+          "name": "cn.jpush.android.ui.PushActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "cn.jpush.android.intent.REGISTER",
+                "cn.jpush.android.intent.REPORT",
+                "cn.jpush.android.intent.PushService",
+                "cn.jpush.android.intent.PUSH_TIME"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "cn.jpush.android.service.PushService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "cn.jpush.android.intent.NOTIFICATION_RECEIVED_PROXY"
+              ],
+              "categories": [
+                "space.xinzhi.globe"
+              ],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "cn.jpush.android.service.PushReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "cn.jpush.android.service.AlarmReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "cn.jpush.android.service.SchedulerReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.DataProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "cn.jpush.android.service.DataProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "cn.jpush.android.intent.JNotifyActivity"
+              ],
+              "categories": [
+                "android.intent.category.DEFAULT",
+                "space.xinzhi.globe"
+              ],
+              "data": []
+            }
+          ],
+          "kind": "activity",
+          "name": "cn.jpush.android.service.JNotifyActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "cn.android.service.JTransitActivity"
+              ],
+              "categories": [
+                "android.intent.category.DEFAULT",
+                "space.xinzhi.globe"
+              ],
+              "data": []
+            }
+          ],
+          "kind": "activity",
+          "name": "cn.android.service.JTransitActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "receiver",
+          "name": "cn.jpush.android.asus.AsusPushMessageReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.jiguang.InitProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "cn.jpush.android.service.InitProvider",
+          "permission": null,
+          "read_permission": "space.xinzhi.globe.permission.JPUSH_MESSAGE",
+          "write_permission": "space.xinzhi.globe.permission.JPUSH_MESSAGE"
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.huawei.push.action.MESSAGING_EVENT"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "cn.jpush.android.service.PluginHuaweiPlatformsService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.huawei.intent.action.PUSH_DELAY_NOTIFY",
+                "com.huawei.intent.action.PUSH"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "com.huawei.hms.support.api.push.PushMsgReceiver",
+          "permission": "space.xinzhi.globe.permission.PROCESS_PUSH_MSG",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.huawei.android.push.intent.REGISTRATION",
+                "com.huawei.android.push.intent.RECEIVE"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "com.huawei.hms.support.api.push.PushReceiver",
+          "permission": "space.xinzhi.globe.permission.PROCESS_PUSH_MSG",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.huawei.push.msg.NOTIFY_MSG",
+                "com.huawei.push.msg.PASSBY_MSG"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "com.huawei.hms.support.api.push.service.HmsMsgService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.huawei.push.provider",
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.huawei.hms.support.api.push.PushProvider",
+          "permission": null,
+          "read_permission": "space.xinzhi.globe.permission.PUSH_PROVIDER",
+          "write_permission": "space.xinzhi.globe.permission.PUSH_WRITE_PROVIDER"
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.huawei.hms.support.api.push.TransActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.meizu.flyme.push.intent.MESSAGE",
+                "com.meizu.flyme.push.intent.REGISTER.FEEDBACK",
+                "com.meizu.flyme.push.intent.UNREGISTER.FEEDBACK",
+                "com.meizu.c2dm.intent.REGISTRATION",
+                "com.meizu.c2dm.intent.RECEIVE"
+              ],
+              "categories": [
+                "space.xinzhi.globe"
+              ],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "cn.jpush.android.service.PluginMeizuPlatformsReceiver",
+          "permission": "com.meizu.cloud.push.permission.MESSAGE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.vivo.pushclient.action.RECEIVE"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "cn.jpush.android.service.PluginVivoMessageReceiver",
+          "permission": "space.xinzhi.globe.permission.JPUSH_MESSAGE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.coloros.mcs.action.RECEIVE_MCS_MESSAGE"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "com.heytap.msp.push.service.CompatibleDataMessageCallbackService",
+          "permission": "com.coloros.mcs.permission.SEND_MCS_MESSAGE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.heytap.mcs.action.RECEIVE_MCS_MESSAGE",
+                "com.heytap.msp.push.RECEIVE_MCS_MESSAGE"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "com.heytap.msp.push.service.DataMessageCallbackService",
+          "permission": "com.heytap.mcs.permission.SEND_PUSH_MESSAGE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.coloros.mcs.action.RECEIVE_MCS_MESSAGE"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "service",
+          "name": "cn.jpush.android.service.PluginOppoPushService",
+          "permission": "com.coloros.mcs.permission.SEND_MCS_MESSAGE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.xiaomi.mipush.RECEIVE_MESSAGE"
+              ],
+              "categories": [],
+              "data": []
+            },
+            {
+              "actions": [
+                "com.xiaomi.mipush.MESSAGE_ARRIVED"
+              ],
+              "categories": [],
+              "data": []
+            },
+            {
+              "actions": [
+                "com.xiaomi.mipush.ERROR"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "cn.jpush.android.service.PluginXiaomiPlatformsReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.aaidinitprovider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.huawei.hms.aaid.InitProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.MLInitializerProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.huawei.hms.mlsdk.common.provider.MLInitializerProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": "space.xinzhi.globe.AGCInitializeProvider",
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "provider",
+          "name": "com.huawei.agconnect.core.provider.AGConnectInitializeProvider",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.huawei.agconnect.core.ServiceDiscovery",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.meizu.flyme.push.intent.PUSH_SYSTEM"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "com.meizu.cloud.pushsdk.MzPushSystemReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.vivo.push.sdk.service.CommandClientService",
+          "permission": "com.push.permission.UPSTAGESERVICE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.xiaomi.push.service.XMPushService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.xiaomi.push.service.XMJobService",
+          "permission": "android.permission.BIND_JOB_SERVICE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.xiaomi.mipush.sdk.PushMessageHandler",
+          "permission": "com.xiaomi.xmsf.permission.MIPUSH_RECEIVE",
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": false,
+          "exported_attribute": null,
+          "intent_filters": [],
+          "kind": "service",
+          "name": "com.xiaomi.mipush.sdk.MessageHandleService",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [
+            {
+              "actions": [
+                "com.xiaomi.push.PING_TIMER"
+              ],
+              "categories": [],
+              "data": []
+            }
+          ],
+          "kind": "receiver",
+          "name": "com.xiaomi.push.service.receivers.PingReceiver",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": true,
+          "exported": true,
+          "exported_attribute": true,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.xiaomi.mipush.sdk.NotificationClickedActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.huawei.hms.activity.BridgeActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        },
+        {
+          "authorities": null,
+          "enabled": null,
+          "exported": false,
+          "exported_attribute": false,
+          "intent_filters": [],
+          "kind": "activity",
+          "name": "com.huawei.hms.activity.EnableServiceActivity",
+          "permission": null,
+          "read_permission": null,
+          "write_permission": null
+        }
+      ],
+      "declared_permissions": [
+        {
+          "name": "space.xinzhi.globe.openadsdk.permission.TT_PANGOLIN",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.gdt.qq.SEND_PERMISSION",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.gdt.qq.RECEIVE_PERMISSION",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.permission.JPUSH_MESSAGE",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.permission.PROCESS_PUSH_MSG",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.permission.PUSH_PROVIDER",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.permission.PUSH_WRITE_PROVIDER",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.push.permission.MESSAGE",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.permission.C2D_MESSAGE",
+          "protection_level": "0x2"
+        },
+        {
+          "name": "space.xinzhi.globe.permission.MIPUSH_RECEIVE",
+          "protection_level": "0x2"
+        }
+      ],
+      "max_sdk": null,
+      "min_sdk": "24",
+      "package": "space.xinzhi.globe",
+      "target_sdk": "36",
+      "uses_features": [
+        "android.hardware.camera"
+      ],
+      "uses_libraries": [
+        "org.apache.http.legacy"
+      ],
+      "uses_permissions": [
+        "android.permission.INTERNET",
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.MANAGE_OVERLAY_PERMISSION",
+        "android.permission.VIBRATE",
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.QUERY_ALL_PACKAGES",
+        "space.xinzhi.globe.openadsdk.permission.TT_PANGOLIN",
+        "space.xinzhi.globe.gdt.qq.SEND_PERMISSION",
+        "space.xinzhi.globe.gdt.qq.RECEIVE_PERMISSION",
+        "android.permission.CHANGE_NETWORK_STATE",
+        "android.permission.REORDER_TASKS",
+        "com.asus.msa.SupplementaryDID.ACCESS",
+        "android.permission.CHANGE_WIFI_STATE",
+        "android.permission.WAKE_LOCK",
+        "space.xinzhi.globe.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+        "com.google.android.gms.permission.AD_ID",
+        "android.permission.WRITE_SETTINGS",
+        "freemme.permission.msa",
+        "space.xinzhi.globe.permission.JPUSH_MESSAGE",
+        "android.permission.POST_NOTIFICATIONS",
+        "com.huawei.android.launcher.permission.CHANGE_BADGE",
+        "space.xinzhi.globe.permission.PROCESS_PUSH_MSG",
+        "space.xinzhi.globe.permission.PUSH_PROVIDER",
+        "com.meizu.flyme.push.permission.RECEIVE",
+        "space.xinzhi.globe.push.permission.MESSAGE",
+        "com.meizu.c2dm.permission.RECEIVE",
+        "space.xinzhi.globe.permission.C2D_MESSAGE",
+        "com.vivo.notification.permission.BADGE_ICON",
+        "com.vivo.abe.permission.launcher.notification.num",
+        "com.coloros.mcs.permission.RECIEVE_MCS_MESSAGE",
+        "com.heytap.mcs.permission.RECIEVE_MCS_MESSAGE",
+        "com.meizu.flyme.permission.PUSH",
+        "space.xinzhi.globe.permission.MIPUSH_RECEIVE"
+      ],
+      "version_code": "161",
+      "version_name": "1.6.1"
+    },
+    "manifest_xml": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" android:versionCode=\"161\" android:versionName=\"1.6.1\" android:compileSdkVersion=\"36\" android:compileSdkVersionCodename=\"16\" platformBuildVersionName=\"16\" platformBuildVersionCode=\"36\" package=\"space.xinzhi.globe\">\n  <uses-sdk android:minSdkVersion=\"24\" android:targetSdkVersion=\"36\">\n  </uses-sdk>\n  <uses-feature android:name=\"android.hardware.camera\" android:required=\"false\">\n  </uses-feature>\n  <uses-permission android:name=\"android.permission.INTERNET\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.CAMERA\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.ACCESS_LOCATION_EXTRA_COMMANDS\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.ACCESS_BACKGROUND_LOCATION\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.FOREGROUND_SERVICE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.FOREGROUND_SERVICE_LOCATION\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.MANAGE_OVERLAY_PERMISSION\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.VIBRATE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.REQUEST_INSTALL_PACKAGES\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.READ_PHONE_STATE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" android:maxSdkVersion=\"32\">\n  </uses-permission>\n  <queries>\n    <intent>\n      <action android:name=\"android.media.action.IMAGE_CAPTURE\">\n      </action>\n    </intent>\n    <intent>\n      <action android:name=\"android.media.action.ACTION_VIDEO_CAPTURE\">\n      </action>\n    </intent>\n    <intent>\n      <action android:name=\"android.intent.action.MAIN\">\n      </action>\n      <category android:name=\"android.intent.category.LAUNCHER\">\n      </category>\n    </intent>\n    <package android:name=\"com.ss.android.ugc.aweme\">\n    </package>\n    <package android:name=\"com.ss.android.ugc.aweme.lite\">\n    </package>\n    <intent>\n      <action android:name=\"android.intent.action.VIEW\">\n      </action>\n      <category android:name=\"android.intent.category.BROWSABLE\">\n      </category>\n      <data android:scheme=\"https\">\n      </data>\n    </intent>\n    <intent>\n      <action android:name=\"android.intent.action.MAIN\">\n      </action>\n    </intent>\n    <intent>\n      <action android:name=\"android.intent.action.VIEW\">\n      </action>\n    </intent>\n    <package android:name=\"com.google.android.gms.policy_cast_dynamite\">\n    </package>\n    <package android:name=\"com.ss.android.article.news\">\n    </package>\n    <package android:name=\"com.ss.android.article.lite\">\n    </package>\n    <package android:name=\"com.dragon.read\">\n    </package>\n    <package android:name=\"com.hihonor.id\">\n    </package>\n    <intent>\n      <action android:name=\"*\">\n      </action>\n      <data android:scheme=\"tbopen\">\n      </data>\n    </intent>\n    <package android:name=\"com.eg.android.AlipayGphone\">\n    </package>\n    <package android:name=\"com.eg.android.AlipayGphoneRC\">\n    </package>\n    <package android:name=\"hk.alipay.wallet\">\n    </package>\n    <package android:name=\"hk.alipay.walletRC\">\n    </package>\n    <package android:name=\"com.google.android.gms\">\n    </package>\n    <package android:name=\"com.android.vending\">\n    </package>\n    <package android:name=\"com.android.creator\">\n    </package>\n    <package android:name=\"com.mdid.msa\">\n    </package>\n    <package android:name=\"com.samsung.android.deviceidservice\">\n    </package>\n    <package android:name=\"com.coolpad.deviceidsupport\">\n    </package>\n    <package android:name=\"com.heytap.openid\">\n    </package>\n    <package android:name=\"com.huawei.hwid\">\n    </package>\n    <package android:name=\"com.huawei.hwid.tv\">\n    </package>\n    <package android:name=\"com.huawei.hms\">\n    </package>\n    <package android:name=\"com.asus.msa.SupplementaryDID\">\n    </package>\n    <package android:name=\"com.zui.deviceidservice\">\n    </package>\n    <package android:name=\"com.qiku.id\">\n    </package>\n    <package android:name=\"com.huawei.android.pushagent\">\n    </package>\n    <package android:name=\"com.huawei.hff\">\n    </package>\n    <intent>\n      <action android:name=\"com.huawei.hms.core.aidlservice\">\n      </action>\n    </intent>\n    <intent>\n      <action android:name=\"com.huawei.hms.core\">\n      </action>\n    </intent>\n    <package android:name=\"com.meizu.cloud\">\n    </package>\n    <package android:name=\"com.huawei.works\">\n    </package>\n  </queries>\n  <uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.READ_MEDIA_AUDIO\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.READ_MEDIA_VIDEO\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.QUERY_ALL_PACKAGES\">\n  </uses-permission>\n  <permission android:name=\"space.xinzhi.globe.openadsdk.permission.TT_PANGOLIN\" android:protectionLevel=\"0x2\">\n  </permission>\n  <uses-permission android:name=\"space.xinzhi.globe.openadsdk.permission.TT_PANGOLIN\">\n  </uses-permission>\n  <permission android:name=\"space.xinzhi.globe.gdt.qq.SEND_PERMISSION\" android:protectionLevel=\"0x2\">\n  </permission>\n  <permission android:name=\"space.xinzhi.globe.gdt.qq.RECEIVE_PERMISSION\" android:protectionLevel=\"0x2\">\n  </permission>\n  <uses-permission android:name=\"space.xinzhi.globe.gdt.qq.SEND_PERMISSION\">\n  </uses-permission>\n  <uses-permission android:name=\"space.xinzhi.globe.gdt.qq.RECEIVE_PERMISSION\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.REORDER_TASKS\">\n  </uses-permission>\n  <uses-permission android:name=\"com.asus.msa.SupplementaryDID.ACCESS\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.WAKE_LOCK\">\n  </uses-permission>\n  <permission android:name=\"space.xinzhi.globe.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION\" android:protectionLevel=\"0x2\">\n  </permission>\n  <uses-permission android:name=\"space.xinzhi.globe.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION\">\n  </uses-permission>\n  <uses-permission android:name=\"com.google.android.gms.permission.AD_ID\">\n  </uses-permission>\n  <supports-screens android:anyDensity=\"true\" android:smallScreens=\"true\" android:normalScreens=\"true\" android:largeScreens=\"true\" android:resizeable=\"true\">\n  </supports-screens>\n  <uses-permission android:name=\"android.permission.WRITE_SETTINGS\">\n  </uses-permission>\n  <uses-permission android:name=\"freemme.permission.msa\">\n  </uses-permission>\n  <permission android:name=\"space.xinzhi.globe.permission.JPUSH_MESSAGE\" android:protectionLevel=\"0x2\">\n  </permission>\n  <uses-permission android:name=\"space.xinzhi.globe.permission.JPUSH_MESSAGE\">\n  </uses-permission>\n  <uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\">\n  </uses-permission>\n  <uses-permission android:name=\"com.huawei.android.launcher.permission.CHANGE_BADGE\">\n  </uses-permission>\n  <permission android:name=\"space.xinzhi.globe.permission.PROCESS_PUSH_MSG\" android:protectionLevel=\"0x2\">\n  </permission>\n  <permission android:name=\"space.xinzhi.globe.permission.PUSH_PROVIDER\" android:protectionLevel=\"0x2\">\n  </permission>\n  <permission android:name=\"space.xinzhi.globe.permission.PUSH_WRITE_PROVIDER\" android:protectionLevel=\"0x2\">\n  </permission>\n  <uses-permission android:name=\"space.xinzhi.globe.permission.PROCESS_PUSH_MSG\">\n  </uses-permission>\n  <uses-permission android:name=\"space.xinzhi.globe.permission.PUSH_PROVIDER\">\n  </uses-permission>\n  <uses-permission android:name=\"com.meizu.flyme.push.permission.RECEIVE\">\n  </uses-permission>\n  <permission android:name=\"space.xinzhi.globe.push.permission.MESSAGE\" android:protectionLevel=\"0x2\">\n  </permission>\n  <uses-permission android:name=\"space.xinzhi.globe.push.permission.MESSAGE\">\n  </uses-permission>\n  <uses-permission android:name=\"com.meizu.c2dm.permission.RECEIVE\">\n  </uses-permission>\n  <permission android:name=\"space.xinzhi.globe.permission.C2D_MESSAGE\" android:protectionLevel=\"0x2\">\n  </permission>\n  <uses-permission android:name=\"space.xinzhi.globe.permission.C2D_MESSAGE\">\n  </uses-permission>\n  <uses-permission android:name=\"com.vivo.notification.permission.BADGE_ICON\">\n  </uses-permission>\n  <uses-permission android:name=\"com.vivo.abe.permission.launcher.notification.num\">\n  </uses-permission>\n  <uses-permission android:name=\"com.coloros.mcs.permission.RECIEVE_MCS_MESSAGE\">\n  </uses-permission>\n  <uses-permission android:name=\"com.heytap.mcs.permission.RECIEVE_MCS_MESSAGE\">\n  </uses-permission>\n  <uses-permission android:name=\"com.meizu.flyme.permission.PUSH\">\n  </uses-permission>\n  <permission android:name=\"space.xinzhi.globe.permission.MIPUSH_RECEIVE\" android:protectionLevel=\"0x2\">\n  </permission>\n  <uses-permission android:name=\"space.xinzhi.globe.permission.MIPUSH_RECEIVE\">\n  </uses-permission>\n  <application android:theme=\"@0x7f1302da\" android:label=\"@0x7f1200a2\" android:icon=\"@0x7f0f0076\" android:name=\"MyWrapperProxyApplication\" android:allowBackup=\"true\" android:hardwareAccelerated=\"true\" android:supportsRtl=\"true\" android:extractNativeLibs=\"true\" android:fullBackupContent=\"@0x7f150001\" android:usesCleartextTraffic=\"true\" android:networkSecurityConfig=\"@0x7f15000a\" android:appComponentFactory=\"android.app.AppComponentFactory\" android:usesNonSdkApi=\"true\" android:requestLegacyExternalStorage=\"true\" android:dataExtractionRules=\"@0x7f150003\">\n    <activity android:name=\"space.xinzhi.globe.ui.pages.GeographicImageryActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <meta-data android:name=\"design_width_in_dp\" android:value=\"375\">\n    </meta-data>\n    <meta-data android:name=\"design_height_in_dp\" android:value=\"812\">\n    </meta-data>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.OpenVipActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.guide.GuideActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.CompassListActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.LoginActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.MapSettingActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.SettingActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.NotifyTrampolineActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.PhoneUpdateActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.MeasureProveActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.AccountSettingActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.feedback.ComplaintFeedbackActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.feedback.MyFeedbackActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.feedback.BugFeedbackActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.setting.feedback.OrderFeedbackActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.VrActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.interest.SaveInterestActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.track.TrackListActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.track.TrackSettingActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.track.TrackReplayVideoActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.interest.InterestListActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.MapDemoActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.WaterActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.MountainActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.PopulationActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.PopulationIntroActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.HistoryImageActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.StreetDiscoveryActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.DiscoveryActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.GlobalLiveActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.LiveActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\" android:configChanges=\"0xfb0\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.StreetDetailActivity\" android:exported=\"false\" android:launchMode=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.EarthDiscoveryActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.discovery.DiscoveryDetailActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.WeatherActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.AboutActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.SearchActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:theme=\"@0x7f1302da\" android:name=\"space.xinzhi.globe.ui.pages.WebActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.VideoPlayActivity\" android:launchMode=\"1\" android:screenOrientation=\"1\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.SuperMapListActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.SuperMapPreviewActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.bill.BillApplyActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.bill.BillDetailActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.bill.BillOrderListActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.bill.BillRecordActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.ToolsManagerActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:name=\"space.xinzhi.globe.ui.pages.CompassIntroduceActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:theme=\"@0x7f1302da\" android:name=\"space.xinzhi.globe.ui.pages.MainActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"1\">\n    </activity>\n    <activity android:theme=\"@0x7f13032c\" android:name=\"space.xinzhi.globe.ui.pages.SplashActivity\" android:exported=\"true\" android:launchMode=\"1\">\n      <intent-filter>\n        <action android:name=\"android.intent.action.MAIN\">\n        </action>\n        <category android:name=\"android.intent.category.LAUNCHER\">\n        </category>\n      </intent-filter>\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"space.xinzhi.globe.wxapi.WXEntryActivity\" android:exported=\"true\" android:taskAffinity=\"space.xinzhi.globe\" android:launchMode=\"2\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:theme=\"@0x7f1302d1\" android:name=\"space.xinzhi.globe.wxapi.WXPayEntryActivity\" android:exported=\"true\" android:taskAffinity=\"space.xinzhi.globe\" android:launchMode=\"2\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.tencent.connect.common.AssistActivity\" android:screenOrientation=\"3\" android:configChanges=\"0xa0\">\n    </activity>\n    <provider android:name=\"androidx.core.content.FileProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.fileProvider\" android:grantUriPermissions=\"true\">\n      <meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@0x7f15000c\">\n      </meta-data>\n    </provider>\n    <provider android:name=\"com.bytedance.sdk.openadsdk.TTFileProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.TTFileProvider\" android:grantUriPermissions=\"true\">\n      <meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@0x7f15000b\">\n      </meta-data>\n    </provider>\n    <provider android:name=\"com.bytedance.sdk.openadsdk.multipro.TTMultiProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.TTMultiProvider\">\n    </provider>\n    <provider android:name=\"com.qq.e.comm.GDTFileProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.gdt.fileprovider\" android:grantUriPermissions=\"true\">\n      <meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@0x7f150004\">\n      </meta-data>\n    </provider>\n    <service android:name=\"com.amap.api.location.APSService\" android:foregroundServiceType=\"0x8\">\n    </service>\n    <meta-data android:name=\"com.amap.api.v2.apikey\" android:value=\"ee95ca317964639d24ab299086469af6\">\n    </meta-data>\n    <service android:name=\"space.xinzhi.globe.service.MyJPushService\" android:enabled=\"true\" android:exported=\"false\" android:process=\":pushcore\">\n      <intent-filter>\n        <action android:name=\"cn.jiguang.user.service.action\">\n        </action>\n      </intent-filter>\n    </service>\n    <service android:name=\"space.xinzhi.globe.service.TrackForegroundService\" android:enabled=\"true\" android:exported=\"false\" android:foregroundServiceType=\"0x8\">\n    </service>\n    <receiver android:name=\"space.xinzhi.globe.receiver.MyJPushReceiver\" android:enabled=\"true\" android:exported=\"false\">\n      <intent-filter>\n        <action android:name=\"cn.jpush.android.intent.RECEIVE_MESSAGE\">\n        </action>\n        <category android:name=\"space.xinzhi.globe\">\n        </category>\n      </intent-filter>\n    </receiver>\n    <provider android:name=\"com.qq.gdt.action.GDTInitProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.GDTInitProvider\">\n    </provider>\n    <activity android:name=\"xyz.adscope.amps.tool.downloadinfo.AMPSDownloadAppInfoActivity\">\n    </activity>\n    <activity android:name=\"com.beizi.ad.AdActivity\" android:exported=\"false\" android:configChanges=\"0xfb0\" android:hardwareAccelerated=\"true\">\n    </activity>\n    <activity android:theme=\"@0x7f13012c\" android:name=\"com.beizi.ad.v2.activity.BeiZiNewInterstitialActivity\" android:exported=\"false\">\n    </activity>\n    <activity android:name=\"com.beizi.ad.v2.activity.BeiZiNewRewardVideoActivity\" android:exported=\"false\">\n    </activity>\n    <activity android:name=\"com.beizi.ad.internal.activity.DownloadAppInfoActivity\" android:exported=\"false\">\n    </activity>\n    <activity android:theme=\"@0x7f13012c\" android:name=\"com.beizi.ad.internal.activity.BeiZiDownloadDialogActivity\" android:exported=\"false\">\n    </activity>\n    <service android:name=\"com.beizi.ad.DownloadService\" android:exported=\"false\">\n    </service>\n    <service android:name=\"com.qq.e.comm.DownloadService\" android:exported=\"false\" android:multiprocess=\"true\">\n    </service>\n    <activity android:name=\"com.qq.e.ads.ADActivity\" android:exported=\"false\" android:multiprocess=\"true\" android:configChanges=\"0x5b0\">\n    </activity>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.qq.e.ads.PortraitADActivity\" android:exported=\"false\" android:multiprocess=\"true\" android:screenOrientation=\"1\" android:configChanges=\"0x5b0\">\n    </activity>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.qq.e.ads.LandscapeADActivity\" android:exported=\"false\" android:multiprocess=\"true\" android:screenOrientation=\"6\" android:configChanges=\"0x5b0\">\n    </activity>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.qq.e.ads.RewardvideoPortraitADActivity\" android:exported=\"false\" android:multiprocess=\"true\" android:configChanges=\"0x4b0\">\n      <meta-data android:name=\"android.notch_support\" android:value=\"true\">\n      </meta-data>\n    </activity>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.qq.e.ads.RewardvideoLandscapeADActivity\" android:exported=\"false\" android:multiprocess=\"true\" android:screenOrientation=\"0\" android:configChanges=\"0x4b0\">\n      <meta-data android:name=\"android.notch_support\" android:value=\"true\">\n      </meta-data>\n    </activity>\n    <activity android:theme=\"@0x01030011\" android:name=\"com.qq.e.ads.DialogActivity\" android:exported=\"false\" android:multiprocess=\"true\">\n    </activity>\n    <receiver android:name=\"com.bytedance.embedapplog.collector.Collector\" android:enabled=\"true\" android:exported=\"false\">\n    </receiver>\n    <activity android:name=\"com.ss.android.downloadlib.addownload.compliance.AppPrivacyPolicyActivity\" android:exported=\"false\">\n    </activity>\n    <activity android:name=\"com.ss.android.downloadlib.addownload.compliance.AppDetailInfoActivity\" android:exported=\"false\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.ss.android.downloadlib.activity.TTDelegateActivity\" android:exported=\"false\" android:launchMode=\"2\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.ss.android.downloadlib.activity.JumpKllkActivity\" android:exported=\"false\" android:launchMode=\"2\">\n    </activity>\n    <receiver android:name=\"com.ss.android.downloadlib.core.download.DownloadReceiver\" android:exported=\"false\">\n    </receiver>\n    <activity android:name=\"com.ss.android.socialbase.appdownloader.view.DownloadHandleNotificationActivity\" android:exported=\"false\" android:launchMode=\"2\">\n    </activity>\n    <service android:name=\"com.ss.android.socialbase.appdownloader.DownloadHandlerService\" android:exported=\"false\" android:stopWithTask=\"true\">\n    </service>\n    <activity android:theme=\"@0x0103000b\" android:name=\"com.ss.android.socialbase.appdownloader.view.DownloadTaskDeleteActivity\" android:exported=\"false\" android:launchMode=\"2\">\n    </activity>\n    <activity android:theme=\"@0x0103000b\" android:name=\"com.ss.android.socialbase.appdownloader.view.JumpUnknownSourceActivity\" android:exported=\"false\" android:launchMode=\"2\">\n    </activity>\n    <service android:name=\"com.ss.android.socialbase.appdownloader.RetryJobSchedulerService\" android:permission=\"android.permission.BIND_JOB_SERVICE\" android:enabled=\"true\" android:exported=\"false\" android:stopWithTask=\"true\">\n    </service>\n    <service android:name=\"com.ss.android.socialbase.downloader.downloader.CSJIndependentProcessDownloadService\" android:exported=\"false\" android:process=\":downloader\" android:stopWithTask=\"true\">\n      <intent-filter>\n        <action android:name=\"com.ss.android.socialbase.downloader.remote\">\n        </action>\n      </intent-filter>\n    </service>\n    <service android:name=\"com.ss.android.socialbase.downloader.notification.DownloadNotificationService\" android:exported=\"false\" android:stopWithTask=\"true\">\n    </service>\n    <service android:name=\"com.ss.android.socialbase.downloader.downloader.CSJDownloadService\" android:exported=\"false\" android:stopWithTask=\"true\">\n    </service>\n    <service android:name=\"com.ss.android.socialbase.downloader.impls.DownloadHandleService\" android:exported=\"false\" android:stopWithTask=\"true\">\n    </service>\n    <service android:name=\"com.ss.android.socialbase.downloader.downloader.SqlDownloadCacheService\" android:exported=\"false\" android:stopWithTask=\"true\">\n    </service>\n    <activity android:theme=\"@0x7f130568\" android:name=\"com.bytedance.sdk.openadsdk.core.activity.base.TTNativePageActivity\" android:exported=\"false\" android:launchMode=\"0\" android:configChanges=\"0x4a0\" android:windowSoftInputMode=\"0x2\">\n    </activity>\n    <activity android:theme=\"@0x7f130568\" android:name=\"com.bytedance.sdk.openadsdk.core.activity.base.TTWebPageActivity\" android:exported=\"false\" android:launchMode=\"0\" android:configChanges=\"0x4a0\" android:windowSoftInputMode=\"0x2\">\n    </activity>\n    <activity android:theme=\"@0x7f130568\" android:name=\"com.bytedance.sdk.openadsdk.core.activity.base.TTVideoWebPageActivity\" android:exported=\"false\" android:launchMode=\"0\" android:configChanges=\"0x4a0\" android:windowSoftInputMode=\"0x2\">\n    </activity>\n    <activity android:theme=\"@0x7f130568\" android:name=\"com.bytedance.sdk.openadsdk.core.activity.base.TTVideoScrollWebPageActivity\" android:exported=\"false\" android:launchMode=\"0\" android:configChanges=\"0x4a0\" android:windowSoftInputMode=\"0x2\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.bytedance.sdk.openadsdk.core.activity.base.TTDelegateActivity\" android:exported=\"false\" android:launchMode=\"0\">\n    </activity>\n    <activity android:theme=\"@0x7f130567\" android:name=\"com.bytedance.sdk.openadsdk.core.component.reward.activity.TTRewardVideoActivity\" android:exported=\"false\" android:launchMode=\"0\" android:screenOrientation=\"1\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:theme=\"@0x7f130567\" android:name=\"com.bytedance.sdk.openadsdk.core.component.reward.activity.TTFullScreenVideoActivity\" android:exported=\"false\" android:launchMode=\"0\" android:screenOrientation=\"1\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:theme=\"@0x7f130567\" android:name=\"com.bytedance.sdk.openadsdk.core.component.reward.activity.TTRewardVideoLandscapeActivity\" android:exported=\"false\" android:launchMode=\"0\" android:screenOrientation=\"0\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:theme=\"@0x7f130567\" android:name=\"com.bytedance.sdk.openadsdk.core.component.reward.activity.TTFullScreenVideoLandscapeActivity\" android:exported=\"false\" android:launchMode=\"0\" android:screenOrientation=\"0\" android:configChanges=\"0x4a0\">\n    </activity>\n    <service android:name=\"com.bytedance.sdk.openadsdk.core.multipro.aidl.BinderPoolService\" android:exported=\"false\">\n    </service>\n    <activity android:theme=\"@0x01030006\" android:name=\"com.bytedance.sdk.openadsdk.stub.activity.Stub_Standard_Activity\" android:exported=\"false\" android:launchMode=\"0\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:theme=\"@0x01030006\" android:name=\"com.bytedance.sdk.openadsdk.stub.activity.Stub_Standard_Portrait_Activity\" android:exported=\"false\" android:launchMode=\"0\" android:screenOrientation=\"1\" android:configChanges=\"0x6e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:theme=\"@0x0103000f\" android:name=\"com.bytedance.sdk.openadsdk.stub.activity.Stub_Standard_Activity_T\" android:exported=\"false\" android:launchMode=\"0\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:theme=\"@0x01030006\" android:name=\"com.bytedance.sdk.openadsdk.stub.activity.Stub_Standard_Landscape_Activity\" android:exported=\"false\" android:launchMode=\"0\" android:screenOrientation=\"0\" android:configChanges=\"0x6e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:theme=\"@0x01030006\" android:name=\"com.bytedance.sdk.openadsdk.stub.activity.Stub_Activity\" android:exported=\"false\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:theme=\"@0x0103000f\" android:name=\"com.bytedance.sdk.openadsdk.stub.activity.Stub_SingleTask_Activity_T\" android:exported=\"false\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.bytedance.sdk.openadsdk.stub.activity.Stub_SingleTask_Activity\" android:exported=\"false\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <provider android:name=\"com.bytedance.sdk.openadsdk.stub.server.DownloaderServerManager\" android:exported=\"false\" android:process=\":downloader\" android:authorities=\"space.xinzhi.globe.pangle.servermanager.downloader.com.bytedance.sdk.openadsdk.adhost\">\n    </provider>\n    <provider android:name=\"com.bytedance.sdk.openadsdk.stub.server.MainServerManager\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.pangle.servermanager.main\">\n    </provider>\n    <service android:name=\"com.bytedance.sdk.openadsdk.downloadnew.ApiDownloadHandlerService\" android:exported=\"false\" android:stopWithTask=\"true\">\n    </service>\n    <activity android:name=\"com.bytedance.sdk.openadsdk.downloadnew.ApiDownloadHandleNotificationActivity\" android:exported=\"false\" android:launchMode=\"2\">\n    </activity>\n    <provider android:name=\"com.bytedance.pangle.provider.MainProcessProviderProxy\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.pangle.provider.proxy.main\">\n    </provider>\n    <provider android:name=\"com.bytedance.pangle.FileProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.pangle.fileprovider\" android:grantUriPermissions=\"true\">\n    </provider>\n    <activity android:name=\"com.bytedance.android.openliveplugin.stub.activity.DouyinAuthorizeActivityProxy\" android:exported=\"true\">\n    </activity>\n    <activity android:name=\"com.bytedance.android.openliveplugin.stub.activity.DouyinAuthorizeActivityLiveProcessProxy\" android:exported=\"true\" android:process=\":bytelive\">\n    </activity>\n    <provider android:name=\"com.bytedance.android.openliveplugin.process.server.LiveServerManager\" android:exported=\"false\" android:process=\":bytelive\" android:authorities=\"space.xinzhi.globe.bytedance.android.openliveplugin.process.server.LiveServerManager\">\n    </provider>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait\" android:exported=\"false\" android:screenOrientation=\"1\" android:configChanges=\"0x42a0\">\n    </activity>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait2\" android:exported=\"false\" android:screenOrientation=\"1\" android:configChanges=\"0x42a0\">\n    </activity>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait3\" android:exported=\"false\" android:screenOrientation=\"1\" android:configChanges=\"0x42a0\">\n    </activity>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait4\" android:exported=\"false\" android:screenOrientation=\"1\" android:configChanges=\"0x42a0\">\n    </activity>\n    <activity android:theme=\"@0x0103000d\" android:name=\"com.bytedance.android.openliveplugin.stub.activity.StubActivity$Activity_Portrait5\" android:exported=\"false\" android:screenOrientation=\"1\" android:configChanges=\"0x42a0\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTask4\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTop3\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTop2\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTop5\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTop4\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_standard\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"0\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTop1\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTask1\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTop6\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTask2\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleTask3\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTask1\" android:exported=\"false\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTask2\" android:exported=\"false\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTask3\" android:exported=\"false\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTask4\" android:exported=\"false\" android:launchMode=\"2\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_standard\" android:exported=\"false\" android:launchMode=\"0\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTop1\" android:exported=\"false\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTop2\" android:exported=\"false\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleInstance1\" android:exported=\"false\" android:launchMode=\"3\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTop5\" android:exported=\"false\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTop6\" android:exported=\"false\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTop3\" android:exported=\"false\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_main_singleTop4\" android:exported=\"false\" android:launchMode=\"1\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:name=\"com.byted.live.lite.Activity_bytelive_singleInstance1\" android:exported=\"false\" android:process=\":bytelive\" android:launchMode=\"3\" android:configChanges=\"0x4e0\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <provider android:name=\"com.byted.live.lite.ServerManager_bytelive\" android:exported=\"false\" android:process=\":bytelive\" android:authorities=\"space.xinzhi.globe.pangle.servermanager.bytelive.com.byted.live.lite\">\n    </provider>\n    <provider android:name=\"com.byted.live.lite.ServerManager_push\" android:exported=\"false\" android:process=\":push\" android:authorities=\"space.xinzhi.globe.pangle.servermanager.push.com.byted.live.lite\">\n    </provider>\n    <provider android:name=\"com.byted.live.lite.ServerManager_downloader\" android:exported=\"false\" android:process=\":downloader\" android:authorities=\"space.xinzhi.globe.pangle.servermanager.downloader.com.byted.live.lite\">\n    </provider>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.bytedance.msdk.api.activity.TTDelegateActivity\" android:exported=\"false\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.bytedance.msdk.api.activity.TTTransparentActivity\" android:exported=\"false\" android:configChanges=\"0x490\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.bytedance.msdk.core.admanager.reward.rewardagain.GMRewardAgainDialogActivity\" android:exported=\"false\">\n    </activity>\n    <meta-data android:name=\"android.notch_support\" android:value=\"true\">\n    </meta-data>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.lxj.xpopup.util.XPermission$PermissionActivity\">\n    </activity>\n    <provider android:name=\"com.luck.picture.lib.basic.PictureFileProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.luckProvider\" android:grantUriPermissions=\"true\">\n      <meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@0x7f15000d\">\n      </meta-data>\n    </provider>\n    <service android:name=\"com.luck.picture.lib.service.ForegroundService\" android:enabled=\"true\" android:foregroundServiceType=\"0x8\">\n    </service>\n    <activity android:theme=\"@0x7f130079\" android:name=\"com.luck.picture.lib.basic.PictureSelectorSupporterActivity\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:theme=\"@0x7f13018c\" android:name=\"com.luck.picture.lib.basic.PictureSelectorTransparentActivity\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:theme=\"@0x7f130000\" android:name=\"com.blankj.utilcode.util.UtilsTransActivity4MainProcess\" android:exported=\"false\" android:configChanges=\"0x4a0\" android:windowSoftInputMode=\"0x3\">\n    </activity>\n    <activity android:theme=\"@0x7f130000\" android:name=\"com.blankj.utilcode.util.UtilsTransActivity\" android:exported=\"false\" android:multiprocess=\"true\" android:configChanges=\"0x4a0\" android:windowSoftInputMode=\"0x3\">\n    </activity>\n    <provider android:name=\"com.blankj.utilcode.util.UtilsFileProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.utilcode.fileprovider\" android:grantUriPermissions=\"true\">\n      <meta-data android:name=\"android.support.FILE_PROVIDER_PATHS\" android:resource=\"@0x7f15000f\">\n      </meta-data>\n    </provider>\n    <service android:name=\"com.blankj.utilcode.util.MessengerUtils$ServerService\" android:exported=\"false\">\n      <intent-filter>\n        <action android:name=\"space.xinzhi.globe.messenger\">\n        </action>\n      </intent-filter>\n    </service>\n    <receiver android:name=\"com.google.android.gms.cast.framework.media.MediaIntentReceiver\" android:exported=\"false\">\n    </receiver>\n    <service android:name=\"com.google.android.gms.cast.framework.ReconnectionService\" android:exported=\"false\">\n    </service>\n    <service android:name=\"androidx.camera.core.impl.MetadataHolderService\" android:enabled=\"false\" android:exported=\"false\">\n      <meta-data android:name=\"androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER\" android:value=\"androidx.camera.camera2.Camera2Config$DefaultProvider\">\n      </meta-data>\n    </service>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.google.android.gms.common.api.GoogleApiActivity\" android:exported=\"false\">\n    </activity>\n    <meta-data android:name=\"com.google.android.gms.version\" android:value=\"@0x7f0b000b\">\n    </meta-data>\n    <provider android:name=\"androidx.startup.InitializationProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.androidx-startup\">\n      <meta-data android:name=\"androidx.emoji2.text.EmojiCompatInitializer\" android:value=\"androidx.startup\">\n      </meta-data>\n      <meta-data android:name=\"androidx.lifecycle.ProcessLifecycleInitializer\" android:value=\"androidx.startup\">\n      </meta-data>\n      <meta-data android:name=\"okhttp3.internal.platform.PlatformInitializer\" android:value=\"androidx.startup\">\n      </meta-data>\n      <meta-data android:name=\"androidx.profileinstaller.ProfileInstallerInitializer\" android:value=\"androidx.startup\">\n      </meta-data>\n    </provider>\n    <receiver android:name=\"androidx.profileinstaller.ProfileInstallReceiver\" android:permission=\"android.permission.DUMP\" android:enabled=\"true\" android:exported=\"true\" android:directBootAware=\"false\">\n      <intent-filter>\n        <action android:name=\"androidx.profileinstaller.action.INSTALL_PROFILE\">\n        </action>\n      </intent-filter>\n      <intent-filter>\n        <action android:name=\"androidx.profileinstaller.action.SKIP_FILE\">\n        </action>\n      </intent-filter>\n      <intent-filter>\n        <action android:name=\"androidx.profileinstaller.action.SAVE_PROFILE\">\n        </action>\n      </intent-filter>\n      <intent-filter>\n        <action android:name=\"androidx.profileinstaller.action.BENCHMARK_OPERATION\">\n        </action>\n      </intent-filter>\n    </receiver>\n    <service android:name=\"com.google.android.datatransport.runtime.backends.TransportBackendDiscovery\" android:exported=\"false\">\n      <meta-data android:name=\"backend:com.google.android.datatransport.cct.CctBackendFactory\" android:value=\"cct\">\n      </meta-data>\n    </service>\n    <service android:name=\"com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService\" android:permission=\"android.permission.BIND_JOB_SERVICE\" android:exported=\"false\">\n    </service>\n    <receiver android:name=\"com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver\" android:exported=\"false\">\n    </receiver>\n    <activity android:name=\"com.bytedance.applog.migrate.MigrateDetectorActivity\" android:exported=\"false\">\n    </activity>\n    <receiver android:name=\"com.bytedance.applog.collector.Collector\" android:enabled=\"true\" android:exported=\"false\">\n    </receiver>\n    <meta-data android:name=\"hume_convert.AppConvert.sdk.version\" android:value=\"1.3.2.0\">\n    </meta-data>\n    <activity android:theme=\"@0x7f1303a7\" android:name=\"com.bytedance.ads.convert.BDBridgeActivity\" android:exported=\"true\">\n    </activity>\n    <provider android:name=\"me.jessyan.autosize.InitProvider\" android:exported=\"false\" android:multiprocess=\"true\" android:authorities=\"space.xinzhi.globe.autosize-init-provider\">\n    </provider>\n    <service android:name=\"com.efs.sdk.memleaksdk.monitor.UMonitorService\" android:enabled=\"true\" android:exported=\"false\" android:process=\":u_heap\">\n    </service>\n    <activity android:theme=\"@0x7f130548\" android:name=\"com.mobile.auth.gatewayauth.LoginAuthActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"3\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:theme=\"@0x7f130548\" android:name=\"com.mobile.auth.gatewayauth.PrivacyDialogActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"3\" android:configChanges=\"0x4a0\">\n    </activity>\n    <activity android:name=\"com.mobile.auth.gatewayauth.activity.AuthWebVeiwActivity\" android:exported=\"false\" android:launchMode=\"1\" android:screenOrientation=\"3\" android:configChanges=\"0x4a0\">\n    </activity>\n    <receiver android:name=\"cn.thinkingdata.analytics.utils.broadcast.TDReceiver\" android:enabled=\"false\" android:exported=\"false\">\n    </receiver>\n    <uses-library android:name=\"org.apache.http.legacy\" android:required=\"false\">\n    </uses-library>\n    <activity android:theme=\"@0x01030006\" android:name=\"com.alipay.sdk.app.H5PayActivity\" android:exported=\"false\" android:configChanges=\"0x40003df4\">\n    </activity>\n    <activity android:theme=\"@0x01030006\" android:name=\"com.alipay.sdk.app.H5AuthActivity\" android:exported=\"false\" android:configChanges=\"0x40003df4\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.alipay.sdk.app.PayResultActivity\" android:exported=\"true\" android:launchMode=\"3\" android:configChanges=\"0x40003df4\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.alipay.sdk.app.AlipayResultActivity\" android:exported=\"true\" android:launchMode=\"2\" android:configChanges=\"0x40003df4\">\n    </activity>\n    <activity android:name=\"com.alipay.sdk.app.H5OpenAuthActivity\" android:exported=\"false\" android:screenOrientation=\"3\" android:configChanges=\"0x40003df4\" android:windowSoftInputMode=\"0x12\">\n    </activity>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.alipay.sdk.app.APayEntranceActivity\" android:exported=\"false\" android:configChanges=\"0x40003df4\">\n    </activity>\n    <provider android:name=\"razerdp.basepopup.BasePopupInitializer\" android:exported=\"false\" android:multiprocess=\"true\" android:authorities=\"com.github.razerdp.space.xinzhi.globe.BasePopupInitializer\">\n    </provider>\n    <receiver android:name=\"cn.gravity.android.GEReceiver\" android:enabled=\"false\" android:exported=\"false\">\n    </receiver>\n    <meta-data android:name=\"com.huawei.hms.client.service.name:ads-identifier\" android:value=\"ads-identifier:3.4.62.300\">\n    </meta-data>\n    <meta-data android:name=\"huawei_module_scankit_local\" android:value=\"21200301\">\n    </meta-data>\n    <meta-data android:name=\"huawei_module_scankit_sdk_version\" android:value=\"scanplus:2.12.0.301\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.client.service.name:scanplus\" android:value=\"scanplus:2.12.0.301\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.min_api_level:scanplus:huawei_module_scankit\" android:value=\"1\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.min_api_level:scanplus:hmscore\" android:value=\"1\">\n    </meta-data>\n    <activity android:name=\"com.huawei.hms.hmsscankit.ScanKitActivity\" android:launchMode=\"2\" android:configChanges=\"0xfc0\">\n    </activity>\n    <activity android:theme=\"@0x7f13016a\" android:name=\"cn.jpush.android.ui.PopWinActivity\" android:exported=\"true\">\n      <intent-filter>\n        <category android:name=\"android.intent.category.DEFAULT\">\n        </category>\n        <action android:name=\"cn.jpush.android.ui.PopWinActivity\">\n        </action>\n        <category android:name=\"space.xinzhi.globe\">\n        </category>\n      </intent-filter>\n    </activity>\n    <activity android:theme=\"@0x01030006\" android:name=\"cn.jpush.android.ui.PushActivity\" android:exported=\"true\" android:configChanges=\"0xa0\">\n      <intent-filter>\n        <action android:name=\"cn.jpush.android.ui.PushActivity\">\n        </action>\n        <category android:name=\"android.intent.category.DEFAULT\">\n        </category>\n        <category android:name=\"space.xinzhi.globe\">\n        </category>\n      </intent-filter>\n    </activity>\n    <service android:name=\"cn.jpush.android.service.PushService\" android:enabled=\"true\" android:exported=\"false\" android:process=\":pushcore\">\n      <intent-filter>\n        <action android:name=\"cn.jpush.android.intent.REGISTER\">\n        </action>\n        <action android:name=\"cn.jpush.android.intent.REPORT\">\n        </action>\n        <action android:name=\"cn.jpush.android.intent.PushService\">\n        </action>\n        <action android:name=\"cn.jpush.android.intent.PUSH_TIME\">\n        </action>\n      </intent-filter>\n    </service>\n    <receiver android:name=\"cn.jpush.android.service.PushReceiver\" android:enabled=\"true\" android:exported=\"false\">\n      <intent-filter android:priority=\"1000\">\n        <action android:name=\"cn.jpush.android.intent.NOTIFICATION_RECEIVED_PROXY\">\n        </action>\n        <category android:name=\"space.xinzhi.globe\">\n        </category>\n      </intent-filter>\n    </receiver>\n    <receiver android:name=\"cn.jpush.android.service.AlarmReceiver\" android:exported=\"false\">\n    </receiver>\n    <receiver android:name=\"cn.jpush.android.service.SchedulerReceiver\" android:exported=\"false\">\n    </receiver>\n    <provider android:name=\"cn.jpush.android.service.DataProvider\" android:exported=\"false\" android:process=\":pushcore\" android:authorities=\"space.xinzhi.globe.DataProvider\">\n    </provider>\n    <activity android:theme=\"@0x7f13016b\" android:name=\"cn.jpush.android.service.JNotifyActivity\" android:exported=\"true\" android:taskAffinity=\"\">\n      <intent-filter>\n        <action android:name=\"cn.jpush.android.intent.JNotifyActivity\">\n        </action>\n        <category android:name=\"android.intent.category.DEFAULT\">\n        </category>\n        <category android:name=\"space.xinzhi.globe\">\n        </category>\n      </intent-filter>\n    </activity>\n    <activity android:theme=\"@0x7f13016b\" android:name=\"cn.android.service.JTransitActivity\" android:exported=\"true\" android:taskAffinity=\"\">\n      <intent-filter>\n        <action android:name=\"cn.android.service.JTransitActivity\">\n        </action>\n        <category android:name=\"android.intent.category.DEFAULT\">\n        </category>\n        <category android:name=\"space.xinzhi.globe\">\n        </category>\n      </intent-filter>\n    </activity>\n    <receiver android:name=\"cn.jpush.android.asus.AsusPushMessageReceiver\" android:exported=\"false\">\n    </receiver>\n    <meta-data android:name=\"JPUSH_CHANNEL\" android:value=\"developer-default\">\n    </meta-data>\n    <meta-data android:name=\"JPUSH_APPKEY\" android:value=\"560c3901779935912e3204a5\">\n    </meta-data>\n    <provider android:name=\"cn.jpush.android.service.InitProvider\" android:readPermission=\"space.xinzhi.globe.permission.JPUSH_MESSAGE\" android:writePermission=\"space.xinzhi.globe.permission.JPUSH_MESSAGE\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.jiguang.InitProvider\">\n    </provider>\n    <service android:name=\"cn.jpush.android.service.PluginHuaweiPlatformsService\" android:exported=\"false\">\n      <intent-filter>\n        <action android:name=\"com.huawei.push.action.MESSAGING_EVENT\">\n        </action>\n      </intent-filter>\n    </service>\n    <meta-data android:name=\"push_kit_auto_init_enabled\" android:value=\"false\">\n    </meta-data>\n    <receiver android:name=\"com.huawei.hms.support.api.push.PushMsgReceiver\" android:permission=\"space.xinzhi.globe.permission.PROCESS_PUSH_MSG\" android:exported=\"true\" android:directBootAware=\"true\">\n      <intent-filter>\n        <action android:name=\"com.huawei.intent.action.PUSH_DELAY_NOTIFY\">\n        </action>\n        <action android:name=\"com.huawei.intent.action.PUSH\">\n        </action>\n      </intent-filter>\n    </receiver>\n    <receiver android:name=\"com.huawei.hms.support.api.push.PushReceiver\" android:permission=\"space.xinzhi.globe.permission.PROCESS_PUSH_MSG\" android:exported=\"true\" android:directBootAware=\"true\">\n      <intent-filter>\n        <action android:name=\"com.huawei.android.push.intent.REGISTRATION\">\n        </action>\n        <action android:name=\"com.huawei.android.push.intent.RECEIVE\">\n        </action>\n      </intent-filter>\n    </receiver>\n    <service android:name=\"com.huawei.hms.support.api.push.service.HmsMsgService\" android:enabled=\"true\" android:exported=\"true\" android:process=\":pushservice\" android:directBootAware=\"true\">\n      <intent-filter>\n        <action android:name=\"com.huawei.push.msg.NOTIFY_MSG\">\n        </action>\n        <action android:name=\"com.huawei.push.msg.PASSBY_MSG\">\n        </action>\n      </intent-filter>\n    </service>\n    <provider android:name=\"com.huawei.hms.support.api.push.PushProvider\" android:readPermission=\"space.xinzhi.globe.permission.PUSH_PROVIDER\" android:writePermission=\"space.xinzhi.globe.permission.PUSH_WRITE_PROVIDER\" android:exported=\"true\" android:authorities=\"space.xinzhi.globe.huawei.push.provider\">\n    </provider>\n    <meta-data android:name=\"com.huawei.hms.client.service.name:push\" android:value=\"push:6.13.0.300\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.min_api_level:push:push\" android:value=\"1\">\n    </meta-data>\n    <activity android:name=\"com.huawei.hms.support.api.push.TransActivity\" android:exported=\"false\">\n    </activity>\n    <receiver android:name=\"cn.jpush.android.service.PluginMeizuPlatformsReceiver\" android:permission=\"com.meizu.cloud.push.permission.MESSAGE\" android:exported=\"true\">\n      <intent-filter>\n        <action android:name=\"com.meizu.flyme.push.intent.MESSAGE\">\n        </action>\n        <action android:name=\"com.meizu.flyme.push.intent.REGISTER.FEEDBACK\">\n        </action>\n        <action android:name=\"com.meizu.flyme.push.intent.UNREGISTER.FEEDBACK\">\n        </action>\n        <action android:name=\"com.meizu.c2dm.intent.REGISTRATION\">\n        </action>\n        <action android:name=\"com.meizu.c2dm.intent.RECEIVE\">\n        </action>\n        <category android:name=\"space.xinzhi.globe\">\n        </category>\n      </intent-filter>\n    </receiver>\n    <meta-data android:name=\"MEIZU_APPKEY\" android:value=\"cac200d1efb64aa9adb70b33642f6298\">\n    </meta-data>\n    <meta-data android:name=\"MEIZU_APPID\" android:value=\"156491\">\n    </meta-data>\n    <receiver android:name=\"cn.jpush.android.service.PluginVivoMessageReceiver\" android:permission=\"space.xinzhi.globe.permission.JPUSH_MESSAGE\" android:exported=\"false\">\n      <intent-filter>\n        <action android:name=\"com.vivo.pushclient.action.RECEIVE\">\n        </action>\n      </intent-filter>\n    </receiver>\n    <meta-data android:name=\"com.vivo.push.api_key\" android:value=\"7448fbaf576de40d95b1617a330416d5\">\n    </meta-data>\n    <meta-data android:name=\"com.vivo.push.app_id\" android:value=\"105971272\">\n    </meta-data>\n    <service android:name=\"com.heytap.msp.push.service.CompatibleDataMessageCallbackService\" android:permission=\"com.coloros.mcs.permission.SEND_MCS_MESSAGE\" android:exported=\"true\">\n      <intent-filter>\n        <action android:name=\"com.coloros.mcs.action.RECEIVE_MCS_MESSAGE\">\n        </action>\n      </intent-filter>\n    </service>\n    <service android:name=\"com.heytap.msp.push.service.DataMessageCallbackService\" android:permission=\"com.heytap.mcs.permission.SEND_PUSH_MESSAGE\" android:exported=\"true\">\n      <intent-filter>\n        <action android:name=\"com.heytap.mcs.action.RECEIVE_MCS_MESSAGE\">\n        </action>\n        <action android:name=\"com.heytap.msp.push.RECEIVE_MCS_MESSAGE\">\n        </action>\n      </intent-filter>\n    </service>\n    <service android:name=\"cn.jpush.android.service.PluginOppoPushService\" android:permission=\"com.coloros.mcs.permission.SEND_MCS_MESSAGE\" android:exported=\"true\">\n      <intent-filter>\n        <action android:name=\"com.coloros.mcs.action.RECEIVE_MCS_MESSAGE\">\n        </action>\n      </intent-filter>\n    </service>\n    <meta-data android:name=\"OPPO_APPKEY\" android:value=\"e645c1582b4948be9d83414d61f1a0e9\">\n    </meta-data>\n    <meta-data android:name=\"OPPO_APPID\" android:value=\"36355813\">\n    </meta-data>\n    <meta-data android:name=\"OPPO_APPSECRET\" android:value=\"d92a4a0ee75e4c59a079d5b462b33d7e\">\n    </meta-data>\n    <meta-data android:name=\"XIAOMI_APPID\" android:value=\"2882303761520456390\">\n    </meta-data>\n    <meta-data android:name=\"XIAOMI_APPKEY\" android:value=\"5872045650390\">\n    </meta-data>\n    <receiver android:name=\"cn.jpush.android.service.PluginXiaomiPlatformsReceiver\" android:exported=\"true\">\n      <intent-filter>\n        <action android:name=\"com.xiaomi.mipush.RECEIVE_MESSAGE\">\n        </action>\n      </intent-filter>\n      <intent-filter>\n        <action android:name=\"com.xiaomi.mipush.MESSAGE_ARRIVED\">\n        </action>\n      </intent-filter>\n      <intent-filter>\n        <action android:name=\"com.xiaomi.mipush.ERROR\">\n        </action>\n      </intent-filter>\n    </receiver>\n    <provider android:name=\"com.huawei.hms.aaid.InitProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.aaidinitprovider\" android:initOrder=\"500\">\n    </provider>\n    <meta-data android:name=\"com.huawei.hms.client.service.name:opendevice\" android:value=\"opendevice:6.13.0.300\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.min_api_level:opendevice:push\" android:value=\"1\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.client.service.name:base\" android:value=\"base:6.13.0.301\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.min_api_level:base:hmscore\" android:value=\"1\">\n    </meta-data>\n    <meta-data android:name=\"availableLoaded\" android:value=\"yes\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.client.service.name:dynamic-api\" android:value=\"dynamic-api:1.0.24.300\">\n    </meta-data>\n    <meta-data android:name=\"com.huawei.hms.min_api_level:dynamic-api:huawei_module_dynamicloader\" android:value=\"10\">\n    </meta-data>\n    <provider android:name=\"com.huawei.hms.mlsdk.common.provider.MLInitializerProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.MLInitializerProvider\">\n    </provider>\n    <provider android:name=\"com.huawei.agconnect.core.provider.AGConnectInitializeProvider\" android:exported=\"false\" android:authorities=\"space.xinzhi.globe.AGCInitializeProvider\">\n    </provider>\n    <service android:name=\"com.huawei.agconnect.core.ServiceDiscovery\" android:exported=\"false\">\n    </service>\n    <meta-data android:name=\"JCORE_VT\" android:value=\"r5500\">\n    </meta-data>\n    <meta-data android:name=\"JCORE_MD5\" android:value=\"1:550:7ef9ee88:296:r:\">\n    </meta-data>\n    <receiver android:name=\"com.meizu.cloud.pushsdk.MzPushSystemReceiver\" android:exported=\"false\">\n      <intent-filter>\n        <action android:name=\"com.meizu.flyme.push.intent.PUSH_SYSTEM\">\n        </action>\n      </intent-filter>\n    </receiver>\n    <meta-data android:name=\"sdk_version_vivo\" android:value=\"510\">\n    </meta-data>\n    <service android:name=\"com.vivo.push.sdk.service.CommandClientService\" android:permission=\"com.push.permission.UPSTAGESERVICE\" android:exported=\"true\">\n    </service>\n    <meta-data android:name=\"local_iv\" android:value=\"MzMsMzQsMzUsMzYsMzcsMzgsMzksNDAsNDEsMzIsMzgsMzcsMzYsMzUsMzQsMzMsI0AzNCwzMiwzMywzNywzMywzNCwzMiwzMywzMywzMywzNCw0MSwzNSwzNSwzMiwzMiwjQDMzLDM0LDM1LDM2LDM3LDM4LDM5LDQwLDQxLDMyLDM4LDM3LDMzLDM1LDM0LDMzLCNAMzQsMzIsMzMsMzcsMzMsMzQsMzIsMzMsMzMsMzMsMzQsNDEsMzUsMzIsMzIsMzI\">\n    </meta-data>\n    <meta-data android:name=\"com.vivo.push.support_monitor\" android:value=\"1\">\n    </meta-data>\n    <meta-data android:name=\"sdkVersion\" android:value=\"3701\">\n    </meta-data>\n    <meta-data android:name=\"MIPUSH_SDK_VERSION_CODE\" android:value=\"60001\">\n    </meta-data>\n    <meta-data android:name=\"MIPUSH_SDK_VERSION_NAME\" android:value=\"6_0_1-C\">\n    </meta-data>\n    <service android:name=\"com.xiaomi.push.service.XMPushService\" android:enabled=\"true\" android:process=\":pushservice\">\n    </service>\n    <service android:name=\"com.xiaomi.push.service.XMJobService\" android:permission=\"android.permission.BIND_JOB_SERVICE\" android:enabled=\"true\" android:exported=\"false\" android:process=\":pushservice\">\n    </service>\n    <service android:name=\"com.xiaomi.mipush.sdk.PushMessageHandler\" android:permission=\"com.xiaomi.xmsf.permission.MIPUSH_RECEIVE\" android:enabled=\"true\" android:exported=\"true\">\n    </service>\n    <service android:name=\"com.xiaomi.mipush.sdk.MessageHandleService\" android:enabled=\"true\">\n    </service>\n    <receiver android:name=\"com.xiaomi.push.service.receivers.PingReceiver\" android:exported=\"false\" android:process=\":pushservice\">\n      <intent-filter>\n        <action android:name=\"com.xiaomi.push.PING_TIMER\">\n        </action>\n      </intent-filter>\n    </receiver>\n    <activity android:theme=\"@0x01030010\" android:name=\"com.xiaomi.mipush.sdk.NotificationClickedActivity\" android:enabled=\"true\" android:exported=\"true\" android:excludeFromRecents=\"true\" android:launchMode=\"3\">\n      <meta-data android:name=\"supportStyle\" android:value=\"scene|voip\">\n      </meta-data>\n    </activity>\n    <activity android:theme=\"@0x7f130125\" android:name=\"com.huawei.hms.activity.BridgeActivity\" android:exported=\"false\" android:excludeFromRecents=\"true\" android:screenOrientation=\"3\" android:configChanges=\"0x40002f84\" android:hardwareAccelerated=\"true\">\n      <meta-data android:name=\"hwc-theme\" android:value=\"androidhwext:style/Theme.Emui.Translucent\">\n      </meta-data>\n      <meta-data android:name=\"distractionOptimized\" android:value=\"true\">\n      </meta-data>\n    </activity>\n    <activity android:name=\"com.huawei.hms.activity.EnableServiceActivity\" android:exported=\"false\" android:configChanges=\"0xda0\">\n    </activity>\n    <meta-data android:name=\"com.huawei.hms.client.appid\" android:value=\"appid=115362959\">\n    </meta-data>\n  </application>\n</manifest>\n",
+    "max_sdk": null,
+    "min_sdk": "24",
+    "native_libraries": {
+      "arm64-v8a": [
+        {
+          "bytes": 83928,
+          "compression": "stored",
+          "name": "libEncryptorP.so"
+        },
+        {
+          "bytes": 1075752,
+          "compression": "stored",
+          "name": "libPglbizssdk_ml.so"
+        },
+        {
+          "bytes": 4330936,
+          "compression": "stored",
+          "name": "libWCDB.so"
+        },
+        {
+          "bytes": 5824,
+          "compression": "stored",
+          "name": "libalicomphonenumberauthsdk_core.so"
+        },
+        {
+          "bytes": 10096,
+          "compression": "stored",
+          "name": "libandroidx.graphics.path.so"
+        },
+        {
+          "bytes": 747584,
+          "compression": "stored",
+          "name": "libavmdl_lite.so"
+        },
+        {
+          "bytes": 1292896,
+          "compression": "stored",
+          "name": "libc++_shared.so"
+        },
+        {
+          "bytes": 325552,
+          "compression": "stored",
+          "name": "libcommonV2DevInfo.so"
+        },
+        {
+          "bytes": 647928,
+          "compression": "stored",
+          "name": "libcrashsdk.so"
+        },
+        {
+          "bytes": 325552,
+          "compression": "stored",
+          "name": "libdevInfo.so"
+        },
+        {
+          "bytes": 1161456,
+          "compression": "stored",
+          "name": "libffavc.so"
+        },
+        {
+          "bytes": 5529520,
+          "compression": "stored",
+          "name": "libijkffmpeg.so"
+        },
+        {
+          "bytes": 422488,
+          "compression": "stored",
+          "name": "libijkplayer.so"
+        },
+        {
+          "bytes": 481352,
+          "compression": "stored",
+          "name": "libijksdl.so"
+        },
+        {
+          "bytes": 32544,
+          "compression": "stored",
+          "name": "libimage_processing_util_jni.so"
+        },
+        {
+          "bytes": 1524984,
+          "compression": "stored",
+          "name": "libjutils.so"
+        },
+        {
+          "bytes": 39568,
+          "compression": "stored",
+          "name": "libluster.so"
+        },
+        {
+          "bytes": 5824,
+          "compression": "stored",
+          "name": "libmaparmor.so"
+        },
+        {
+          "bytes": 717336,
+          "compression": "stored",
+          "name": "libmmkv.so"
+        },
+        {
+          "bytes": 3370784,
+          "compression": "stored",
+          "name": "libpag.so"
+        },
+        {
+          "bytes": 251120,
+          "compression": "stored",
+          "name": "libpanglearmor.so"
+        },
+        {
+          "bytes": 10064,
+          "compression": "stored",
+          "name": "libpangleflipped.so"
+        },
+        {
+          "bytes": 474536,
+          "compression": "stored",
+          "name": "libpns-2.14.6-LogOnlineStandardCuumRelease_alijtca_plus.so"
+        },
+        {
+          "bytes": 92072,
+          "compression": "stored",
+          "name": "librtmp-jni.so"
+        },
+        {
+          "bytes": 2607552,
+          "compression": "stored",
+          "name": "libscannative.so"
+        },
+        {
+          "bytes": 4896,
+          "compression": "stored",
+          "name": "libsurface_util_jni.so"
+        },
+        {
+          "bytes": 256176,
+          "compression": "stored",
+          "name": "libterrain.so"
+        },
+        {
+          "bytes": 43384,
+          "compression": "stored",
+          "name": "libtobEmbedEncrypt.so"
+        },
+        {
+          "bytes": 440672,
+          "compression": "stored",
+          "name": "libtt_ugen_layout.so"
+        },
+        {
+          "bytes": 1502480,
+          "compression": "stored",
+          "name": "libttmplayer_lite.so"
+        },
+        {
+          "bytes": 321960,
+          "compression": "stored",
+          "name": "libturingad.so"
+        },
+        {
+          "bytes": 97280,
+          "compression": "stored",
+          "name": "libucrash-core.so"
+        },
+        {
+          "bytes": 51648,
+          "compression": "stored",
+          "name": "libucrash.so"
+        },
+        {
+          "bytes": 398472,
+          "compression": "stored",
+          "name": "libumeng-spy.so"
+        },
+        {
+          "bytes": 247352,
+          "compression": "stored",
+          "name": "libumonitor.so"
+        },
+        {
+          "bytes": 360400,
+          "compression": "stored",
+          "name": "libshell-super.space.xinzhi.globe.so"
+        },
+        {
+          "bytes": 6004,
+          "compression": "stored",
+          "name": "libshella-4.6.2.2.so"
+        }
+      ]
+    },
+    "package": "space.xinzhi.globe",
+    "res_files": 3250,
+    "signing": {
+      "schemes": [
+        "v1",
+        "v2"
+      ],
+      "signing_block": {
+        "entries": [
+          {
+            "id": "0x7109871a",
+            "name": "signature scheme v2",
+            "size": 1575
+          },
+          {
+            "id": "0x881155ff",
+            "name": "unknown",
+            "size": 6
+          },
+          {
+            "id": "0x42726577",
+            "name": "verity padding",
+            "size": 2447
+          }
+        ],
+        "offset": 100392960,
+        "signers": [
+          {
+            "certificates": [
+              {
+                "bytes": 929,
+                "issuer": "C=86, ST=chongqing, L=chongqing, O=space.xinzhi.map, OU=space.xinzhi.map, CN=anjianhu",
+                "not_after": "21200404034443Z",
+                "not_before": "200428034443Z",
+                "public_key_algorithm": "rsaEncryption",
+                "serial": "51b59e2e",
+                "sha256": "4842a27a5e3c8bbac6682a26a9c5f7f37b83916212338e2afa4deadaa76a5115",
+                "signature_algorithm": "sha256WithRSAEncryption",
+                "subject": "C=86, ST=chongqing, L=chongqing, O=space.xinzhi.map, OU=space.xinzhi.map, CN=anjianhu",
+                "version": 3
+              }
+            ],
+            "digests": [
+              {
+                "algorithm": "0x0103",
+                "algorithm_name": "RSASSA-PKCS1-v1_5 with SHA2-256",
+                "digest": "18ae7c00439fa93b6d9c2b8fd870cbb6f5b060222cf5e3c4d7d2f9aac353fb94"
+              }
+            ],
+            "max_sdk": null,
+            "min_sdk": null,
+            "public_key_bytes": 294,
+            "scheme": "v2",
+            "signature_algorithms": [
+              "RSASSA-PKCS1-v1_5 with SHA2-256 (0x0103)"
+            ],
+            "verification": {
+              "algorithm": "RSASSA-PKCS1-v1_5 with SHA2-256",
+              "certificate_sha256": "4842a27a5e3c8bbac6682a26a9c5f7f37b83916212338e2afa4deadaa76a5115",
+              "digest_matches": true,
+              "max_sdk": null,
+              "min_sdk": null,
+              "notes": [],
+              "public_key_matches_certificate": true,
+              "scheme": "v2",
+              "signature_valid": {
+                "status": "valid"
+              },
+              "verified": true
+            }
+          }
+        ],
+        "size": 4088
+      },
+      "v1": [
+        {
+          "bytes": 1427,
+          "certificates": [
+            {
+              "bytes": 929,
+              "issuer": "C=86, ST=chongqing, L=chongqing, O=space.xinzhi.map, OU=space.xinzhi.map, CN=anjianhu",
+              "not_after": "21200404034443Z",
+              "not_before": "200428034443Z",
+              "public_key_algorithm": "rsaEncryption",
+              "serial": "51b59e2e",
+              "sha256": "4842a27a5e3c8bbac6682a26a9c5f7f37b83916212338e2afa4deadaa76a5115",
+              "signature_algorithm": "sha256WithRSAEncryption",
+              "subject": "C=86, ST=chongqing, L=chongqing, O=space.xinzhi.map, OU=space.xinzhi.map, CN=anjianhu",
+              "version": 3
+            }
+          ],
+          "file": "META-INF/XINZHI.RSA",
+          "integrity": {
+            "files_listed": 3875,
+            "files_matched": 3874,
+            "files_mismatched": 0,
+            "files_unchecked": 1,
+            "manifest_digest_matches": true,
+            "mismatched_names": [],
+            "notes": []
+          },
+          "pkcs7": {
+            "certificate_sha256": "4842a27a5e3c8bbac6682a26a9c5f7f37b83916212338e2afa4deadaa76a5115",
+            "chain": {
+              "fully_linked": true,
+              "links": [
+                {
+                  "issuer": "C=86, ST=chongqing, L=chongqing, O=space.xinzhi.map, OU=space.xinzhi.map, CN=anjianhu",
+                  "self_signed": true,
+                  "sha256": "4842a27a5e3c8bbac6682a26a9c5f7f37b83916212338e2afa4deadaa76a5115",
+                  "signature_verified": {
+                    "status": "valid"
+                  },
+                  "subject": "C=86, ST=chongqing, L=chongqing, O=space.xinzhi.map, OU=space.xinzhi.map, CN=anjianhu"
+                }
+              ],
+              "notes": [
+                "chain not verified to a trusted root: the top certificate is self-signed but not a bundled Apple root"
+              ],
+              "root_sha256": "4842a27a5e3c8bbac6682a26a9c5f7f37b83916212338e2afa4deadaa76a5115",
+              "root_subject": "C=86, ST=chongqing, L=chongqing, O=space.xinzhi.map, OU=space.xinzhi.map, CN=anjianhu",
+              "trusted_root": null
+            },
+            "notes": [],
+            "signature_valid": {
+              "status": "valid"
+            },
+            "signer_subject": "C=86, ST=chongqing, L=chongqing, O=space.xinzhi.map, OU=space.xinzhi.map, CN=anjianhu"
+          },
+          "signature_file": "META-INF/XINZHI.SF"
+        }
+      ]
+    },
+    "target_sdk": "36",
+    "version_code": "161",
+    "version_name": "1.6.1",
+    "warnings": []
+  },
+  "summary": "space.xinzhi.globe (swss.apk, version 1.6.1, SDK 24–36): 48 permissions, 225 components (25 exported), 7 DEX file(s), native code for arm64-v8a; signed with scheme v1, v2 (cryptographically VERIFIED).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "verification_scope",
+      "message": "Signatures ARE verified cryptographically here (v2/v3 signature over the signed data plus a recomputed APK content digest; v1 PKCS#7 over the .SF plus MANIFEST.MF per-file digests). NOT checked: certificate revocation, v3 key-rotation lineage/proof-of-rotation, rollback protection, source-stamp, and whether the signing certificate is one you trust (the certificate SHA-256 fingerprint is reported so you can compare it yourself)."
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 3878,
+    "total": 3878
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\input\\swss.apk"
+    }
+  ],
+  "links": []
+}

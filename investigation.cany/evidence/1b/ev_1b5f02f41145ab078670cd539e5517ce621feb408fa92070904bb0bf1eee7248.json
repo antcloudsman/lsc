@@ -1,0 +1,64 @@
+{
+  "id": "ev_1b5f02f41145ab078670cd539e5517ce621feb408fa92070904bb0bf1eee7248",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "android_classes_find",
+  "params": {
+    "limit": 300,
+    "offset": 0,
+    "path": "E:\\APPDetector\\input\\swss.apk",
+    "query": "space.xinzhi.globe"
+  },
+  "result": {
+    "classes": [
+      {
+        "access": [
+          "public"
+        ],
+        "descriptor": "Lspace/xinzhi/globe/MyWrapperProxyApplication;",
+        "dex": "classes.dex",
+        "fields": 0,
+        "methods": 3,
+        "name": "space.xinzhi.globe.MyWrapperProxyApplication",
+        "superclass": "com.wrapper.proxyapplication.WrapperProxyApplication"
+      }
+    ],
+    "classes_total": 74,
+    "dex_files": [
+      "classes.dex",
+      "classes2.dex",
+      "classes3.dex",
+      "classes4.dex",
+      "classes5.dex",
+      "classes6.dex",
+      "classes7.dex"
+    ],
+    "matches": 1,
+    "query": "space.xinzhi.globe"
+  },
+  "summary": "1 of 74 classes match \"space.xinzhi.globe\" in 7 DEX file(s); showing 1.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\input\\swss.apk"
+    }
+  ],
+  "links": []
+}

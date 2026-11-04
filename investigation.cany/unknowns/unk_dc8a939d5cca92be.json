@@ -1,0 +1,14 @@
+{
+  "id": "unk_dc8a939d5cca92be",
+  "revision": 2,
+  "question": "Does the \"三维山水全景地图\" 3D panorama map need to be reproduced, or is the offline Feng Shui compass + knowledge base the intended core?",
+  "severity": "high",
+  "domain": "scope",
+  "status": "resolved",
+  "probes": [
+    "core_person_ask about scope: 3D live map vs offline compass core"
+  ],
+  "evidence_for": [],
+  "evidence_against": [],
+  "resolution": "Decided to build the offline Feng Shui compass + knowledge base as the core. The 3D panorama map requires AMap online service + a 3D terrain engine (libterrain.so) and cannot run offline in a self-contained desktop app; the person delegated decisions, and this is the closest reproducible equivalent. A heading-reading panel reproduces the compass's practical output."
+}

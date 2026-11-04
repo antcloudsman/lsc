@@ -1,0 +1,42 @@
+{
+  "id": "ev_cb5f568efdfab759aa70694b618ee1eb1ee2659ba017a629964319a7c00f60a3",
+  "subject": {
+    "kind": "elf",
+    "sha256": "101d4547d499dc8d19bace4a1e7287c97c9270e19f9d92f1647cb46376f3cb66",
+    "name": "libterrain.so"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 200,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "子|丑|寅|分金|罗盘|山|卦"
+  },
+  "result": {
+    "matches": [],
+    "total": 0
+  },
+  "summary": "0 strings match \"子|丑|寅|分金|罗盘|山|卦\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [],
+  "links": []
+}

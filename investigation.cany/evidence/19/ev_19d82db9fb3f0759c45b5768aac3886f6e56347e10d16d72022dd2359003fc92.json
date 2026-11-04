@@ -1,0 +1,1575 @@
+{
+  "id": "ev_19d82db9fb3f0759c45b5768aac3886f6e56347e10d16d72022dd2359003fc92",
+  "subject": {
+    "kind": "dex",
+    "sha256": "df6ea4071bd5b41678d2190179cd5f338d9685877ecdeafe84eaa8088afd05cb",
+    "name": "classes06.dex"
+  },
+  "operation": "android_method_show",
+  "params": {
+    "class_name": "space.xinzhi.globe.common.CompassReadTypeEnum",
+    "java_source": false,
+    "limit": 250,
+    "method_name": "getTextList",
+    "offset": 0,
+    "overload_index": 0,
+    "path": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+  },
+  "result": {
+    "access": [
+      "private",
+      "final"
+    ],
+    "class": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;",
+    "dex": "classes06.dex",
+    "ins": 1,
+    "instructions": [
+      {
+        "offset": "0000",
+        "opcode": "0x62",
+        "text": "sget-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum$WhenMappings;->$EnumSwitchMapping$0:[I",
+        "units": 2
+      },
+      {
+        "offset": "0002",
+        "opcode": "0x74",
+        "text": "invoke-virtual/range {v24 .. v24}, Ljava/lang/Enum;->ordinal()I",
+        "units": 3
+      },
+      {
+        "offset": "0005",
+        "opcode": "0x0a",
+        "text": "move-result v1",
+        "units": 1
+      },
+      {
+        "offset": "0006",
+        "opcode": "0x44",
+        "text": "aget v0, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0008",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x15",
+        "units": 2
+      },
+      {
+        "offset": "000a",
+        "opcode": "0x13",
+        "text": "const/16 v2, 0x14",
+        "units": 2
+      },
+      {
+        "offset": "000c",
+        "opcode": "0x13",
+        "text": "const/16 v3, 0x13",
+        "units": 2
+      },
+      {
+        "offset": "000e",
+        "opcode": "0x13",
+        "text": "const/16 v4, 0x12",
+        "units": 2
+      },
+      {
+        "offset": "0010",
+        "opcode": "0x13",
+        "text": "const/16 v5, 0x11",
+        "units": 2
+      },
+      {
+        "offset": "0012",
+        "opcode": "0x13",
+        "text": "const/16 v6, 0x10",
+        "units": 2
+      },
+      {
+        "offset": "0014",
+        "opcode": "0x13",
+        "text": "const/16 v7, 0xf",
+        "units": 2
+      },
+      {
+        "offset": "0016",
+        "opcode": "0x13",
+        "text": "const/16 v8, 0xe",
+        "units": 2
+      },
+      {
+        "offset": "0018",
+        "opcode": "0x13",
+        "text": "const/16 v9, 0xd",
+        "units": 2
+      },
+      {
+        "offset": "001a",
+        "opcode": "0x13",
+        "text": "const/16 v10, 0xc",
+        "units": 2
+      },
+      {
+        "offset": "001c",
+        "opcode": "0x13",
+        "text": "const/16 v11, 0xb",
+        "units": 2
+      },
+      {
+        "offset": "001e",
+        "opcode": "0x13",
+        "text": "const/16 v12, 0xa",
+        "units": 2
+      },
+      {
+        "offset": "0020",
+        "opcode": "0x13",
+        "text": "const/16 v13, 9",
+        "units": 2
+      },
+      {
+        "offset": "0022",
+        "opcode": "0x13",
+        "text": "const/16 v14, 8",
+        "units": 2
+      },
+      {
+        "offset": "0024",
+        "opcode": "0x12",
+        "text": "const/4 v15, 7",
+        "units": 1
+      },
+      {
+        "offset": "0025",
+        "opcode": "0x13",
+        "text": "const/16 v16, 6",
+        "units": 2
+      },
+      {
+        "offset": "0027",
+        "opcode": "0x13",
+        "text": "const/16 v17, 5",
+        "units": 2
+      },
+      {
+        "offset": "0029",
+        "opcode": "0x13",
+        "text": "const/16 v18, 4",
+        "units": 2
+      },
+      {
+        "offset": "002b",
+        "opcode": "0x13",
+        "text": "const/16 v19, 3",
+        "units": 2
+      },
+      {
+        "offset": "002d",
+        "opcode": "0x13",
+        "text": "const/16 v20, 2",
+        "units": 2
+      },
+      {
+        "offset": "002f",
+        "opcode": "0x13",
+        "text": "const/16 v21, 1",
+        "units": 2
+      },
+      {
+        "offset": "0031",
+        "opcode": "0x13",
+        "text": "const/16 v22, 0",
+        "units": 2
+      },
+      {
+        "offset": "0033",
+        "opcode": "0x2b",
+        "text": "packed-switch v0, :10b0  # 1 -> :108d, 2 -> :106a, 3 -> :1047, 4 -> :0fde, 5 -> :0e55, 6 -> :0bac, 7 -> :0a6b, 8 -> :0a02, 9 -> :0999, 10 -> :06f0, 11 -> :0597, 12 -> :043e, 13 -> :02e5, 14 -> :003c",
+        "units": 3
+      },
+      {
+        "offset": "0036",
+        "opcode": "0x22",
+        "text": "new-instance v0, Lkotlin/NoWhenBranchMatchedException;",
+        "units": 2
+      },
+      {
+        "offset": "0038",
+        "opcode": "0x70",
+        "text": "invoke-direct {v0}, Lkotlin/NoWhenBranchMatchedException;-><init>()V",
+        "units": 3
+      },
+      {
+        "offset": "003b",
+        "opcode": "0x27",
+        "text": "throw v0",
+        "units": 1
+      },
+      {
+        "offset": "003c",
+        "opcode": "0x13",
+        "text": "const/16 v0, 0x78",
+        "units": 2
+      },
+      {
+        "offset": "003e",
+        "opcode": "0x23",
+        "text": "new-array v0, v0, [Ljava/lang/String;",
+        "units": 2
+      },
+      {
+        "offset": "0040",
+        "opcode": "0x1a",
+        "text": "const-string v23, \"癸山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0042",
+        "opcode": "0x4d",
+        "text": "aput-object v23, v0, v22",
+        "units": 2
+      },
+      {
+        "offset": "0044",
+        "opcode": "0x1a",
+        "text": "const-string v22, \"癸山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0046",
+        "opcode": "0x4d",
+        "text": "aput-object v22, v0, v21",
+        "units": 2
+      },
+      {
+        "offset": "0048",
+        "opcode": "0x1a",
+        "text": "const-string v21, \"癸山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "004a",
+        "opcode": "0x4d",
+        "text": "aput-object v21, v0, v20",
+        "units": 2
+      },
+      {
+        "offset": "004c",
+        "opcode": "0x1a",
+        "text": "const-string v20, \"癸山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "004e",
+        "opcode": "0x4d",
+        "text": "aput-object v20, v0, v19",
+        "units": 2
+      },
+      {
+        "offset": "0050",
+        "opcode": "0x1a",
+        "text": "const-string v19, \"癸山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0052",
+        "opcode": "0x4d",
+        "text": "aput-object v19, v0, v18",
+        "units": 2
+      },
+      {
+        "offset": "0054",
+        "opcode": "0x1a",
+        "text": "const-string v18, \"丑山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0056",
+        "opcode": "0x4d",
+        "text": "aput-object v18, v0, v17",
+        "units": 2
+      },
+      {
+        "offset": "0058",
+        "opcode": "0x1a",
+        "text": "const-string v17, \"丑山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "005a",
+        "opcode": "0x4d",
+        "text": "aput-object v17, v0, v16",
+        "units": 2
+      },
+      {
+        "offset": "005c",
+        "opcode": "0x1a",
+        "text": "const-string v16, \"丑山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "005e",
+        "opcode": "0x4d",
+        "text": "aput-object v16, v0, v15",
+        "units": 2
+      },
+      {
+        "offset": "0060",
+        "opcode": "0x1a",
+        "text": "const-string v15, \"丑山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0062",
+        "opcode": "0x4d",
+        "text": "aput-object v15, v0, v14",
+        "units": 2
+      },
+      {
+        "offset": "0064",
+        "opcode": "0x1a",
+        "text": "const-string v14, \"丑山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0066",
+        "opcode": "0x4d",
+        "text": "aput-object v14, v0, v13",
+        "units": 2
+      },
+      {
+        "offset": "0068",
+        "opcode": "0x1a",
+        "text": "const-string v13, \"艮山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "006a",
+        "opcode": "0x4d",
+        "text": "aput-object v13, v0, v12",
+        "units": 2
+      },
+      {
+        "offset": "006c",
+        "opcode": "0x1a",
+        "text": "const-string v12, \"艮山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "006e",
+        "opcode": "0x4d",
+        "text": "aput-object v12, v0, v11",
+        "units": 2
+      },
+      {
+        "offset": "0070",
+        "opcode": "0x1a",
+        "text": "const-string v11, \"艮山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0072",
+        "opcode": "0x4d",
+        "text": "aput-object v11, v0, v10",
+        "units": 2
+      },
+      {
+        "offset": "0074",
+        "opcode": "0x1a",
+        "text": "const-string v10, \"艮山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0076",
+        "opcode": "0x4d",
+        "text": "aput-object v10, v0, v9",
+        "units": 2
+      },
+      {
+        "offset": "0078",
+        "opcode": "0x1a",
+        "text": "const-string v9, \"艮山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "007a",
+        "opcode": "0x4d",
+        "text": "aput-object v9, v0, v8",
+        "units": 2
+      },
+      {
+        "offset": "007c",
+        "opcode": "0x1a",
+        "text": "const-string v8, \"寅山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "007e",
+        "opcode": "0x4d",
+        "text": "aput-object v8, v0, v7",
+        "units": 2
+      },
+      {
+        "offset": "0080",
+        "opcode": "0x1a",
+        "text": "const-string v7, \"寅山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0082",
+        "opcode": "0x4d",
+        "text": "aput-object v7, v0, v6",
+        "units": 2
+      },
+      {
+        "offset": "0084",
+        "opcode": "0x1a",
+        "text": "const-string v6, \"寅山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0086",
+        "opcode": "0x4d",
+        "text": "aput-object v6, v0, v5",
+        "units": 2
+      },
+      {
+        "offset": "0088",
+        "opcode": "0x1a",
+        "text": "const-string v5, \"寅山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "008a",
+        "opcode": "0x4d",
+        "text": "aput-object v5, v0, v4",
+        "units": 2
+      },
+      {
+        "offset": "008c",
+        "opcode": "0x1a",
+        "text": "const-string v4, \"寅山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "008e",
+        "opcode": "0x4d",
+        "text": "aput-object v4, v0, v3",
+        "units": 2
+      },
+      {
+        "offset": "0090",
+        "opcode": "0x1a",
+        "text": "const-string v3, \"甲山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0092",
+        "opcode": "0x4d",
+        "text": "aput-object v3, v0, v2",
+        "units": 2
+      },
+      {
+        "offset": "0094",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0096",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0098",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x16",
+        "units": 2
+      },
+      {
+        "offset": "009a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "009c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "009e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x17",
+        "units": 2
+      },
+      {
+        "offset": "00a0",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00a2",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00a4",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x18",
+        "units": 2
+      },
+      {
+        "offset": "00a6",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"甲山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "00a8",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00aa",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x19",
+        "units": 2
+      },
+      {
+        "offset": "00ac",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "00ae",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00b0",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1a",
+        "units": 2
+      },
+      {
+        "offset": "00b2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00b4",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00b6",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1b",
+        "units": 2
+      },
+      {
+        "offset": "00b8",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00ba",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00bc",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1c",
+        "units": 2
+      },
+      {
+        "offset": "00be",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00c0",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00c2",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1d",
+        "units": 2
+      },
+      {
+        "offset": "00c4",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"卯山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "00c6",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00c8",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1e",
+        "units": 2
+      },
+      {
+        "offset": "00ca",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乙山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "00cc",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00ce",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x1f",
+        "units": 2
+      },
+      {
+        "offset": "00d0",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乙山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00d2",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00d4",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x20",
+        "units": 2
+      },
+      {
+        "offset": "00d6",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乙山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00d8",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00da",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x21",
+        "units": 2
+      },
+      {
+        "offset": "00dc",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乙山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00de",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00e0",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x22",
+        "units": 2
+      },
+      {
+        "offset": "00e2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"乙山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "00e4",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00e6",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x23",
+        "units": 2
+      },
+      {
+        "offset": "00e8",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "00ea",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00ec",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x24",
+        "units": 2
+      },
+      {
+        "offset": "00ee",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00f0",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00f2",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x25",
+        "units": 2
+      },
+      {
+        "offset": "00f4",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00f6",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00f8",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x26",
+        "units": 2
+      },
+      {
+        "offset": "00fa",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "00fc",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "00fe",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x27",
+        "units": 2
+      },
+      {
+        "offset": "0100",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"辰山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0102",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0104",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x28",
+        "units": 2
+      },
+      {
+        "offset": "0106",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0108",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "010a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x29",
+        "units": 2
+      },
+      {
+        "offset": "010c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "010e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0110",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2a",
+        "units": 2
+      },
+      {
+        "offset": "0112",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0114",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0116",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2b",
+        "units": 2
+      },
+      {
+        "offset": "0118",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "011a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "011c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2c",
+        "units": 2
+      },
+      {
+        "offset": "011e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巽山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0120",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0122",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2d",
+        "units": 2
+      },
+      {
+        "offset": "0124",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0126",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0128",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2e",
+        "units": 2
+      },
+      {
+        "offset": "012a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "012c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "012e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x2f",
+        "units": 2
+      },
+      {
+        "offset": "0130",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0132",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0134",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x30",
+        "units": 2
+      },
+      {
+        "offset": "0136",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0138",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "013a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x31",
+        "units": 2
+      },
+      {
+        "offset": "013c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"巳山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "013e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0140",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x32",
+        "units": 2
+      },
+      {
+        "offset": "0142",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0144",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0146",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x33",
+        "units": 2
+      },
+      {
+        "offset": "0148",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "014a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "014c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x34",
+        "units": 2
+      },
+      {
+        "offset": "014e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0150",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0152",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x35",
+        "units": 2
+      },
+      {
+        "offset": "0154",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0156",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0158",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x36",
+        "units": 2
+      },
+      {
+        "offset": "015a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丙山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "015c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "015e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x37",
+        "units": 2
+      },
+      {
+        "offset": "0160",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0162",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0164",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x38",
+        "units": 2
+      },
+      {
+        "offset": "0166",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0168",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "016a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x39",
+        "units": 2
+      },
+      {
+        "offset": "016c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "016e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0170",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3a",
+        "units": 2
+      },
+      {
+        "offset": "0172",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0174",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0176",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3b",
+        "units": 2
+      },
+      {
+        "offset": "0178",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"午山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "017a",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "017c",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3c",
+        "units": 2
+      },
+      {
+        "offset": "017e",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0180",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0182",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3d",
+        "units": 2
+      },
+      {
+        "offset": "0184",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0186",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0188",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3e",
+        "units": 2
+      },
+      {
+        "offset": "018a",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "018c",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "018e",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x3f",
+        "units": 2
+      },
+      {
+        "offset": "0190",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "0192",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "0194",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x40",
+        "units": 2
+      },
+      {
+        "offset": "0196",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"丁山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "0198",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "019a",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x41",
+        "units": 2
+      },
+      {
+        "offset": "019c",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "019e",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01a0",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x42",
+        "units": 2
+      },
+      {
+        "offset": "01a2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01a4",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01a6",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x43",
+        "units": 2
+      },
+      {
+        "offset": "01a8",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01aa",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01ac",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x44",
+        "units": 2
+      },
+      {
+        "offset": "01ae",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01b0",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01b2",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x45",
+        "units": 2
+      },
+      {
+        "offset": "01b4",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"未山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "01b6",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01b8",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x46",
+        "units": 2
+      },
+      {
+        "offset": "01ba",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "01bc",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01be",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x47",
+        "units": 2
+      },
+      {
+        "offset": "01c0",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01c2",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01c4",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x48",
+        "units": 2
+      },
+      {
+        "offset": "01c6",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01c8",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01ca",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x49",
+        "units": 2
+      },
+      {
+        "offset": "01cc",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01ce",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01d0",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4a",
+        "units": 2
+      },
+      {
+        "offset": "01d2",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"坤山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "01d4",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01d6",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4b",
+        "units": 2
+      },
+      {
+        "offset": "01d8",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "01da",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01dc",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4c",
+        "units": 2
+      },
+      {
+        "offset": "01de",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01e0",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01e2",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4d",
+        "units": 2
+      },
+      {
+        "offset": "01e4",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01e6",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01e8",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4e",
+        "units": 2
+      },
+      {
+        "offset": "01ea",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山九度内\"",
+        "units": 2
+      },
+      {
+        "offset": "01ec",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      },
+      {
+        "offset": "01ee",
+        "opcode": "0x13",
+        "text": "const/16 v1, 0x4f",
+        "units": 2
+      },
+      {
+        "offset": "01f0",
+        "opcode": "0x1a",
+        "text": "const-string v2, \"申山九度外\"",
+        "units": 2
+      },
+      {
+        "offset": "01f2",
+        "opcode": "0x4d",
+        "text": "aput-object v2, v0, v1",
+        "units": 2
+      }
+    ],
+    "instructions_total": 2144,
+    "java_source": {
+      "status": "not_requested"
+    },
+    "listing": "0000: sget-object v0, Lspace/xinzhi/globe/common/CompassReadTypeEnum$WhenMappings;->$EnumSwitchMapping$0:[I\n0002: invoke-virtual/range {v24 .. v24}, Ljava/lang/Enum;->ordinal()I\n0005: move-result v1\n0006: aget v0, v0, v1\n0008: const/16 v1, 0x15\n000a: const/16 v2, 0x14\n000c: const/16 v3, 0x13\n000e: const/16 v4, 0x12\n0010: const/16 v5, 0x11\n0012: const/16 v6, 0x10\n0014: const/16 v7, 0xf\n0016: const/16 v8, 0xe\n0018: const/16 v9, 0xd\n001a: const/16 v10, 0xc\n001c: const/16 v11, 0xb\n001e: const/16 v12, 0xa\n0020: const/16 v13, 9\n0022: const/16 v14, 8\n0024: const/4 v15, 7\n0025: const/16 v16, 6\n0027: const/16 v17, 5\n0029: const/16 v18, 4\n002b: const/16 v19, 3\n002d: const/16 v20, 2\n002f: const/16 v21, 1\n0031: const/16 v22, 0\n0033: packed-switch v0, :10b0  # 1 -> :108d, 2 -> :106a, 3 -> :1047, 4 -> :0fde, 5 -> :0e55, 6 -> :0bac, 7 -> :0a6b, 8 -> :0a02, 9 -> :0999, 10 -> :06f0, 11 -> :0597, 12 -> :043e, 13 -> :02e5, 14 -> :003c\n0036: new-instance v0, Lkotlin/NoWhenBranchMatchedException;\n0038: invoke-direct {v0}, Lkotlin/NoWhenBranchMatchedException;-><init>()V\n003b: throw v0\n003c: const/16 v0, 0x78\n003e: new-array v0, v0, [Ljava/lang/String;\n0040: const-string v23, \"癸山九度外\"\n0042: aput-object v23, v0, v22\n0044: const-string v22, \"癸山九度内\"\n0046: aput-object v22, v0, v21\n0048: const-string v21, \"癸山九度内\"\n004a: aput-object v21, v0, v20\n004c: const-string v20, \"癸山九度内\"\n004e: aput-object v20, v0, v19\n0050: const-string v19, \"癸山九度外\"\n0052: aput-object v19, v0, v18\n0054: const-string v18, \"丑山九度外\"\n0056: aput-object v18, v0, v17\n0058: const-string v17, \"丑山九度内\"\n005a: aput-object v17, v0, v16\n005c: const-string v16, \"丑山九度内\"\n005e: aput-object v16, v0, v15\n0060: const-string v15, \"丑山九度内\"\n0062: aput-object v15, v0, v14\n0064: const-string v14, \"丑山九度外\"\n0066: aput-object v14, v0, v13\n0068: const-string v13, \"艮山九度外\"\n006a: aput-object v13, v0, v12\n006c: const-string v12, \"艮山九度内\"\n006e: aput-object v12, v0, v11\n0070: const-string v11, \"艮山九度内\"\n0072: aput-object v11, v0, v10\n0074: const-string v10, \"艮山九度内\"\n0076: aput-object v10, v0, v9\n0078: const-string v9, \"艮山九度外\"\n007a: aput-object v9, v0, v8\n007c: const-string v8, \"寅山九度外\"\n007e: aput-object v8, v0, v7\n0080: const-string v7, \"寅山九度内\"\n0082: aput-object v7, v0, v6\n0084: const-string v6, \"寅山九度内\"\n0086: aput-object v6, v0, v5\n0088: const-string v5, \"寅山九度内\"\n008a: aput-object v5, v0, v4\n008c: const-string v4, \"寅山九度外\"\n008e: aput-object v4, v0, v3\n0090: const-string v3, \"甲山九度外\"\n0092: aput-object v3, v0, v2\n0094: const-string v2, \"甲山九度内\"\n0096: aput-object v2, v0, v1\n0098: const/16 v1, 0x16\n009a: const-string v2, \"甲山九度内\"\n009c: aput-object v2, v0, v1\n009e: const/16 v1, 0x17\n00a0: const-string v2, \"甲山九度内\"\n00a2: aput-object v2, v0, v1\n00a4: const/16 v1, 0x18\n00a6: const-string v2, \"甲山九度外\"\n00a8: aput-object v2, v0, v1\n00aa: const/16 v1, 0x19\n00ac: const-string v2, \"卯山九度外\"\n00ae: aput-object v2, v0, v1\n00b0: const/16 v1, 0x1a\n00b2: const-string v2, \"卯山九度内\"\n00b4: aput-object v2, v0, v1\n00b6: const/16 v1, 0x1b\n00b8: const-string v2, \"卯山九度内\"\n00ba: aput-object v2, v0, v1\n00bc: const/16 v1, 0x1c\n00be: const-string v2, \"卯山九度内\"\n00c0: aput-object v2, v0, v1\n00c2: const/16 v1, 0x1d\n00c4: const-string v2, \"卯山九度外\"\n00c6: aput-object v2, v0, v1\n00c8: const/16 v1, 0x1e\n00ca: const-string v2, \"乙山九度外\"\n00cc: aput-object v2, v0, v1\n00ce: const/16 v1, 0x1f\n00d0: const-string v2, \"乙山九度内\"\n00d2: aput-object v2, v0, v1\n00d4: const/16 v1, 0x20\n00d6: const-string v2, \"乙山九度内\"\n00d8: aput-object v2, v0, v1\n00da: const/16 v1, 0x21\n00dc: const-string v2, \"乙山九度内\"\n00de: aput-object v2, v0, v1\n00e0: const/16 v1, 0x22\n00e2: const-string v2, \"乙山九度外\"\n00e4: aput-object v2, v0, v1\n00e6: const/16 v1, 0x23\n00e8: const-string v2, \"辰山九度外\"\n00ea: aput-object v2, v0, v1\n00ec: const/16 v1, 0x24\n00ee: const-string v2, \"辰山九度内\"\n00f0: aput-object v2, v0, v1\n00f2: const/16 v1, 0x25\n00f4: const-string v2, \"辰山九度内\"\n00f6: aput-object v2, v0, v1\n00f8: const/16 v1, 0x26\n00fa: const-string v2, \"辰山九度内\"\n00fc: aput-object v2, v0, v1\n00fe: const/16 v1, 0x27\n0100: const-string v2, \"辰山九度外\"\n0102: aput-object v2, v0, v1\n0104: const/16 v1, 0x28\n0106: const-string v2, \"巽山九度外\"\n0108: aput-object v2, v0, v1\n010a: const/16 v1, 0x29\n010c: const-string v2, \"巽山九度内\"\n010e: aput-object v2, v0, v1\n0110: const/16 v1, 0x2a\n0112: const-string v2, \"巽山九度内\"\n0114: aput-object v2, v0, v1\n0116: const/16 v1, 0x2b\n0118: const-string v2, \"巽山九度内\"\n011a: aput-object v2, v0, v1\n011c: const/16 v1, 0x2c\n011e: const-string v2, \"巽山九度外\"\n0120: aput-object v2, v0, v1\n0122: const/16 v1, 0x2d\n0124: const-string v2, \"巳山九度外\"\n0126: aput-object v2, v0, v1\n0128: const/16 v1, 0x2e\n012a: const-string v2, \"巳山九度内\"\n012c: aput-object v2, v0, v1\n012e: const/16 v1, 0x2f\n0130: const-string v2, \"巳山九度内\"\n0132: aput-object v2, v0, v1\n0134: const/16 v1, 0x30\n0136: const-string v2, \"巳山九度内\"\n0138: aput-object v2, v0, v1\n013a: const/16 v1, 0x31\n013c: const-string v2, \"巳山九度外\"\n013e: aput-object v2, v0, v1\n0140: const/16 v1, 0x32\n0142: const-string v2, \"丙山九度外\"\n0144: aput-object v2, v0, v1\n0146: const/16 v1, 0x33\n0148: const-string v2, \"丙山九度内\"\n014a: aput-object v2, v0, v1\n014c: const/16 v1, 0x34\n014e: const-string v2, \"丙山九度内\"\n0150: aput-object v2, v0, v1\n0152: const/16 v1, 0x35\n0154: const-string v2, \"丙山九度内\"\n0156: aput-object v2, v0, v1\n0158: const/16 v1, 0x36\n015a: const-string v2, \"丙山九度外\"\n015c: aput-object v2, v0, v1\n015e: const/16 v1, 0x37\n0160: const-string v2, \"午山九度外\"\n0162: aput-object v2, v0, v1\n0164: const/16 v1, 0x38\n0166: const-string v2, \"午山九度内\"\n0168: aput-object v2, v0, v1\n016a: const/16 v1, 0x39\n016c: const-string v2, \"午山九度内\"\n016e: aput-object v2, v0, v1\n0170: const/16 v1, 0x3a\n0172: const-string v2, \"午山九度内\"\n0174: aput-object v2, v0, v1\n0176: const/16 v1, 0x3b\n0178: const-string v2, \"午山九度外\"\n017a: aput-object v2, v0, v1\n017c: const/16 v1, 0x3c\n017e: const-string v2, \"丁山九度外\"\n0180: aput-object v2, v0, v1\n0182: const/16 v1, 0x3d\n0184: const-string v2, \"丁山九度内\"\n0186: aput-object v2, v0, v1\n0188: const/16 v1, 0x3e\n018a: const-string v2, \"丁山九度内\"\n018c: aput-object v2, v0, v1\n018e: const/16 v1, 0x3f\n0190: const-string v2, \"丁山九度内\"\n0192: aput-object v2, v0, v1\n0194: const/16 v1, 0x40\n0196: const-string v2, \"丁山九度外\"\n0198: aput-object v2, v0, v1\n019a: const/16 v1, 0x41\n019c: const-string v2, \"未山九度外\"\n019e: aput-object v2, v0, v1\n01a0: const/16 v1, 0x42\n01a2: const-string v2, \"未山九度内\"\n01a4: aput-object v2, v0, v1\n01a6: const/16 v1, 0x43\n01a8: const-string v2, \"未山九度内\"\n01aa: aput-object v2, v0, v1\n01ac: const/16 v1, 0x44\n01ae: const-string v2, \"未山九度内\"\n01b0: aput-object v2, v0, v1\n01b2: const/16 v1, 0x45\n01b4: const-string v2, \"未山九度外\"\n01b6: aput-object v2, v0, v1\n01b8: const/16 v1, 0x46\n01ba: const-string v2, \"坤山九度外\"\n01bc: aput-object v2, v0, v1\n01be: const/16 v1, 0x47\n01c0: const-string v2, \"坤山九度内\"\n01c2: aput-object v2, v0, v1\n01c4: const/16 v1, 0x48\n01c6: const-string v2, \"坤山九度内\"\n01c8: aput-object v2, v0, v1\n01ca: const/16 v1, 0x49\n01cc: const-string v2, \"坤山九度内\"\n01ce: aput-object v2, v0, v1\n01d0: const/16 v1, 0x4a\n01d2: const-string v2, \"坤山九度外\"\n01d4: aput-object v2, v0, v1\n01d6: const/16 v1, 0x4b\n01d8: const-string v2, \"申山九度外\"\n01da: aput-object v2, v0, v1\n01dc: const/16 v1, 0x4c\n01de: const-string v2, \"申山九度内\"\n01e0: aput-object v2, v0, v1\n01e2: const/16 v1, 0x4d\n01e4: const-string v2, \"申山九度内\"\n01e6: aput-object v2, v0, v1\n01e8: const/16 v1, 0x4e\n01ea: const-string v2, \"申山九度内\"\n01ec: aput-object v2, v0, v1\n01ee: const/16 v1, 0x4f\n01f0: const-string v2, \"申山九度外\"\n01f2: aput-object v2, v0, v1",
+    "method": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String;",
+    "outs": 1,
+    "overload_index": 0,
+    "overloads": [
+      "private final java.lang.String[] getTextList()"
+    ],
+    "registers": 25,
+    "signature": "private final java.lang.String[] getTextList()",
+    "tries": []
+  },
+  "summary": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String; (classes06.dex): 2144 instructions.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "parse_warning",
+      "message": "classes06.dex: Adler-32 checksum does not match the content"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 250,
+    "total": 2144,
+    "next_offset": 250
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "E:\\APPDetector\\output\\.inspect\\unpack\\mem_dump\\classes06.dex"
+    },
+    {
+      "kind": "method",
+      "value": "Lspace/xinzhi/globe/common/CompassReadTypeEnum;->getTextList()[Ljava/lang/String;"
+    }
+  ],
+  "links": []
+}

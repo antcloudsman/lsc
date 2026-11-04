@@ -1,0 +1,34 @@
+# ---- craft workspace 运行时产物（可再生，不入库） ----
+/checks/
+/feed.json
+/pinned/
+/capture/
+/attachments/
+/.inspect/
+/craft.json.bak
+
+# ---- Rust 桌面版 ----
+/app/target/
+**/*.rs.bk
+luopan.exe
+
+# ---- Android / Gradle ----
+/app/android/.gradle/
+/app/android/build/
+/app/android/app/build/
+/app/android/local.properties
+/app/android/.idea/
+*.apk
+*.keystore
+*.jks
+
+# ---- 构建日志与临时文件 ----
+*.log
+build-activity.log
+/tmp/
+.DS_Store
+Thumbs.db
+
+# ---- 大体积截图证据（保留在 checks/ 与 app/shots/，不入库） ----
+/app/shots/
+/docs/screenshots/

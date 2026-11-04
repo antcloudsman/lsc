@@ -1,0 +1,15 @@
+{
+  "id": "unk_8c499e1b15d1868c",
+  "revision": 2,
+  "question": "Exact per-mountain five-element and 分金/龙 assignment order for the full compass rings (from the packed DEX, not readable).",
+  "severity": "medium",
+  "domain": "mechanics",
+  "status": "resolved",
+  "probes": [
+    "Decode the packed classes.dex payload (assets/0OO00l111l1l) to find ring layout code",
+    "Use standard 三合盘/三元盘 conventions from the knowledge base"
+  ],
+  "evidence_for": [],
+  "evidence_against": [],
+  "resolution": "The app's real classes are inside a commercial packer (com.wrapper.proxyapplication + libshell-super.space.xinzhi.globe.so / libshella-4.6.2.2.so); the per-mountain tables are in the encrypted DEX payload (assets/0OO00l111l1l) and not statically readable. Resolved by using standard 三合盘/三元盘 conventions (天干地支五行, 旺相分金, 寄表), which are consistent with the app's own knowledge base; these are marked \"estimated\" in MECHANICS.md."
+}

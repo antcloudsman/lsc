@@ -1,0 +1,649 @@
+{
+  "id": "ev_3a2acd004f8e7faa437d1af0034c708ce29cb10aa5f1a68aaf83c34687be662b",
+  "subject": {
+    "kind": "elf",
+    "sha256": "101d4547d499dc8d19bace4a1e7287c97c9270e19f9d92f1647cb46376f3cb66",
+    "name": "libterrain.so"
+  },
+  "operation": "native_functions_list",
+  "params": {
+    "limit": 60,
+    "offset": 0
+  },
+  "result": {
+    "functions": [
+      {
+        "address": "0xe534",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 7,
+        "name": "fmodf@plt",
+        "name_source": "import_thunk",
+        "size": 28,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe550",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_get_globals_fast@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe560",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_throw@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe570",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "realloc@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe580",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZnamSt11align_val_t@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe590",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "pthread_key_create@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe5a0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__vsnprintf_chk@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe5b0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "pthread_once@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe5c0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_finalize@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe5d0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_end_catch@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe5e0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "calloc@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe5f0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "syslog@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe600",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_Znwm@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe610",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "posix_memalign@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe620",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__strlen_chk@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe630",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "fmod@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe640",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZdaPvSt11align_val_t@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe650",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "abort@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe660",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "vsnprintf@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe670",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_call_unexpected@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe680",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "dl_iterate_phdr@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe690",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "android_set_abort_message@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe6a0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "islower@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe6b0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZnwmSt11align_val_t@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe6c0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__memmove_chk@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe6d0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZNSt13bad_exceptionD1Ev@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe6e0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZNSt9type_infoD2Ev@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe6f0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZSt15get_new_handlerv@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe700",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "fputc@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe710",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__stack_chk_fail@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe720",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "pthread_setspecific@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe730",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "openlog@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe740",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_get_globals@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe750",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZdlPvSt11align_val_t@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe760",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZN10__cxxabiv121__isOurExceptionClassEPK17_Unwind_Exception@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe770",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_demangle@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe780",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "strcmp@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe790",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZdaPv@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe7a0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZN10__cxxabiv119__getExceptionClassEPK17_Unwind_Exception@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe7b0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_allocate_exception@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe7c0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "pthread_mutex_lock@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe7d0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "closelog@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe7e0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "pthread_getspecific@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe7f0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZdlPv@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe800",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "memmove@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe810",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZSt9terminatev@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe820",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_Znam@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe830",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "isxdigit@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe840",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_begin_catch@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe850",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZNSt9bad_allocC1Ev@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe860",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__vsprintf_chk@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe870",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__dynamic_cast@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe880",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "strlen@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe890",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "vasprintf@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe8a0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZNSt9exceptionD2Ev@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe8b0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "__cxa_rethrow@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe8c0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "malloc@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe8d0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "memcpy@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe8e0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "memset@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      },
+      {
+        "address": "0xe8f0",
+        "blocks": 1,
+        "found_by": "stub",
+        "instructions": 4,
+        "name": "_ZSt13get_terminatev@plt",
+        "name_source": "import_thunk",
+        "size": 16,
+        "thunk_of": null
+      }
+    ],
+    "total": 289
+  },
+  "summary": "289 functions (showing 60).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "indirect_jumps_unresolved",
+      "message": "27 indirect jumps could not be resolved; code they reach may be missing"
+    },
+    {
+      "code": "stripped_binary",
+      "message": "no local symbols: most function names are generated (sub_…)"
+    },
+    {
+      "code": "static_analysis_only",
+      "message": "functions reached only through computed pointers or at run time may be missing; absence is not proof"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 60,
+    "total": 289,
+    "next_offset": 60
+  },
+  "locations": [],
+  "links": []
+}

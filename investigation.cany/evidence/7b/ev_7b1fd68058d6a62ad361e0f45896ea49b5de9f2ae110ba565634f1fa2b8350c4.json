@@ -1,0 +1,52 @@
+{
+  "id": "ev_7b1fd68058d6a62ad361e0f45896ea49b5de9f2ae110ba565634f1fa2b8350c4",
+  "subject": {
+    "kind": "apk",
+    "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+    "name": "swss.apk"
+  },
+  "operation": "core_target_triage",
+  "params": {
+    "path": "E:\\APPDetector\\input\\swss.apk"
+  },
+  "result": {
+    "description": "An Android app",
+    "kind": "apk",
+    "next_steps": [
+      {
+        "tool": "android_package_show",
+        "why": "manifest, permissions, components and code"
+      },
+      {
+        "tool": "android_classes_find",
+        "why": "find classes by name"
+      }
+    ],
+    "plain_english": "swss.apk is an Android app package.",
+    "recommended_toolsets": [
+      "core",
+      "android"
+    ],
+    "size": 100655304
+  },
+  "summary": "swss.apk is an Android app package.",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.3.0",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "detected_by_content",
+      "message": "the kind is detected from the first bytes and, to break ties, the file name"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [],
+  "links": []
+}

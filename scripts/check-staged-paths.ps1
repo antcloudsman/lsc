@@ -108,8 +108,15 @@ if ($gitCode -ne 0) {
 
 $staged = @($stagedText | ForEach-Object { $_.Trim().Replace('\', '/') } | Where-Object { $_ })
 if ($staged.Count -eq 0) {
-    Write-Host 'STAGED-PATHS: PASS (nothing staged)'
-    exit 0
+    Write-Info "repo: $RepoRoot"
+    Write-Info 'no staged changes'
+    if ($failures.Count -eq 0) {
+        Write-Host 'STAGED-PATHS: PASS (no staged changes)' -ForegroundColor Green
+        exit 0
+    }
+    # A branch-check failure must never be masked as PASS just because nothing is staged.
+    Write-Host "STAGED-PATHS: FAIL ($($failures.Count) violation(s), no staged changes)" -ForegroundColor Red
+    exit 1
 }
 
 Write-Info "repo: $RepoRoot"

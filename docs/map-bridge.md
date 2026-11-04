@@ -75,6 +75,19 @@
 
 **只有前两个是 MainActivity 当前已在调用的**（`MainActivity.updateReading()` 里 `evaluateJavascript("setHeading(...)")` / `setSitFace(...)`），其余为本次新增、客户端可直接用。
 
+### 4.1 启动参数（URL hash）
+
+客户端改 `loadUrl` 即可直接进 3D，免去模拟点按钮：
+
+| hash | 行为 |
+|---|---|
+| `#in3d` | 页面加载后直接进 3D（50 ms 后执行） |
+| `&lat=..&lng=..&z=..` | 指定初始视点（同 `debugSetView`） |
+| `&pitch=0..60` / `&bearing=0..359` | 初始俯仰/旋转 |
+| `&contour` / `&ground` / `&sit` | 启动即开对应控件 |
+
+例：`file:///android_asset/map.html#in3d`（3D 桥对拍用）。自测入口 `#selftest` 仍保留（会等 DEM 就绪后自动点选一次）。
+
 ## 5. 页面 → 客户端（回调契约，D-005 / D-006）
 
 ```js

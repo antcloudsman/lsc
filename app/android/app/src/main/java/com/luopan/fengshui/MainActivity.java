@@ -156,6 +156,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         switch (cmd) {
             case "heading":
                 injectedHeading = it.getFloatExtra("value", 0f);
+                if (compassView != null) {
+                    compassView.setSensorHeading(
+                            SensorMath.applyDeclination(injectedHeading, declination, trueNorth));
+                }
                 break;
             case "accuracy":
                 injectedAccuracy = it.getIntExtra("value", 3);
@@ -515,8 +519,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         CompassData.MOUNTAINS[plate(r.heading + 15f)],
                         CompassData.MOUNTAINS[plate(r.heading)],
                         CompassData.MOUNTAINS[r.sitting],
-                        r.fenjinText, r.dragon72Text,
-                        r.dragon60Text, r.houtianText, r.xiantianText));
+                        clean(r.fenjinText), clean(r.dragon72Text),
+                        clean(r.dragon60Text), clean(r.houtianText), clean(r.xiantianText)));
 
         // P0-1 status bar: 口径 + 精度 + 倾斜
         if (statusView != null) {
@@ -553,6 +557,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             compassMapView.evaluateJavascript("setHeading(" + r.heading + ")", null);
             compassMapView.evaluateJavascript("setSitFace('" + face + "','" + sit + "')", null);
         }
+    }
+
+    private static String clean(String s) {
+        return s == null ? "" : s.replace("\u200c", "");
     }
 
     private boolean isDebuggable() {
@@ -593,6 +601,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        // AT-P0-1: 注入态冻结传感器管线，否则每帧 setText 让 uiautomator 永远拿不到 idle。
+        if (injectedHeading != null) return;
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
             SensorManager.getOrientation(rotationMatrix, orientation);

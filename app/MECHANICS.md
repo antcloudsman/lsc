@@ -223,5 +223,102 @@ Derived from the KB's explicit rules (assets/compassIntroduce/六十甲配六十
   丑山 乙丑/丁丑/己丑/辛丑/癸丑, 艮山 borrows 丑, 甲山 borrows 寅 …). This is exactly the
   旺相 convention used in the rebuild: 阳支山 take 甲丙戊庚壬+支, 阴支山 take 乙丁己辛癸+支,
   八干/四维 borrow the adjacent 支. (Original even has a typo "已山" for 乙山.)
-- **Remaining for 1:1:** the 3D terrain home page (`libterrain.so`), `MainActivity`'s 481
-  methods, and the exact per-dial ring-layout radii/colors in `CompassToolsKt`.
+- **Remaining for 1:1:** the 3D terrain home page (`libterrain.so`) and the per-page UX of
+  `MainActivity`; the per-dial ring radii/colors are **no longer an open item** — see R1 below.
+
+## 补证 R1（2026-11-05，smali 级 / 内存 DEX）
+
+原版被爱加密加壳，磁盘版方法体被 nop。本节全部结论来自 **Frida 内存 dump**
+(`.inspect\unpack\mem_dump\classes06.dex`, 7.4 MB, 7698 classes) 的 baksmali 输出
+`.inspect\unpack\mem_smali\`（apktool.jar 内 shaded dexlib2/baksmali 无 main，
+用 `.inspect\tools\BaksmaliLauncher.java` 调 API 反汇编；脚本与命令见 `docs\gap-matrix.md` §0）。
+
+### R1.1 构造器字段顺序（把「offset/interval」钉死）
+`CompassReadTypeEnum.<init>(Ljava/lang/String;ILjava/lang/String;FFLjava/lang/String;Z)V`：
+
+```smali
+iput-object v3, v0, ...->text:Ljava/lang/String;
+iput v4, v0, ...->offsetDegrees:F      # 第 4 参 = offsetDegrees
+iput v5, v0, ...->intervalDegrees:F    # 第 5 参 = intervalDegrees
+iput-object v6, v0, ...->html:Ljava/lang/String;
+iput-boolean v7, v0, ...->isVip:Z
+```
+
+### R1.2 14 张文字表全部还原（780 条，`getTextList()`）
+`getTextList()`（smali 630-7094）用 `packed-switch` key 1..14 分派到 14 个
+`new-array` + `const-string` + `aput-object` 块。逐条寄存器仿真还原（脚本
+`.inspect\tools\extract_rings.py`），结果写入 `app\mechanics.json` 的 `rings[].labels`
+（`labels_status: confirmed_dex`），全量可读版 `.inspect\derived\ring_tables.txt`。
+
+| TYPE | text | 条数 | 首条 | 末条 | smali 行 |
+|---|---|---|---|---|---|
+| TYPE_1 | 先天八卦_卦位 | 8 | ‌震 | ‌坤 | 7022-7078 |
+| TYPE_2 | 后天八卦_卦位 | 8 | 坤 | ‌坎 | 6967-7021 |
+| TYPE_3 | 先天八卦洛书数 | 8 | ‌震 4 | ‌坤 8 | 6912-6966 |
+| TYPE_4 | 地盘正针二十四山 | 24 | 癸山 | 子山 | 6752-6911 |
+| TYPE_5 | 穿山七十二龙 | 72 | 庚子 | 戊子 | 6160-6751 |
+| TYPE_6 | 地盘正针百二十分金 | 120 | 甲山 庚子 | 甲山 戊子 | 5136-6159 |
+| TYPE_7 | 透地平分六十龙 | 60 | 壬子 壬子 | 壬子 庚子 | 4652-5135 |
+| TYPE_8 | 人盘中针二十四山 | 24 | 癸山 | 子山 | 4492-4651 |
+| TYPE_9 | 天盘缝针二十四山 | 24 | 子山 | 壬山 | 4332-4491 |
+| TYPE_10 | 天盘缝针百二十分金 | 120 | 甲山甲子 | 壬山癸亥 | 3308-4331 |
+| TYPE_11 | 先天方图六十四卦内卦 | 64 | 乾小畜 | 乾乾 | 2788-3307 |
+| TYPE_12 | 先天圆图六十四卦外卦 | 64 | 坤复一 | 坤坤一 | 2268-2787 |
+| TYPE_13 | 六十甲配六十四卦五行 | 64 | 复甲子金 | 坤甲子金 | 1748-2267 |
+| TYPE_14 | 正兼向度数指标 | 120 | 癸山九度外 | 子山九度外 | 724-1747 |
+
+**原版数据自带瑕疵（1:1 必须保留）**：TYPE_2 只有 兑七/乾六/艮八/震三/巽四 五个带数字，
+坤/离/坎 无数字；TYPE_1 有 7/8 条以 U+200C（零宽非连接符）开头；TYPE_5 有错字
+戌寅(=戊寅)/戌午(=戊午)/巳未(=己未)/壬坤 等；TYPE_6 有「已山」(=乙山)；
+TYPE_10 的「山名+干支」无空格（TYPE_6 有空格）；TYPE_7 是「双山名 + 干支」两段式
+（12 双山 × 5 = 60）；TYPE_5 是 12 组 × (5 龙 + 1「正X」) = 72，**不是**「每山 3 龙」。
+
+### R1.3 人盘/天盘的真值：不是 offset，是表旋转（轮 B 关键）
+| 盘 | TYPE | offsetDegrees | interval | labels 首位→末位 | 子山中心 | 等价值（MOUNTAINS 子=0） |
+|---|---|---|---|---|---|---|
+| 地盘正针 | TYPE_4 | 7.5f (`0x40f00000`) | 15.0f | 癸山→子山 | 0° | `floor((h+7.5)/15) % 24` |
+| 人盘中针 | TYPE_8 | **0.0f** (`const/4 v11,0x0`) | 15.0f | 癸山→子山 | **−7.5°** | `(floor(h/15)+1) % 24` |
+| 天盘缝针 | TYPE_9 | **0.0f** (`const/4 v12,0x0`) | 15.0f | 子山→壬山 | **+7.5°** | `floor(h/15) % 24` |
+
+即：三盘的 24 山名相同，差异**全部**编码在各自 labels 的起点/顺序里；人盘=逆时针 7.5°、
+天盘=顺时针 7.5° 与教材一致。**原版不存在第四/第五套 ±7.5 的 offset 常量。**
+
+复算证据（逐指令移植 `getFaceText`，float32）：0.1° 扫频 3600 点，人盘与地盘
+**1800/3600 (50.0%) 不同**、天盘与地盘同样 50.0%（`.inspect\derived\readings_check.txt`）。
+10°/170°/250° 三方位（同一文件 §2）：
+- h=10：地=癸山 人=癸山 天=子山
+- h=170：地=丙山 人=午山 天=丙山
+- h=250：地=庚山 人=庚山 天=申山
+
+边界行为：h=0 时 地=子山、人=癸山、天=子山；h=15 时 地=癸山、人=丑山、天=癸山。
+
+### R1.4 盘面是位图，不是「圈层集合」
+`CommonCompassEnum.<clinit>` 构造 `(name, ordinal, code, text, resId, isVip)`：
+COMPASS_0 compass/二十四山(阴)/`R$mipmap.compass`/false；COMPASS_1 compass1/常用罗盘/
+`compass1_min`/false；COMPASS_2 compass2/三合罗盘(白)/`compass2_min`/true；
+COMPASS_3 compass3/三元罗盘(金)/`compass3_min`/true；COMPASS_4 compass4/综合罗盘(白)/
+`compass4_min`/true。全 dex 内 `getResId()` 只被 `CompassToolsKt.smali:3716` 取用作背景图；
+`getFaceText/getBackText` 只被 `ui\compose\W$a$b/c/i`（读数面板）调用。
+
+整盘 artwork：`assets/webapp/assets/imgs/compass/` 下 `compass.png` + `compass1..13.png`
+共 14 幅（620–2251 px，`compass.png`=1080² 单圈 24 山+360°刻度）+ `pointer.png`(46×188)。
+**结论：盘面不「开」圈层；读数面板独立列 14 类读数（向/坐）。**
+（`compass4.png` 的逐圈清单本轮未目视清点 → 未确认。）
+
+### R1.5 读数公式逐指令
+`getFaceText(F)`：`sub-float offset` → `add 360.0f` → `rem 360.0f` → `div-float interval` →
+`float-to-int`（截断，非 floor）→ `0<=i<len` 取 `list[i]`，否则 `"未知"`。
+`getBackText(F)`：`add 180.0f` → `rem 360.0f` → `getFaceText`。
+在 `h∈[0,360)`、`offset<=22.5` 下 `x+360 ∈ (337.5,720)`，`rem` 后恒 ≥0，故截断 ≡ floor。
+
+### R1.6 知识库与设置页（本轮新增，供产品/客户端）
+- KB：`assets/compassIntroduce/` 14 个 HTML（52–60 KB/个），由
+  `CompassToolsKt.a1(BaseActivity, boolean, CompassReadTypeEnum)`（smali 1539）→
+  `CompassIntroduceActivity$a.a(Context, CompassReadTypeEnum)`（smali 1568）打开枚举的
+  `html` 字段。
+- 设置：**原版有独立设置页**。`MainActivity.MainDrawerContent (MainActivity.kt:851)` 是入口，
+  菜单项字符串：地图设置/账户设置/投诉反馈/关于我们/联系我们/推荐给好友/开具发票/帮助中心/
+  用户协议/隐私政策/第三方sdk清单/权限清单；`SettingActivity.kt:64 Item`、`:83 Divider`；
+  `MapSettingActivity.kt:269/292/313/325/412/461/545` = 地图滤镜（常规/自然/高亮/自定义）+
+  亮度最小/最大/饱和度/对比度/色相旋转 + 恢复默认，预览走
+  `https://appassets.androidplatform.net/assets/webapp/index.html`。

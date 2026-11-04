@@ -374,16 +374,18 @@ impl LuopanApp {
                 }
             }
         }
-        // 60 dragons ring (6° ticks) + 龙 labels.
+        // 60 dragons ring (6° ticks) + 龙 labels. TYPE_7 = interval 6.0 / offset 1.5:
+        // cell k covers [1.5+6k, 7.5+6k), tick on the boundary, label at the centre 4.5+6k.
         if self.rings.dragon60 {
-            for d in (0..360).step_by(DRAGON60_STEP as usize) {
-                let p0 = screen_pos(cx, cy, r * 0.78, d as f32, self.heading);
-                let p1 = screen_pos(cx, cy, r * 0.76, d as f32, self.heading);
+            for k in 0..60 {
+                let d = DRAGON60_OFFSET + k as f32 * DRAGON60_STEP;
+                let p0 = screen_pos(cx, cy, r * 0.78, d, self.heading);
+                let p1 = screen_pos(cx, cy, r * 0.76, d, self.heading);
                 painter.line_segment([p0, p1], Stroke::new(1.0_f32, Color32::from_rgb(100, 120, 140)));
             }
             ring(0.78, 0.76, Color32::from_rgb(80, 100, 120), 1.0);
             for k in 0..60 {
-                let deg = k as f32 * DRAGON60_STEP;
+                let deg = DRAGON60_OFFSET + k as f32 * DRAGON60_STEP + DRAGON60_STEP / 2.0;
                 let name = JIAZI[k];
                 let p = screen_pos(cx, cy, r * 0.77, deg, self.heading);
                 painter.text(p, Align2::CENTER_CENTER, name, FontId::new(8.0, FontFamily::Proportional), Color32::from_rgb(150, 175, 205));
@@ -568,9 +570,11 @@ impl LuopanApp {
         };
         row(ui, "度数", format!("{:.2}°", rd.heading), Color32::WHITE);
         row(ui, "地盘正针", format!("{}山", MOUNTAINS[m]), wuxing_color(WUXING[m]));
-        // Same pin as reading_for: tests/numeric/source_parse.py reads these two lets.
-        let hm = ((normalize_deg(rd.heading + 7.5) / 15.0).floor() as usize) % 24;
-        let tm = ((normalize_deg(rd.heading - 7.5 + 15.0) / 15.0).floor() as usize) % 24;
+        // BUG-001: 人盘/天盘 are label-table rotations, not offsets
+        // (LC逆向 118357a: TYPE_8/9 offsetDegrees = 0.0f; 人盘 list starts 癸, 天盘 starts 子).
+        // Kept as inline literals because tests/numeric/source_parse.py evaluates these lets.
+        let hm = ((rd.heading / 15.0).floor() as usize + 1) % 24;
+        let tm = ((rd.heading / 15.0).floor() as usize) % 24;
         row(ui, "人盘中针", format!("{}山", MOUNTAINS[hm]), Color32::from_rgb(180, 200, 220));
         row(ui, "天盘缝针", format!("{}山", MOUNTAINS[tm]), Color32::from_rgb(230, 200, 170));
         row(ui, "五行", WUXING[m].to_string(), wuxing_color(WUXING[m]));

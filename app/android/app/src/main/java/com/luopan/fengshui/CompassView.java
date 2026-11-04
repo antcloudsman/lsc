@@ -166,7 +166,8 @@ public class CompassView extends View {
             paint.setColor(Color.rgb(110, 130, 90));
             canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
         }
-        for (int d = 0; d < 360; d += (int) CompassData.DRAGON60_STEP) {
+        for (int k = 0; k < 60; k++) {
+            float d = CompassData.DRAGON60_OFFSET + k * CompassData.DRAGON60_STEP;
             float[] p0 = pos(cx, cy, r * 0.775f, d, heading);
             float[] p1 = pos(cx, cy, r * 0.755f, d, heading);
             paint.setColor(Color.rgb(90, 110, 130));

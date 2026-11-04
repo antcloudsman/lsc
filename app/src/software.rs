@@ -6,9 +6,10 @@
 //! interactive eframe app.
 
 use crate::{
-    borrow_branch, gua_wuxing, nayin_of, normalize_deg, reading_for, screen_pos, wuxing_color,
-    BAGUA_STEP, DRAGON60_STEP, DRAGON72_STEP, FENJIN_STEP, HEAVEN_OFFSET, HEXAGRAM64_STEP,
-    HOUTIAN_GUA, HUMAN_OFFSET, JIAZI, MOUNTAIN_STEP, MOUNTAINS, WUXING, XIANTIAN_GUA, YINYANG,
+    borrow_branch, gua_wuxing, nayin_of, reading_for, screen_pos, wuxing_color,
+    BAGUA_STEP, DRAGON60_OFFSET, DRAGON60_STEP, DRAGON72_STEP, FENJIN_STEP, HEAVEN_OFFSET,
+    HEXAGRAM64_STEP, HOUTIAN_GUA, HUMAN_OFFSET, JIAZI, MOUNTAIN_STEP, MOUNTAINS, WUXING,
+    XIANTIAN_GUA, YINYANG,
 };
 
 type Rgb = (u8, u8, u8);
@@ -220,9 +221,11 @@ pub fn software_screenshot(path: &str) {
         let p1 = screen_pos(cx, cy, r * 0.785, d as f32, heading);
         cv.line(p0.x as i32, p0.y as i32, p1.x as i32, p1.y as i32, (110, 130, 90));
     }
-    for d in (0..360).step_by(DRAGON60_STEP as usize) {
-        let p0 = screen_pos(cx, cy, r * 0.775, d as f32, heading);
-        let p1 = screen_pos(cx, cy, r * 0.755, d as f32, heading);
+    // 60 龙: TYPE_7 interval 6.0 / offset 1.5 -> boundaries at 1.5+6k.
+    for k in 0..60 {
+        let d = DRAGON60_OFFSET + k as f32 * DRAGON60_STEP;
+        let p0 = screen_pos(cx, cy, r * 0.775, d, heading);
+        let p1 = screen_pos(cx, cy, r * 0.755, d, heading);
         cv.line(p0.x as i32, p0.y as i32, p1.x as i32, p1.y as i32, (90, 110, 130));
     }
 
@@ -299,8 +302,9 @@ pub fn software_screenshot(path: &str) {
         let lh = 34.0;
         cv.text(x, y, "方位读数", 22.0, gold, f);
         y += lh + 8.0;
-        let hm = ((normalize_deg(rd.heading + 7.5) / 15.0).floor() as usize) % 24;
-        let tm = ((normalize_deg(rd.heading - 7.5 + 15.0) / 15.0).floor() as usize) % 24;
+        // BUG-001: 人盘 list starts 癸, 天盘 starts 子 (both offsetDegrees = 0).
+        let hm = ((rd.heading / 15.0).floor() as usize + 1) % 24;
+        let tm = ((rd.heading / 15.0).floor() as usize) % 24;
         let fj = crate::wangxiang(borrow_branch(rd.mountain), rd.fenjin_slot);
         let d72 = crate::wangxiang(borrow_branch(rd.mountain), rd.dragon72_slot);
         let d60 = JIAZI[rd.dragon60];

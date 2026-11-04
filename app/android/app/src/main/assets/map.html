@@ -27,6 +27,19 @@
     color:#ff6666; font-size:13px; z-index:6; background:#201a14cc; padding:2px 8px; border-radius:6px; }
   .marker { position:absolute; width:14px; height:14px; margin:-7px; border-radius:50%;
     background:#ff4444; border:2px solid #fff; z-index:7; pointer-events:none; box-shadow:0 0 4px #000; }
+  #fsExit { position:fixed; right:10px; bottom:70px; z-index:30; display:none; padding:9px 14px;
+    background:#201a14e6; color:#dcbe82; border:1px solid #5a4a30; border-radius:8px; font-size:14px; }
+  #srcInfo { position:absolute; right:10px; bottom:8px; z-index:9; color:#968268; font-size:11px;
+    background:#201a14cc; padding:2px 6px; border-radius:5px; }
+  #srcPanel { position:absolute; inset:0; background:#00000099; z-index:20; display:none; }
+  #srcPanel .box { position:absolute; left:10px; right:10px; top:70px; max-height:72%; overflow:auto;
+    background:#201a14f5; border:1px solid #5a4a30; border-radius:10px; padding:10px; }
+  #srcPanel h3 { margin:2px 0 8px 2px; color:#dcbe82; font-size:14px; }
+  #srcPanel .srchint { color:#968268; font-size:11px; margin:0 0 8px 2px; }
+  .srcItem { display:block; width:100%; text-align:left; padding:9px 10px; margin-bottom:5px;
+    background:#2a231b; color:#dcbe82; border:1px solid #4a3c28; border-radius:6px; font-size:13px; }
+  .srcItem.off { color:#6b5f4d; border-color:#3a3126; }
+  .srcItem.on { background:#5a4a30; color:#fff; }
 </style>
 </head>
 <body>
@@ -45,6 +58,7 @@
   <button onclick="pitchStep(-10)">俯仰 −</button>
   <button onclick="pitchStep(10)">俯仰 +</button>
   <div id="pitchWrap"><input id="pitchRange" type="range" min="0" max="60" step="1" value="45" oninput="setPitch(this.value)"></div>
+  <button onclick="openSources()">底图源</button>
   <button id="btn_needle" class="active" onclick="toggleNeedle()">指针</button>
   <button id="btn_sit" onclick="toggleSitNorth()">坐南朝北</button>
   <button id="btn_contour" onclick="toggleContour()">等高线</button>
@@ -54,6 +68,13 @@
   <button onclick="locate()">定位</button>
 </div>
 <div id="hud"></div>
+<button id="fsExit" onclick="toggleFullScreen()">退出全屏</button>
+<div id="srcInfo">底图：天地图地形 · 审图号：未确认</div>
+<div id="srcPanel"><div class="box"><h3>底图源</h3>
+  <div class="srchint">原版 12 源；无 key 的置灰（D-006），审图号须按源官方核对</div>
+  <div id="srcBox"></div>
+  <button class="srcItem" onclick="closeSources()">关闭</button>
+</div></div>
 <div id="hint">天地图 · 拖动平移，按钮缩放 · 罗盘指针显示坐向</div>
 <div id="needle"></div>
 <div id="heading-label">向 0°</div>
@@ -164,6 +185,7 @@ function setBase(b) {
   } else {
     render();
   }
+  updateSrcInfo();
 }
 
 /* ---------------- 模式 / 视角 ---------------- */
@@ -239,13 +261,76 @@ function setPitch(v) {
 function zoomIn() { zoom = Math.min(18, zoom + 1); if (mode === "3d") ensurePatch(); else render(); updateHud(); }
 function zoomOut() { zoom = Math.max(2, zoom - 1); if (mode === "3d") ensurePatch(); else render(); updateHud(); }
 
+var fullScreen = false;
 function toggleFullScreen() {
-  var fullScreen = document.getElementById("controls").style.display !== "none";
+  fullScreen = !fullScreen;
   document.getElementById("controls").style.display = fullScreen ? "none" : "";
   document.getElementById("hint").style.display = fullScreen ? "none" : "";
+  document.getElementById("srcInfo").style.display = fullScreen ? "none" : "";
+  document.getElementById("fsExit").style.display = fullScreen ? "block" : "none";
+  try {
+    var fr = document.getElementById("fsExit").getBoundingClientRect();
+    console.log("LC3D fsExit " + Math.round(fr.left) + "," + Math.round(fr.top) + " " +
+      Math.round(fr.width) + "x" + Math.round(fr.height) + " vp=" +
+      document.documentElement.clientWidth + "x" + document.documentElement.clientHeight);
+  } catch (e) { }
   if (mode === "3d") {
     setTimeout(function () { resizeGL(); }, 60);
   }
+}
+
+/* ---- 底图源（原版 12 源；D-006：无 key 置灰；审图号按源绑定，核对前一律「未确认」） ---- */
+var MAP_SOURCES = [
+  { name: "中科星图", layer: null, note: "需授权" },
+  { name: "吉林一号·全球", layer: null, note: "需授权" },
+  { name: "吉林一号·全国", layer: null, note: "需授权" },
+  { name: "世纪空间卫星", layer: null, note: "原版默认源，需授权（有意差异）" },
+  { name: "天地图卫星", layer: "img", review: "未确认" },
+  { name: "天地图地图", layer: "vec", review: "未确认" },
+  { name: "天地图地形", layer: "ter", review: "未确认" },
+  { name: "高德卫星", layer: null, note: "需 key" },
+  { name: "高德地图", layer: null, note: "需 key" },
+  { name: "腾讯卫星", layer: null, note: "需 key" },
+  { name: "腾讯地图", layer: null, note: "需 key" },
+  { name: "腾讯地形", layer: null, note: "需 key" }
+];
+var srcIndex = 6;
+
+function sourceOfBase(layer) {
+  for (var i = 0; i < MAP_SOURCES.length; i++) if (MAP_SOURCES[i].layer === layer) return i;
+  return -1;
+}
+
+function openSources() {
+  var box = document.getElementById("srcBox");
+  var html = "";
+  for (var i = 0; i < MAP_SOURCES.length; i++) {
+    var s = MAP_SOURCES[i];
+    var cls = (s.layer === null) ? "srcItem off" : ((i === srcIndex) ? "srcItem on" : "srcItem");
+    var tail = (s.layer === null) ? (" · " + s.note) : (" · 审图号 " + s.review);
+    html += '<button class="' + cls + '"' + (s.layer === null ? " disabled" : "") +
+      ' onclick="selectSource(' + i + ')">' + (i + 1) + ". " + s.name + tail + "</button>";
+  }
+  box.innerHTML = html;
+  document.getElementById("srcPanel").style.display = "block";
+}
+
+function closeSources() { document.getElementById("srcPanel").style.display = "none"; }
+
+function selectSource(i) {
+  var s = MAP_SOURCES[i];
+  if (!s || s.layer === null) return;
+  srcIndex = i;
+  setBase(s.layer);
+  closeSources();
+}
+
+function updateSrcInfo() {
+  var i = sourceOfBase(base);
+  if (i >= 0) srcIndex = i;
+  var s = MAP_SOURCES[srcIndex] || { name: "天地图地形", review: "未确认" };
+  var el = document.getElementById("srcInfo");
+  if (el) el.textContent = "底图：" + s.name + " · 审图号：" + (s.review || "未确认");
 }
 
 /* ---------------- 罗盘坐向指针 ---------------- */
@@ -1342,6 +1427,7 @@ window.__LCBridgeTest = (function () {
 
 /* ---- 启动 ---- */
 updateHud();
+updateSrcInfo();
 render();
 
 /* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
@@ -1361,6 +1447,10 @@ if (location.hash.indexOf("in3d") >= 0) {
     if (h.indexOf("contour") >= 0) toggleContour();
     if (h.indexOf("ground") >= 0) toggleGround();
     if (h.indexOf("sit") >= 0) { setHeading(90); toggleSitNorth(); }
+    if (h.indexOf("srcpanel") >= 0) openSources();
+    if (h.indexOf("fs") >= 0) toggleFullScreen();
+    var msi = h.match(/src=(\d+)/);
+    if (msi) selectSource(parseInt(msi[1], 10));
     console.log("LC3D in3d hash=" + h);
   }, 50);
 }

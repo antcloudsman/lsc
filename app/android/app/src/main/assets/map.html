@@ -694,7 +694,8 @@ function uploadMesh(p) {
 /* 天地图底图贴面（3×3 瓦片拼成 768×768 纹理） */
 function buildPatchTexture(p) {
   var seq = patchSeq;
-  var TEX_TILES = 6, TEX_PX = TEX_TILES * 256;   // 1536px
+  var TEX_TILES = 6, TEX_PX = 2048;              // POT 画布，才能开 mipmap
+  var cell = TEX_PX / TEX_TILES;                 // 341.33px/瓦片，1.33× 上采样换 mipmap
   var zt = Math.min(p.z + 1, 18);                // 比 DEM 高一级
   var tx0 = p.ox * 2, ty0 = p.oy * 2;            // 该级别下地形块的左上瓦片
   var cv = document.createElement("canvas");
@@ -711,7 +712,7 @@ function buildPatchTexture(p) {
         tasks.push(new Promise(function (res) {
           var img = new Image();
           img.crossOrigin = "anonymous";
-          img.onload = function () { ctx.drawImage(img, i * 256, j * 256, 256, 256); ok++; res(); };
+          img.onload = function () { ctx.drawImage(img, i * cell, j * cell, cell, cell); ok++; res(); };
           img.onerror = function () { res(); };
           img.src = tileUrl(drape, zt, x, y);
         }));
@@ -738,7 +739,8 @@ function uploadTexture(p) {
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, p.texCanvas);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.generateMipmap(gl.TEXTURE_2D);              /* POT 纹理：三线性 + 远距抗锯齿 */
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -1261,6 +1263,7 @@ render();
 if (location.hash.indexOf("selftest") >= 0) {
   setTimeout(function () { setMode("3d"); }, 100);
   setTimeout(function () {
+    if (location.hash.indexOf("pitch0") >= 0) setPitch(0);
     if (mode !== "3d" || !patch) { console.log("LC3D selftest not-ready"); return; }
     if (location.hash.indexOf("bridge") >= 0) { window.__LCBridgeTest.selfTest(); return; }
     var w = glCanvas.clientWidth, h = glCanvas.clientHeight;

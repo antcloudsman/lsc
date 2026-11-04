@@ -21,6 +21,7 @@ param(
     [string]$Device = "L2E0222531014833",
     [Parameter(Mandatory = $true)][string]$OutDir,
     [string]$ReferenceDir = "",
+    [string]$Apk = "",
     [float]$Heading = 0.0
 )
 
@@ -30,7 +31,20 @@ New-Item -ItemType Directory -Force $OutDir | Out-Null
 $result = Join-Path $OutDir "result.txt"
 "AT-P0-0 run $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" | Set-Content -Encoding UTF8 $result
 
-# 0) 前台 + receiver 注册 + 冻结传感器（注入 heading，避免 dump idle 超时）
+# 0) 装包（可选）→ **force-stop 再启动**（install -r + am start 会复用旧进程/旧页面）
+if ($Apk) {
+    $install = (& $adb -s $Device install -r $Apk 2>&1 | Select-Object -Last 1)
+    Add-Content -Encoding UTF8 $result ("install: " + (($install -replace '\s+', ' ').Trim()))
+    if ($install -notmatch "Success") {
+        Add-Content -Encoding UTF8 $result "BLOCKED: install 失败"
+        Write-Host "AT-P0-0: BLOCKED — install 失败"
+        exit 2
+    }
+}
+& $adb -s $Device shell am force-stop com.luopan.fengshui
+$pkg = ((& $adb -s $Device shell dumpsys package com.luopan.fengshui 2>&1) -join "`n")
+$upd = ([regex]::Match($pkg, 'lastUpdateTime=([^\r\n]+)')).Groups[1].Value.Trim()
+Add-Content -Encoding UTF8 $result "package: lastUpdateTime=$upd"
 $null = & $adb -s $Device shell am start -n com.luopan.fengshui/.MainActivity 2>&1
 Start-Sleep -Seconds 2
 $resumed = ((& $adb -s $Device shell dumpsys activity activities 2>&1) |

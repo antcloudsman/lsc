@@ -60,29 +60,50 @@ def rust_let_expr(source: str, name: str, consts: dict | None = None) -> str:
                            consts=rust_consts(source) if consts is None else consts)
 
 
-def rust_ring_label_expr(source: str, ring_key: str) -> str:
-    """取某个环绘制分支里的标签角度表达式。
-
-    轮 C 把绘制搬到 `app/src/dial.rs`（分支名 `if st.rings.<key> {`），常量仍在
-    `main.rs` 的生成块里；这里两个文件都认，常量也合并，避免因为搬家假红。
+def ring_text_body(source: str) -> str:
+    """B2 起圈层文字改走 `fn ring_text(ring_type, heading) -> &'static str`：
+    返回其函数体，供断言「按 (offset, interval) 取 labels 下标」。
     """
-    pattern = rf"if\s+(?:self|st)\.rings\.{re.escape(ring_key)}\s*\{{(.{{0,1600}})"
-    m = re.search(pattern, source, re.S)
-    text_source = source
+    m = re.search(r"fn ring_text\(ring_type: usize, heading: f32\) -> &'static str \{(.*?)\n\}",
+                  source, re.S)
     if not m:
-        try:
-            text_source = read_text(O.DIAL_RS)
-        except FileNotFoundError:
-            raise AssertionError(f"main.rs / dial.rs 中找不到 `rings.{ring_key} {{` 分支")
-        m = re.search(pattern, text_source, re.S)
-    if not m:
-        raise AssertionError(f"找不到 `rings.{ring_key} {{` 分支（main.rs 与 dial.rs 都没有）")
-    deg = re.search(r"let deg = (.+?);", m.group(1), re.S)
-    if not deg:
-        raise AssertionError(f"rings.{ring_key} 分支中找不到 `let deg = ...;`")
-    consts = rust_consts(source)
-    consts.update(rust_consts(text_source))
-    return rust_expr_to_py(deg.group(1), where=f" (rings.{ring_key} deg)", consts=consts)
+        raise AssertionError("main.rs 中找不到 `fn ring_text(ring_type, heading) -> &'static str`")
+    return m.group(1)
+
+
+def parse_rust_rings(source: str) -> dict:
+    """解析生成的 `pub const RINGS: [RingDef; 14]` 为 {type: {text,interval,offset,labels}}。"""
+    out = {}
+    pat = re.compile(
+        r'RingDef \{ id: "TYPE_(\d+)", text: "([^"]*)", interval: ([\d.]+), offset: ([\d.]+), '
+        r'labels: &\[(.*?)\] \}', re.S)
+    for m in pat.finditer(source):
+        out[int(m.group(1))] = {
+            "text": m.group(2),
+            "interval": float(m.group(3)),
+            "offset": float(m.group(4)),
+            "labels": re.findall(r'"([^"]*)"', m.group(5)),
+        }
+    if len(out) != 14:
+        raise AssertionError(f"main.rs 的 RINGS 解析到 {len(out)} 个 RingDef（应为 14）")
+    return out
+
+
+def parse_java_rings(source: str) -> dict:
+    """解析 `CompassData.java` 生成的 `RingDef[] RINGS`。"""
+    out = {}
+    pat = re.compile(
+        r'new RingDef\("TYPE_(\d+)", "([^"]*)", ([\d.]+)f, ([\d.]+)f, new String\[\]\{(.*?)\}\)')
+    for m in pat.finditer(source):
+        out[int(m.group(1))] = {
+            "text": m.group(2),
+            "interval": float(m.group(3)),
+            "offset": float(m.group(4)),
+            "labels": re.findall(r'"([^"]*)"', m.group(5)),
+        }
+    if len(out) != 14:
+        raise AssertionError(f"CompassData.java 的 RINGS 解析到 {len(out)} 个 RingDef（应为 14）")
+    return out
 
 
 def rust_array(source: str, name: str, length: int) -> list:

@@ -144,8 +144,11 @@ class FenjinDragonSlotTest(unittest.TestCase):
     def test_60_dragons_60_divisions(self):
         seen = {O.earth_reading(h)["d60"] for h in [i * 6.0 for i in range(60)]}
         self.assertEqual(seen, set(range(60)))
-        self.assertEqual(O.earth_reading(0.0)["d60name"], "癸亥")
-        self.assertEqual(O.earth_reading(4.5)["d60name"], "甲子")
+        # 只锁几何：60 龙 0° 落在第 59 格（offset 1.5），4.5° 落在第 0 格。
+        # 文字 golden 在 test_b2_golden（原版 = rings[7].labels[59]='壬子 庚子'，
+        # 当前教材值 JIAZI[59]='癸亥' 由那条 xfail 锁住，B2 换表后转正）。
+        self.assertEqual(O.earth_reading(0.0)["d60"], 59)
+        self.assertEqual(O.earth_reading(4.5)["d60"], 0)
 
 
 if __name__ == "__main__":

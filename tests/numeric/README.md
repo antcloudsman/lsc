@@ -39,7 +39,7 @@ python tests\numeric\tools\dump_readings.py
 | 12 | 14 圈层参数与 `MECHANICS.md` 表格逐行对齐（防手误） | `test_rings.RingTableTest` |
 | 13 | 两端同源：`mechanics.json` 19 项 / 0 估计；7 张表逐项；5 盘面名；`mechanics.json` v2 的 values/rings/dials/tables 四段 | `test_mechanics` |
 | 14 | 真实代码对拍：Java `CompassData.read`（javac 编译执行，40 航向）＋ Rust `reading_for`（表达式从源码解析求值）＋ 两端一致 | `test_ends_parity` |
-| 15 | 环上标签与读数一致性（分金/72/60 龙全部通过） | `test_divergences.RingLabelAlignmentTest` |
+| 15 | B2 文字表：Rust/Java 生成的 `RINGS` 与 `rings[].labels` **逐条一致（780）**、`ring_text` 按 (offset,interval) 取表、四向量、读数面板确用 `ring_text` | `test_b2_golden` |
 
 ## oracle 依据（不臆造）
 
@@ -51,15 +51,15 @@ python tests\numeric\tools\dump_readings.py
 `oracle.py` 不 import 业务代码；被测代码通过两条独立路径验证（见覆盖 14），
 所以「oracle 写错」不会因为两端同错而静默通过——Java 与 Rust 是两支独立实现。
 
-## 轮 B 回归（原 xfail 已转正）
+## 轮 B 回归
 
-`409ad5f`（BUG-001/002 修复）后，`test_divergences.py` 的 5 条已去掉
-`@expectedFailure`，现在是正常回归用例：三盘 Java/Rust 各 2 条 + 60 龙 1 条。
-当前 `run_all.py` → 74 tests / 0 expected_failure / 0 unexpected_success。
+`409ad5f`（BUG-001/002 修复）后，4 条三盘 xfail 已转正常用例（`test_divergences`）；
+B2（`662c006`）后圈层文字改走 `ring_text(type, h)`，圈层不再整圈画字，原「标签==读数」
+不变量删除，文字改由 `test_b2_golden` 与 `rings[].labels` 逐条对拍。
 
 **以后新增缺陷的惯例**：先写会失败的断言并用 `@unittest.expectedFailure` 锁定（套件保持绿），
 缺陷修好后会变成 unexpected success（红）→ 删标记、更新 `docs/qa/bugs.md`，再提交。
-60 龙读数公式 `(h-1.5)/6` 不许加补偿；标签/刻度按 `4.5+6k` 格中心、`1.5+6k` 格界落位。
+60 龙读数公式 `(h-1.5)/6` 不许加补偿；文字落位 `offset+(i+0.5)×interval`。
 
 ## 目录
 
@@ -73,7 +73,8 @@ tests/numeric/
 ├─ test_plates.py        # 三盘 + 正兼向 + 分金/龙格
 ├─ test_mechanics.py     # 19 项 0 估计 + 两端同源 + v2 四段
 ├─ test_ends_parity.py   # Java 真实代码 / Rust 源码驱动对拍
-├─ test_divergences.py   # 轮 B 回归（三盘/60 龙，原 xfail）
+├─ test_divergences.py   # 轮 B 回归（三盘读数）
+├─ test_b2_golden.py     # B2 文字表：RINGS/rings[].labels/ring_text/四向量
 ├─ java/CompassProbe.java# 测试探针（不进 APK）
 └─ tools/dump_readings.py# 缺陷证据/读数对照
 ```

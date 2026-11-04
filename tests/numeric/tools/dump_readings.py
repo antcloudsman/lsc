@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""打印两端读数与 oracle 的对照表（证据收集/回归用，只读）。
+"""打印两端读数与 `rings[].labels` 对照表（证据收集/回归用，只读）。
 
 用法：python tests/numeric/tools/dump_readings.py
-打印三盘关键航向对照 + 60 龙「读数 vs 指针处标签」一致性。
+- 三盘：Java（MainActivity 表达式）/ Rust（main.rs 表达式）/ oracle；
+- 圈层文字：B2 起 = `ring_text(type, h) -> rings[].labels[i]`，此处按同一公式从
+  `mechanics.json` 复算（`i = floor(((h-offset+360)%360)/interval)`）。
 """
 import os
 import sys
@@ -34,22 +36,18 @@ def main():
               f"{O.MOUNTAINS[jh]}{O.MOUNTAINS[jt]} "
               f"{O.MOUNTAINS[rh]}{O.MOUNTAINS[rt]}")
 
-    print("\n60 龙：读数 vs 指针处标签（标签按 (interval 6.0, offset 1.5) 的格中心落位）")
-    label_expr = SP.rust_ring_label_expr(main_rs, "dragon60")
-
-    def label_angle(k):
-        return eval(label_expr, {"__builtins__": {}}, {"k": k}) % 360.0
-
-    for h in (0.0, 1.0, 1.5, 3.0, 4.5, 7.5, 180.0, 352.5, 359.0):
-        d = SP.rust_reading(main_rs, h)["d60"]
-        dists = sorted((abs(((h - label_angle(k) + 180) % 360) - 180), k) for k in range(60))
-        near = dists[0][1]
-        if abs(dists[0][0] - dists[1][0]) < 1e-9:
-            mark = "TIE"  # 正好落在两标签中点，视觉二义，不算错位
-        else:
-            mark = "OK" if near == d else "MISMATCH"
-        print(f"h={h:6.2f}  读数={O.JIAZI[d]}(k={d}, 格中心 {O.dragon60_center(d):.1f}°)  "
-              f"指针处标签={O.JIAZI[near]}(k={near}, 画在 {label_angle(near):.1f}°)  {mark}")
+    doc = O.load_mechanics_doc()
+    rings = {r["type"]: r for r in doc["rings"]}
+    headings = (0.0, 15.0, 170.0)
+    print("\n圈层文字（rings[].labels，B2 换表后 = 界面读数文字）")
+    print(f"{'ring':<8}" + "".join(f"{h:>16.1f}°" for h in headings))
+    for name, t in (("后天卦", 2), ("先天卦", 1), ("分金", 6),
+                    ("72龙", 5), ("60龙", 7), ("正兼向", 14)):
+        cells = []
+        for h in headings:
+            i = O.dex_index(h, rings[t]["offset"], rings[t]["interval"])
+            cells.append(f"{rings[t]['labels'][i]:>15}")
+        print(f"{name:<8}" + "".join(cells))
 
 
 if __name__ == "__main__":

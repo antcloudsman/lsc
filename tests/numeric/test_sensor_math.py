@@ -44,6 +44,8 @@ def expected_tilt(pitch_deg, roll_deg):
 class SensorMathJvmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if not O.SENSOR_MATH_JAVA.exists():
+            raise unittest.SkipTest("SensorMath.java 不在本树（P0-1 f2cf102 未合入），跳过")
         javac, java = find_jdk()
         if not javac:
             raise unittest.SkipTest("未找到 JDK（javac），跳过 SensorMath JVM 断言")

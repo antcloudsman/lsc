@@ -35,6 +35,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final float[] orientation = new float[3];
     private long lastRingLog = 0L;
 
+    // P0-1 reading trust
+    private android.widget.TextView statusView;
+    private android.content.SharedPreferences prefs;
+    private float declination = 0f;
+    private boolean trueNorth = false;
+    private boolean calibrationDone = false;
+    private DebugBridge debugBridge;
+    private Float injectedHeading = null;
+    private Float injectedPitch = null;
+    private Float injectedRoll = null;
+    private Integer injectedAccuracy = null;
+    private int sensorAccuracy = 3;
+    private boolean receiverRegistered = false;
+    private android.widget.Button declButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +59,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Button tabCompass = findViewById(R.id.tab_compass);
         Button tabMap = findViewById(R.id.tab_map);
         Button tabKnowledge = findViewById(R.id.tab_knowledge);
+
+        prefs = getSharedPreferences("lc_prefs", MODE_PRIVATE);
+        declination = prefs.getFloat("declination", 0f);
+        trueNorth = prefs.getBoolean("true_north", false);
+        calibrationDone = prefs.getBoolean("calibration_done", false);
 
         compassTab = buildCompassTab();
         mapView = buildMapTab();
@@ -69,6 +89,68 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
+
+        if (!calibrationDone) showCalibrationGuide();
+    }
+
+    /** P0-1 RT-009: first-entry calibration guide, 跳过 persists calibration_done. */
+    private void showCalibrationGuide() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("校准罗盘")
+                .setMessage("首次使用请按 8 字晃动手机校准。也可以先跳过，随时可在罗盘页重试。")
+                .setPositiveButton("开始校准", (d, w) -> {
+                    calibrationDone = true;
+                    prefs.edit().putBoolean("calibration_done", true).apply();
+                    android.widget.Toast.makeText(this, "请按 8 字晃动手机", android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("跳过", (d, w) -> {
+                    calibrationDone = true;
+                    prefs.edit().putBoolean("calibration_done", true).apply();
+                })
+                .show();
+    }
+
+    /** P0-1 S2/S8 debug bridge. */
+    private void handleDebugCommand(String cmd, android.content.Intent it) {
+        switch (cmd) {
+            case "heading":
+                injectedHeading = it.getFloatExtra("value", 0f);
+                break;
+            case "accuracy":
+                injectedAccuracy = it.getIntExtra("value", 3);
+                break;
+            case "tilt":
+                injectedPitch = it.getFloatExtra("pitch", 0f);
+                injectedRoll = it.getFloatExtra("roll", 0f);
+                break;
+            case "reset":
+                injectedHeading = null;
+                injectedPitch = null;
+                injectedRoll = null;
+                injectedAccuracy = null;
+                break;
+            default:
+                return;
+        }
+        updateReading();
+    }
+
+    private void registerDebugBridge() {
+        if (receiverRegistered) return;
+        debugBridge = new DebugBridge(this::handleDebugCommand);
+        android.content.IntentFilter f = new android.content.IntentFilter(DebugBridge.ACTION);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(debugBridge, f, android.content.Context.RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(debugBridge, f);
+        }
+        receiverRegistered = true;
+    }
+
+    private void unregisterDebugBridge() {
+        if (!receiverRegistered || debugBridge == null) return;
+        unregisterReceiver(debugBridge);
+        receiverRegistered = false;
     }
 
     private View buildCompassTab() {
@@ -109,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         panel.addView(dials);
 
         readingView = new TextView(this);
+        readingView.setId(R.id.reading_text);
         readingView.setTextColor(Color.rgb(235, 228, 215));
         readingView.setTextSize(14f);
         readingView.setPadding(24, 8, 24, 4);
@@ -133,6 +216,35 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         buttons.addView(shot, new LinearLayout.LayoutParams(0,
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         panel.addView(buttons);
+
+        // P0-1: 口径切换 + 磁偏角 + 状态条
+        android.widget.LinearLayout trust = new android.widget.LinearLayout(this);
+        trust.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+        final android.widget.Button modeButton = new android.widget.Button(this);
+        modeButton.setText(trueNorth ? "真北" : "磁北");
+        modeButton.setTextSize(12f);
+        modeButton.setOnClickListener(v -> {
+            trueNorth = !trueNorth;
+            prefs.edit().putBoolean("true_north", trueNorth).apply();
+            modeButton.setText(trueNorth ? "真北" : "磁北");
+            updateReading();
+        });
+        declButton = new android.widget.Button(this);
+        declButton.setTextSize(12f);
+        declButton.setText(String.format(java.util.Locale.US, "偏角%+.1f°", declination));
+        declButton.setOnClickListener(v -> showDeclinationDialog(modeButton));
+        trust.addView(modeButton, new android.widget.LinearLayout.LayoutParams(0,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        trust.addView(declButton, new android.widget.LinearLayout.LayoutParams(0,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        panel.addView(trust);
+
+        statusView = new android.widget.TextView(this);
+        statusView.setId(R.id.sensor_status);
+        statusView.setTextColor(Color.rgb(180, 170, 150));
+        statusView.setTextSize(12f);
+        statusView.setPadding(24, 0, 24, 8);
+        panel.addView(statusView);
 
         FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
@@ -320,6 +432,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return lv;
     }
 
+    private void showDeclinationDialog(android.widget.Button modeButton) {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER
+                | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                | android.text.InputType.TYPE_NUMBER_FLAG_SIGNED);
+        input.setText(String.format(java.util.Locale.US, "%.1f", declination));
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("磁偏角（-30° ~ +30°）")
+                .setView(input)
+                .setPositiveButton("确定", (d, w) -> {
+                    try {
+                        declination = SensorMath.clampDeclination(Float.parseFloat(input.getText().toString()));
+                    } catch (Throwable t) {
+                        declination = 0f;
+                    }
+                    prefs.edit().putFloat("declination", declination).apply();
+                    declButton.setText(String.format(java.util.Locale.US, "偏角%+.1f°", declination));
+                    updateReading();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
     private void showTab(int index) {
         compassTab.setVisibility(index == 0 ? View.VISIBLE : View.GONE);
         mapView.setVisibility(index == 1 ? View.VISIBLE : View.GONE);
@@ -338,6 +473,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         CompassData.MOUNTAINS[r.sitting],
                         r.fenjinText, r.dragon72Text,
                         r.dragon60Text, r.houtianText, r.xiantianText));
+
+        // P0-1 status bar: 口径 + 精度 + 倾斜
+        if (statusView != null) {
+            int acc = injectedAccuracy != null ? injectedAccuracy : sensorAccuracy;
+            float tilt = 0f;
+            if (injectedPitch != null) tilt = SensorMath.tiltDegrees(injectedPitch, injectedRoll);
+            String accText = acc >= 3 ? "" : (acc == 2 ? " · 精度中" : " · 精度低");
+            String tiltText = tilt > 8f ? String.format(java.util.Locale.US, " · 请端平(%.0f°)", tilt) : "";
+            String declText = trueNorth
+                    ? String.format(java.util.Locale.US, "真北%+.1f°", declination)
+                    : "磁北";
+            statusView.setText(declText + accText + tiltText);
+            statusView.setTextColor(acc <= 1 ? Color.rgb(230, 200, 90) : Color.rgb(180, 170, 150));
+        }
 
         // AT-B2 §2.4: structured debug line, max 2/s (sensor runs at UI rate).
         if (isDebuggable() && System.currentTimeMillis() - lastRingLog > 500) {
@@ -383,6 +532,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
+        registerDebugBridge();
         if (sensorManager != null && rotationVector != null) {
             sensorManager.registerListener(this, rotationVector, SensorManager.SENSOR_DELAY_UI);
         }
@@ -390,6 +540,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onPause() {
+        unregisterDebugBridge();
         super.onPause();
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
@@ -401,15 +552,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
             SensorManager.getOrientation(rotationMatrix, orientation);
-            float azimuth = normalize((float) Math.toDegrees(orientation[0]));
-            compassView.setSensorHeading(azimuth);
+            float raw = normalize((float) Math.toDegrees(orientation[0]));
+            if (injectedHeading != null) raw = injectedHeading;
+            // P0-1 S5: every ring uses H, never the raw value.
+            float h = SensorMath.applyDeclination(raw, declination, trueNorth);
+            compassView.setSensorHeading(h);
             updateReading();
         }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // no-op
+        this.sensorAccuracy = accuracy;
+        updateReading();
     }
 
     @Override

@@ -45,6 +45,10 @@
   <button onclick="pitchStep(-10)">俯仰 −</button>
   <button onclick="pitchStep(10)">俯仰 +</button>
   <div id="pitchWrap"><input id="pitchRange" type="range" min="0" max="60" step="1" value="45" oninput="setPitch(this.value)"></div>
+  <button id="btn_needle" class="active" onclick="toggleNeedle()">指针</button>
+  <button id="btn_sit" onclick="toggleSitNorth()">坐南朝北</button>
+  <button id="btn_contour" onclick="toggleContour()">等高线</button>
+  <button id="btn_ground" onclick="toggleGround()">贴地</button>
   <button onclick="toggleFullScreen()">全屏</button>
   <button onclick="clearMarkers()">清除标记</button>
   <button onclick="locate()">定位</button>
@@ -74,6 +78,12 @@ var pitch = 45;                // 3D 俯仰 0(俯视)–60°
 var center = { lat: 39.9042, lng: 116.4074 };   // 北京
 var zoom = 5;
 var lastHeading = 0;
+var needleOn = true;           // 指针开关（原版右侧「指针开关」）
+var sitNorth = false;          // 坐南朝北：向方朝上、坐方朝下
+var bearingBeforeSit = 0;
+var contourOn = false;         // 等高线（3D 高程着色叠加）
+var groundMode = false;        // 贴地：低机位 + 高俯仰
+var pitchBeforeGround = 45;
 var drape = "img";             // 3D 贴面层（D-005：默认影像；ter 仍可用按钮切）
 var pick = null;               // 3D 立向点 {lng,lat,elev,world,heading}
 var pickEl = null;
@@ -241,11 +251,56 @@ function toggleFullScreen() {
 /* ---------------- 罗盘坐向指针 ---------------- */
 function setHeading(deg) {
   lastHeading = Number(deg) || 0;
+  if (sitNorth) {
+    /* 坐南朝北：地图随向角旋转，向方恒朝屏幕上方 */
+    bearing = ((Math.round(lastHeading) % 360) + 360) % 360;
+    if (mode !== "3d") applyTransform();
+  }
   refreshNeedle();
   var lbl = document.getElementById("heading-label");
   if (lbl && lbl.getAttribute("data-sit") == null) {
     lbl.textContent = "向 " + (Math.round(lastHeading) % 360) + "°";
   }
+}
+
+/* ---- 指针开关 / 坐南朝北 / 等高线 / 贴地 ---- */
+function toggleNeedle() {
+  needleOn = !needleOn;
+  var el = document.getElementById("needle");
+  if (el) el.style.display = needleOn ? "" : "none";
+  document.getElementById("btn_needle").className = needleOn ? "active" : "";
+}
+
+function toggleSitNorth() {
+  sitNorth = !sitNorth;
+  document.getElementById("btn_sit").className = sitNorth ? "active" : "";
+  if (sitNorth) {
+    bearingBeforeSit = bearing;
+    bearing = ((Math.round(lastHeading) % 360) + 360) % 360;
+  } else {
+    bearing = bearingBeforeSit;
+  }
+  refreshNeedle();
+  if (mode === "3d") updateHud(); else applyTransform();
+}
+
+function toggleContour() {
+  contourOn = !contourOn;
+  document.getElementById("btn_contour").className = contourOn ? "active" : "";
+  if (mode !== "3d" && contourOn) setMode("3d");   // 等高线依赖 DEM 网格，仅 3D 生效
+}
+
+function toggleGround() {
+  groundMode = !groundMode;
+  document.getElementById("btn_ground").className = groundMode ? "active" : "";
+  if (groundMode) {
+    pitchBeforeGround = pitch;
+    if (mode !== "3d") setMode("3d");
+    setPitch(60);
+  } else {
+    setPitch(pitchBeforeGround);
+  }
+  updateHud();
 }
 
 function refreshNeedle() {
@@ -468,6 +523,7 @@ function initGL() {
   ].join("\n");
 
   var fs = [
+    "#extension GL_OES_standard_derivatives : enable",
     "precision mediump float;",
     "precision mediump sampler2D;",
     "varying vec3 vNrm;",
@@ -480,6 +536,7 @@ function initGL() {
     "uniform vec3 uFog;",
     "uniform float uFogNear;",
     "uniform float uFogFar;",
+    "uniform float uContour;",
     "vec3 hypo(float e){",
     "  if (e < 1.0) return vec3(0.10, 0.22, 0.34);",
     "  if (e < 200.0) return mix(vec3(0.16, 0.32, 0.19), vec3(0.32, 0.48, 0.24), e / 200.0);",
@@ -497,6 +554,24 @@ function initGL() {
     "    col = mix(col, t, 0.88);",
     "  }",
     "  col *= sh;",
+    "  if (uContour > 0.5) {",
+    "    float v = vElev / 100.0;",
+    "    float f100 = fract(v);",
+    "    float d100 = min(f100, 1.0 - f100);",
+    "    float v5 = vElev / 500.0;",
+    "    float f500 = fract(v5);",
+    "    float d500 = min(f500, 1.0 - f500);",
+    "#ifdef GL_OES_standard_derivatives",
+    "    float w100 = fwidth(v) * 3.0;",
+    "    float w500 = fwidth(v5) * 3.0;",
+    "#else",
+    "    float w100 = 0.03;",
+    "    float w500 = 0.02;",
+    "#endif",
+    "    float line100 = 1.0 - smoothstep(0.0, max(w100, 0.004), d100);",
+    "    float line500 = 1.0 - smoothstep(0.0, max(w500, 0.004), d500);",
+    "    col = mix(col, vec3(0.12, 0.09, 0.05), line100 * 0.68 + line500 * 0.55);",
+    "  }",
     "  float f = clamp((vDist - uFogNear) / max(1.0, uFogFar - uFogNear), 0.0, 1.0);",
     "  col = mix(col, uFog, f * 0.9);",
     "  gl_FragColor = vec4(col, 1.0);",
@@ -539,7 +614,8 @@ function initGL() {
     light: gl.getUniformLocation(prog, "uLight"),
     fog: gl.getUniformLocation(prog, "uFog"),
     fogNear: gl.getUniformLocation(prog, "uFogNear"),
-    fogFar: gl.getUniformLocation(prog, "uFogFar")
+    fogFar: gl.getUniformLocation(prog, "uFogFar"),
+    contour: gl.getUniformLocation(prog, "uContour")
   };
 
   buffers = {
@@ -552,6 +628,8 @@ function initGL() {
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([58, 74, 52, 255]));
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  console.log("LC3D contourLoc=" + (loc.contour !== null) + " deriv=" +
+    !!(gl.getExtension("OES_standard_derivatives")));
   gl.enable(gl.DEPTH_TEST);
   gl.disable(gl.CULL_FACE);
   gl.clearColor(0.47, 0.55, 0.62, 1.0);
@@ -1031,6 +1109,7 @@ function render3D() {
   var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
   var hCss = Math.max(1, glCanvas.clientHeight);
   var D = (hCss * zMpp) / (2 * Math.tan(FOV / 2));
+  if (groundMode) D *= 0.35;          /* 贴地：机位压低到 35%，配合俯仰 60° */
 
   var t = lonLatToTile(center.lng, center.lat, patch.z);
   var gx = t.x * 256, gy = t.y * 256;
@@ -1087,6 +1166,12 @@ function render3D() {
   gl.uniform3f(loc.fog, 0.47, 0.55, 0.62);
   gl.uniform1f(loc.fogNear, R * 0.75);
   gl.uniform1f(loc.fogFar, R * 1.05);
+  gl.uniform1f(loc.contour, contourOn ? 1 : 0);
+  if (contourOn && !window.__lcDbgContour) {
+    window.__lcDbgContour = 1;
+    console.log("LC3D contour on=" + contourOn + " uniform=" +
+      (loc.contour ? gl.getUniform(prog, loc.contour) : "null") + " elev=" + Math.round(demoElev));
+  }
   gl.uniform1f(loc.useTex, patch.tex ? 1 : 0);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, patch.tex || placeholderTex);
@@ -1261,7 +1346,20 @@ render();
 
 /* 本地/无真机自测：map.html#selftest → 进 3D，等 DEM 就绪后在屏幕中心偏下做一次点选 */
 if (location.hash.indexOf("selftest") >= 0) {
-  setTimeout(function () { setMode("3d"); }, 100);
+  setTimeout(function () {
+    setMode("3d");
+    if (location.hash.indexOf("contour") >= 0) toggleContour();
+    if (location.hash.indexOf("ground") >= 0) toggleGround();
+    if (location.hash.indexOf("sit") >= 0) { setHeading(90); toggleSitNorth(); }
+    if (location.hash.indexOf("noneedle") >= 0) toggleNeedle();
+    /* 可复现视点：map.html#selftest&lat=40.0&lng=115.5&z=12 */
+    var hh = location.hash;
+    var mlat = hh.match(/lat=(-?[\d.]+)/), mlng = hh.match(/lng=(-?[\d.]+)/), mz = hh.match(/[&#]z=(\d+)/);
+    if (mlat || mlng || mz) {
+      debugSetView(mlat ? parseFloat(mlat[1]) : null, mlng ? parseFloat(mlng[1]) : null,
+        mz ? parseInt(mz[1], 10) : null, null, null);
+    }
+  }, 100);
   setTimeout(function () {
     if (location.hash.indexOf("pitch0") >= 0) setPitch(0);
     if (mode !== "3d" || !patch) { console.log("LC3D selftest not-ready"); return; }

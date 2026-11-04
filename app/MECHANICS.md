@@ -441,3 +441,32 @@ COMPASS_3 compass3/三元罗盘(金)/`compass3_min`/true；COMPASS_4 compass4/�
      图层枚举（水体=water/river/canal/lake/reservoir/basin；植被=forest/meadow/scrub/wetland）。
 3. `AccountManager` 里是登录态明文（id/nickname/phone/token）——去商业原则下 LC 不实现账号体系，
    仅记录在案，**不复制值**。
+
+## 补证 R4（14 类文字渲染在哪：`CompassReadSheet`，已定）
+
+**结论：14 类读数渲染在 `space.xinzhi.globe.ui.compose.CompassReadSheet` 的底部弹层里，
+不是罗盘页面上的常驻文本。**
+
+证据：
+
+1. `ui\compose\W.smali` 的 `.source` 字符串即类名与文件行号：
+   `space.xinzhi.globe.ui.compose.CompassReadSheet (CompassReadSheet.kt:54)`、
+   `space.xinzhi.globe.ui.compose.ReadTypeItem (CompassReadSheet.kt:125)`。
+2. `W.smali` 里的界面文案（4 条）：`点击查看`、`向：`、` 坐：`（坐前面有空格，照抄）。
+   → 每行 `ReadTypeItem` = 「类型名 + 向：X + 坐：Y + 点击查看」。
+3. `getFaceText/getBackText` 的调用点只有 `W$a$b` / `W$a$c` / `W$a$i`（这三个是 `ReadTypeItem`
+   的 Compose lambda），即**弹层里的行**在取文字；罗盘页的 ring 绘制**不调用** `getFaceText`。
+4. 打开入口：`CompassToolsKt.n0(BaseActivity, MainViewModel, Function0, …)`
+   （`CompassToolsKt.smali` 第 14591 行）→ `Lspace/xinzhi/globe/ui/compose/W;->f(FLSheetState;…)`，
+   传入当前 heading 与 `SheetState`。按钮文案：罗盘页左列第 5 个 **「读盘」**
+   （`CompassToolsKt.smali:9763`）；工具浮层里另有 **「解读」**（`:776`），二者是否同一弹层**未确认**。
+5. 「点击查看」→ `CompassToolsKt.a1(BaseActivity, boolean, CompassReadTypeEnum)`（`.smali:1539`）
+   → `CompassIntroduceActivity$a.a(Context, CompassReadTypeEnum)`（`:1568`），带该类的 `html`。
+
+**行位置（真机截图坐标，1228×2700，`win-02-compass.png` 左列）**：截屏 y≈1340 / 等高线 1500 /
+罗盘复位 1690 / 罗盘锁定 1880 / **读盘 2070** / 贴地 2250，按钮中心 x≈132。
+（上一轮 30 分钟窗口两次点 2070 之外（1957/2196）→ 弹层没打开，**不是功能缺失**，记录纠正。）
+
+**对 P0-2 的含义**：读数面板不必自创布局，按原版做「14 行 × (向：/坐：) + 点击查看」即可；
+数据就是 `rings[].labels` + `getFaceText/getBackText` 公式；「解读/读盘」两个入口的差异
+留待真机确认后定。

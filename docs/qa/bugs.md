@@ -12,6 +12,7 @@
 | BUG-001 | P0 | 两端读数面板 | 人盘/天盘读数恒等于地盘（三盘永远同一个山） | LC客户端 | **已修复（409ad5f）** |
 | BUG-002 | P2 | 桌面 UI | 60 龙标签环整体偏 4.5°，指针处标签与读数不一致 | LC客户端 | **已修复（409ad5f）** |
 | BUG-003 | P1 | 两端文字 | 圈层文字仍是教材推导，6/14 类与 DEX `rings[].labels` 不等价 | LC客户端（轮 B2） | **已修复/关闭（B2 `662c006`+`0bd22f8`，AT-B2 于 2026-11-05 通过）** |
+| BUG-004 | P1 | Android P0-1 | 总开关关闭后只隐藏 UI，偏角仍在算（注入 94 显示 99.00°） | LC客户端 | **已修复/关闭（`20883cd`，RT-010 真机复验 PASS）** |
 | OBS-001 | — | Android UI | 5 个盘面按钮只渲染出 3 种不同盘面 | LC客户端 / LC逆向（差距矩阵） | 待归口 |
 | OBS-002 | — | 桌面截图工具 | `--screenshot` 中心读数硬编码「正向」 | LC客户端 | 备忘（当前不触发） |
 | QA-001 | — | 测试资产 | `test_divergences.py:36` 两行被并成一行（IndentationError），套件整体红 | LC测试 | **已修复**（2026-11-05 02:41 拆行，74 PASS） |
@@ -21,6 +22,9 @@
 >
 > 02:41 补记：`409ad5f` 里 `test_divergences.py` 有一处拆行丢失（`def ...(self):        expr = ...`），
 > 套件曾整体 ImportError；LC测试 已就地拆行（QA-001），重跑 `python tests\numeric\run_all.py` = 74 PASS。
+>
+> 03:55 更新：P0-1 RT-010 暴露的「总开关关掉仍算偏角」记入 **BUG-004**，已随 `20883cd` 修复并复验
+> （raw 94 → 94.00°，`sensor_status` 节点 0）；BUG-003 已随 B2 `662c006`/`0bd22f8` 关闭。
 
 ---
 
@@ -192,6 +196,34 @@ Select-String -Path app\src\main.rs -Pattern 'JIAZI\[rd.dragon60\]|wangxiang\(bo
 **修复前记录（历史）**
 - numeric 套件当时只锁几何 `(interval, offset, index)` 与两端同源，未把教材文字固化成 golden；
   B2 前用 1 条 xfail 锁四向量（`0b5fa0e`），换表后转正删除（`0615cd8`）。
+
+## BUG-004（P1）P0-1 总开关关闭后仍叠加偏角（RT-010）
+
+**复现**（真机，P0-1 `f2cf102` 版本）
+1. 长按读数文本 7 次打开隐藏开关入口，关闭 `p0_1_enabled`（UI 上状态条/口径行消失）；
+2. 注入 heading 94（`am broadcast -a com.luopan.fengshui.DEBUG --ef heading 94`）；
+3. 读数为 **99.00°**（真北口径），而不是基线的 **94.00°**（地盘卯）。
+
+**期望**：总开关全关 = 完全回到 P0-1 之前的基线路径，`H = normalize(raw)`，
+不叠加偏角、不弹校准、状态条不存在（AT-P0-1 RT-010「全关回基线」）。
+
+**实际**：开关只隐藏了 UI，航向仍走 `applyDeclination(raw, declination, …)`，
+所以 raw 94 被 +5° 偏角显示成 99.00°；等于「看起来关了，实际还在改读数」。
+
+**证据**
+- 修复前 dump：`checks\at-p0-1\ui-60-rt010-off.xml`（节点隐藏但读数 99.00°）
+- 修复后 dump：`checks\at-p0-1\ui-61-rt010-off-fixed.xml`（读数 **94.00°**、`sensor_status` 节点 0）
+- 客户端 runbook：`checks\at-p0-1\RUNBOOK.md`「RT-010 · 总开关全关」
+
+**修复**（LC客户端 `20883cd`）
+- `p0_1_enabled ? SensorMath.applyDeclination(raw, decl, trueNorth) : SensorMath.normalize(raw)`；
+- 新增 `lastRaw` 记录原始方位，`applyTrustState` 在开关切换时重新推一次 heading（注入态也立即回基线）；
+- 未改 `SensorMath` 本身，数值公式不动（tilt 仍 `acos(cos p·cos r)=14.106`）。
+
+**回归**：修复后 raw 94 → **94.00°**（地盘卯），状态条/口径行消失，RT-010 **PASS**；
+RT-004（真北↔磁北连切 10 次 94.00↔99.00 无漂移）保持 PASS。
+**责任人/状态**：LC客户端，**已修复并关闭**（2026-11-05）。
+**备注**：这是「开关语义」缺陷，不在数值层；数值层（三盘/圈层/偏角公式）另有 `tests/numeric` 覆盖。
 
 ## 观测（待归口，未计入缺陷）
 

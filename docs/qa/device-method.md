@@ -62,10 +62,27 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 ## 5. 本轮已知未完成
 
 - 知识页 dump 在 D5 后失败一次，未收录；需要时按 §1 先清远程文件、在知识页等 2s 再试。
-- AT-P0-0 的「P0-1 总开关全关」变体基线还没拍，等客户端这轮真机验完后补拍罗盘页。
+- AT-P0-0 的「P0-1 总开关全关」变体基线已补：`round-d5/variant-p01/`
+  （同 87654af 构建、同航向 273.85°、on/off 同会话；见其 `manifest.md`）。
 
+## 6. adb 调试广播的 shell 吃参数坑（2026-11-05 客户端实测）
 
-## 附：真机调试通道（LC客户端，2026-11-05）
+- **现象**：`am broadcast … --es value 'file:///…/map.html#in3d&fs'` 在宿主机 PowerShell
+  或设备 `sh` 下，未加引号的 `&` 被当后台符，整条命令被截断；`Broadcast completed:
+  result=0` 只表示广播发出，**不代表 receiver 收到**。表现是 `LCDEBUG` 零输出、页面没导航。
+- **正确写法**：整条命令包一层引号、值里避免裸 `&`/括号；例如
+  `adb shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value 'console.log(42)'"`。
+  还不行再给值里的 `&` 多一层转义。
+- **诊断顺序**：先 `--es cmd js` 打一行 `console.log(42)`，看 `LCDEBUG cmd=js` 确认 receiver
+  活着；再打地图 `state()`；最后才谈「没订阅」。抓日志用 `adb logcat -s LCDEBUG LC3D`。
+- **`url` 命令的坑**：只改 hash 不会重载（同文档导航不触发 `onload`）；`?t=` 的 file:// 变体
+  不加载。要靠 `url` 一次进 3D，必须让 `map.html` 在初始化时读 hash（地图侧已改）。
+- **`js` 注入可观测性**：当前 `evaluateJavascript` 没带 `ValueCallback`，页面输出不回写，
+  「注入到底生没生效」不可观测；客户端正改为带回调回写 logcat。
+- **结论**：receiver 注册本身没问题（33+ 的 `RECEIVER_EXPORTED` 与旧版普通注册都生效），
+  问题在 shell 引号/元字符与「注入无回显」。
+
+## 附B：真机调试通道（LC客户端，2026-11-05）
 
 1. **广播要整条加引号**：宿主机 → `adb shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value 'console.log(42)'"`。
    直接把 `&`/括号放外层，设备 `sh` 会截断或报语法错误；`result=0` 只表示广播发出，**不代表 receiver 收到**。

@@ -58,7 +58,7 @@ $recv = ((& $adb -s $Device shell dumpsys activity broadcasts 2>&1) |
     Select-String 'com\.luopan\.fengshui\.DEBUG' | Select-Object -First 3) -join " | "
 Add-Content -Encoding UTF8 $result ("receiver: " + $(if ($recv) { $recv } else { "dumpsys 未见 DEBUG receiver（可能未注册）" }))
 & $adb -s $Device logcat -c
-$bc = (& $adb -s $Device shell am broadcast -a com.luopan.fengshui.DEBUG --ef value $Heading 2>&1) -join "`n"
+$bc = (& $adb -s $Device shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value $Heading 2>&1) -join "`n"
 Add-Content -Encoding UTF8 $result ("broadcast: " + (($bc -replace '\s+', ' ').Trim()))
 Start-Sleep -Milliseconds 800
 & $adb -s $Device logcat -d | Set-Content -Encoding UTF8 (Join-Path $OutDir "logcat-heading.txt")
@@ -155,5 +155,6 @@ if (-not $dumpOk) {
 Add-Content -Encoding UTF8 $result "PASS: ① 行存在性 ② prefs 值均符合（p0_1_enabled=$enabled）"
 Write-Host "AT-P0-0: PASS (p0_1_enabled=$enabled)"
 exit 0
+
 
 

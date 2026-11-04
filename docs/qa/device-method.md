@@ -84,13 +84,15 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
   `am broadcast -a com.luopan.fengshui.DEBUG --ef value 90`；`--ef heading 90` 会被忽略。
 - **`dumpsys activity broadcasts` 的两个段落别混**：
   - `Broadcast Records` 里出现 `act=com.luopan.fengshui.DEBUG` **只说明广播发过/进过历史**，
-    不等于 receiver 已注册；
-  - 要确认注册，看 **`Registered Receivers:`** 段里有没有 `com.luopan`；
-    本轮在 SHA `7CBD3D00…`（`lastUpdateTime 04:47:03`）的包上查到注册列表为空，
-    同时 `--ef value 90` 不改变读数、`LCDEBUG` 零条。
-- **结论修正**：receiver 注册在客户端某次修复的包上生效过，但不能默认所有构建都注册；
-  需要客户端加「注册成功/失败」日志（`LCDEBUG bridge registered` + 异常栈）后，
-  再按「先看 `LCDEBUG`、再看 `LCJS`」判断，别把「广播发出」当「通道活着」。
+    不等于 receiver 已注册；要确认注册，看 **`Registered Receivers:`** 段里有没有 `com.luopan`。
+- **根因更正（2026-11-05 05:02 实测）**：之前「注册列表为空/通道死」的判断是错的。
+  真正原因是广播**缺 `--es cmd <命令名>`**——`DebugBridge` 先取 `cmd` 再分发，缺了它既不打
+  `LCDEBUG` 也不执行动作。补上 `--es cmd heading --ef value 90` 后立刻出现
+  `LCDEBUG cmd=heading`、读数 90.00°，`ui dump` 也因传感器冻结而成功。
+  同一包上 `--es cmd js --es value '1+1'` 返回 `LCJS mapView -> 2`，通道一直是活的。
+- **教训**：`result=0`、`Broadcast Records`、`Registered Receivers` 三段证据要一起看，
+  且先发一条 `js 1+1` 当「通道探针」；别用一条缺 `cmd` 的广播去推断 receiver 死了。
+
 
 
 ## 附B：真机调试通道（LC客户端，2026-11-05）

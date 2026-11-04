@@ -129,3 +129,12 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
    「底图·审图号」画进图内（面板上缘之上），页面里的 `#srcInfo` 仍在面板后面、矩形不变。
    继续拿 DOM 矩形判会永远 FAIL。现在的判据：面板带上方条带 y1400–1850 内
    金色文字行 ≥100（无角注旧构建同区域实测 54，有角注 143）。
+7. **中文不要经 PowerShell 管道进 Python / 也不要经管道出 Python（全组通用坑）**：
+   本机实测 `$p = & python -c "print('子')"` 得到的是 `��`（长度 2）、`$p -eq '子'` 为 **False**——
+   Python 在管道模式下按 locale（cp936）编码 stdout，PowerShell 侧按 UTF-8 解码，中文就废了。
+   我 05:17 那轮被自己骗过一次：`golden` 打出来是 `�� 94.0��`，与 dump 比对结果 **0/14 全不符**，
+   差点当成产品 bug。改成 **Python 直写 UTF-8 文件**（`golden_readsheet.py --out path`），
+   PS 用 `Get-Content -Raw -Encoding UTF8` 读，同一数据立刻 **14/14**；
+   退一步至少 `$env:PYTHONIOENCODING='utf-8'`。
+   逆向那边的同类表现是 `git show` 进管道再让 Python 按 cp936 读 → 假「MISSING」。
+   **结论：判据只用原生判断**（`git diff --quiet` / `git grep` / 直接读文件），中文不要走管道。

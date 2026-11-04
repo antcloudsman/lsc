@@ -280,9 +280,9 @@ pub fn software_screenshot(path: &str) {
         // BUG-001: 人盘 list starts 癸, 天盘 starts 子 (both offsetDegrees = 0).
         let hm = ((rd.heading / 15.0).floor() as usize + 1) % 24;
         let tm = ((rd.heading / 15.0).floor() as usize) % 24;
-        let fj = crate::wangxiang(borrow_branch(rd.mountain), rd.fenjin_slot);
-        let d72 = crate::wangxiang(borrow_branch(rd.mountain), rd.dragon72_slot);
-        let d60 = JIAZI[rd.dragon60];
+        let fj = crate::ring_text_clean(6, rd.heading);
+        let d72 = crate::ring_text_clean(5, rd.heading);
+        let d60 = crate::ring_text_clean(7, rd.heading);
 
         let rows = [
             ("度数", format!("{:.2}°", rd.heading)),
@@ -291,12 +291,12 @@ pub fn software_screenshot(path: &str) {
             ("天盘缝针", format!("{}山", MOUNTAINS[tm])),
             ("五行", WUXING[rd.mountain].to_string()),
             ("阴阳", YINYANG[rd.mountain].to_string()),
-            ("后天卦", HOUTIAN_GUA[rd.mountain].to_string()),
-            ("先天卦", XIANTIAN_GUA[rd.mountain].to_string()),
-            ("正/兼向", crate::rd_offset_label(&rd)),
-            ("分金", format!("{}山 {} · {}", MOUNTAINS[rd.mountain], fj, nayin_of(fj))),
-            ("七十二龙", format!("{}山 {} · {}", MOUNTAINS[rd.mountain], d72, nayin_of(d72))),
-            ("六十龙", format!("{} · {}", d60, nayin_of(d60))),
+            ("后天卦", crate::ring_text_clean(2, rd.heading)),
+            ("先天卦", crate::ring_text_clean(1, rd.heading)),
+            ("正/兼向", format!("{} ({:+.1}°)", crate::ring_text_clean(14, rd.heading), rd.offset)),
+            ("分金", fj),
+            ("七十二龙", d72),
+            ("六十龙", d60),
             ("坐", format!("{}山", MOUNTAINS[rd.sitting])),
         ];
         for (k, v) in rows {
@@ -304,7 +304,7 @@ pub fn software_screenshot(path: &str) {
             cv.text(x + 96.0, y, &v, 15.0, white, f);
             y += lh;
         }
-        cv.text(x, y + 6.0, "（分金/龙文字仍为教材式命名，待轮 B2 换原版表）", 11.0, (120, 110, 95), f);
+        cv.text(x, y + 6.0, "（文字取自 mechanics.json rings[].labels）", 11.0, (120, 110, 95), f);
     }
 
     // Save PNG.

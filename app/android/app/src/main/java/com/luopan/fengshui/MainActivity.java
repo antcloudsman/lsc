@@ -329,17 +329,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (compassView == null || readingView == null) return;
         CompassData.Reading r = CompassData.read(compassView.getHeading());
         readingView.setText(
-                String.format("度数 %.2f°  %s%s  五行%s\n地盘 %s山  人盘 %s山  天盘 %s山  坐 %s山\n分金 %s山%s·%s  七十二龙 %s山%s·%s\n六十龙 %s·%s  后天卦 %s",
-                        r.heading, r.jian, CompassData.MOUNTAINS[r.mountain],
-                        CompassData.WUXING[r.mountain],
+                String.format("度数 %.2f°  %s  %s\n地盘 %s山  人盘 %s山  天盘 %s山  坐 %s山\n分金 %s  七十二龙 %s\n六十龙 %s  后天卦 %s  先天卦 %s",
+                        r.heading, r.jianText, CompassData.MOUNTAINS[r.mountain],
                         CompassData.MOUNTAINS[r.mountain],
                         CompassData.MOUNTAINS[plate(r.heading + 15f)],
                         CompassData.MOUNTAINS[plate(r.heading)],
                         CompassData.MOUNTAINS[r.sitting],
-                        CompassData.MOUNTAINS[r.mountain], r.fenjin, r.fenjinNayin,
-                        CompassData.MOUNTAINS[r.mountain], r.dragon72, r.dragon72Nayin,
-                        r.dragon60Name, r.dragon60Nayin,
-                        CompassData.HOUTIAN[r.mountain]));
+                        r.fenjinText, r.dragon72Text,
+                        r.dragon60Text, r.houtianText, r.xiantianText));
 
         // Push heading + sit/face to the compass-tab WebView (B-17: 坐向 overlay).
         if (compassMapView != null) {

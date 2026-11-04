@@ -10,7 +10,7 @@
 use eframe::egui::{Color32, Pos2};
 
 use crate::{
-    borrow_branch, gua_color, gua_wuxing, reading_for, screen_pos, wangxiang, wuxing_color,
+    gua_color, gua_wuxing, reading_for, screen_pos, wuxing_color, RINGS,
     BAGUA_STEP, DRAGON60_OFFSET, DRAGON60_STEP, DRAGON72_STEP, EARTH_OFFSET, FENJIN_STEP,
     HEAVEN_OFFSET, HEXAGRAM64_STEP, HUMAN_OFFSET, JIAZI, MOUNTAIN_STEP, MOUNTAINS, WUXING,
     YINYANG,
@@ -123,14 +123,8 @@ pub fn draw_dial<C: DialCanvas>(cv: &mut C, st: &DialState<'_>, cx: f32, cy: f32
             cv.line(p0, p1, Color32::from_rgb(140, 120, 90), 1.0);
         }
         ring(cv, cx, cy, r, 0.845, 0.82, Color32::from_rgb(120, 100, 70), 1.0);
-        for m in 0..24 {
-            for s in 0..5 {
-                let deg = m as f32 * MOUNTAIN_STEP - 6.0 + s as f32 * FENJIN_STEP;
-                let name = wangxiang(borrow_branch(m), s);
-                let p = screen_pos(cx, cy, r * 0.835, deg, heading);
-                cv.text_centered(p, name, 8.0, Color32::from_rgb(205, 175, 120));
-            }
-        }
+        // B2: 120 cells x 5-char labels cannot fit r=232 (3 deg/cell); the table
+        // text is shown in the reading panel, the ring keeps ticks for orientation.
     }
 
     // 72 dragons ring (5° ticks) + 龙 labels.
@@ -141,14 +135,7 @@ pub fn draw_dial<C: DialCanvas>(cv: &mut C, st: &DialState<'_>, cx: f32, cy: f32
             cv.line(p0, p1, Color32::from_rgb(120, 140, 100), 1.0);
         }
         ring(cv, cx, cy, r, 0.81, 0.79, Color32::from_rgb(90, 110, 80), 1.0);
-        for m in 0..24 {
-            for s in 0..3 {
-                let deg = m as f32 * MOUNTAIN_STEP - 5.0 + s as f32 * DRAGON72_STEP;
-                let name = wangxiang(borrow_branch(m), s);
-                let p = screen_pos(cx, cy, r * 0.80, deg, heading);
-                cv.text_centered(p, name, 8.0, Color32::from_rgb(165, 190, 150));
-            }
-        }
+        // B2: 72 labels come from rings[4]; the panel shows the current one.
     }
 
     // 60 dragons ring (TYPE_7 = interval 6.0 / offset 1.5):
@@ -161,12 +148,7 @@ pub fn draw_dial<C: DialCanvas>(cv: &mut C, st: &DialState<'_>, cx: f32, cy: f32
             cv.line(p0, p1, Color32::from_rgb(100, 120, 140), 1.0);
         }
         ring(cv, cx, cy, r, 0.78, 0.76, Color32::from_rgb(80, 100, 120), 1.0);
-        for k in 0..60 {
-            let deg = DRAGON60_OFFSET + k as f32 * DRAGON60_STEP + DRAGON60_STEP / 2.0;
-            let name = JIAZI[k];
-            let p = screen_pos(cx, cy, r * 0.77, deg, heading);
-            cv.text_centered(p, name, 8.0, Color32::from_rgb(150, 175, 205));
-        }
+        // B2: 60 labels are 5 chars (山名+干支) -> panel carries the current one.
     }
 
     // 64 hexagrams (六十四卦) ring: 64 × 5.625° = 360°.
@@ -193,15 +175,17 @@ pub fn draw_dial<C: DialCanvas>(cv: &mut C, st: &DialState<'_>, cx: f32, cy: f32
 
     // Bagua ring.
     if st.rings.bagua {
-        let names: &[&str] = match st.bagua_mode {
-            BaguaMode::HouTian => &["坎", "艮", "震", "巽", "离", "坤", "兑", "乾"],
-            BaguaMode::XianTian => &["坤", "震", "离", "兑", "乾", "巽", "坎", "艮"],
+        // B2: text straight from mechanics.json rings (TYPE_2 后天 / TYPE_1 先天).
+        let ringdef = match st.bagua_mode {
+            BaguaMode::HouTian => &RINGS[1],
+            BaguaMode::XianTian => &RINGS[0],
         };
-        for (i, name) in names.iter().enumerate() {
-            let d = i as f32 * BAGUA_STEP;
+        for (i, name) in ringdef.labels.iter().enumerate() {
+            let d = ringdef.offset + (i as f32 + 0.5) * ringdef.interval;
             let p = screen_pos(cx, cy, r * 0.30, d, heading);
-            let gwx = gua_wuxing(name);
-            cv.text_centered(p, &format!("{} {}", name, gwx), 12.0, gua_color(gwx));
+            let plain: String = name.chars().filter(|c| *c != '\u{200c}').collect();
+            let gwx = gua_wuxing(&plain);
+            cv.text_centered(p, &plain, 12.0, gua_color(&gwx));
         }
         ring(cv, cx, cy, r, 0.35, 0.24, fg.gamma_multiply(0.6), 1.0);
     }

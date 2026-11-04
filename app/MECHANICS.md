@@ -386,3 +386,35 @@ COMPASS_3 compass3/三元罗盘(金)/`compass3_min`/true；COMPASS_4 compass4/�
 **排字提醒（客户端 backlog 的量化依据）**：换表后 72龙/120分金/60龙 的文字从 2–3 字变成
 3–6 字（`癸山 甲子`/`壬子 庚子`），120 格时分金每格仅 3°、同一半径文字必然叠；
 原版靠整幅位图排版规避，矢量重建需「只画当前选中圈 + 相邻圈半透明」或按缩放分级显隐。
+
+## 补证 R3（盘面目录的数据源：服务端，不是常量）
+
+**结论：原版「罗盘切换」页的盘面目录来自服务端接口，APK 内不存在完整列表；5 个
+`CommonCompassEnum` 盘面是唯一可静态证实的部分。**
+
+证据链：
+
+1. 接口：`space.xinzhi.globe.net.ApiService.getCompassList()`
+   `@GET "api/compass/list"` → `Call<ApiResult<List<CompassModel>>>`（retrofit2，
+   `.inspect\unpack\mem_smali\space\xinzhi\globe\net\ApiService.smali`）。
+   `CompassModel` 字段：`id/name/label/categoryName/img/previewImg/vip`。
+2. 分组在客户端按 `categoryName` 做：`CompassListActivity$b$a$a.smali:311`
+   `CompassModel.getCategoryName()`（同 `$e$a.smali:78`）。
+3. **否定性证据**：把「简易罗盘 / 极简白底 / 极简红底 / 入门 / 罗门八局 / 十二长生水法 /
+   九元罗盘 / 廿十四山 / 传统罗盘」共 9 个词，在 **30 个 Frida 内存 dump dex** 里按 UTF-8
+   逐字节搜索 → **全部 0 命中**；`decoded/res/values/strings.xml` 与 `decoded/assets/`
+   同样 0 命中。只有「常用罗盘」「综合罗盘」（= CommonCompassEnum 名称）与「上传罗盘」
+   各 1 处。即：组名与条目名**运行时从网络取得**。
+4. `CompassCategoryModel`（`categoryName` + `List<CompassModel>`）**全 dex 无引用**，是历史死类。
+5. `CompassManager` 只负责「选中盘面 + 自定义上传」：MMKV key `lastSelected`、
+   自定义目录 `files/compass/custom`、事件 `event_last_compass_changed`、
+   `CommonCompassEnum.getCode()/getDefault()`。它不持有目录。
+
+**规模**：真机实测「罗盘切换」页滚动中可见 ≥27 个盘面（`.inspect\derived\orig-shots\dial-switch.png`、
+`dial-switch3.png`），但**精确总数不能从 APK 静态确定**；要定死需读设备 MMKV 缓存
+（key `compassModel`）或抓 `api/compass/list` 响应（需网络 + 登录态）。
+
+**对 1:1 的含义（供产品/总监）**：可 1:1 的是「四组结构 + 分组 UI + 常用组 5 项」；
+简易组/综合组的**条目内容**是服务端数据，离线复刻不可能穷举 → 建议登记为
+「等价替代（内置若干常见盘面）」或「有意省略（仅保留常用 5 项）」，二者都要在差距矩阵里写死，
+不能按「27 个」排期。

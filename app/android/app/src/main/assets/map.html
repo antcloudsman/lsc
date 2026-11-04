@@ -1344,6 +1344,27 @@ window.__LCBridgeTest = (function () {
 updateHud();
 render();
 
+/* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit */
+if (location.hash.indexOf("in3d") >= 0) {
+  setTimeout(function () {
+    var h = location.hash;
+    var mlat = h.match(/lat=(-?[\d.]+)/), mlng = h.match(/lng=(-?[\d.]+)/);
+    var mz = h.match(/[&#]z=(\d+)/), mp = h.match(/pitch=(\d+)/), mb = h.match(/bearing=(-?\d+)/);
+    setMode("3d");
+    if (mp) setPitch(parseInt(mp[1], 10));
+    if (mb) { bearing = ((parseInt(mb[1], 10) % 360) + 360) % 360; refreshNeedle(); }
+    if (mlat || mlng || mz) {
+      debugSetView(mlat ? parseFloat(mlat[1]) : null, mlng ? parseFloat(mlng[1]) : null,
+        mz ? parseInt(mz[1], 10) : null, null, null);
+    }
+    if (h.indexOf("contour") >= 0) toggleContour();
+    if (h.indexOf("ground") >= 0) toggleGround();
+    if (h.indexOf("sit") >= 0) { setHeading(90); toggleSitNorth(); }
+    console.log("LC3D in3d hash=" + h);
+  }, 50);
+}
+
 /* 本地/无真机自测：map.html#selftest → 进 3D，等 DEM 就绪后在屏幕中心偏下做一次点选 */
 if (location.hash.indexOf("selftest") >= 0) {
   setTimeout(function () {

@@ -273,6 +273,14 @@ iput-boolean v7, v0, ...->isVip:Z
 TYPE_10 的「山名+干支」无空格（TYPE_6 有空格）；TYPE_7 是「双山名 + 干支」两段式
 （12 双山 × 5 = 60）；TYPE_5 是 12 组 × (5 龙 + 1「正X」) = 72，**不是**「每山 3 龙」。
 
+**逐条地址**：每条 label 对应自己那条 `const-string` 的指令地址，已导成
+`.inspect\derived\ring_label_addrs.json`（`{i, text, code_off, smali_line}`，780 条；
+`code_off` 为 dex **code-unit** 偏移，与 `packed-switch` 载荷同一坐标系）。
+段级首末地址：TYPE_1 `@108f→@10ab`、TYPE_2 `@106c→@1088`、TYPE_3 `@1049→@1065`、
+TYPE_4 `@fe2→@1042`、TYPE_5 `@e59→@fd9`、TYPE_6 `@bb0→@e50`、TYPE_7 `@a6f→@ba7`、
+TYPE_8 `@a06→@a66`、TYPE_9 `@99d→@9fd`、TYPE_10 `@6f4→@994`、TYPE_11 `@59b→@6eb`、
+TYPE_12 `@442→@592`、TYPE_13 `@2e9→@439`、TYPE_14 `@40→@2e0`。
+
 ### R1.3 人盘/天盘的真值：不是 offset，是表旋转（轮 B 关键）
 | 盘 | TYPE | offsetDegrees | interval | labels 首位→末位 | 子山中心 | 等价值（MOUNTAINS 子=0） |
 |---|---|---|---|---|---|---|
@@ -303,7 +311,16 @@ COMPASS_3 compass3/三元罗盘(金)/`compass3_min`/true；COMPASS_4 compass4/�
 整盘 artwork：`assets/webapp/assets/imgs/compass/` 下 `compass.png` + `compass1..13.png`
 共 14 幅（620–2251 px，`compass.png`=1080² 单圈 24 山+360°刻度）+ `pointer.png`(46×188)。
 **结论：盘面不「开」圈层；读数面板独立列 14 类读数（向/坐）。**
-（`compass4.png` 的逐圈清单本轮未目视清点 → 未确认。）
+
+五幅盘面各自的圈层（12 点钟条带逐圈清点，条带图 `.inspect\derived\dial_strips\*_top.png`）：
+
+| 盘面 | 圈数 | 由外向内（要点） |
+|---|---|---|
+| COMPASS_0 `compass.png` | 2 | 360°刻度 → 24山(阴)单圈 → 中心圆 |
+| COMPASS_1 `compass1.png` | ≈9 | 360°刻度 → 24山 → 72/60龙干支 → 分金(五子/三子/七子) → 后天八卦+洛书数 → 内层24山 → 指北针 |
+| COMPASS_2 `compass2.png` | ≈13 | 360° → 28宿 → 纳音五行 → 壬子紫带(72龙) → 分金五子+五行色 → 24山 → 纳音 → 60龙 → 壬子癸紫带(三盘24山) → 申巳艮/乾巳巽(八卦) → 后天卦+卦符 → 指北针 |
+| COMPASS_3 `compass3.png` | ≈17 | 360° → 江东/江西·天元/地元/人元 → 卦符 → 九星(贪巨禄文廉武破) → 洛书数 → 玄空数 → 64卦名 → 数字带 → 神煞(破劫刑賓客輔庫正天) → 节气+五行 → 三盘24山(天地人) → 神煞(玉印/劫煞/華蓋/直符/地煞) → 后天卦+卦符 → 指北针 |
+| COMPASS_4 `compass4.png` | ≈20 | 360° → 28宿 → 八煞 → 64卦+九星 → 先天八卦 → 后天八卦 → 三盘24山并排 → 120分金 → 72龙 → 60龙纳音 → 中心指向罗盘 |
 
 ### R1.5 读数公式逐指令
 `getFaceText(F)`：`sub-float offset` → `add 360.0f` → `rem 360.0f` → `div-float interval` →

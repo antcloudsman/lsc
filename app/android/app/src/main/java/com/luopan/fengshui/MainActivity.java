@@ -23,6 +23,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private FrameLayout content;
     private View compassTab;
+    private View bottomPanel;
+    private String lastAttribution = "";
     private CompassView compassView;
     private TextView readingView;
     private WebView mapView;
@@ -202,6 +204,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             }
+            case "capture":
+                android.util.Log.d("LCDEBUG", "capture requested");
+                captureMap();
+                break;
+            case "declination": {
+                float v = it.getFloatExtra("value", 0f);
+                declination = SensorMath.clampDeclination(v);
+                prefs.edit().putFloat("declination", declination).apply();
+                if (declButton != null) {
+                    declButton.setText(String.format(java.util.Locale.US, "偏角%+.1f°", declination));
+                }
+                updateReading();
+                android.util.Log.d("LCDEBUG", "declination=" + declination);
+                break;
+            }
             case "reset":
                 injectedHeading = null;
                 injectedPitch = null;
@@ -330,6 +347,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         trust.addView(declButton, new android.widget.LinearLayout.LayoutParams(0,
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         trustRow = trust;
+        bottomPanel = panel;
         panel.addView(trust);
 
         statusView = new android.widget.TextView(this);
@@ -385,6 +403,31 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             toast("截图失败：罗盘页未就绪");
             return;
         }
+        // BUG-005: #srcInfo is covered by the bottom panel on device; composite the
+        // current source + review number into the saved image instead of moving map.html.
+        if (compassMapView != null) {
+            compassMapView.evaluateJavascript(
+                    "(function(){var e=document.getElementById('srcInfo');return e?e.textContent:'';})()",
+                    v -> { lastAttribution = decodeJsString(v); doCapture(); });
+        } else {
+            doCapture();
+        }
+    }
+
+    /** JSON-quoted JS string -> plain text. */
+    private static String decodeJsString(String v) {
+        if (v == null || v.length() < 2) return "";
+        String s = v.substring(1, v.length() - 1);
+        s = s.replace("\\\"", "\"").replace("\\\\", "\\").replace("\n", " ");
+        return s.trim();
+    }
+
+    private void doCapture() {
+        final View target = compassTab;
+        if (target == null || target.getWidth() == 0 || target.getHeight() == 0) {
+            toast("截图失败：罗盘页未就绪");
+            return;
+        }
         final int w = target.getWidth();
         final int h = target.getHeight();
         final android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888);
@@ -395,7 +438,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 android.graphics.Rect rect = new android.graphics.Rect(loc[0], loc[1], loc[0] + w, loc[1] + h);
                 android.view.PixelCopy.request(getWindow(), rect, bmp, result -> {
                     if (result == android.view.PixelCopy.SUCCESS && !looksBlank(bmp)) {
-                        saveCompassShot(bmp);
+                        saveCompassShot(composeAttribution(bmp));
                     } else {
                         captureViaJs();
                     }
@@ -442,11 +485,39 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             toast("截图失败：解码图片失败");
                             return;
                         }
-                        saveCompassShot(map);
+                        saveCompassShot(composeAttribution(map));
                     } catch (Throwable t) {
                         toast("截图失败: " + t.getMessage());
                     }
                 });
+    }
+
+    /** BUG-005: draw "底图/审图号" into the image, above the bottom panel. */
+    private android.graphics.Bitmap composeAttribution(android.graphics.Bitmap bmp) {
+        String text = lastAttribution == null ? "" : lastAttribution.trim();
+        if (text.isEmpty()) return bmp;
+        try {
+            android.graphics.Bitmap out = bmp.copy(android.graphics.Bitmap.Config.ARGB_8888, true);
+            android.graphics.Canvas c = new android.graphics.Canvas(out);
+            float d = getResources().getDisplayMetrics().density;
+            android.graphics.Paint p = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            p.setColor(android.graphics.Color.rgb(220, 190, 130));
+            p.setTextSize(12f * d);
+            float tw = p.measureText(text);
+            int panelTop = bottomPanel != null ? bottomPanel.getTop() : out.getHeight() - (int) (340 * d);
+            float x = out.getWidth() - tw - 12 * d;
+            float y = panelTop - 12 * d;
+            if (y < 40 * d) y = 40 * d;
+            android.graphics.Paint bg = new android.graphics.Paint();
+            bg.setColor(android.graphics.Color.argb(170, 0, 0, 0));
+            c.drawRect(x - 8 * d, y - 14 * d, out.getWidth(), y + 6 * d, bg);
+            c.drawText(text, x, y, p);
+            android.util.Log.d("LCCAP", "attribution drawn: " + text);
+            return out;
+        } catch (Throwable t) {
+            android.util.Log.e("LCCAP", "attribution draw failed", t);
+            return bmp;
+        }
     }
 
     private void saveCompassShot(android.graphics.Bitmap bmp) {

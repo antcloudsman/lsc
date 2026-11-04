@@ -28,6 +28,37 @@ public class CompassView extends View {
     }
     private boolean followSensor = true;
     private boolean trustEnabled = false;
+    /** P0-2: full artwork dial (null = vector mode). */
+    private android.graphics.Bitmap artwork;
+
+    /** Load the original artwork for dial 0..4, downsampled to <= 1200 px. */
+    public void setArtwork(int dial) {
+        int[] res = {R.drawable.dial_full_0, R.drawable.dial_full_1, R.drawable.dial_full_2,
+                R.drawable.dial_full_3, R.drawable.dial_full_4};
+        try {
+            android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
+            opts.inJustDecodeBounds = true;
+            android.graphics.BitmapFactory.decodeResource(getResources(), res[dial], opts);
+            int sample = 1;
+            while (Math.max(opts.outWidth, opts.outHeight) / sample > 1200) sample *= 2;
+            opts.inJustDecodeBounds = false;
+            opts.inSampleSize = sample;
+            artwork = android.graphics.BitmapFactory.decodeResource(getResources(), res[dial], opts);
+        } catch (Throwable t) {
+            artwork = null;
+        }
+        invalidate();
+    }
+
+    private void drawArtwork(Canvas canvas, float cx, float cy, float r) {
+        if (artwork == null) return;
+        canvas.save();
+        canvas.rotate(-heading, cx, cy);
+        float d = r * 2f;
+        android.graphics.RectF dst = new android.graphics.RectF(cx - d / 2f, cy - d / 2f, cx + d / 2f, cy + d / 2f);
+        canvas.drawBitmap(artwork, null, dst, paint);
+        canvas.restore();
+    }
 
     public interface OnHeadingChangeListener {
         void onHeadingChanged(float heading);
@@ -141,6 +172,10 @@ public class CompassView extends View {
         paint.setColor(gold);
         canvas.drawCircle(cx, cy, r, paint);
 
+        if (artwork != null) {
+            drawArtwork(canvas, cx, cy, r);
+        } else {
+
         // Degree ticks + numbers.
         for (int d = 0; d < 360; d += 5) {
             float a0 = r * 0.965f;
@@ -224,6 +259,8 @@ public class CompassView extends View {
             String name = bagua.labels[i].replace("\u200c", "");
             textPaint.setColor(wuxingColor(guaWuxing(name.substring(0, 1))));
             drawText(canvas, name, p[0], p[1], textPaint);
+        }
+
         }
 
         // P0-1: 天池（仅读数可信包开启时）

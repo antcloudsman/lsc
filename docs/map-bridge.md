@@ -90,6 +90,9 @@
 
 例：`file:///android_asset/map.html#in3d`（3D 桥对拍用）。自测入口 `#selftest` 仍保留（会等 DEM 就绪后自动点选一次）。
 
+**hash 在页面初始化与 `hashchange` 时都会应用**，所以同文档导航只改 hash（不触发 onload）也能生效：客户端一次 `loadUrl("...#in3d&sit")` 即可。hash 片段按 token 匹配（`#in3d`/`&sit`/`&lat=`），不会被 `lat=` 之类误命中。
+> 实机注意：部分 WebView 对「仅 fragment 不同」的 `loadUrl` 不导航、也不发 `hashchange`；若客户端发现页面无反应，改用 `evaluateJavascript("location.hash='#in3d&sit'")` 即可走同一路径。
+
 ## 5. 页面 → 客户端（回调契约，D-005 / D-006）
 
 ```js

@@ -33,7 +33,7 @@ try {
   if ($text -match 'TD-') { Write-Host ($text -replace '^.*?\]\s*"', '' -replace '"$', '') }
   $r = ($result -replace '^.*?\]\s*"', '' -replace '"$', '')
   Write-Host $r
-  Write-Host "AT-P04 manual: TD-015 (device FPS>=30 / touch feel) — run on L2E0222531014833"
+  Write-Host "AT-P04 manual: TD-016 (device FPS>=30 / touch feel) — run on L2E0222531014833"
   if ($r -match 'PASS') { exit 0 } else { exit 1 }
 }
 finally {

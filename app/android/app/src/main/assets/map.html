@@ -1329,17 +1329,33 @@ function debugSetView(lat, lng, z, p, b) {
   if (mode === "3d") { ensurePatch(true); updateHud(); } else { applyTransform(); render(); }
 }
 
+/* 文档 §4 承诺的 window 级 API（getState/getFps/setView/sitNorth 以前只在内部作用域，
+ * 客户端 js 断言拿不到——这次显式挂到 window，并由 AT TD-016 守住） */
+function getState() {
+  return {
+    mode: mode, lat: center.lat, lng: center.lng, zoom: zoom, pitch: pitch,
+    bearing: bearing, fps: fps, elev: Math.round(demoElev),
+    demZoom: patch ? patch.z : null, hasTexture: !!(patch && patch.tex),
+    sitMode: sitMode, sitNorth: sitMode !== 0,
+    contour: contourOn, ground: groundMode, needle: needleOn,
+    base: base, drape: drape,
+    source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
+  };
+}
+function getFps() { return fps; }
+function setView(lat, lng, z) { debugSetView(lat, lng, z, null, null); }
+try {
+  Object.defineProperty(window, "sitNorth", {
+    get: function () { return sitMode !== 0; },
+    configurable: true
+  });
+} catch (e) { }
+
 window.__LC3D = {
   setView: debugSetView,
   setMode: setMode,
-  state: function () {
-    return {
-      mode: mode, lat: center.lat, lng: center.lng, zoom: zoom, pitch: pitch,
-      bearing: bearing, fps: fps, elev: Math.round(demoElev),
-      demZoom: patch ? patch.z : null, hasTexture: !!(patch && patch.tex)
-    };
-  },
-  fps: function () { return fps; },
+  state: getState,
+  fps: getFps,
   screenshot: function () {
     try { return glCanvas.toDataURL("image/png"); } catch (e) { return ""; }
   }
@@ -1528,6 +1544,15 @@ function runAT() {
   var thrown = false;
   try { pick3D(10, 10); } catch (e) { thrown = true; }
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
+  var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch",
+    "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
+    "getState", "getFps"];
+  var missing = [];
+  for (var ai = 0; ai < api.length; ai++) {
+    if (typeof window[api[ai]] !== "function") missing.push(api[ai]);
+  }
+  if (typeof window.sitNorth !== "boolean") missing.push("sitNorth");
+  ok("TD-015", missing.length === 0, missing.length ? ("missing:" + missing.join(",")) : "window api");
   var fails = 0;
   for (var i = 0; i < R.length; i++) if (R[i].indexOf("FAIL") === 0) fails++;
   console.log("LCAT " + R.join(" | "));

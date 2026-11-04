@@ -73,7 +73,16 @@
 | `getState()` | — | 返回 JSON（mode/lat/lng/zoom/pitch/bearing/fps/elev） |
 | `getFps()` | — | 最近 1 s 的 rAF 实测帧率 |
 
-**只有前两个是 MainActivity 当前已在调用的**（`MainActivity.updateReading()` 里 `evaluateJavascript("setHeading(...)")` / `setSitFace(...)`），其余为本次新增、客户端可直接用。
+**只有前两个是 MainActivity 当前已在调用的**（`MainActivity.updateReading()` 里 `evaluateJavascript("setHeading(...)")` / `setSitFace(...)`），其余为本次新增、客户端可直接用。**表中方法全部真实挂在 `window` 上，由 AT TD-015 逐项断言**（此前 `getState/sitNorth` 只在内部作用域，客户端 `js` 拿到 `undefined`，已修）。
+
+### 3.1 window 级状态读取（客户端 `js` 断言用）
+
+| 接口 | 返回 |
+|---|---|
+| `getState()` | 对象 `{mode, lat, lng, zoom, pitch, bearing, fps, elev, demZoom, hasTexture, sitMode, sitNorth, contour, ground, needle, base, drape, source}` |
+| `getFps()` | 数字（最近 1 s rAF 实测帧率） |
+| `window.sitNorth` | 只读布尔（`sitMode!==0`，即坐向对齐是否开启） |
+| `window.__LC3D.*` | 兼容别名：`setView/state/fps/screenshot` |
 
 ### 4.1 启动参数（URL hash）
 

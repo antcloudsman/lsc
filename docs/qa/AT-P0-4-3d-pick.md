@@ -1,14 +1,14 @@
 # AT-P0-4 — 3D 点读（地图）
 
 > 归属：LC地图。被测对象 `app\android\app\src\main\assets\map.html`。
-> 无头执行器：`tools\map\run_at_p04.ps1`（TD-001…TD-014）；TD-015 必须真机。
+> 无头执行器：`tools\map\run_at_p04.ps1`（TD-001…TD-015）；TD-016 必须真机。
 > 契约出处：`docs/map-bridge.md` §5.1（D-005/D-006）。
 
 ## 运行
 
 ```powershell
 pwsh -File tools\map\run_at_p04.ps1
-# 期望末行：LCAT-RESULT PASS total=14 fails=0
+# 期望末行：LCAT-RESULT PASS total=15 fails=0
 ```
 
 原理：本地 http 服务 + Chrome headless（SwiftShader WebGL）打开 `map.html#at&lat=40.02&lng=115.45&z=12`，页面在 DEM/贴面就绪后跑 14 条断言，输出 `LCAT …` 与 `LCAT-RESULT`。
@@ -31,12 +31,13 @@ pwsh -File tools\map\run_at_p04.ps1
 | TD-012 | 天空不误触 | 屏幕顶部点选 → 无 `pick` 事件（射线未击中地形） |
 | TD-013 | 2D 清空也发事件 | 切 2D 后 `clearMarkers()` 仍发 `pick-clear` |
 | TD-014 | 无桥不崩 | `LCAndroid` 不存在时点选不抛异常且不残留标记 |
+| TD-015 | window API 暴露 | `map-bridge.md` §4 承诺的 14 个方法全部是 `function`，`window.sitNorth` 是 `boolean`（防「文档说有、页面 undefined」） |
 
 ## 真机用例（必须手动）
 
 | ID | 目的 | 步骤 | 期望 |
 |---|---|---|---|
-| TD-015 | 帧率与手感 | 装 develop 的 APK → `#in3d` → 连续点选 5 次，`logcat -s hwschromium` 看 `LC3D fps` | FPS ≥ 30；每次点选只 1 条 `LC3D pick`；标记落点贴合地形、无偏移；`FATAL EXCEPTION` 0 |
+| TD-016 | 帧率与手感 | 装 develop 的 APK → `#in3d` → 连续点选 5 次，`logcat -s hwschromium` 看 `LC3D fps` | FPS ≥ 30；每次点选只 1 条 `LC3D pick`；标记落点贴合地形、无偏移；`FATAL EXCEPTION` 0 |
 
 ## 边界
 

@@ -216,14 +216,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void registerDebugBridge() {
         if (receiverRegistered) return;
-        debugBridge = new DebugBridge(this::handleDebugCommand);
-        android.content.IntentFilter f = new android.content.IntentFilter(DebugBridge.ACTION);
-        if (android.os.Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(debugBridge, f, android.content.Context.RECEIVER_EXPORTED);
-        } else {
-            registerReceiver(debugBridge, f);
+        try {
+            debugBridge = new DebugBridge(this::handleDebugCommand);
+            android.content.IntentFilter f = new android.content.IntentFilter(DebugBridge.ACTION);
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                registerReceiver(debugBridge, f, android.content.Context.RECEIVER_EXPORTED);
+            } else {
+                registerReceiver(debugBridge, f);
+            }
+            receiverRegistered = true;
+            android.util.Log.d("LCDEBUG", "bridge registered sdk=" + android.os.Build.VERSION.SDK_INT
+                    + " action=" + DebugBridge.ACTION);
+        } catch (Throwable t) {
+            android.util.Log.e("LCDEBUG", "bridge register FAILED", t);
         }
-        receiverRegistered = true;
     }
 
     private void unregisterDebugBridge() {

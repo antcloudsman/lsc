@@ -205,13 +205,15 @@ public class CompassView extends View {
             drawText(canvas, CompassData.MOUNTAINS[m], p[0], p[1], textPaint);
         }
 
-        // 后天八卦 ring.
-        String[] gua = {"坎", "艮", "震", "巽", "离", "坤", "兑", "乾"};
+        // B2: bagua text from mechanics.json rings (TYPE_2 后天卦位).
+        CompassData.RingDef bagua = CompassData.RINGS[1];
         textPaint.setTextSize(12f * density());
-        for (int i = 0; i < 8; i++) {
-            float[] p = pos(cx, cy, r * 0.18f, i * CompassData.BAGUA_STEP, heading);
-            textPaint.setColor(wuxingColor(guaWuxing(gua[i])));
-            drawText(canvas, gua[i], p[0], p[1], textPaint);
+        for (int i = 0; i < bagua.labels.length; i++) {
+            float d = bagua.offset + (i + 0.5f) * bagua.interval;
+            float[] p = pos(cx, cy, r * 0.18f, d, heading);
+            String name = bagua.labels[i].replace("\u200c", "");
+            textPaint.setColor(wuxingColor(guaWuxing(name.substring(0, 1))));
+            drawText(canvas, name, p[0], p[1], textPaint);
         }
 
         // Fixed crosshair + top pointer (screen space).

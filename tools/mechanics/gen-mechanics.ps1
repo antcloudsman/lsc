@@ -79,6 +79,51 @@ function Java-StrArray([string]$indent, [string]$decl, $items, [int]$perLine) {
     return $sb.ToString()
 }
 
+function Ring-LabelsRust($labels) {
+    $parts = @()
+    foreach ($l in $labels) { $parts += ('"' + (Esc-Rust $l) + '"') }
+    return '&[' + ($parts -join ', ') + ']'
+}
+
+function Rust-Rings($rings) {
+    $sb = New-Object System.Text.StringBuilder
+    [void]$sb.Append("pub struct RingDef {`n")
+    [void]$sb.Append("    pub id: &'static str,`n    pub text: &'static str,`n")
+    [void]$sb.Append("    pub interval: f32,`n    pub offset: f32,`n")
+    [void]$sb.Append("    pub labels: &'static [&'static str],`n}`n")
+    [void]$sb.Append("pub const RINGS: [RingDef; $($rings.Count)] = [`n")
+    foreach ($r in $rings) {
+        $line = "    RingDef { id: `"$($r.id)`", text: `"$($r.text)`", interval: " +
+            (Fmt-RustFloat ([double]$r.interval)) + ", offset: " + (Fmt-RustFloat ([double]$r.offset)) +
+            ", labels: " + (Ring-LabelsRust $r.labels) + " },`n"
+        [void]$sb.Append($line)
+    }
+    [void]$sb.Append("];`n")
+    return $sb.ToString()
+}
+
+function Java-Rings($rings) {
+    $sb = New-Object System.Text.StringBuilder
+    [void]$sb.Append("    public static final class RingDef {`n")
+    [void]$sb.Append("        public final String id;`n        public final String text;`n")
+    [void]$sb.Append("        public final float interval;`n        public final float offset;`n")
+    [void]$sb.Append("        public final String[] labels;`n")
+    [void]$sb.Append("        RingDef(String id, String text, float interval, float offset, String[] labels) {`n")
+    [void]$sb.Append("            this.id = id; this.text = text; this.interval = interval;`n")
+    [void]$sb.Append("            this.offset = offset; this.labels = labels;`n        }`n    }`n")
+    [void]$sb.Append("    public static final RingDef[] RINGS = {`n")
+    foreach ($r in $rings) {
+        $parts = @()
+        foreach ($l in $r.labels) { $parts += ('"' + (Esc-Java $l) + '"') }
+        $line = "        new RingDef(`"$($r.id)`", `"$($r.text)`", " +
+            (Fmt-JavaFloat ([double]$r.interval)) + ", " + (Fmt-JavaFloat ([double]$r.offset)) +
+            ", new String[]{" + ($parts -join ', ') + "}),`n"
+        [void]$sb.Append($line)
+    }
+    [void]$sb.Append("    };`n")
+    return $sb.ToString()
+}
+
 $json = Read-Utf8 $JsonPath
 $doc = $json | ConvertFrom-Json
 if ($doc.version -ne 2) { throw "mechanics.json version must be 2, got $($doc.version)" }
@@ -115,6 +160,7 @@ $rust = New-Object System.Text.StringBuilder
 $gw = @()
 foreach ($p in $doc.tables.gua_wuxing) { $gw += '    ("' + (Esc-Rust $p[0]) + '", "' + (Esc-Rust $p[1]) + '"),' }
 [void]$rust.Append(($gw -join "`n") + "`n];`n")
+[void]$rust.Append((Rust-Rings $doc.rings))
 [void]$rust.Append("`n")
 [void]$rust.Append("// Ring scalars (values[] / rings[]). The reading formulas keep their inline`n")
 [void]$rust.Append("// literals for now and are pinned to these by the #[cfg(test)] module in main.rs.`n")
@@ -158,6 +204,7 @@ foreach ($r in $doc.rings) {
     $readTypes += ([string]$r.text + ' ' + $ivs + [char]0x00B0)
 }
 [void]$java.Append((Java-StrArray $ind 'public static final String[] READ_TYPES' $readTypes 2))
+[void]$java.Append((Java-Rings $doc.rings))
 
 [void]$java.Append($ind + "// Ring scalars (values[] / rings[]).`n")
 function JLine([string]$mods, [string]$name, [double]$v) {

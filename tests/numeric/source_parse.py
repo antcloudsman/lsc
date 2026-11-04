@@ -71,6 +71,24 @@ def ring_text_body(source: str) -> str:
     return m.group(1)
 
 
+def fn_body(source: str, name: str) -> str:
+    """任意 Rust 无泛型函数的函数体（用于 ring_index / ring_center 等）。"""
+    m = re.search(rf"fn\s+{re.escape(name)}\s*\([^)]*\)\s*->[^{{]+\{{(.*?)\n\}}", source, re.S)
+    if not m:
+        raise AssertionError(f"main.rs 中找不到 `fn {name}(...)`")
+    return m.group(1)
+
+
+def java_method_body(source: str, name: str) -> str:
+    """`public static ... name(...) { ... }` 的 Java 方法体（4 空格缩进的右花括号）。"""
+    m = re.search(
+        rf"public static [^\n]{{0,80}}?\b{re.escape(name)}\s*\([^)]*\)\s*\{{(.*?)\n    \}}",
+        source, re.S)
+    if not m:
+        raise AssertionError(f"CompassData.java 中找不到 `public static ... {name}(...)`")
+    return m.group(1)
+
+
 def parse_rust_rings(source: str) -> dict:
     """解析生成的 `pub const RINGS: [RingDef; 14]` 为 {type: {text,interval,offset,labels}}。"""
     out = {}

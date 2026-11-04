@@ -87,12 +87,31 @@ class B2RingTextSourceTest(unittest.TestCase):
         cls.main_rs = SP.read_text(O.MAIN_RS)
         cls.java = SP.read_text(O.COMPASS_DATA_JAVA)
 
-    def test_ring_text_uses_labels_with_offset_interval(self):
-        body = SP.ring_text_body(self.main_rs)
-        for token in ("labels[", "ring.offset", "ring.interval", "normalize_deg", "% n"):
-            self.assertIn(token, body, f"ring_text 体缺 {token!r}")
+    def test_ring_index_uses_offset_interval(self):
+        """索引公式在 `ring_index` 里：(normalize(h)-offset)/interval 取整。"""
+        body = SP.fn_body(self.main_rs, "ring_index")
+        for token in ("ring.offset", "ring.interval", "normalize_deg", "% n"):
+            self.assertIn(token, body, f"ring_index 体缺 {token!r}")
+        jbody = SP.java_method_body(self.java, "ringIndex")
+        for token in ("r.offset", "r.interval", "Math.floor", ".length"):
+            self.assertIn(token, jbody, f"Java ringIndex 体缺 {token!r}")
+
+    def test_ring_text_delegates_to_ring_index(self):
+        body = SP.fn_body(self.main_rs, "ring_text")
+        self.assertIn("labels[", body, "ring_text 未从 labels 取值")
+        self.assertIn("ring_index(", body, "ring_text 未委托 ring_index")
+        jbody = SP.java_method_body(self.java, "ringText")
+        self.assertIn(".labels[", jbody, "Java ringText 未从 labels 取值")
+        self.assertIn("ringIndex(", jbody, "Java ringText 未委托 ringIndex")
         self.assertIn("ring_text_clean", self.main_rs)
         self.assertIn("\\u{200c}", self.main_rs, "U+200C 清洗")
+
+    def test_current_cell_center_formula(self):
+        """当前格中心 = offset + (i+0.5)*interval（高亮/落位共用）。"""
+        for body in (SP.fn_body(self.main_rs, "ring_center"),
+                     SP.java_method_body(self.java, "ringCenter")):
+            self.assertIn("0.5", body, "格中心缺 +0.5*interval")
+            self.assertRegex(body, r"offset", "格中心缺 offset")
 
     def test_client_unit_vectors_present(self):
         for ring_type, heading, want in ((7, "0.0", "壬子 庚子"), (7, "170.0", "丙午 甲午"),

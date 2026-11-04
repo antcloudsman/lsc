@@ -15,67 +15,90 @@ mod software;
 // and standard 三合盘/三元盘 conventions. See MECHANICS.md.
 // ---------------------------------------------------------------------------
 
-/// 24 mountains in clockwise order starting from 子 (north = 0°).
+// >>> BEGIN GENERATED (app/mechanics.json) >>>
+// Source: app/mechanics.json (sha256: 984c5fb618634b0a1202908243acfa1dfbd3d1e4efa0b34df2a778e0d31f34ca). Regenerate: tools/mechanics/gen-mechanics.ps1
+// Hand edits inside the markers are rejected by gen-mechanics.ps1 -Check.
 const MOUNTAINS: [&str; 24] = [
-    "子", "癸", "丑", "艮", "寅", "甲", "卯", "乙", "辰", "巽", "巳", "丙",
-    "午", "丁", "未", "坤", "申", "庚", "酉", "辛", "戌", "乾", "亥", "壬",
+    "子", "癸", "丑", "艮", "寅", "甲",
+    "卯", "乙", "辰", "巽", "巳", "丙",
+    "午", "丁", "未", "坤", "申", "庚",
+    "酉", "辛", "戌", "乾", "亥", "壬"
 ];
-
-/// Five elements (五行) of each of the 24 mountains, aligned with MOUNTAINS.
 const WUXING: [&str; 24] = [
-    "水", "水", "土", "土", "木", "木", "木", "木", "土", "木", "火", "火",
-    "火", "火", "土", "土", "金", "金", "金", "金", "土", "金", "水", "水",
+    "水", "水", "土", "土", "木", "木",
+    "木", "木", "土", "木", "火", "火",
+    "火", "火", "土", "土", "金", "金",
+    "金", "金", "土", "金", "水", "水"
 ];
-
-/// Yin/yang (三元盘) of each mountain, aligned with MOUNTAINS.
-/// 阴: 辰戌丑未, 子午卯酉, 癸丁, 乙辛. 阳: the rest.
 const YINYANG: [&str; 24] = [
-    "阴", "阴", "阴", "阳", "阳", "阳", "阴", "阴", "阴", "阳", "阳", "阳",
-    "阴", "阴", "阴", "阳", "阳", "阳", "阴", "阴", "阴", "阳", "阳", "阳",
+    "阴", "阴", "阴", "阳", "阳", "阳",
+    "阴", "阴", "阴", "阳", "阳", "阳",
+    "阴", "阴", "阴", "阳", "阳", "阳",
+    "阴", "阴", "阴", "阳", "阳", "阳"
 ];
-
-/// 后天八卦 (Later Heaven bagua) per mountain.
 const HOUTIAN_GUA: [&str; 24] = [
-    "坎", "坎", "艮", "艮", "艮", "震", "震", "震", "巽", "巽", "巽", "离",
-    "离", "离", "坤", "坤", "坤", "兑", "兑", "兑", "乾", "乾", "乾", "坎",
+    "坎", "坎", "艮", "艮", "艮", "震",
+    "震", "震", "巽", "巽", "巽", "离",
+    "离", "离", "坤", "坤", "坤", "兑",
+    "兑", "兑", "乾", "乾", "乾", "坎"
 ];
-
-/// 先天八卦 (Former Heaven bagua) per mountain.
 const XIANTIAN_GUA: [&str; 24] = [
-    "坤", "坤", "震", "震", "震", "离", "离", "离", "兑", "兑", "兑", "乾",
-    "乾", "乾", "巽", "巽", "巽", "坎", "坎", "坎", "艮", "艮", "艮", "坤",
+    "坤", "坤", "震", "震", "震", "离",
+    "离", "离", "兑", "兑", "兑", "乾",
+    "乾", "乾", "巽", "巽", "巽", "坎",
+    "坎", "坎", "艮", "艮", "艮", "坤"
 ];
-
-/// Five elements of the eight trigrams.
-const GUA_WUXING: [(&str, &str); 8] = [
-    ("坎", "水"), ("艮", "土"), ("震", "木"), ("巽", "木"),
-    ("离", "火"), ("坤", "土"), ("兑", "金"), ("乾", "金"),
-];
-
-/// 60 Jiazi in order (甲子 → 癸亥).
 const JIAZI: [&str; 60] = [
     "甲子", "乙丑", "丙寅", "丁卯", "戊辰", "己巳", "庚午", "辛未", "壬申", "癸酉",
     "甲戌", "乙亥", "丙子", "丁丑", "戊寅", "己卯", "庚辰", "辛巳", "壬午", "癸未",
     "甲申", "乙酉", "丙戌", "丁亥", "戊子", "己丑", "庚寅", "辛卯", "壬辰", "癸巳",
     "甲午", "乙未", "丙申", "丁酉", "戊戌", "己亥", "庚子", "辛丑", "壬寅", "癸卯",
     "甲辰", "乙巳", "丙午", "丁未", "戊申", "己酉", "庚戌", "辛亥", "壬子", "癸丑",
-    "甲寅", "乙卯", "丙辰", "丁巳", "戊午", "己未", "庚申", "辛酉", "壬戌", "癸亥",
+    "甲寅", "乙卯", "丙辰", "丁巳", "戊午", "己未", "庚申", "辛酉", "壬戌", "癸亥"
 ];
-
-/// 纳音五行 for each of the 60 Jiazi (aligned with JIAZI).
 const NAYIN: [&str; 60] = [
     "海中金", "海中金", "炉中火", "炉中火", "大林木", "大林木", "路旁土", "路旁土", "剑锋金", "剑锋金",
     "山头火", "山头火", "涧下水", "涧下水", "城头土", "城头土", "白蜡金", "白蜡金", "杨柳木", "杨柳木",
     "泉中水", "泉中水", "屋上土", "屋上土", "霹雳火", "霹雳火", "松柏木", "松柏木", "长流水", "长流水",
     "沙中金", "沙中金", "山下火", "山下火", "平地木", "平地木", "壁上土", "壁上土", "金箔金", "金箔金",
     "佛灯火", "佛灯火", "天河水", "天河水", "大驿土", "大驿土", "钗钏金", "钗钏金", "桑柘木", "桑柘木",
-    "大溪水", "大溪水", "沙中土", "沙中土", "天上火", "天上火", "石榴木", "石榴木", "大海水", "大海水",
+    "大溪水", "大溪水", "沙中土", "沙中土", "天上火", "天上火", "石榴木", "石榴木", "大海水", "大海水"
+];
+const BRANCHES: [&str; 12] = [
+    "子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"
+];
+const YANG_STEMS: [&str; 5] = [
+    "甲", "丙", "戊", "庚", "壬"
+];
+const YIN_STEMS: [&str; 5] = [
+    "乙", "丁", "己", "辛", "癸"
+];
+const GUA_WUXING: [(&str, &str); 8] = [
+    ("坎", "水"),
+    ("艮", "土"),
+    ("震", "木"),
+    ("巽", "木"),
+    ("离", "火"),
+    ("坤", "土"),
+    ("兑", "金"),
+    ("乾", "金"),
 ];
 
-/// Twelve earthly branches, used to build the 旺相 fenjin / dragon names.
-const BRANCHES: [&str; 12] = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
-const YANG_STEMS: [&str; 5] = ["甲", "丙", "戊", "庚", "壬"];
-const YIN_STEMS: [&str; 5] = ["乙", "丁", "己", "辛", "癸"];
+// Ring scalars (values[] / rings[]). The reading formulas keep their inline
+// literals for now and are pinned to these by the #[cfg(test)] module in main.rs.
+const MOUNTAIN_STEP: f32 = 15.0;
+const EARTH_OFFSET: f32 = 0.0;
+const HUMAN_OFFSET: f32 = -7.5;
+const HEAVEN_OFFSET: f32 = 7.5;
+const FENJIN_STEP: f32 = 3.0;
+const DRAGON72_STEP: f32 = 5.0;
+const DRAGON60_STEP: f32 = 6.0;
+#[allow(dead_code)] // pinned by the mechanics_pin test; the reading formula takes it in round B
+const DRAGON60_OFFSET: f32 = 1.5;
+const HEXAGRAM64_STEP: f32 = 5.625;
+const BAGUA_STEP: f32 = 45.0;
+const ZHENG_XIANG_DEG: f32 = 9.0;
+// <<< END GENERATED <<<
 
 /// Which branch each mountain "borrows" (寄) for 分金/龙 naming (三合盘 convention).
 fn borrow_branch(m: usize) -> usize {
@@ -150,6 +173,10 @@ fn normalize_deg(d: f32) -> f32 {
 }
 
 fn reading_for(heading: f32) -> Reading {
+    // The numeric literals below are pinned to the generated ring scalars by the
+    // `mechanics_pin` test module at the bottom of this file. They stay inline in
+    // round A because tests/numeric/source_parse.py evaluates these exact lets;
+    // round B swaps them for the consts together with LC测试.
     let h = normalize_deg(heading);
     let m = ((h + 7.5) % 360.0 / 15.0).floor() as usize % 24;
     let center = m as f32 * 15.0;
@@ -314,7 +341,7 @@ impl LuopanApp {
 
         // 120 分金 ring (3° ticks) + 甲子 labels.
         if self.rings.fenjin {
-            for d in (0..360).step_by(3) {
+            for d in (0..360).step_by(FENJIN_STEP as usize) {
                 let p0 = screen_pos(cx, cy, r * 0.845, d as f32, self.heading);
                 let p1 = screen_pos(cx, cy, r * 0.825, d as f32, self.heading);
                 painter.line_segment([p0, p1], Stroke::new(1.0_f32, Color32::from_rgb(140, 120, 90)));
@@ -322,7 +349,7 @@ impl LuopanApp {
             ring(0.845, 0.82, Color32::from_rgb(120, 100, 70), 1.0);
             for m in 0..24 {
                 for s in 0..5 {
-                    let deg = m as f32 * 15.0 - 6.0 + s as f32 * 3.0;
+                    let deg = m as f32 * MOUNTAIN_STEP - 6.0 + s as f32 * FENJIN_STEP;
                     let name = wangxiang(borrow_branch(m), s);
                     let p = screen_pos(cx, cy, r * 0.835, deg, self.heading);
                     painter.text(p, Align2::CENTER_CENTER, name, FontId::new(8.0, FontFamily::Proportional), Color32::from_rgb(205, 175, 120));
@@ -332,7 +359,7 @@ impl LuopanApp {
 
         // 72 dragons ring (5° ticks) + 龙 labels.
         if self.rings.dragon72 {
-            for d in (0..360).step_by(5) {
+            for d in (0..360).step_by(DRAGON72_STEP as usize) {
                 let p0 = screen_pos(cx, cy, r * 0.81, d as f32, self.heading);
                 let p1 = screen_pos(cx, cy, r * 0.79, d as f32, self.heading);
                 painter.line_segment([p0, p1], Stroke::new(1.0_f32, Color32::from_rgb(120, 140, 100)));
@@ -340,7 +367,7 @@ impl LuopanApp {
             ring(0.81, 0.79, Color32::from_rgb(90, 110, 80), 1.0);
             for m in 0..24 {
                 for s in 0..3 {
-                    let deg = m as f32 * 15.0 - 5.0 + s as f32 * 5.0;
+                    let deg = m as f32 * MOUNTAIN_STEP - 5.0 + s as f32 * DRAGON72_STEP;
                     let name = wangxiang(borrow_branch(m), s);
                     let p = screen_pos(cx, cy, r * 0.80, deg, self.heading);
                     painter.text(p, Align2::CENTER_CENTER, name, FontId::new(8.0, FontFamily::Proportional), Color32::from_rgb(165, 190, 150));
@@ -349,14 +376,14 @@ impl LuopanApp {
         }
         // 60 dragons ring (6° ticks) + 龙 labels.
         if self.rings.dragon60 {
-            for d in (0..360).step_by(6) {
+            for d in (0..360).step_by(DRAGON60_STEP as usize) {
                 let p0 = screen_pos(cx, cy, r * 0.78, d as f32, self.heading);
                 let p1 = screen_pos(cx, cy, r * 0.76, d as f32, self.heading);
                 painter.line_segment([p0, p1], Stroke::new(1.0_f32, Color32::from_rgb(100, 120, 140)));
             }
             ring(0.78, 0.76, Color32::from_rgb(80, 100, 120), 1.0);
             for k in 0..60 {
-                let deg = k as f32 * 6.0;
+                let deg = k as f32 * DRAGON60_STEP;
                 let name = JIAZI[k];
                 let p = screen_pos(cx, cy, r * 0.77, deg, self.heading);
                 painter.text(p, Align2::CENTER_CENTER, name, FontId::new(8.0, FontFamily::Proportional), Color32::from_rgb(150, 175, 205));
@@ -365,7 +392,7 @@ impl LuopanApp {
 
         // 64 hexagrams (六十四卦) ring: 64 × 5.625° = 360°.
         for d in 0..64 {
-            let deg = d as f32 * 5.625;
+            let deg = d as f32 * HEXAGRAM64_STEP;
             let p0 = screen_pos(cx, cy, r * 0.745, deg, self.heading);
             let p1 = screen_pos(cx, cy, r * 0.725, deg, self.heading);
             painter.line_segment([p0, p1], Stroke::new(1.0_f32, Color32::from_rgb(150, 120, 150)));
@@ -373,37 +400,32 @@ impl LuopanApp {
 
         // Three 24-mountain plates.
         if self.rings.earth {
-            self.draw_plate(&painter, cx, cy, r * 0.715, 0.0, 15.0, Color32::WHITE);
+            self.draw_plate(&painter, cx, cy, r * 0.715, EARTH_OFFSET, MOUNTAIN_STEP, Color32::WHITE);
             ring(0.775, 0.655, fg, 1.5);
         }
         if self.rings.human {
-            self.draw_plate(&painter, cx, cy, r * 0.58, -7.5, 12.5, Color32::from_rgb(180, 200, 220));
+            self.draw_plate(&painter, cx, cy, r * 0.58, HUMAN_OFFSET, 12.5, Color32::from_rgb(180, 200, 220));
             ring(0.64, 0.52, fg.gamma_multiply(0.7), 1.0);
         }
         if self.rings.heaven {
-            self.draw_plate(&painter, cx, cy, r * 0.44, 7.5, 12.5, Color32::from_rgb(230, 200, 170));
+            self.draw_plate(&painter, cx, cy, r * 0.44, HEAVEN_OFFSET, 12.5, Color32::from_rgb(230, 200, 170));
             ring(0.50, 0.38, fg.gamma_multiply(0.7), 1.0);
         }
 
         // Bagua ring.
         if self.rings.bagua {
-            let (dirs, names): (&[f32], &[&str]) = match self.bagua_mode {
-                BaguaMode::HouTian => (
-                    &[0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0],
-                    &["坎", "艮", "震", "巽", "离", "坤", "兑", "乾"],
-                ),
-                BaguaMode::XianTian => (
-                    &[0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0],
-                    &["坤", "震", "离", "兑", "乾", "巽", "坎", "艮"],
-                ),
+            let names: &[&str] = match self.bagua_mode {
+                BaguaMode::HouTian => &["坎", "艮", "震", "巽", "离", "坤", "兑", "乾"],
+                BaguaMode::XianTian => &["坤", "震", "离", "兑", "乾", "巽", "坎", "艮"],
             };
-            for (i, d) in dirs.iter().enumerate() {
-                let p = screen_pos(cx, cy, r * 0.30, *d, self.heading);
-                let gwx = gua_wuxing(names[i]);
+            for (i, name) in names.iter().enumerate() {
+                let d = i as f32 * BAGUA_STEP;
+                let p = screen_pos(cx, cy, r * 0.30, d, self.heading);
+                let gwx = gua_wuxing(name);
                 painter.text(
                     p,
                     Align2::CENTER_CENTER,
-                    format!("{} {}", names[i], gwx),
+                    format!("{} {}", name, gwx),
                     FontId::new(12.0, FontFamily::Proportional),
                     gua_color(gwx),
                 );
@@ -483,7 +505,7 @@ impl LuopanApp {
         color: Color32,
     ) {
         for (m, name) in MOUNTAINS.iter().enumerate() {
-            let deg = m as f32 * 15.0 + offset;
+            let deg = m as f32 * MOUNTAIN_STEP + offset;
             let p = screen_pos(cx, cy, radius, deg, self.heading);
             painter.text(
                 p,
@@ -546,6 +568,7 @@ impl LuopanApp {
         };
         row(ui, "度数", format!("{:.2}°", rd.heading), Color32::WHITE);
         row(ui, "地盘正针", format!("{}山", MOUNTAINS[m]), wuxing_color(WUXING[m]));
+        // Same pin as reading_for: tests/numeric/source_parse.py reads these two lets.
         let hm = ((normalize_deg(rd.heading + 7.5) / 15.0).floor() as usize) % 24;
         let tm = ((normalize_deg(rd.heading - 7.5 + 15.0) / 15.0).floor() as usize) % 24;
         row(ui, "人盘中针", format!("{}山", MOUNTAINS[hm]), Color32::from_rgb(180, 200, 220));
@@ -575,7 +598,7 @@ impl LuopanApp {
 
 fn rd_offset_label(rd: &Reading) -> String {
     let off = rd.offset;
-    if off.abs() * 2.0 <= 9.0 {
+    if off.abs() * 2.0 <= ZHENG_XIANG_DEG {
         format!("正向 ({:+.1}°)", off)
     } else {
         let neighbor = if off < 0.0 { rd.mountain.wrapping_sub(1) % 24 } else { (rd.mountain + 1) % 24 };
@@ -699,11 +722,16 @@ impl eframe::App for LuopanApp {
 
 fn main() -> eframe::Result {
     let mut screenshot = None;
+    let mut screenshot_ui = None;
     let args: Vec<String> = std::env::args().collect();
     let mut i = 1;
     while i < args.len() {
         if args[i] == "--screenshot" && i + 1 < args.len() {
             screenshot = Some(args[i + 1].clone());
+            i += 2;
+        } else if args[i] == "--screenshot-ui" && i + 1 < args.len() {
+            // Real egui window + deliverable PNG (needs a desktop session).
+            screenshot_ui = Some(args[i + 1].clone());
             i += 2;
         } else {
             i += 1;
@@ -725,6 +753,68 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "luopan",
         options,
-        Box::new(move |cc| Ok(Box::new(LuopanApp::new(cc, None)))),
+        Box::new(move |cc| Ok(Box::new(LuopanApp::new(cc, screenshot_ui)))),
     )
+}
+
+// ---------------------------------------------------------------------------
+// Round A pins: the generated ring scalars must stay equal to the literals that
+// `reading_for` / `reading_panel` still carry inline, and the读数 must not drift.
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod mechanics_pin {
+    use super::*;
+
+    #[test]
+    fn ring_scalars_match_reading_literals() {
+        assert_eq!(MOUNTAIN_STEP, 15.0);
+        assert_eq!(FENJIN_STEP, 3.0);
+        assert_eq!(DRAGON72_STEP, 5.0);
+        assert_eq!(DRAGON60_STEP, 6.0);
+        assert_eq!(DRAGON60_OFFSET, 1.5);
+        assert_eq!(HEXAGRAM64_STEP, 5.625);
+        assert_eq!(ZHENG_XIANG_DEG, 9.0);
+        assert_eq!(EARTH_OFFSET, 0.0);
+        assert_eq!(HUMAN_OFFSET, -7.5);
+        assert_eq!(HEAVEN_OFFSET, 7.5);
+        assert_eq!(BAGUA_STEP, 45.0);
+    }
+
+    #[test]
+    fn table_lengths() {
+        assert_eq!(MOUNTAINS.len(), 24);
+        assert_eq!(WUXING.len(), 24);
+        assert_eq!(YINYANG.len(), 24);
+        assert_eq!(HOUTIAN_GUA.len(), 24);
+        assert_eq!(XIANTIAN_GUA.len(), 24);
+        assert_eq!(JIAZI.len(), 60);
+        assert_eq!(NAYIN.len(), 60);
+        assert_eq!(GUA_WUXING.len(), 8);
+    }
+
+    #[test]
+    fn readings_pinned_at_boundaries() {
+        for (h, want) in [
+            (0.0, "子"),
+            (7.4, "子"),
+            (7.5, "癸"),
+            (10.0, "癸"),
+            (90.0, "卯"),
+            (180.0, "午"),
+            (270.0, "酉"),
+            (352.5, "子"),
+            (359.99, "子"),
+            (360.0, "子"),
+            (720.5, "子"),
+            (-0.01, "子"),
+        ] {
+            assert_eq!(MOUNTAINS[reading_for(h).mountain], want, "heading {h}");
+        }
+        let rd = reading_for(4.501);
+        assert_eq!(rd.fenjin_slot, 4);
+        assert_eq!(rd.dragon72_slot, 2);
+        assert_eq!(rd.sitting, 12);
+        assert_eq!(rd.offset > 4.5, true);
+    }
 }

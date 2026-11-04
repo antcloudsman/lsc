@@ -250,6 +250,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private static int plate(float h) {
+        // Numeric literal on purpose: tests/numeric/source_parse.py evaluates this
+        // expression; 轮 B moves it to CompassData.MOUNTAIN_STEP together with LC测试.
         float x = h % 360f;
         if (x < 0f) x += 360f;
         return ((int) Math.floor(x / 15f)) % 24;

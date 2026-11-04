@@ -7,7 +7,8 @@
 
 use crate::{
     borrow_branch, gua_wuxing, nayin_of, normalize_deg, reading_for, screen_pos, wuxing_color,
-    HOUTIAN_GUA, JIAZI, MOUNTAINS, WUXING, XIANTIAN_GUA, YINYANG,
+    BAGUA_STEP, DRAGON60_STEP, DRAGON72_STEP, FENJIN_STEP, HEAVEN_OFFSET, HEXAGRAM64_STEP,
+    HOUTIAN_GUA, HUMAN_OFFSET, JIAZI, MOUNTAIN_STEP, MOUNTAINS, WUXING, XIANTIAN_GUA, YINYANG,
 };
 
 type Rgb = (u8, u8, u8);
@@ -209,17 +210,17 @@ pub fn software_screenshot(path: &str) {
     }
 
     // 分金 (3°) and 龙 rings (5°/6°).
-    for d in (0..360).step_by(3) {
+    for d in (0..360).step_by(FENJIN_STEP as usize) {
         let p0 = screen_pos(cx, cy, r * 0.845, d as f32, heading);
         let p1 = screen_pos(cx, cy, r * 0.825, d as f32, heading);
         cv.line(p0.x as i32, p0.y as i32, p1.x as i32, p1.y as i32, (120, 100, 70));
     }
-    for d in (0..360).step_by(5) {
+    for d in (0..360).step_by(DRAGON72_STEP as usize) {
         let p0 = screen_pos(cx, cy, r * 0.805, d as f32, heading);
         let p1 = screen_pos(cx, cy, r * 0.785, d as f32, heading);
         cv.line(p0.x as i32, p0.y as i32, p1.x as i32, p1.y as i32, (110, 130, 90));
     }
-    for d in (0..360).step_by(6) {
+    for d in (0..360).step_by(DRAGON60_STEP as usize) {
         let p0 = screen_pos(cx, cy, r * 0.775, d as f32, heading);
         let p1 = screen_pos(cx, cy, r * 0.755, d as f32, heading);
         cv.line(p0.x as i32, p0.y as i32, p1.x as i32, p1.y as i32, (90, 110, 130));
@@ -227,7 +228,7 @@ pub fn software_screenshot(path: &str) {
 
     // 64 hexagrams (六十四卦) ring: 64 × 5.625° = 360°.
     for d in 0..64 {
-        let deg = d as f32 * 5.625;
+        let deg = d as f32 * HEXAGRAM64_STEP;
         let p0 = screen_pos(cx, cy, r * 0.745, deg, heading);
         let p1 = screen_pos(cx, cy, r * 0.725, deg, heading);
         cv.line(p0.x as i32, p0.y as i32, p1.x as i32, p1.y as i32, (150, 120, 150));
@@ -236,28 +237,28 @@ pub fn software_screenshot(path: &str) {
     // Three plates.
     if let Some(f) = &font {
         for (m, name) in MOUNTAINS.iter().enumerate() {
-            let deg = m as f32 * 15.0;
+            let deg = m as f32 * MOUNTAIN_STEP;
             let p = screen_pos(cx, cy, r * 0.715, deg, heading);
             cv.text_centered(p.x, p.y, name, 17.0, rgb(wuxing_color(WUXING[m])), f);
         }
         for (m, name) in MOUNTAINS.iter().enumerate() {
-            let deg = m as f32 * 15.0 - 7.5;
+            let deg = m as f32 * MOUNTAIN_STEP + HUMAN_OFFSET;
             let p = screen_pos(cx, cy, r * 0.52, deg, heading);
             cv.text_centered(p.x, p.y, name, 13.0, (180, 200, 220), f);
         }
         for (m, name) in MOUNTAINS.iter().enumerate() {
-            let deg = m as f32 * 15.0 + 7.5;
+            let deg = m as f32 * MOUNTAIN_STEP + HEAVEN_OFFSET;
             let p = screen_pos(cx, cy, r * 0.34, deg, heading);
             cv.text_centered(p.x, p.y, name, 13.0, (230, 200, 170), f);
         }
         // Bagua ring (后天).
-        let gua_dirs = [0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0];
         let gua_names = ["坎", "艮", "震", "巽", "离", "坤", "兑", "乾"];
-        for (i, d) in gua_dirs.iter().enumerate() {
-            let p = screen_pos(cx, cy, r * 0.18, *d, heading);
-            let gwx = gua_wuxing(gua_names[i]);
+        for (i, name) in gua_names.iter().enumerate() {
+            let d = i as f32 * BAGUA_STEP;
+            let p = screen_pos(cx, cy, r * 0.18, d, heading);
+            let gwx = gua_wuxing(name);
             let c = wuxing_color(gwx);
-            let label = format!("{}{}", gua_names[i], gwx);
+            let label = format!("{}{}", name, gwx);
             cv.text_centered(p.x, p.y, &label, 12.0, rgb(c), f);
         }
     }

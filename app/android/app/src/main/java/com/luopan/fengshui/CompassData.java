@@ -9,59 +9,91 @@ package com.luopan.fengshui;
  */
 public final class CompassData {
 
-    /** 24 mountains clockwise from 子 (north = 0°). */
+    // >>> BEGIN GENERATED (app/mechanics.json) >>>
+    // Source: app/mechanics.json (sha256: 984c5fb618634b0a1202908243acfa1dfbd3d1e4efa0b34df2a778e0d31f34ca). Regenerate: tools/mechanics/gen-mechanics.ps1
+    // Hand edits inside the markers are rejected by gen-mechanics.ps1 -Check.
     public static final String[] MOUNTAINS = {
-        "子","癸","丑","艮","寅","甲","卯","乙","辰","巽","巳","丙",
-        "午","丁","未","坤","申","庚","酉","辛","戌","乾","亥","壬"
+        "子", "癸", "丑", "艮", "寅", "甲",
+        "卯", "乙", "辰", "巽", "巳", "丙",
+        "午", "丁", "未", "坤", "申", "庚",
+        "酉", "辛", "戌", "乾", "亥", "壬"
     };
-
-    /** Five elements (五行) per mountain, aligned with MOUNTAINS. */
     public static final String[] WUXING = {
-        "水","水","土","土","木","木","木","木","土","木","火","火",
-        "火","火","土","土","金","金","金","金","土","金","水","水"
+        "水", "水", "土", "土", "木", "木",
+        "木", "木", "土", "木", "火", "火",
+        "火", "火", "土", "土", "金", "金",
+        "金", "金", "土", "金", "水", "水"
     };
-
-    /** Yin/yang (三元盘) per mountain. */
     public static final String[] YINYANG = {
-        "阴","阴","阴","阳","阳","阳","阴","阴","阴","阳","阳","阳",
-        "阴","阴","阴","阳","阳","阳","阴","阴","阴","阳","阳","阳"
+        "阴", "阴", "阴", "阳", "阳", "阳",
+        "阴", "阴", "阴", "阳", "阳", "阳",
+        "阴", "阴", "阴", "阳", "阳", "阳",
+        "阴", "阴", "阴", "阳", "阳", "阳"
     };
-
-    /** 后天八卦 per mountain. */
     public static final String[] HOUTIAN = {
-        "坎","坎","艮","艮","艮","震","震","震","巽","巽","巽","离",
-        "离","离","坤","坤","坤","兑","兑","兑","乾","乾","乾","坎"
+        "坎", "坎", "艮", "艮", "艮", "震",
+        "震", "震", "巽", "巽", "巽", "离",
+        "离", "离", "坤", "坤", "坤", "兑",
+        "兑", "兑", "乾", "乾", "乾", "坎"
     };
-
-    /** 先天八卦 per mountain. */
     public static final String[] XIANTIAN = {
-        "坤","坤","震","震","震","离","离","离","兑","兑","兑","乾",
-        "乾","乾","巽","巽","巽","坎","坎","坎","艮","艮","艮","坤"
+        "坤", "坤", "震", "震", "震", "离",
+        "离", "离", "兑", "兑", "兑", "乾",
+        "乾", "乾", "巽", "巽", "巽", "坎",
+        "坎", "坎", "艮", "艮", "艮", "坤"
     };
-
-    /** 60 Jiazi in order. */
     public static final String[] JIAZI = {
-        "甲子","乙丑","丙寅","丁卯","戊辰","己巳","庚午","辛未","壬申","癸酉",
-        "甲戌","乙亥","丙子","丁丑","戊寅","己卯","庚辰","辛巳","壬午","癸未",
-        "甲申","乙酉","丙戌","丁亥","戊子","己丑","庚寅","辛卯","壬辰","癸巳",
-        "甲午","乙未","丙申","丁酉","戊戌","己亥","庚子","辛丑","壬寅","癸卯",
-        "甲辰","乙巳","丙午","丁未","戊申","己酉","庚戌","辛亥","壬子","癸丑",
-        "甲寅","乙卯","丙辰","丁巳","戊午","己未","庚申","辛酉","壬戌","癸亥"
+        "甲子", "乙丑", "丙寅", "丁卯", "戊辰", "己巳", "庚午", "辛未", "壬申", "癸酉",
+        "甲戌", "乙亥", "丙子", "丁丑", "戊寅", "己卯", "庚辰", "辛巳", "壬午", "癸未",
+        "甲申", "乙酉", "丙戌", "丁亥", "戊子", "己丑", "庚寅", "辛卯", "壬辰", "癸巳",
+        "甲午", "乙未", "丙申", "丁酉", "戊戌", "己亥", "庚子", "辛丑", "壬寅", "癸卯",
+        "甲辰", "乙巳", "丙午", "丁未", "戊申", "己酉", "庚戌", "辛亥", "壬子", "癸丑",
+        "甲寅", "乙卯", "丙辰", "丁巳", "戊午", "己未", "庚申", "辛酉", "壬戌", "癸亥"
     };
-
-    /** 纳音五行 per 甲子. */
     public static final String[] NAYIN = {
-        "海中金","海中金","炉中火","炉中火","大林木","大林木","路旁土","路旁土","剑锋金","剑锋金",
-        "山头火","山头火","涧下水","涧下水","城头土","城头土","白蜡金","白蜡金","杨柳木","杨柳木",
-        "泉中水","泉中水","屋上土","屋上土","霹雳火","霹雳火","松柏木","松柏木","长流水","长流水",
-        "沙中金","沙中金","山下火","山下火","平地木","平地木","壁上土","壁上土","金箔金","金箔金",
-        "佛灯火","佛灯火","天河水","天河水","大驿土","大驿土","钗钏金","钗钏金","桑柘木","桑柘木",
-        "大溪水","大溪水","沙中土","沙中土","天上火","天上火","石榴木","石榴木","大海水","大海水"
+        "海中金", "海中金", "炉中火", "炉中火", "大林木", "大林木", "路旁土", "路旁土", "剑锋金", "剑锋金",
+        "山头火", "山头火", "涧下水", "涧下水", "城头土", "城头土", "白蜡金", "白蜡金", "杨柳木", "杨柳木",
+        "泉中水", "泉中水", "屋上土", "屋上土", "霹雳火", "霹雳火", "松柏木", "松柏木", "长流水", "长流水",
+        "沙中金", "沙中金", "山下火", "山下火", "平地木", "平地木", "壁上土", "壁上土", "金箔金", "金箔金",
+        "佛灯火", "佛灯火", "天河水", "天河水", "大驿土", "大驿土", "钗钏金", "钗钏金", "桑柘木", "桑柘木",
+        "大溪水", "大溪水", "沙中土", "沙中土", "天上火", "天上火", "石榴木", "石榴木", "大海水", "大海水"
     };
-
-    private static final String[] BRANCHES = {"子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"};
-    private static final String[] YANG_STEMS = {"甲","丙","戊","庚","壬"};
-    private static final String[] YIN_STEMS  = {"乙","丁","己","辛","癸"};
+    private static final String[] BRANCHES = {
+        "子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"
+    };
+    private static final String[] YANG_STEMS = {
+        "甲", "丙", "戊", "庚", "壬"
+    };
+    private static final String[] YIN_STEMS = {
+        "乙", "丁", "己", "辛", "癸"
+    };
+    public static final String[] COMPASS_TYPES = {
+        "二十四山(阴)", "常用罗盘", "三合罗盘(白)",
+        "三元罗盘(金)", "综合罗盘(白)"
+    };
+    public static final String[] READ_TYPES = {
+        "先天八卦_卦位 45°", "后天八卦_卦位 45°",
+        "先天八卦洛书数 45°", "地盘正针二十四山 15°",
+        "穿山七十二龙 5°", "地盘正针百二十分金 3°",
+        "透地平分六十龙 6°", "人盘中针二十四山 15°",
+        "天盘缝针二十四山 15°", "天盘缝针百二十分金 3°",
+        "先天方图六十四卦内卦 5.625°", "先天圆图六十四卦外卦 5.625°",
+        "六十甲配六十四卦五行 5.625°", "正兼向度数指标 3°"
+    };
+    // Ring scalars (values[] / rings[]).
+    public static final float HEXAGRAM64_DEG = 5.625f;
+    static final float MOUNTAIN_STEP = 15f;
+    static final float MOUNTAIN_HALF = 7.5f;
+    static final float EARTH_OFFSET = 0f;
+    static final float HUMAN_OFFSET = -7.5f;
+    static final float HEAVEN_OFFSET = 7.5f;
+    static final float FENJIN_STEP = 3f;
+    static final float DRAGON72_STEP = 5f;
+    static final float DRAGON60_STEP = 6f;
+    static final float DRAGON60_OFFSET = 1.5f;
+    static final float BAGUA_STEP = 45f;
+    static final float ZHENG_XIANG_DEG = 9f;
+    // <<< END GENERATED <<<
 
     public static final int WUXING_WATER = 0;
     public static final int WUXING_WOOD  = 1;
@@ -140,14 +172,14 @@ public final class CompassData {
         Reading(float heading) {
             this.heading = norm(heading);
             float h = this.heading;
-            int m = (int) Math.floor(norm(h + 7.5f) / 15f) % 24;
+            int m = (int) Math.floor(norm(h + MOUNTAIN_HALF) / MOUNTAIN_STEP) % 24;
             this.mountain = m;
-            float center = m * 15f;
+            float center = m * MOUNTAIN_STEP;
             this.offset = norm(h - center + 180f) - 180f;
-            float fromStart = norm(h - (center - 7.5f));
-            this.fenjinSlot = Math.min((int) Math.floor(fromStart / 3f), 4);
-            this.dragon72Slot = Math.min((int) Math.floor(fromStart / 5f), 2);
-            this.dragon60 = (int) Math.floor(((h - 1.5f + 360f) % 360f) / 6f) % 60;
+            float fromStart = norm(h - (center - MOUNTAIN_HALF));
+            this.fenjinSlot = Math.min((int) Math.floor(fromStart / FENJIN_STEP), 4);
+            this.dragon72Slot = Math.min((int) Math.floor(fromStart / DRAGON72_STEP), 2);
+            this.dragon60 = (int) Math.floor(((h - DRAGON60_OFFSET + 360f) % 360f) / DRAGON60_STEP) % 60;
             this.sitting = (m + 12) % 24;
 
             this.fenjin = wangxiang(borrowBranch(m), fenjinSlot);
@@ -157,7 +189,7 @@ public final class CompassData {
             this.dragon72Nayin = nayinOf(this.dragon72);
             this.dragon60Nayin = nayinOf(this.dragon60Name);
 
-            if (Math.abs(offset) * 2f <= 9f) {
+            if (Math.abs(offset) * 2f <= ZHENG_XIANG_DEG) {
                 this.jian = "正向";
             } else {
                 int n = offset < 0 ? (m + 23) % 24 : (m + 1) % 24;
@@ -186,20 +218,4 @@ public final class CompassData {
         "天干：甲乙木 丙丁火 庚辛金 壬癸水；地支：子亥水 寅卯木 巳午火 申酉金 辰戌丑未土。"
     };
 
-    /** 5 compass dials (from CommonCompassEnum, decompiled) — all free, no paywall. */
-    public static final String[] COMPASS_TYPES = {
-        "二十四山(阴)", "常用罗盘", "三合罗盘(白)", "三元罗盘(金)", "综合罗盘(白)"
-    };
-
-    /** 14 ring/reading types (from CompassReadTypeEnum, decompiled). */
-    public static final String[] READ_TYPES = {
-        "先天八卦_卦位 45°", "后天八卦_卦位 45°", "先天八卦洛书数 45°",
-        "地盘正针二十四山 15°", "穿山七十二龙 5°", "地盘正针百二十分金 3°",
-        "透地平分六十龙 6°", "人盘中针二十四山 15°", "天盘缝针二十四山 15°",
-        "天盘缝针百二十分金 3°", "先天方图六十四卦内卦 5.625°", "先天圆图六十四卦外卦 5.625°",
-        "六十甲配六十四卦五行 5.625°", "正兼向度数指标 3°"
-    };
-
-    /** Degrees per 64-hexagram division (360/64). */
-    public static final float HEXAGRAM64_DEG = 5.625f;
 }

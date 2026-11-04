@@ -154,19 +154,19 @@ public class CompassView extends View {
 
         // 分金 (3°) and 龙 (5°/6°) ticks + labels (detail rings; dial 0 = 二十四山(阴) hides them).
         if (dialType > 0) {
-        for (int d = 0; d < 360; d += 3) {
+        for (int d = 0; d < 360; d += (int) CompassData.FENJIN_STEP) {
             float[] p0 = pos(cx, cy, r * 0.845f, d, heading);
             float[] p1 = pos(cx, cy, r * 0.825f, d, heading);
             paint.setColor(Color.rgb(120, 100, 70));
             canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
         }
-        for (int d = 0; d < 360; d += 5) {
+        for (int d = 0; d < 360; d += (int) CompassData.DRAGON72_STEP) {
             float[] p0 = pos(cx, cy, r * 0.805f, d, heading);
             float[] p1 = pos(cx, cy, r * 0.785f, d, heading);
             paint.setColor(Color.rgb(110, 130, 90));
             canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
         }
-        for (int d = 0; d < 360; d += 6) {
+        for (int d = 0; d < 360; d += (int) CompassData.DRAGON60_STEP) {
             float[] p0 = pos(cx, cy, r * 0.775f, d, heading);
             float[] p1 = pos(cx, cy, r * 0.755f, d, heading);
             paint.setColor(Color.rgb(90, 110, 130));
@@ -188,18 +188,18 @@ public class CompassView extends View {
         // Three 24-mountain plates.
         textPaint.setTextSize(17f * density());
         for (int m = 0; m < 24; m++) {
-            float[] p = pos(cx, cy, r * 0.715f, m * 15f, heading);
+            float[] p = pos(cx, cy, r * 0.715f, m * CompassData.MOUNTAIN_STEP, heading);
             textPaint.setColor(wuxingColor(CompassData.WUXING[m]));
             drawText(canvas, CompassData.MOUNTAINS[m], p[0], p[1], textPaint);
         }
         textPaint.setTextSize(13f * density());
         for (int m = 0; m < 24; m++) {
-            float[] p = pos(cx, cy, r * 0.52f, m * 15f - 7.5f, heading);
+            float[] p = pos(cx, cy, r * 0.52f, m * CompassData.MOUNTAIN_STEP + CompassData.HUMAN_OFFSET, heading);
             textPaint.setColor(Color.rgb(180, 200, 220));
             drawText(canvas, CompassData.MOUNTAINS[m], p[0], p[1], textPaint);
         }
         for (int m = 0; m < 24; m++) {
-            float[] p = pos(cx, cy, r * 0.34f, m * 15f + 7.5f, heading);
+            float[] p = pos(cx, cy, r * 0.34f, m * CompassData.MOUNTAIN_STEP + CompassData.HEAVEN_OFFSET, heading);
             textPaint.setColor(Color.rgb(230, 200, 170));
             drawText(canvas, CompassData.MOUNTAINS[m], p[0], p[1], textPaint);
         }
@@ -208,7 +208,7 @@ public class CompassView extends View {
         String[] gua = {"坎", "艮", "震", "巽", "离", "坤", "兑", "乾"};
         textPaint.setTextSize(12f * density());
         for (int i = 0; i < 8; i++) {
-            float[] p = pos(cx, cy, r * 0.18f, i * 45f, heading);
+            float[] p = pos(cx, cy, r * 0.18f, i * CompassData.BAGUA_STEP, heading);
             textPaint.setColor(wuxingColor(guaWuxing(gua[i])));
             drawText(canvas, gua[i], p[0], p[1], textPaint);
         }

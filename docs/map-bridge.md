@@ -110,6 +110,32 @@ if (window.LCAndroid) LCAndroid.onEvent(JSON.stringify({type:"...", ...}));
 
 3D 标记渲染：页面内单个 DOM 红点，按 `vp` 矩阵逐帧投影到屏幕；`clearMarkers()` 一并清除并 `pick-clear`。
 
+### 5.2 JS 侧模拟桥与契约自测（客户端接桥前先对拍）
+
+页面暴露 `window.__LCBridgeTest`，用假 `LCAndroid` 抓事件、跑契约断言，**不干扰真桥**（`install()` 会暂存/恢复原 `LCAndroid`）：
+
+| 方法 | 说明 |
+|---|---|
+| `install()` / `uninstall()` | 安装/卸载假桥（`onEvent` 收 JSON 字符串存数组） |
+| `events()` / `last(type)` / `reset()` | 取事件、取最后一个某类型事件、清空 |
+| `assertContract()` | 对已抓事件跑断言，返回 `{pass, events, failures[]}` |
+| `selfTest()` | 需已进 3D 且 DEM 就绪：连点 2 次 → 校验单点覆盖 → `clearMarkers()` → 跑 `assertContract()`，打 `LCBRIDGE selfTest PASS/FAIL {…}` |
+
+断言项：JSON 可解析、`type` 为字符串、无 `NaN/Infinity`、`pick` 的 `lng∈[-180,180]`/`lat∈[-90,90]`/`heading∈[0,360)`/`src==="3d"`、`elev` 必须是**数字或 `null`**（缺失用 `null`，不用 0 当哨兵）、`pick-clear` 存在、两次点选后 DOM 里 `.pick3d` 只有 1 个（单点覆盖）。
+
+无头自测（本机 Chrome，无需真机）：
+
+```powershell
+cd app\android\app\src\main\assets
+python -m http.server 8765 --bind 127.0.0.1
+& 'C:\Program Files\Google\Chrome\Application\chrome.exe' --headless=new `
+  --enable-unsafe-swiftshader --enable-logging=stderr --v=0 `
+  --virtual-time-budget=22000 --window-size=400,800 `
+  "http://127.0.0.1:8765/map.html#selftest&bridge"
+```
+
+实测输出：`LCBRIDGE selfTest PASS {"pass":true,"events":3,"failures":[],"picks":2,"markersAfterTwoPicks":1}`（事件 = 2×pick + 1×pick-clear）。
+
 ## 6. 截图
 
 - 3D canvas 创建时已设 `preserveDrawingBuffer:true`，页面内 `window.__LC3D.screenshot()` 可返回 `toDataURL('image/png')`。

@@ -1159,6 +1159,100 @@ window.__LC3D = {
   }
 };
 
+/* ---- LCAndroid 契约模拟桥（供客户端轮 C 后对拍；不影响真桥） ---- */
+window.__LCBridgeTest = (function () {
+  var events = [], installed = false, prevBridge = null;
+
+  function capture(json) {
+    var evt = null, err = null;
+    try { evt = JSON.parse(json); } catch (e) { err = "bad-json"; }
+    events.push({ raw: json, evt: evt, err: err });
+  }
+
+  function install() {
+    if (installed) return;
+    prevBridge = window.LCAndroid;
+    window.LCAndroid = { onEvent: capture };
+    installed = true;
+  }
+
+  function uninstall() {
+    if (!installed) return;
+    if (prevBridge === undefined) { try { delete window.LCAndroid; } catch (e) { window.LCAndroid = undefined; } }
+    else window.LCAndroid = prevBridge;
+    installed = false;
+  }
+
+  function isNum(v) { return typeof v === "number" && isFinite(v); }
+
+  function assertContract() {
+    var fails = [];
+    if (!events.length) fails.push("no events captured");
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      if (e.err) { fails.push("event# " + i + " bad json"); continue; }
+      var ev = e.evt;
+      if (!ev || typeof ev !== "object") { fails.push("event# " + i + " not object"); continue; }
+      if (typeof ev.type !== "string") { fails.push("event# " + i + " missing type"); continue; }
+      if (/NaN|Infinity/.test(e.raw)) fails.push("event# " + i + " non-finite serialized");
+      if (ev.type === "pick") {
+        if (!isNum(ev.lng) || ev.lng < -180 || ev.lng > 180) fails.push("pick#" + i + " lng");
+        if (!isNum(ev.lat) || ev.lat < -90 || ev.lat > 90) fails.push("pick#" + i + " lat");
+        if (!(ev.elev === null || isNum(ev.elev))) fails.push("pick#" + i + " elev must be number|null (missing=elev null, not 0)");
+        if (!isNum(ev.heading) || ev.heading < 0 || ev.heading >= 360) fails.push("pick#" + i + " heading");
+        if (ev.src !== "3d") fails.push("pick#" + i + " src");
+      } else if (ev.type === "pick-clear") {
+        /* 约定只有 type */
+      } else {
+        fails.push("event# " + i + " unknown type " + ev.type);
+      }
+    }
+    return { pass: fails.length === 0, events: events.length, failures: fails };
+  }
+
+  function selfTest() {
+    install();
+    events = [];
+    if (mode !== "3d" || !patch || !patch.mesh) {
+      var r0 = { pass: false, failures: ["3d not ready"] };
+      console.log("LCBRIDGE selfTest FAIL " + JSON.stringify(r0));
+      uninstall();
+      return r0;
+    }
+    var w = glCanvas.clientWidth, h = glCanvas.clientHeight;
+    pick3D(w * 0.50, h * 0.62);
+    pick3D(w * 0.42, h * 0.55);
+    var markers = mapEl.querySelectorAll(".pick3d").length;
+    clearMarkers();                       /* 应发 pick-clear */
+    var r = assertContract();
+    if (markers !== 1) r.failures.push("marker count " + markers + " != 1 (单点覆盖式)");
+    var hasClear = false;
+    for (var i = 0; i < events.length; i++) {
+      if (events[i].evt && events[i].evt.type === "pick-clear") hasClear = true;
+    }
+    if (!hasClear) r.failures.push("no pick-clear after clearMarkers()");
+    r.picks = events.filter(function (e) { return e.evt && e.evt.type === "pick"; }).length;
+    r.markersAfterTwoPicks = markers;
+    if (r.picks < 1) r.failures.push("no pick event emitted");
+    r.pass = r.failures.length === 0;
+    console.log("LCBRIDGE selfTest " + (r.pass ? "PASS" : "FAIL") + " " + JSON.stringify(r));
+    uninstall();
+    return r;
+  }
+
+  return {
+    install: install, uninstall: uninstall,
+    reset: function () { events = []; },
+    events: function () { return events.slice(); },
+    last: function (type) {
+      for (var i = events.length - 1; i >= 0; i--) if (events[i].evt && events[i].evt.type === type) return events[i].evt;
+      return null;
+    },
+    assertContract: assertContract,
+    selfTest: selfTest
+  };
+})();
+
 /* ---- 启动 ---- */
 updateHud();
 render();
@@ -1168,6 +1262,7 @@ if (location.hash.indexOf("selftest") >= 0) {
   setTimeout(function () { setMode("3d"); }, 100);
   setTimeout(function () {
     if (mode !== "3d" || !patch) { console.log("LC3D selftest not-ready"); return; }
+    if (location.hash.indexOf("bridge") >= 0) { window.__LCBridgeTest.selfTest(); return; }
     var w = glCanvas.clientWidth, h = glCanvas.clientHeight;
     pick3D(w / 2, h * 0.62);
   }, 12000);

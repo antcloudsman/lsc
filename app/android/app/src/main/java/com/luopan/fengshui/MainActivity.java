@@ -34,6 +34,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final float[] rotationMatrix = new float[9];
     private final float[] orientation = new float[3];
     private long lastRingLog = 0L;
+    /** D-005: single 3D pick marker (overwritten on every pick, cleared by pick-clear). */
+    private MapMarker mapMarker;
 
     // P0-1 reading trust
     private android.widget.TextView statusView;
@@ -310,6 +312,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setGeolocationEnabled(true);
+        webView.addJavascriptInterface(new LCAndroid((type, marker) -> {
+            if ("pick".equals(type)) {
+                mapMarker = marker;
+            } else {
+                mapMarker = null;
+            }
+        }), "LCAndroid");
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new android.webkit.WebChromeClient() {
             @Override

@@ -49,6 +49,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private int sensorAccuracy = 3;
     private boolean receiverRegistered = false;
     private android.widget.Button declButton;
+    private android.widget.LinearLayout trustRow;
+    private boolean p01Enabled = true;
+    private int hiddenTapCount = 0;
+    private long lastHiddenTap = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         declination = prefs.getFloat("declination", 0f);
         trueNorth = prefs.getBoolean("true_north", false);
         calibrationDone = prefs.getBoolean("calibration_done", false);
+        p01Enabled = prefs.getBoolean("p0_1_enabled", true);
 
         compassTab = buildCompassTab();
         mapView = buildMapTab();
@@ -90,7 +95,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
-        if (!calibrationDone) showCalibrationGuide();
+        if (p01Enabled && !calibrationDone) showCalibrationGuide();
+        applyTrustState();
+    }
+
+    /** P0-1 RT-010: master switch — off means no status bar / trust row / 天池. */
+    private void applyTrustState() {
+        if (statusView != null) statusView.setVisibility(p01Enabled ? View.VISIBLE : View.GONE);
+        if (trustRow != null) trustRow.setVisibility(p01Enabled ? View.VISIBLE : View.GONE);
+        if (compassView != null) compassView.setTrustEnabled(p01Enabled);
+    }
+
+    /** P0-0 minimal entry: long-press the reading text 7 times opens the switch. */
+    private void showHiddenSwitch() {
+        final android.widget.CheckBox cb = new android.widget.CheckBox(this);
+        cb.setText("读数可信包（P0-1）");
+        cb.setChecked(p01Enabled);
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("隐藏开关")
+                .setView(cb)
+                .setPositiveButton("保存", (d, w) -> {
+                    p01Enabled = cb.isChecked();
+                    prefs.edit().putBoolean("p0_1_enabled", p01Enabled).apply();
+                    applyTrustState();
+                    updateReading();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void countHiddenTap() {
+        long now = System.currentTimeMillis();
+        if (now - lastHiddenTap > 1500) hiddenTapCount = 0;
+        lastHiddenTap = now;
+        if (++hiddenTapCount >= 7) {
+            hiddenTapCount = 0;
+            showHiddenSwitch();
+        }
     }
 
     /** P0-1 RT-009: first-entry calibration guide, 跳过 persists calibration_done. */
@@ -192,6 +233,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         readingView = new TextView(this);
         readingView.setId(R.id.reading_text);
+        readingView.setOnLongClickListener(v -> { countHiddenTap(); return true; });
         readingView.setTextColor(Color.rgb(235, 228, 215));
         readingView.setTextSize(14f);
         readingView.setPadding(24, 8, 24, 4);
@@ -237,6 +279,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         trust.addView(declButton, new android.widget.LinearLayout.LayoutParams(0,
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        trustRow = trust;
         panel.addView(trust);
 
         statusView = new android.widget.TextView(this);
@@ -251,6 +294,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         pp.gravity = android.view.Gravity.BOTTOM;
         frame.addView(panel, pp);
 
+        applyTrustState();
         return frame;
     }
 

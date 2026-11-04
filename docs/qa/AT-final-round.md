@@ -20,7 +20,12 @@ pwsh -File tests\at\run-final.ps1 -Apk <apk> -SkipTd016
 退出码：`0` 全 PASS / `1` 有 FAIL / `2` 有 BLOCKED 无 FAIL / `4` 环境（装包、前台、通道）不通过。
 证据落在 `checks\at-final\<时间戳>\`（`table.tsv`、`notes.md`、各 `ui-*.xml`、截图），**不入库**。
 
-## 本轮结果（17 PASS / 1 FAIL / 0 BLOCKED / 1 诊断）
+## 本轮结果（两跑：修前 17/1，修后 18/0）
+
+| 跑次 | 构建 | 结果 |
+|---|---|---|
+| 修前 | `b79a54a`，APK sha256 `C3A91120…B7B141` | 17 PASS / **1 FAIL**（P2-06-vis）/ 0 BLOCKED / 1 诊断 |
+| 修后 | `d286873`（merge `111c4fb`），APK sha256 `A94DE24A…F70F189B` | **18 PASS / 0 FAIL / 0 BLOCKED / 1 诊断，exit 0** |
 
 | 用例 | 结果 | 实测 | 判据来源 |
 |---|---|---|---|
@@ -31,14 +36,14 @@ pwsh -File tests\at\run-final.ps1 -Apk <apk> -SkipTd016
 | SW-006-off-2 | PASS | `p0_1_enabled=false` | 同上 |
 | SW-006-off-3 | PASS | 全关后读数 = 原始航向 0.00°（偏角不叠加） | AT-P0-1 RT-010 |
 | SW-006-off-3pix | 诊断 | 面板区 y1850–2500 diff **5.46%**（活地图污染，不作门禁） | 总监裁决：降为诊断 |
-| P2-07 | PASS | 智能读盘 14 行向/坐 **14/14** 逐字等于 `mechanics.json`（含滚动补拍） | AT-P0-2 P2-07 |
+| P2-07 | PASS | 智能读盘 14 行向/坐 **14/14**（剥离 U+200C 后逐字等于 `mechanics.json`，含滚动补拍） | AT-P0-2 P2-07 |
 | P2-08 | PASS | 顶部两行 `向北 94.0° 坐南 274.0°` / `坐酉山 向卯山` | AT-P0-2 P2-08 |
-| P2-01 | PASS | 点「截图」新增 `坐向酉向卯_20261105_053453.png`（2139063 B，1228×2376） | AT-P0-2 P2-01/03 |
-| P2-03 | PASS | 命名模式 `坐向<坐>向<向>_yyyyMMdd_HHmmss.png`；与 PRD「带山字」写法有差 → OBS-003 | AT-P0-2 P2-03 |
+| P2-01 | PASS | 点「截图」新增 `坐向酉向卯_20261105_054540.png`（2150066 B，1228×2376） | AT-P0-2 P2-01/03 |
+| P2-03 | PASS | 命名模式 `坐向<坐>向<向>_yyyyMMdd_HHmmss.png`（产品已定名：不带「山」字） | AT-P0-2 P2-03 |
 | P2-04 | PASS | PNG 无 `eXIf` 块（即无 EXIF/GPS 坐标） | AT-P0-2 P2-04 |
-| P2-05 | PASS | 分享抽屉打开；被分享文件 sha256 `3AA4FDE8…CBC3D4`（相册同一文件） | AT-P0-2 P2-05 |
-| P2-06 | PASS | DOM：`底图：天地图地形 · 审图号：未确认`；`map.html` 无 `GS(2026)1219` | AT-P0-2 P2-06（语义） |
-| P2-06-vis | **FAIL** | `#srcInfo` 设备像素 x560–1195 / y2293–2349 → 落在底部读数面板带内，**分享图上被盖住** | AT-P0-2 P2-06（可见性）→ BUG-005 |
+| P2-05 | PASS | 分享抽屉打开；被分享文件 sha256 `AB8C7821…`（相册同一文件） | AT-P0-2 P2-05 |
+| P2-06 | PASS | DOM：`底图：天地图地形 · 审图号：未确认`；`map.html` 无 `GS(2026)1219` | AT-P0-2 P2-06a（语义） |
+| P2-06-vis | **PASS（修后）** | 判图：面板上方条带 y1400–1850 最大金色像素行 **143 @ y1717**（修前构建同区域 54，门槛 100） | AT-P0-2 P2-06b（可见性）→ BUG-005 |
 | TD-016 | PASS | 3D 点选 5 次 → `LC3D pick` 5 条、`LC3D fps=60..61`、FATAL 0；手感人工 | AT-P0-4 TD-016 |
 | RT-011-numeric | PASS | `tests=86 failures=0 errors=0` → PASS | AT-P0-1 RT-011 |
 | RT-011-mechanics | PASS | `values=19 sourced=19 estimated=0` | 质量红线 |
@@ -46,8 +51,10 @@ pwsh -File tests\at\run-final.ps1 -Apk <apk> -SkipTd016
 
 ## 口径与已知边界
 
-- **P2-06 分两条**：语义（DOM 文案 + 禁第三方号）自动判；**可见性**按 `#srcInfo` 的 DOM 矩形换算设备像素，
-  与底部面板带（y≥1850）求交。两者分开记，避免「语义齐」掩掉「分享图上看不到」。
+- **P2-06 分两条**：语义（DOM 文案 + 禁第三方号）自动判；**可见性判图、不判 DOM**——
+  `111c4fb` 起客户端把「底图·审图号」画进图内、面板上缘之上，`#srcInfo` 仍在面板后面，
+  拿 DOM 矩形判会永远 FAIL。现判据：面板带上方条带（y1400–1850）里金色文字行 ≥100
+  （无角注旧构建同区域 54，有角注 143）。
 - **RT-005 的「当帧不刷新」不是缺陷**：注入模式下 `compassView.getHeading()` 是静态值，改偏角后
   需下一帧传感器才重算；真机连续传感器不会有这个空窗。脚本因此再注入一次后判读数。
 - **SW-006 ③ 面板像素 diff 只作诊断**：罗盘叠在活 WebView + 半透明面板上，实测 5.46% 波动与开关无关。

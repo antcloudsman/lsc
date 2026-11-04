@@ -202,6 +202,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             }
+            case "capture":
+                android.util.Log.d("LCDEBUG", "capture requested");
+                captureMap();
+                break;
+            case "declination": {
+                float v = it.getFloatExtra("value", 0f);
+                declination = SensorMath.clampDeclination(v);
+                prefs.edit().putFloat("declination", declination).apply();
+                if (declButton != null) {
+                    declButton.setText(String.format(java.util.Locale.US, "偏角%+.1f°", declination));
+                }
+                updateReading();
+                android.util.Log.d("LCDEBUG", "declination=" + declination);
+                break;
+            }
             case "reset":
                 injectedHeading = null;
                 injectedPitch = null;
@@ -466,6 +481,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 try (java.io.OutputStream os = getContentResolver().openOutputStream(uri)) {
                     bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os);
                 }
+                android.util.Log.d("LCCAP", "saved Pictures/LC/" + name + ".png");
                 shareShot(uri, name);
             } else {
                 java.io.File dir = new java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES), "LC");
@@ -477,6 +493,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 toast("已保存 " + out.getName());
             }
         } catch (Throwable t) {
+            android.util.Log.e("LCCAP", "save failed", t);
             toast("保存失败: " + t.getMessage());
         }
     }

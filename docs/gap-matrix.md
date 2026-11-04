@@ -60,10 +60,10 @@ java -cp ".inspect\unpack\apktool.jar;.inspect\tools" BaksmaliLauncher `
 | # | 模块 | 原版行为（证据） | 当前实现 | 状态 | 差距说明 | 建议任务 |
 |---|---|---|---|---|---|---|
 | B1 | 盘面清单 | `COMPASS_0` code=compass text=`二十四山(阴)` resId=`R$mipmap.compass` vip=false；`COMPASS_1` compass1/`常用罗盘`/compass1_min/false；`COMPASS_2` compass2/`三合罗盘(白)`/compass2_min/**true**；`COMPASS_3` compass3/`三元罗盘(金)`/compass3_min/**true**；`COMPASS_4` compass4/`综合罗盘(白)`/compass4_min/**true** | `CompassData.java:190-192` 只有 5 个名字字符串；无 artwork、无 code、无 resId | 缺失 | 名称 5 项一致；其余全缺。VIP 门槛按「去商业」原则**有意省略**（付费墙不实现，但盘面本身要保留） | 客户端：5 盘面 = 5 幅 artwork 切换（含 4 个 VIP 盘面免费开放） |
-| B2 | COMPASS_0 圈层内容 | `compass.png` 1080×1080 目视：360° 刻度（10° 分度、5° 小刻度）+ 24 山（阴）单圈 | `dialType=0` 时 `CompassView.java:156` 隐藏分金/龙层，`:178` 隐藏 64 卦 | 等价替代 | 重建「盘 0 = 少画几圈」，原版「盘 0 = 另一幅图」；单圈 24 山语义接近 | 随 B1 |
-| B3 | COMPASS_1 圈层内容 | `compass1.png` 2048² 目视：360° 刻度 + 24 山 + 分金/龙干支多层 + 后天八卦/洛书数 + 内层 24 山 + 中心指北针 | `dialType>0` 画分金/龙（`:155`） | 等价替代 | 层数/层级/字体全不同 | 随 B1 |
-| B4 | COMPASS_2 圈层内容 | `compass2.png` 2048² 目视：多层三合盘（360°/24山/干支龙/卦象/节气/28宿），未逐圈清点 | 无 | 缺失 | artwork 缺失 | 随 B1 |
-| B5 | COMPASS_3 圈层内容 | `compass3.png` 2045² 目视：三元盘（三元卦/天地人元/28宿/节气/先后天卦），未逐圈清点 | 无 | 缺失 | artwork 缺失 | 随 B1 |
+| B2 | COMPASS_0 圈层内容 | `compass.png` 1080×1080，由外向内 2 圈：360° 刻度（10° 主刻度+小刻度）→ 24 山（阴）单圈 → 中心圆 | `dialType=0` 时 `CompassView.java:156` 隐藏分金/龙层，`:178` 隐藏 64 卦 | 等价替代 | 重建「盘 0 = 少画几圈」，原版「盘 0 = 另一幅图」；圈数 2 vs 重建 3+ | 随 B1 |
+| B3 | COMPASS_1 圈层内容 | `compass1.png` 2048²，由外向内约 9 圈：360° 刻度 → 24 山 → 七十二/六十龙干支（金色区块）→ 百二十分金（五子/三子/七子…）→ 后天八卦+洛书数 → 内层 24 山 → 中心指北针 | `dialType>0` 画分金/龙（`:155`） | 等价替代 | 层数（9）与层级次序均不同 | 随 B1 |
+| B4 | COMPASS_2 圈层内容 | `compass2.png` 2048²，12 点钟方向条带逐圈清点（`.inspect\derived\dial_strips\compass2_top.png`）：360° 刻度 → 28宿（十六/虚/九…）→ 纳音五行色带 → 壬子紫带（七十二龙正/空亡）→ 分金五子（丙子/正子/五子/三子/七子）+五行色 → 二十四山（子/癸，带火土）→ 纳音色带 → 六十龙（甲子/丙子/庚子/壬子）→ 壬子癸紫带（三盘 24 山）→ 申巳艮（八卦）→ 乾巳巽 → 后天卦+卦符 → 中心指北针；**约 13 圈** | 无 | 缺失 | artwork 缺失；13 圈 vs 重建 7 圈 | 随 B1 |
+| B5 | COMPASS_3 圈层内容 | `compass3.png` 2045²，条带逐圈清点（`dial_strips\compass3_top.png`）：360° 刻度 → 江东/江西·天元/地元/人元 → 卦符 → 九星（贪/巨/禄/文/廉/武/破）→ 洛书数带 → 玄空数带 → 64卦名（同/履/乾/小畜/孚/家…）→ 数字带 → 卦符 → 神煞（破/劫/刑/賓/客/輔/庫/正/天）→ 数字/方位 → 节气+五行（一水/立春/大寒/小）→ 三盘 24 山（壬/子/癸，天·地·人）→ 神煞（玉印/劫煞/華蓋/直符/地煞）→ 后天八卦+卦符 → 中心指北针；**约 17 圈** | 无 | 缺失 | artwork 缺失；三元/九星/神煞体系完全未实现 | 随 B1 |
 | B6 | COMPASS_4 圈层内容 | `compass4.png` 2048² 目视确认（由外向内）：360°刻度 → 28宿 → 八煞/劫煞 → 64卦+九星（贪狼/巨门/禄存/文曲/廉贞/武曲/破军）→ 先天八卦 → 后天八卦 → 二十四山（三盘并排）→ 百二十分金 → 穿山七十二龙 → 透地六十龙/纳音 → 中心指向罗盘；约 20 圈（清点行数 ≥18） | 无 | 缺失 | artwork 缺失；且实测该盘圈层数与"综合盘"名称相符，远超重建的 7 圈 | 同 B1 |
 | B7 | 盘面↔读数层映射 | 全 dex 内 `CommonCompassEnum.getResId()` 仅 `CompassToolsKt:3716` 取用（背景图）；`getFaceText/getBackText` 仅 `ui/compose/W$a$b/c/i`（读数面板）调用 | 无「读数面板」概念；读数是一行文本 | 缺失 | 原版读数面板按选中的 `CompassReadTypeEnum` 列 向/坐；重建把 14 类压成一行拼接 | **P0**：客户端加读数面板（14 类可选，向/坐分行） |
 | B8 | VIP 盘面/圈层门槛 | TYPE_4..14 `isVip=true`（13/14 类），COMPASS_2..4 vip=true | 全部免费（`CompassData.java:189` 注释「all free, no paywall」） | 有意省略 | 按章程「去商业」：付费墙不做，功能全开 | 无 |
@@ -137,7 +137,7 @@ java -cp ".inspect\unpack\apktool.jar;.inspect\tools" BaksmaliLauncher `
 
 ## I. 本轮「新证实结论」清单（类/方法/地址 → 建议改动）
 
-1. `CompassReadTypeEnum.getTextList()`（`mem_smali/.../CompassReadTypeEnum.smali` 630-7094，packed-switch key 1..14 → 各 `const-string` 块）**14 张表 780 条全部还原** → 写入 `app/mechanics.json` `rings[].labels`；建议客户端轮 B 以表替代推导（P0-2）。
+1. `CompassReadTypeEnum.getTextList()`（`mem_smali/.../CompassReadTypeEnum.smali` 630-7094，packed-switch key 1..14 → 各 `const-string` 块）**14 张表 780 条全部还原**，且每条都带**逐条指令地址**（`.inspect\derived\ring_label_addrs.json`：`{i, text, code_off, smali_line}`，`code_off` 为 dex code-unit 偏移，与 packed-switch 载荷同一坐标系）→ 写入 `app/mechanics.json` `rings[].labels`；建议客户端轮 B2 以表替代推导（P0-2）。
 2. `CompassReadTypeEnum.<init>` `iput v4->offsetDegrees; iput v5->intervalDegrees` → 证实 `MECHANICS.md` 表头（第4参 offset、第5参 interval），纠正「offset/interval 谁在前」的含糊（文档级，无代码影响）。
 3. TYPE_8/TYPE_9 `offsetDegrees=0.0f`（`const/4`）+ labels 旋转 → **人盘/天盘的答案**：不是 offset，是表旋转；等价值 `人盘=(floor(h/15)+1)%24`、`天盘=floor(h/15)%24`（MOUNTAINS 子=0）。→ P0-1。
 4. `getFaceText(F)` 用 `float-to-int`（截断）而非 `Math.floor` → 在 `h∈[0,360)`、`offset<=22.5` 下两者等价；但实现若允许负 heading 必须保留 `+360 后再取模` 的顺序（`CompassData` 已符合）。

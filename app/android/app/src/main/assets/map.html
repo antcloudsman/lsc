@@ -7,7 +7,7 @@
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; background:#181410; overflow:hidden;
     font-family:sans-serif; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; }
-  #map { position:absolute; inset:0; overflow:hidden; }
+  #map { position:absolute; inset:0; overflow:hidden; touch-action:none; }
   #gl { position:absolute; inset:0; width:100%; height:100%; display:none; }
   .tile { position:absolute; user-select:none; -webkit-user-drag:none; pointer-events:none; }
   #controls { position:absolute; left:10px; top:10px; z-index:10; }
@@ -30,7 +30,8 @@
   #fsExit { position:fixed; right:10px; bottom:70px; z-index:30; display:none; padding:9px 14px;
     background:#201a14e6; color:#dcbe82; border:1px solid #5a4a30; border-radius:8px; font-size:14px; }
   #srcInfo { position:absolute; right:10px; bottom:8px; z-index:9; color:#968268; font-size:11px;
-    background:#201a14cc; padding:2px 6px; border-radius:5px; }
+    background:#201a14cc; padding:2px 6px; border-radius:5px; pointer-events:none; }
+  #hint, #hud, #heading-label, #srcInfo { pointer-events:none; }
   #srcPanel { position:absolute; inset:0; background:#00000099; z-index:20; display:none; }
   #srcPanel .box { position:absolute; left:10px; right:10px; top:70px; max-height:72%; overflow:auto;
     background:#201a14f5; border:1px solid #5a4a30; border-radius:10px; padding:10px; }
@@ -69,7 +70,7 @@
 </div>
 <div id="hud"></div>
 <button id="fsExit" onclick="toggleFullScreen()">退出全屏</button>
-<div id="srcInfo">底图：天地图地形 · 审图号：未确认</div>
+<div id="srcInfo">数据来自天地图地形（等价替代原版世纪空间）· 审图号：未确认</div>
 <div id="srcPanel"><div class="box"><h3>底图源</h3>
   <div class="srchint">原版 12 源；无 key 的置灰（D-006），审图号须按源官方核对</div>
   <div id="srcBox"></div>
@@ -112,6 +113,10 @@ var drape = "img";             // 3D 贴面层（D-005：默认影像；ter 仍�
 var pick = null;               // 3D 立向点 {lng,lat,elev,world,heading}
 var pickEl = null;
 var lastVP = null, lastD = 0, lastR = 0;
+/* K-01：单页 UI 模式。full=现状（保留 #controls 等，供无头 AT/回退）；
+ * map=原生左/右工具列接管，隐藏 map 自带 chrome，地图仍可拖动缩放；
+ * compass=在 map 基础上再隐藏 #needle（罗盘浮层自绘准星/北针）。 */
+var uiMode = "full";
 
 var mapEl = document.getElementById("map");
 var glCanvas = document.getElementById("gl");
@@ -202,7 +207,7 @@ function setMode(m) {
   btn.className = (mode === "3d") ? "active" : "";
   btn.textContent = (mode === "3d") ? "返回 2D" : "3D 地形";
   document.getElementById("pitchWrap").style.display = (mode === "3d") ? "block" : "none";
-  hudEl.style.display = (mode === "3d") ? "block" : "none";
+  hudEl.style.display = (mode === "3d" && uiMode === "full") ? "block" : "none";
 
   if (mode === "3d") {
     /* 大陆尺度下真高程起伏相对视距过小，进入 3D 时至少落到 z9（见 docs/map-bridge.md） */
@@ -267,10 +272,10 @@ function zoomOut() { zoom = Math.max(2, zoom - 1); if (mode === "3d") ensurePatc
 var fullScreen = false;
 function toggleFullScreen() {
   fullScreen = !fullScreen;
-  document.getElementById("controls").style.display = fullScreen ? "none" : "";
-  document.getElementById("hint").style.display = fullScreen ? "none" : "";
-  document.getElementById("srcInfo").style.display = fullScreen ? "none" : "";
-  document.getElementById("fsExit").style.display = fullScreen ? "block" : "none";
+  document.getElementById("controls").style.display = (fullScreen || uiMode !== "full") ? "none" : "";
+  document.getElementById("hint").style.display = (fullScreen || uiMode !== "full") ? "none" : "";
+  document.getElementById("srcInfo").style.display = (fullScreen || uiMode !== "full") ? "none" : "";
+  document.getElementById("fsExit").style.display = (fullScreen && uiMode === "full") ? "block" : "none";
   try {
     var fr = document.getElementById("fsExit").getBoundingClientRect();
     console.log("LC3D fsExit " + Math.round(fr.left) + "," + Math.round(fr.top) + " " +
@@ -328,12 +333,56 @@ function selectSource(i) {
   closeSources();
 }
 
+function attributionText(s) {
+  s = s || { name: "天地图地形", review: "未确认" };
+  return "数据来自" + s.name + "（等价替代原版世纪空间）· 审图号：" + (s.review || "未确认");
+}
+
+/* K-01：角注由地图提供数据、原生底部栏负责呈现；不得照抄原版审图号（与底图服务商绑定）。 */
+function getAttribution() {
+  var i = sourceOfBase(base);
+  if (i < 0) i = srcIndex;
+  var s = MAP_SOURCES[i] || { name: "天地图地形", review: "未确认" };
+  return {
+    source: s.name,
+    review: s.review || "未确认",
+    original: "世纪空间",
+    equivalent: true,
+    text: attributionText(s)
+  };
+}
+
 function updateSrcInfo() {
   var i = sourceOfBase(base);
   if (i >= 0) srcIndex = i;
   var s = MAP_SOURCES[srcIndex] || { name: "天地图地形", review: "未确认" };
   var el = document.getElementById("srcInfo");
-  if (el) el.textContent = "底图：" + s.name + " · 审图号：" + (s.review || "未确认");
+  if (el) el.textContent = attributionText(s);
+}
+
+/* K-01：单页 UI 模式。只动 map 自带 chrome，不动瓦片/相机/桥。 */
+function applyNeedleVisibility() {
+  var el = document.getElementById("needle");
+  if (!el) return;
+  el.style.display = (needleOn && uiMode !== "compass") ? "" : "none";
+}
+
+function setUiMode(m) {
+  uiMode = (m === "map" || m === "compass") ? m : "full";
+  var full = (uiMode === "full");
+  var c = document.getElementById("controls");
+  if (c) c.style.display = full ? "" : "none";
+  var h = document.getElementById("hint");
+  if (h) h.style.display = full ? "" : "none";
+  var lbl = document.getElementById("heading-label");
+  if (lbl) lbl.style.display = full ? "" : "none";
+  var si = document.getElementById("srcInfo");
+  if (si) si.style.display = full ? "" : "none";
+  var fx = document.getElementById("fsExit");
+  if (fx) fx.style.display = (full && fullScreen) ? "block" : "none";
+  applyNeedleVisibility();
+  updateHud();
+  return uiMode;
 }
 
 /* ---------------- 罗盘坐向指针 ---------------- */
@@ -355,9 +404,9 @@ function setHeading(deg) {
 /* ---- 指针开关 / 坐南朝北 / 等高线 / 贴地 ---- */
 function toggleNeedle() {
   needleOn = !needleOn;
-  var el = document.getElementById("needle");
-  if (el) el.style.display = needleOn ? "" : "none";
-  document.getElementById("btn_needle").className = needleOn ? "active" : "";
+  applyNeedleVisibility();
+  var b = document.getElementById("btn_needle");
+  if (b) b.className = needleOn ? "active" : "";
 }
 
 function applySit() {
@@ -1293,11 +1342,11 @@ function render3D() {
 /* ---- HUD ---- */
 function setHud(t) {
   hudEl.textContent = t;
-  hudEl.style.display = (mode === "3d") ? "block" : "none";
+  hudEl.style.display = (mode === "3d" && uiMode === "full") ? "block" : "none";
 }
 
 function updateHud() {
-  if (mode !== "3d") { hudEl.style.display = "none"; return; }
+  if (uiMode !== "full" || mode !== "3d") { hudEl.style.display = "none"; return; }
   hudEl.style.display = "block";
   if (!patch || !patch.mesh) { hudEl.textContent = "DEM 加载中…"; return; }
   hudEl.textContent =
@@ -1339,6 +1388,8 @@ function getState() {
     sitMode: sitMode, sitNorth: sitMode !== 0,
     contour: contourOn, ground: groundMode, needle: needleOn,
     base: base, drape: drape,
+    uiMode: uiMode,
+    attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
   };
 }
@@ -1354,6 +1405,8 @@ try {
 window.__LC3D = {
   setView: debugSetView,
   setMode: setMode,
+  setUiMode: setUiMode,
+  attribution: getAttribution,
   state: getState,
   fps: getFps,
   screenshot: function () {
@@ -1459,19 +1512,26 @@ window.__LCBridgeTest = (function () {
 updateHud();
 updateSrcInfo();
 render();
+applyUiModeHash(location.hash);
 
 /* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
- * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass
  * 页面初始化与 hashchange 都会应用，所以客户端一次 `loadUrl(...#in3d&sit)` 即可生效
  * （同文档导航只改 hash、不触发 onload 的情况也覆盖）。 */
 function hashHas(h, name) {
   return new RegExp("(^#|&)" + name + "(&|=|$)").test(h || "");
 }
 
+function applyUiModeHash(h) {
+  var m = (h || "").match(/[&#]uimode=(full|map|compass)/);
+  if (m) setUiMode(m[1]);
+}
+
 function applyIn3D(hash) {
   var h = hash || location.hash || "";
   setTimeout(function () {
     if (!hashHas(h, "in3d")) return;
+    applyUiModeHash(h);
     var mlat = h.match(/lat=(-?[\d.]+)/), mlng = h.match(/lng=(-?[\d.]+)/);
     var mz = h.match(/[&#]z=(\d+)/), mp = h.match(/pitch=(\d+)/), mb = h.match(/bearing=(-?\d+)/);
     if (mode !== "3d") setMode("3d");
@@ -1500,6 +1560,7 @@ function applyIn3D(hash) {
 }
 if (hashHas(location.hash, "in3d")) applyIn3D();
 window.addEventListener("hashchange", function () {
+  applyUiModeHash(location.hash);
   if (hashHas(location.hash, "in3d")) applyIn3D(location.hash);
 });
 
@@ -1546,7 +1607,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps"];
+    "getState", "getFps", "setUiMode", "getAttribution"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

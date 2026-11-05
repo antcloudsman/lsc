@@ -231,3 +231,48 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 - 双指缩放。
 - 截图链路修复（PixelCopy / toDataURL 回传），归口待技术总监定。
 - DEM 境外源是否换国内源（产品已列为待拍板项），换源只需改 `TERRARIUM` 常量与解码函数。
+
+## 10. K-01 单页 / 罗盘浮层增补（2026-11-05）
+
+> 背景：原版首页取证见 `docs/evidence/original-apk/README.md`（真机 1228×2700 / density 540）。原版**没有底部导航、没有 Tab**：首页＝全屏地图＋左列 8 工具＋右列 10 工具；点左列「罗盘」是**同一页面**的半透明浮层，不是第二个页面、也不是第二个 WebView。本增补只定义地图页与原生壳的接口；布局本身归客户端。
+
+### 10.1 职责边界
+
+- `map.html`：地图层（瓦片/3D）、相机、坐向数据、角注**文本**；`full` 模式保留自带控件，供无头 AT 与回退。
+- 原生壳（`MainActivity`/`CompassView`）：单页布局、左/右工具列、罗盘圆盘与透明度、圆外触摸透传、底部工具条、角注**渲染**。
+- 罗盘浮层是自绘，`uiautomator` 只能拿到 1 个原生节点；浮层几何只能由截图测量，不从 dump 取。
+
+### 10.2 新增接口（已挂 `window`，页面不重载）
+
+| 方法 | 参数 | 行为 |
+|---|---|---|
+| `setUiMode(mode)` | `'full'\|'map'\|'compass'` | `full`=现状（保留 `#controls` 等，无头 AT/回退）；`map`=隐藏 `#controls/#hint/#heading-label/#srcInfo/#fsExit/#hud`，保留瓦片/canvas 与 `#needle`，地图可拖动缩放；`compass`=在 `map` 基础上再隐藏 `#needle`（罗盘浮层自绘准星/北针）。返回实际模式。 |
+| `getAttribution()` | — | 返回 `{source, review, original:"世纪空间", equivalent:true, text}`；`text` 形如「数据来自天地图地形（等价替代原版世纪空间）· 审图号：未确认」。 |
+| `getState().uiMode` | — | 当前模式，供 AT 断言。 |
+| hash `&uimode=full\|map\|compass` | — | 启动与 `hashchange` 应用，供无头截图/复现。 |
+
+`window.__LC3D` 同步增加 `setUiMode`、`attribution` 两个别名。
+
+### 10.3 罗盘模式三件事的验收
+
+1. **半透明透出**：`map`/`compass` 模式下 map 隐藏全部自带 chrome（`#controls/#hint/#heading-label/#needle/#srcInfo/#fsExit/#hud`），不画任何遮罩，只留瓦片/canvas；圆盘 face alpha 由 `CompassView` 按 `orig-06-read.png` 实测（原版能透出地图纹理/道路）。验收：罗盘模式截图中心区域可辨认底图纹理；`#controls` 的 `display==="none"`。
+2. **仍可拖动缩放**：`#controls` 不占位、文本层 `pointer-events:none`、`#map{touch-action:none}`；`CompassView` 圆盘**外**的触摸必须透传回 WebView（客户端只消费圆内）。验收：圆外 50px 拖动后 `getState().lng/lat` 变化；`zoomIn()/zoomOut()` 生效；一次拖动不触发 `pick`。
+3. **审图号/数据来源**：`getAttribution().text` 必须是「数据来自X（等价替代原版世纪空间）· 审图号：未确认」；**禁止**出现原版 `GS(2026)1219`（该号与世纪空间绑定，LC 用天地图属等价替代，不得照抄）。原生底部栏用该 `text` 渲染；`#srcInfo` 在 `map/compass` 隐藏但 `textContent` 保留，`captureMap()` 的角注合成仍可读。
+
+### 10.4 调用时序（客户端只需两处）
+
+- `onPageFinished` → `setUiMode('map')`；
+- 点「罗盘」→ `setUiMode('compass')` + `CompassView.VISIBLE`；点「隐藏」/返回 → `setUiMode('map')` + `CompassView.GONE`。
+- 3D/等高线/±/定位 → 现有 `toggle3D()/toggleContour()/zoomIn()/zoomOut()/locate()`；不重载页面，始终同一 WebView。
+
+### 10.5 不变项与副作用
+
+- `setHeading/setSitFace/setBase/setMode/toggle3D/setPitch/rotateBearing/setView/zoomIn/zoomOut/locate/clearMarkers/getState/getFps` 语义不变。
+- `#srcInfo` 文案格式从「底图：X · 审图号：Y」改为「数据来自X（等价替代原版世纪空间）· 审图号：Y」；`MainActivity.captureMap()` 读 `textContent`，不受 `display:none` 影响。
+- `map/compass` 模式下 `#hud` 隐藏：D-009 要求的「垂直放大 2.5× + 贴面类型」需由原生 3D 态在合适位置显示，不在 WebView 内重复。
+- 双 WebView 删除后，`setHeading/setSitFace` 只推一个实例（客户端改）。
+
+### 10.6 验证入口
+
+- 无头：`tools/map/run_at_p04.ps1` 仍跑 TD-001…TD-015；`setUiMode/getAttribution` 已加入 TD-015 的 window API 列表（现 16 项，AT 文档的「14 个方法」需测试侧同步）。
+- 截图：`map.html#in3d&uimode=compass&lat=40.02&lng=115.45&z=12`（或 `&uimode=map`）。

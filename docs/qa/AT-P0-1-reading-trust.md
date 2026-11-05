@@ -47,6 +47,25 @@ adb -s $DEV pull /sdcard/shot.png .\shot.png
 
 > 执行器（LC测试 已落）：`pwsh -File tests\at\run-at.ps1 -Suite P0-1`，缺前置 exit 2。
 
+### 1.1 B-02 验收：release 包必须无调试桥（S2 的负向用例）
+
+S2 的 debug bridge 只在 `FLAG_DEBUGGABLE` 包内注册（`MainActivity.registerDebugBridge()` 首行门槛）。release 包上同一帧广播必须**零输出**——既没有 `bridge registered`，也没有 `LCJS`。步骤：
+
+```powershell
+# 1) 装 release 包（非 debuggable）
+adb -s $DEV install -r .\app-release.apk
+adb -s $DEV shell dumpsys package $PKG | Select-String 'flags='   # 期望：无 DEBUGGABLE
+adb -s $DEV logcat -c
+# 2) 发 heading 与 js 各一帧
+adb -s $DEV shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value 94.0
+adb -s $DEV shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value "1+1"
+Start-Sleep -Milliseconds 500
+# 3) 读日志：期望为空（PASS）
+adb -s $DEV logcat -d -s LCDEBUG LCJS
+```
+
+判定：**PASS** = 上述 logcat 无任何 `bridge registered` / `LCJS` 行，且界面读数不被 94.0 冻结；**FAIL** = 出现任一 `LCDEBUG`/`LCJS` 行（说明 release 注册了桥）。对照组：同一命令在 debug 包上必须打印 `bridge registered sdk=... action=com.luopan.fengshui.DEBUG`，否则是门槛写反了。
+
 **参考读数（JVM 真实现，不手算分金/龙）**：
 
 ```powershell

@@ -232,11 +232,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void registerDebugBridge() {
+        // B-02: 只在 debuggable 包内注册。release 包经 FLAG_DEBUGGABLE 直接返回，调试广播接口不可达。
+        if (!isDebuggable()) return;
         if (receiverRegistered) return;
         try {
             debugBridge = new DebugBridge(this::handleDebugCommand);
             android.content.IntentFilter f = new android.content.IntentFilter(DebugBridge.ACTION);
             if (android.os.Build.VERSION.SDK_INT >= 33) {
+                // 保留 RECEIVER_EXPORTED 是刻意的：AT 依赖 `adb shell am broadcast`，非导出收不到 shell 广播。
+                // 安全边界是上一行的 isDebuggable() 门槛（release 不注册），不是导出标志。
                 registerReceiver(debugBridge, f, android.content.Context.RECEIVER_EXPORTED);
             } else {
                 registerReceiver(debugBridge, f);

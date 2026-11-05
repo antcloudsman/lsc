@@ -694,10 +694,12 @@ if (-not $SkipTd016) {
 
 # ---------- 8. RT-011：数值门禁（静态，不占机）----------
 $numeric = & python (Join-Path $repo 'tests\numeric\run_all.py') 2>&1
+$numericText = ($numeric -join "`n")
 $numericTail = ($numeric | Select-Object -Last 6) -join ' | '
-$numericOk = ($numeric -join "`n") -match 'failures=0' -and ($numeric -join "`n") -match 'PASS'
+# F-01: 跳过不算绿——必须 failures=0、skipped=0、且末行 RESULT: PASS 三件同时成立。
+$numericOk = ($numericText -match 'failures=0') -and ($numericText -match 'skipped=0') -and ($numericText -match 'RESULT: PASS')
 Log "RT-011 numeric: $numericTail"
-Assert3 'RT-011-numeric' $(if ($numericOk) { 'PASS' } else { 'FAIL' }) 'run_all.py 全 PASS（failures=0）' $numericTail (Join-Path $OutDir 'numeric.txt')
+Assert3 'RT-011-numeric' $(if ($numericOk) { 'PASS' } else { 'FAIL' }) 'run_all.py 全 PASS（failures=0、skipped=0）' $numericTail (Join-Path $OutDir 'numeric.txt')
 $numeric -join "`n" | Set-Content -Path (Join-Path $OutDir 'numeric.txt') -Encoding UTF8
 
 $mechScript = Join-Path $repo 'tests\numeric\tools\check_mechanics.py'

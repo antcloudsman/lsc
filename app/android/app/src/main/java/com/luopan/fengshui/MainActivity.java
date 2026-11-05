@@ -60,6 +60,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double jumpLng = Double.NaN;
     /** 地图页是否已加载完（决定 setView 立即调还是等 onPageFinished）。 */
     private boolean mapPageReady = false;
+    /** 冷启时地图未就绪的 uiMode 目标，onPageFinished 后补发（见 applyMapUiMode）。 */
+    private String pendingUiMode;
 
     /** F-04 路网：原版 MapManager.showRoad 默认 true；状态持久化在 MapManager prefs。 */
     private boolean roadNetOn = true;
@@ -763,6 +765,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     // ---------------- F-17（LC 自建，非 1:1）：罗盘显示 ----------------
 
+    /**
+     * 地图侧 uiMode 下发（compass / map）。
+     *
+     * 冷启时 map.html 还没 load 完，`js()` 里的 evaluateJavascript 会被 try/catch 静默吞掉；
+     * 原实现靠 onPageFinished 重放一次，这里再补一个 pendingUiMode：未就绪时先记下，
+     * 页面就绪后再发，避免「浮层已开、地图仍停在 full 态」的不同步。
+     */
+    private void applyMapUiMode(String mode) {
+        if (compassMapView == null) return;
+        if (!mapPageReady) {
+            pendingUiMode = mode;
+            android.util.Log.d("LCCOMPASS", "uiMode deferred: " + mode + " (map not ready)");
+            return;
+        }
+        pendingUiMode = null;
+        android.util.Log.d("LCCOMPASS", "uiMode -> " + mode);
+        js("setUiMode('" + mode + "')");
+    }
+
     /** 应用落盘值；flag 关闭时回退默认（100% / 天支线关），不出现任何控件。 */
     private void applyCompassDisplay() {
         if (compassView == null || compassDisplay == null) return;
@@ -806,18 +827,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         alphaRow.addView(alphaValue);
         panel.addView(alphaRow);
 
+        // 下限 30%（不提供 0%）：0 会让整盘消失且会被持久化，下次冷启直接空盘。
+        // minSdk 24 没有 SeekBar.setMin，用「进度 = 实际值 - 下限」换算。
+        final int minAlpha = CompassDisplayStore.MIN_ALPHA;
         final SeekBar slider = new SeekBar(this);
         slider.setId(R.id.lc_compass_alpha_slider);
-        slider.setMax(100);
-        slider.setProgress(compassDisplay.alphaPercent());
+        slider.setMax(100 - minAlpha);
+        slider.setProgress(compassDisplay.alphaPercent() - minAlpha);
         panel.addView(slider, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar s, int progress, boolean fromUser) {
-                alphaValue.setText(progress + "%");
-                if (compassView != null) compassView.setDialAlpha(progress / 100f);
-                compassDisplay.setAlphaPercent(progress);
+                int percent = minAlpha + progress;
+                alphaValue.setText(percent + "%");
+                if (compassView != null) compassView.setDialAlpha(percent / 100f);
+                compassDisplay.setAlphaPercent(percent);
             }
 
             @Override
@@ -991,6 +1016,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 break;
             case "旋转": js("rotateBearing(15)"); break;
             case "缩放": js("zoomIn()"); break;
+            // F-17 的两个入口：透明度 / 天支线。
+            // 注意：这两个按钮只存在于罗盘模式的底部工具条（buildCompassToolBar 仅在 setCompassMode(true) 时可见），
+            // 不在罗盘态点这个位置点到的是地图——AT 复验前先确认已在罗盘浮层。
             case "透明度":
                 if (new FeatureFlags(this).isEnabled("f17")) {
                     showCompassDisplayPanel();
@@ -1026,7 +1054,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (hideButton != null) hideButton.setVisibility(on ? View.VISIBLE : View.GONE);
         if (topBackButton != null) topBackButton.setVisibility(on ? View.VISIBLE : View.GONE);
         if (topLayerButton != null) topLayerButton.setVisibility(on ? View.VISIBLE : View.GONE);
-        js(on ? "setUiMode('compass')" : "setUiMode('map')");
+        applyMapUiMode(on ? "compass" : "map");
         updateReading();
     }
 
@@ -1586,11 +1614,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onPageFinished(WebView view, String url) {
                 // A10：页面重载（location.reload()）会把 JS 侧 uiMode 复位成默认值，而原生浮层仍在。
                 // 这里不能恒发 'map'，必须按原生当前态重放，否则出现「浮层开着、页面却是 map 态」的不同步。
-                js(compassMode ? "setUiMode('compass')" : "setUiMode('map')");
                 // 重载后地图侧的 heading/坐向也丢了，立即重推一次（传感器下一帧还会再推）。
                 updateReading();
                 if (view == compassMapView) {
                     mapPageReady = true;
+                    // uiMode 按原生当前态重放（若冷启时点过罗盘，这里有 pendingUiMode 兜底补发）。
+                    applyMapUiMode(compassMode ? "compass" : "map");
                     applyPendingMapView();
                     // F-04：页面重载后按持久化状态重放路网开关。
                     view.evaluateJavascript("try{setRoadNet(" + roadNetOn + ")}catch(e){}", null);

@@ -146,6 +146,39 @@ public class CompassView extends View {
         canvas.restore();
     }
 
+    /**
+     * 位图模式的常驻轮廓：外圈 + 30° 刻度 + 度数，统一 ~35% 不透明度。
+     * 目的只有一个——F-17 透明度调低时盘面不会「整片消失」，用户始终能看出罗盘在哪。
+     */
+    private void drawOutlineRings(Canvas canvas, float cx, float cy, float r, int gold) {
+        int savedColor = paint.getColor();
+        int savedAlpha = paint.getAlpha();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.2f);
+        paint.setColor(gold);
+        paint.setAlpha(90);
+        canvas.drawCircle(cx, cy, r * 0.995f, paint);
+        canvas.drawCircle(cx, cy, r * 0.955f, paint);
+        for (int d = 0; d < 360; d += 30) {
+            float[] p0 = pos(cx, cy, r * 0.995f, d, heading);
+            float[] p1 = pos(cx, cy, r * 0.93f, d, heading);
+            canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
+        }
+        int textColor = textPaint.getColor();
+        int textAlpha = textPaint.getAlpha();
+        textPaint.setColor(gold);
+        textPaint.setAlpha(90);
+        textPaint.setTextSize(10f * density());
+        for (int d = 0; d < 360; d += 30) {
+            float[] p = pos(cx, cy, r * 0.875f, d, heading);
+            drawText(canvas, String.valueOf(d), p[0], p[1], textPaint);
+        }
+        textPaint.setColor(textColor);
+        textPaint.setAlpha(textAlpha);
+        paint.setColor(savedColor);
+        paint.setAlpha(savedAlpha);
+    }
+
     public interface OnHeadingChangeListener {
         void onHeadingChanged(float heading);
     }
@@ -281,6 +314,9 @@ public class CompassView extends View {
 
         if (artwork != null) {
             drawArtwork(canvas, cx, cy, r);
+            // 位图模式下矢量环整段被跳过，透明度调低时盘面会整个消失（F-17 曾出现「空盘」）。
+            // 常驻一圈低透明度轮廓 + 30° 刻度，任何 dialAlpha 下都能看出盘面在哪。
+            drawOutlineRings(canvas, cx, cy, r, gold);
         } else {
 
         // Degree ticks + numbers.

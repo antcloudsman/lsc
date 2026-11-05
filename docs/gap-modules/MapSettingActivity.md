@@ -239,3 +239,25 @@ MMKV 实例 ID：`"MapManager"`（`mmkv_delegate` @0x0000）。键与默认值�
 | 图层色相旋转 | -180.0 ～ 180.0 | 1（"%.0f"） |
 
 若用 material3 `Slider` 复刻，建议 `valueRange = min..max`、不传 `steps`（连续），并在 `onValueChangeFinished`/回写处按上表精度 round，才与原版一致。
+
+## §「恢复默认」按钮（自定义参数区）
+
+**结论：原版有该控件；点击后回填的是 `MapColorParamEnum.COMMON`（常规）预设 0 / 1 / 0 / 0 / 0，不是高亮预设。**
+
+链路（逐指令）：
+
+| 步骤 | 证据 |
+|---|---|
+| 控件 | `o0`（`CustomParams`）里一行：图标 `R.drawable.svg_refresh2`，文字 `const-string "恢复默认"` @0x02bd，文字色 `0xff42464d` @0x02ae，整行 `clickable`（`n0$a(0x12c=300ms)` 自绘水波纹）@0x01ee-0x0201 |
+| 点击回调 | `o0` 的点击用 `v10`（= `o0` 的 Function0 入参，来自 N0）→ `setting.Q.invoke()` → `MapSettingActivity$c.a(activity)` → `MapSettingActivity$c.c(activity)` |
+| 回填值来源 | `$c.c` code_units=80：@0x0000 `sget-object … MapColorParamEnum;->COMMON`，随后依次取 `getRasterBrightnessMin()` @0x0002、`getRasterBrightnessMax()` @0x0009、`getRasterSaturation()` @0x0010、`getRasterContrast()` @0x0017、`getRasterHueRotate()` @0x001e |
+| 先写 UI 状态 | 同一个值立刻写入 5 个 `MutableFloatState`：`w1(F)` @0x0006（o）、`x1(F)` @0x000d（p）、`y1(F)` @0x0014（q）、`z1(F)` @0x001b（r）、`A1(F)` @0x0022（s）→ 滑杆位置随之下移/回位 |
+| 再写 MapManager | 回读状态 `e1()/f1()/g1()/h1()/i1()` 后写 `MapManager.setRasterBrightnessMin/Max/Saturation/Contrast/HueRotate` @0x002b/0x0032/0x0039/0x0040/0x0047 |
+| 最后推 WebView | `T0(activity)` @0x004a → `p1()`（5 个 `MapWebApiKt.raster*`） |
+
+因此回填值是 **COMMON = brightnessMin 0.0 / brightnessMax 1.0 / saturation 0.0 / contrast 0.0 / hue 0.0**。
+
+**重要差异**：`$c.c` 全程没有写 `currentColorMode`（没有 `setCurrentColorMode` 调用），所以点「恢复默认」后模式 chip 仍停在「自定义」，只是 5 个滑杆值变成常规预设。
+（对照：切到「高亮」chip 走的是另一条路径 `L0(..., MapColorParamEnum.HIGHLIGHT, ...)`，会把模式与参数一起换成高亮。）
+
+给客户端：若要 1:1，「恢复默认」应按 **常规 0/1/0/0/0** 回填且不改模式 chip；先前按高亮 0.1/1.0/0.6/0.2/0 的实现需要改。

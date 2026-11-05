@@ -58,6 +58,11 @@ public class HistoryImageActivity extends LcFeatureActivity {
     private static final double DEF_LAT = 39.9042;
     private static final double DEF_LNG = 116.4074;
 
+    /** 初始中心：`lc_lat`/`lc_lng`（缺失/越界回退北京）；与 F-06/F-07 同一约定。
+     *  原版 `EXTRA_GEO_POINT` 的 JSON 格式待逆向确认，确认后可在这里补一次解析。 */
+    private double startLat = DEF_LAT;
+    private double startLng = DEF_LNG;
+
     private static final Pattern DATE = Pattern.compile("Wayback (\\d{4}-\\d{2}-\\d{2})");
 
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
@@ -83,6 +88,13 @@ public class HistoryImageActivity extends LcFeatureActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         disabled = !new FeatureFlags(this).isEnabled("f10");
+        startLat = getIntent().getDoubleExtra("lc_lat", DEF_LAT);
+        startLng = getIntent().getDoubleExtra("lc_lng", DEF_LNG);
+        if (Double.isNaN(startLat) || Double.isNaN(startLng)
+                || startLat < -85 || startLat > 85 || startLng < -180 || startLng > 180) {
+            startLat = DEF_LAT;
+            startLng = DEF_LNG;
+        }
         super.onCreate(savedInstanceState);
     }
 
@@ -124,8 +136,8 @@ public class HistoryImageActivity extends LcFeatureActivity {
         web.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                view.evaluateJavascript("setBase('img');debugSetView(" + DEF_LAT + ","
-                        + DEF_LNG + ",11,null,null);", null);
+                view.evaluateJavascript("setBase('img');debugSetView(" + startLat + ","
+                        + startLng + ",11,null,null);", null);
                 loadReleases();
             }
         });

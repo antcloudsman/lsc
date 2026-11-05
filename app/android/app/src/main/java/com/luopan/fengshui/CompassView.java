@@ -38,7 +38,9 @@ public class CompassView extends View {
     private final int touchSlop =
             android.view.ViewConfiguration.get(getContext()).getScaledTouchSlop();
 
-    /** B-05：持久偏移量——`heading = normalize(azimuth + offset)`，仍跟随传感器。 */
+    /** B-05：持久偏移量——合成走 `SensorMath.applyOffset(azimuth, offset)`，仍跟随传感器。
+     *  **预留 API：UI 未接入**（「反盘」按钮随 K-01 删除，原版无该控件），当前只供 JVM 断言；
+     *  不要把它当成活的验收路径。 */
     public void setHeadingOffset(float deg) {
         headingOffset = normalize(deg);
         if (followSensor) invalidate();
@@ -145,7 +147,7 @@ public class CompassView extends View {
     public void setSensorHeading(float azimuth) {
         if (followSensor) {
             // B-05：偏移量参与合成，翻转座向不再需要冻结传感器。
-            heading = normalize(azimuth + headingOffset);
+            heading = SensorMath.applyOffset(azimuth, headingOffset);
             invalidate();
         }
     }

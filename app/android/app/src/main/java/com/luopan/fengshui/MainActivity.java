@@ -646,8 +646,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                // K-01：默认 full 保持不变；只有真机页面加载完成后才切 map（无头 AT 不调则不切）。
-                js("setUiMode('map')");
+                // A10：页面重载（location.reload()）会把 JS 侧 uiMode 复位成默认值，而原生浮层仍在。
+                // 这里不能恒发 'map'，必须按原生当前态重放，否则出现「浮层开着、页面却是 map 态」的不同步。
+                js(compassMode ? "setUiMode('compass')" : "setUiMode('map')");
+                // 重载后地图侧的 heading/坐向也丢了，立即重推一次（传感器下一帧还会再推）。
+                updateReading();
             }
         });
         webView.setWebChromeClient(new android.webkit.WebChromeClient() {

@@ -180,35 +180,34 @@ public class FishingActivity extends LcFeatureActivity {
         statusView.setText(R.string.lc_fish_loading);
         POOL.execute(() -> {
             String province = MapPoints.provinceCode(lat, lng);
-            List<MapPoints.Point> pts = new ArrayList<>();
+            List<MapPoints.Point> lakes = new ArrayList<>();
+            List<MapPoints.Point> rivers = new ArrayList<>();
             if (province != null) {
-                pts.addAll(MapPoints.category(MapKeys.TYPE_LAKE, province, 40));
-                pts.addAll(MapPoints.category(MapKeys.TYPE_RIVER, province, 40));
+                lakes.addAll(MapPoints.category(MapKeys.TYPE_LAKE, province, 40));
+                rivers.addAll(MapPoints.category(MapKeys.TYPE_RIVER, province, 40));
             }
-            if (pts.isEmpty()) {
-                pts.addAll(MapPoints.keywordNear("湖", lat, lng, 10, 40));
-                pts.addAll(MapPoints.keywordNear("河", lat, lng, 10, 40));
+            if (lakes.isEmpty() && rivers.isEmpty()) {
+                lakes.addAll(MapPoints.keywordNear("湖", lat, lng, 10, 40));
+                rivers.addAll(MapPoints.keywordNear("河", lat, lng, 10, 40));
             }
-            final List<MapPoints.Point> out = pts;
-            MAIN.post(() -> apply(out));
+            final List<MapPoints.Point> fl = lakes, fr = rivers;
+            MAIN.post(() -> apply(fl, fr));
         });
     }
 
-    private void apply(List<MapPoints.Point> water) {
+    private void apply(List<MapPoints.Point> lakes, List<MapPoints.Point> rivers) {
         if (isFinishing() || web == null) return;
-        waterCount = water.size();
+        waterCount = lakes.size() + rivers.size();
         userCount = userPoints.size();
         try {
             JSONArray arr = new JSONArray();
-            for (MapPoints.Point p : water) {
-                JSONObject o = new JSONObject();
-                o.put("name", p.name);
-                o.put("type", guessType(p.name));
-                o.put("lat", p.lat);
-                o.put("lng", p.lng);
-                arr.put(o);
+            for (MapPoints.Point p : lakes) arr.put(fishJson(p, "库"));
+            for (MapPoints.Point p : rivers) arr.put(fishJson(p, "河"));
+            for (JSONObject u : userPoints) {
+                /* 老记录没有 typeCode：补一次，保证详情卡徽标口径一致 */
+                if (!u.has("typeCode")) u.put("typeCode", codeOfType(u.optString("type", "塘")));
+                arr.put(u);
             }
-            for (JSONObject u : userPoints) arr.put(u);
             web.evaluateJavascript("setFishLayer(true, " + arr + ")", null);
             statusView.setText(getString(R.string.lc_fish_count, waterCount, userCount));
         } catch (Throwable t) {
@@ -216,12 +215,32 @@ public class FishingActivity extends LcFeatureActivity {
         }
     }
 
-    private static String guessType(String name) {
-        if (name == null) return "塘";
-        if (name.contains("水库") || name.contains("库")) return "库";
-        if (name.contains("河") || name.contains("江") || name.contains("溪")) return "河";
-        if (name.contains("塘") || name.contains("湖") || name.contains("潭")) return "塘";
-        return "塘";
+    /** 天地图搜索结果的 name/address + 水体类型（单字）+ 原版类型码。 */
+    private static JSONObject fishJson(MapPoints.Point p, String type) throws Exception {
+        JSONObject o = new JSONObject();
+        o.put("name", p.name);
+        o.put("address", p.address == null ? "" : p.address);
+        o.put("type", type);
+        o.put("typeCode", codeOfType(type));
+        o.put("lat", p.lat);
+        o.put("lng", p.lng);
+        return o;
+    }
+
+    /**
+     * 水体类型 → 原版钓点码（F-14）。原版 payType：**303 库钓 / 308 河钓 / 309 黑坑 / 0 其它（塘钓）**。
+     *
+     * 我们的映射按**天地图分类来源**（不按名字猜）：
+     *   260205 湖泊/水库（天地图把两者归同一类）→ 303 库钓，单字「库」
+     *   260204 河流                              → 308 河钓，单字「河」
+     *   本机自建（无权威类型）                    → 0   其它塘钓，单字「塘」
+     *   309 黑坑：没有公开数据源，本应用不会产出，码位保留供客户端按原版文案展示。
+     */
+    private static int codeOfType(String type) {
+        if ("库".equals(type)) return 303;
+        if ("河".equals(type)) return 308;
+        if ("黑".equals(type)) return 309;
+        return 0;
     }
 
     private void refreshFromView() {
@@ -280,6 +299,7 @@ public class FishingActivity extends LcFeatureActivity {
                 JSONObject o = new JSONObject();
                 o.put("name", "自建钓点" + (userPoints.size() + 1));
                 o.put("type", "塘");
+                o.put("typeCode", 0);          /* F-14：0 = 其它（塘钓），见 codeOfType 注释 */
                 o.put("lat", lat);
                 o.put("lng", lng);
                 o.put("user", true);
@@ -323,6 +343,9 @@ public class FishingActivity extends LcFeatureActivity {
         final double lat = o.optDouble("lat", 0);
         final double lng = o.optDouble("lng", 0);
         final String kind = o.optString("kind", "");
+        /* F-14：桥事件现在带 address 与 typeCode；老版本事件没有就回退（地址空、按单字映射） */
+        final String addr = o.optString("address", "");
+        final int typeCode = o.has("typeCode") ? o.optInt("typeCode", 0) : -1;
         boolean isUserFlag = false;
         for (JSONObject u : userPoints) {
             if (name.equals(u.optString("name"))
@@ -347,7 +370,7 @@ public class FishingActivity extends LcFeatureActivity {
 
         TextView badge = new TextView(this);
         badge.setId(R.id.lc_fish_detail_type);
-        badge.setText(badgeText(kind) + " · " + (isUser
+        badge.setText(badgeText(typeCode, kind) + " · " + (isUser
                 ? getString(R.string.lc_fish_source_user)
                 : getString(R.string.lc_fish_source_public)));
         badge.setTextSize(12f);
@@ -355,10 +378,13 @@ public class FishingActivity extends LcFeatureActivity {
         badge.setPadding(0, dp(4), 0, dp(6));
         panel.addView(badge);
 
+        final String srcLine = isUser ? getString(R.string.lc_fish_source_user)
+                : getString(R.string.lc_fish_source_public);
+        /* F-14：有 address 就显示 address（天地图分类搜索结果里本来就有），没有才退回来源行 */
+        final String addrLine = addr.isEmpty() ? srcLine : (addr + " · " + srcLine);
         final TextView address = new TextView(this);
         address.setId(R.id.lc_fish_detail_address);
-        address.setText(isUser ? getString(R.string.lc_fish_source_user)
-                : getString(R.string.lc_fish_source_public));
+        address.setText(addrLine);
         address.setTextSize(12f);
         address.setTextColor(Color.rgb(180, 190, 200));
         address.setPadding(0, 0, 0, dp(8));
@@ -414,9 +440,7 @@ public class FishingActivity extends LcFeatureActivity {
                     JSONObject st = new JSONObject(s);
                     double d = TrackStats.haversine(st.optDouble("lat", lat),
                             st.optDouble("lng", lng), lat, lng);
-                    address.setText((isUser ? getString(R.string.lc_fish_source_user)
-                            : getString(R.string.lc_fish_source_public))
-                            + " · " + getString(R.string.lc_fish_distance,
+                    address.setText(addrLine + " · " + getString(R.string.lc_fish_distance,
                             String.format(java.util.Locale.US, "%.2f", d / 1000.0)));
                 } catch (Throwable ignored) {
                 }
@@ -424,13 +448,17 @@ public class FishingActivity extends LcFeatureActivity {
         }
     }
 
-    /** 类型徽标映射（原版码 303 库钓 / 308 河钓 / 309 黑坑 / 其它塘钓）。 */
-    private static String badgeText(String kind) {
-        if (kind == null) return "塘钓";
-        if (kind.contains("黑")) return "黑坑(309)";
-        if (kind.contains("库")) return "库钓(303)";
-        if (kind.contains("河") || kind.contains("江") || kind.contains("溪")) return "河钓(308)";
-        return "塘钓";
+    /**
+     * 类型徽标：优先用事件里的原版码（303 库钓 / 308 河钓 / 309 黑坑 / 0 其它塘钓），
+     * 老事件没有 typeCode 时回退到单字映射（与 {@link #codeOfType} 同一套）。
+     */
+    private static String badgeText(int typeCode, String kind) {
+        if (typeCode == 303) return "库钓(303)";
+        if (typeCode == 308) return "河钓(308)";
+        if (typeCode == 309) return "黑坑(309)";
+        if (typeCode == 0) return "塘钓";
+        if (kind == null || kind.isEmpty()) return "塘钓";
+        return badgeText(codeOfType(kind), "");
     }
 
     private void removeUserPoint(String name, double lat, double lng) {

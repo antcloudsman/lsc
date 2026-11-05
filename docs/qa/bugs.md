@@ -238,8 +238,9 @@ L213（证据索引 EV-108）——该文件在 `fix-p0` 中不存在，引用�
 **登记**：本条由技术总监代登记（登记时 LC测试 尚未取得本树写权限）；2026-11-05 由 LC审测试 复核。
 
 **复现**（同一台设备，先原版后 LC；命令可重复执行）
-> 复现基线：`fix-p0@bc854ec`（K-01 修复前）。K-01 合入后 `build-android.ps1` 构建的是新 UI，
-> 复现前先 `git checkout bc854ec`（或开独立 worktree），否则跑不到三 Tab 现场。
+> 复现基线：`fix-p0@bc854ec`（K-01 修复前）。**K-01 合入后，用 `d752efa`/develop 跑本命令看不到三 Tab**
+> （`showTab` 在 `d752efa` 为 L630、`bc854ec` 为 L634，当前树 0 命中）；复现旧三 Tab 行为请
+> `git checkout bc854ec`（或独立 worktree）。取证引用一律用 `git show bc854ec:<path>`，不依赖工作树。
 ```powershell
 $DEV = 'L2E0222531014833'
 # 1) 原版：必须用输入包（商店构建 cold start ANR，不可作基线，见 README §2）

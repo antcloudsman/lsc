@@ -234,7 +234,7 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
       } else {
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           (tileCacheOn ? 'crossorigin="anonymous" ' : '') +
-          'src="' + url + '" onload="__tileLoaded(this,\'' + url + '\')" ' +
+          'src="' + url + '" onload="__tileLoaded(this,\'' + url + '\',\'' + layer + '\')" ' +
           'onerror="this.style.display=\'none\'">';
       }
     }
@@ -243,14 +243,20 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
 }
 
 /* F-02 瓦片缓存：解码后存 dataURL（有上限），再渲染同一瓦片不再走网络。
- * 注意：天地图瓦片带 CORS 头，才允许 `crossorigin` + canvas 取数据；失败就静默不缓存。 */
-function __tileLoaded(img, url) {
+ * 注意：天地图瓦片带 CORS 头，才允许 `crossorigin` + canvas 取数据；失败就静默不缓存。
+ *
+ * MD-03：注记层（cta/cia/cva）是**带 alpha 的 PNG**——天地图 cta z10 实测 49,503/65,536 像素全透明。
+ * 统一 toDataURL("image/jpeg") 会把透明像素压成黑色，命中缓存后注记整块变黑。
+ * 所以按图层选格式：注记层 PNG（保 alpha），底图层（img/ter/vec，不透明）继续 JPEG 0.85 省内存。 */
+function isAlphaLayer(layer) { return layer === "cta" || layer === "cia" || layer === "cva"; }
+
+function __tileLoaded(img, url, layer) {
   if (!tileCacheOn) return;
   try {
     var cv = document.createElement("canvas");
     cv.width = 256; cv.height = 256;
     cv.getContext("2d").drawImage(img, 0, 0);
-    var d = cv.toDataURL("image/jpeg", 0.85);
+    var d = isAlphaLayer(layer) ? cv.toDataURL("image/png") : cv.toDataURL("image/jpeg", 0.85);
     if (!tileCache[url]) {
       tileCacheKeys.push(url);
       if (tileCacheKeys.length > TILE_CACHE_MAX) delete tileCache[tileCacheKeys.shift()];
@@ -1354,7 +1360,13 @@ var MAP_SOURCES = [
   { name: "高德地图", layer: null, note: "需 key" },
   { name: "腾讯卫星", layer: null, note: "需 key" },
   { name: "腾讯地图", layer: null, note: "需 key" },
-  { name: "腾讯地形", layer: null, note: "需 key" }
+  { name: "腾讯地形", layer: null, note: "需 key" },
+  /* F-10 历史影像（MD-02）：wayback 不在上面 12 个「底图源」里（面板保持原版 12 源，不新增可选按钮），
+   * 但**必须进来源表**——否则 sourceOfBase("wayback") 返回 -1，updateSrcInfo/getAttribution 会沿用
+   * 上一次的「天地图地形」，画面明明是 Esri/Maxar 影像、右下角角注与客户端截图角注却写天地图。
+   * hidden=面板跳过；review 写「不适用」——境外服务没有国内审图号，绝不照抄原版审图号。 */
+  { name: "Esri 历史影像", layer: "wayback", review: "不适用", hidden: true,
+    text: "数据来自 Esri Wayback（World Imagery 历史影像）· 影像 © Esri / Maxar / Earthstar Geographics · 审图号：不适用" }
 ];
 var srcIndex = 6;
 
@@ -1368,6 +1380,7 @@ function openSources() {
   var html = "";
   for (var i = 0; i < MAP_SOURCES.length; i++) {
     var s = MAP_SOURCES[i];
+    if (s.hidden) continue;                 /* 来源表里的隐藏项（wayback）不进面板 */
     var cls = (s.layer === null) ? "srcItem off" : ((i === srcIndex) ? "srcItem on" : "srcItem");
     var tail = (s.layer === null) ? (" · " + s.note) : (" · 审图号 " + s.review);
     html += '<button class="' + cls + '"' + (s.layer === null ? " disabled" : "") +
@@ -1389,19 +1402,22 @@ function selectSource(i) {
 
 function attributionText(s) {
   s = s || { name: "天地图地形", review: "未确认" };
+  if (s.text) return s.text;   /* 自带完整文案的来源（wayback：境外影像，无审图号）不套天地图模板 */
   return "数据来自" + s.name + "（等价替代原版世纪空间）· 审图号：" + (s.review || "未确认");
 }
 
-/* K-01：角注由地图提供数据、原生底部栏负责呈现；不得照抄原版审图号（与底图服务商绑定）。 */
+/* K-01：角注由地图提供数据、原生底部栏负责呈现；不得照抄原版审图号（与底图服务商绑定）。
+ * MD-02：以**当前实际底图**为准（base==="wayback" 时给 Esri 文案），不能沿用上一次的 srcIndex。 */
 function getAttribution() {
   var i = sourceOfBase(base);
   if (i < 0) i = srcIndex;
   var s = MAP_SOURCES[i] || { name: "天地图地形", review: "未确认" };
+  var wb = (s.layer === "wayback");
   return {
     source: s.name,
     review: s.review || "未确认",
-    original: "世纪空间",
-    equivalent: true,
+    original: wb ? null : "世纪空间",
+    equivalent: !wb,
     text: attributionText(s)
   };
 }
@@ -2460,6 +2476,14 @@ function setHud(t) {
   hudEl.style.display = (mode === "3d" && uiMode === "full") ? "block" : "none";
 }
 
+/* 贴面标签（MD-02）：wayback 不能落到默认的「地形」，否则 HUD 与画面不符 */
+function drapeLabel(d) {
+  if (d === "img") return "影像";
+  if (d === "vec") return "矢量";
+  if (d === "wayback") return "历史影像(Esri)";
+  return "地形";
+}
+
 function updateHud() {
   if (uiMode !== "full" || mode !== "3d") { hudEl.style.display = "none"; return; }
   hudEl.style.display = "block";
@@ -2468,7 +2492,7 @@ function updateHud() {
     "FPS " + fps + "\n" +
     "海拔 " + Math.round(demoElev) + " m\n" +
     "z" + zoom + " · 俯仰 " + pitch + "° · " + (Math.round(bearing) % 360) + "°\n" +
-    "垂直放大 " + VEXAG + "× · 贴面 " + (drape === "img" ? "影像" : (drape === "vec" ? "矢量" : "地形")) +
+    "垂直放大 " + VEXAG + "× · 贴面 " + drapeLabel(drape) +
     (pick ? "\n立向点 海拔 " + (pick.elev === null ? "—" : Math.round(pick.elev) + " m") : "");
 }
 

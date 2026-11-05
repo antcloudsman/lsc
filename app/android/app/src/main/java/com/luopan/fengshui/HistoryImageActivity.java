@@ -174,7 +174,11 @@ public class HistoryImageActivity extends LcFeatureActivity {
         note.setId(R.id.lc_history_note);
         note.setTextSize(11f);
         note.setTextColor(0xFFB9A88C);
-        note.setText(R.string.lc_history_note);
+        /* MD-02：`lc_history_attribution`（影像来源：Esri Wayback · © Esri / Maxar / Earthstar）
+         * 之前是死文案——页面只展示了长说明。现在把来源署名放在第一行常显，
+         * 与地图右下角 getAttribution() 的角注同一口径；第二行仍是替代说明。 */
+        note.setText(getString(R.string.lc_history_attribution) + "\n"
+                + getString(R.string.lc_history_note));
         bottom.addView(note);
 
         LinearLayout row1 = new LinearLayout(this);

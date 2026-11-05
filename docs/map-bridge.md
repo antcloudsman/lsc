@@ -38,7 +38,9 @@
 
 ### 2.3 key
 
-`KEY` 为原版内置天地图 key（`dd18858b33229f5837ad1d97b8d3105e`），未改动。商用配额/换 key 属产品决策，未确认。
+天地图 key 沿用原版内置值（`dd18…105e`，**全仓唯一字面量在 `assets/map.html:107` 的 `var KEY`**；Java 侧由
+`app/build.gradle` 构建时解析成 `BuildConfig.TDT_KEY`，见 MD-01 修复）。未改动此 key；商用配额/换 key 属产品决策，未确认。
+日志与异常里的 URL 一律经 `LcHttp.redact()` 只留 host+path，不打印 `tk`。
 
 ## 3. 3D 引擎参数（可复核）
 

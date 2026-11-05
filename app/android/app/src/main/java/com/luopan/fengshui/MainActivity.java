@@ -664,6 +664,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void onToolClick(String label) {
         switch (label) {
             case "罗盘": setCompassMode(true); break;
+            case "全地图工具":
+                // F-01：默认开 → 工具管理页（原版是付费分发页，LC 不实现）；关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f01")) {
+                    startActivity(new android.content.Intent(this, ToolsManagerActivity.class));
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "截屏": captureMap(); break;
             case "读盘":
                 if (compassView != null) CompassReadSheet.show(this, compassView.getHeading());
@@ -731,6 +739,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /** 「更多」＝底部面板（README §6），不是新页面。 */
     private void showMoreSheet() {
+        final FeatureFlags flags = new FeatureFlags(this);
         final String[] tools = {"罗盘", "超清地图", "看山脉", "看水系", "海拔查询", "天气", "历史影像",
                 "等高线", "收藏点", "测量", "画笔", "钓点", "轨迹记录", "路网", "地理影像", "超清优化"};
         LinearLayout grid = new LinearLayout(this);
@@ -751,8 +760,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             b.setMinHeight(0);
             b.setMinimumHeight(0);
             b.setOnClickListener(v -> {
-                if ("罗盘".equals(t)) setCompassMode(true);
-                else toast(t + "：原版为工具子页，本步未实现");
+                if ("罗盘".equals(t)) {
+                    setCompassMode(true);
+                } else if ("收藏点".equals(t) && flags.isEnabled("f11")) {
+                    // F-11：默认开；关掉则回退旧 stub（调试/回退用）
+                    startActivity(new android.content.Intent(this, InterestListActivity.class));
+                } else if ("收藏点".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
+                } else {
+                    toast(t + "：原版为工具子页，本步未实现");
+                }
             });
             row.addView(b, new LinearLayout.LayoutParams(0, dp(48), 1f));
         }

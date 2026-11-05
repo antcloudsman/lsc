@@ -2,7 +2,7 @@
 <resources>
     <!-- F-02 超清地图文案（LC地图）。本地拼接：天地图 img z18，进度按实际下载瓦片数。 -->
     <string name="lc_supermap_title">超清地图</string>
-    <string name="lc_supermap_empty">把地图拖到想看的位置、放大到街道级，再点「生成超清图」：LC 会按天地图影像 z18（原生最高级）下载当前视野的瓦片并拼接成一张大图。没有云端超分、不做会员限制。</string>
+    <string name="lc_supermap_empty">把地图拖到想看的位置、放大到街道级，再点「生成超清图」：LC 会按天地图影像 z18（原生最高级）下载当前视野的瓦片并拼接成一张大图。没有云端超分，全部在本机完成。</string>
     <string name="lc_supermap_generate">生成超清图</string>
     <string name="lc_supermap_progress">正在下载第 %1$d / %2$d 张瓦片…</string>
     <string name="lc_supermap_stitching">正在拼接 %1$d 张瓦片…</string>
@@ -10,7 +10,7 @@
     <string name="lc_supermap_fail">生成失败：%1$d 张瓦片下载失败。检查网络后重试；已下载的瓦片会缓存在本机。</string>
     <string name="lc_supermap_done">已生成：%1$d×%2$d，%3$d 张瓦片（其中缓存 %4$d 张）</string>
     <string name="lc_supermap_saved">已保存：%1$s</string>
-    <string name="lc_supermap_save_fail">图片保存失败</string>
+    <string name="lc_supermap_save_fail_detail">图片保存失败：%1$s；已下载的 %2$d 张瓦片保留在本机缓存（其中 %3$d 张命中缓存），可直接重试。</string>
     <string name="lc_supermap_upscale">2× 放大（双三次）</string>
     <string name="lc_supermap_close">关闭</string>
     <string name="lc_supermap_need_zoom">请先放大到 z15 以上再生成（当前 z%1$d）</string>

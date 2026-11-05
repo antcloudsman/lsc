@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- F-06 看山脉文案（LC地图）。数据来自天地图分类搜索 + 本机 DEM，不出现会员/升级字样。 -->
+    <!-- F-06 看山脉文案（LC地图）。数据来自天地图分类搜索 + 本机 DEM；UI 只写数据来源与口径。 -->
     <string name="lc_mountain_title">看山脉</string>
     <string name="lc_mountain_loading">正在检索视野内的山名…</string>
     <string name="lc_mountain_fail">山名检索失败（网络或天地图配额），点「刷新视野」重试</string>

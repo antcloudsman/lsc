@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebSettings;
@@ -26,12 +27,8 @@ import android.widget.Toast;
 
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -53,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SuperMapActivity extends LcFeatureActivity {
 
+    private static final String TAG = "LCSUPERMAP";
     private static final String KEY = MapKeys.TDT;
     private static final String[] SUB = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7"};
     private static final int TILE_Z = 18;          // 天地图 img 原生最高级
@@ -345,20 +343,42 @@ public class SuperMapActivity extends LcFeatureActivity {
         }).start();
     }
 
+    /**
+     * 落盘并展示。**保存失败必须走失败态**（审查 C-08）：
+     * 原先 catch 里只弹个 Toast，紧接着照样写「已生成…」并弹结果窗——保存失败却报成功。
+     * 现在失败时：隐藏进度、回到空态 + 失败行写明原因，不进结果窗、不写「已生成」；
+     * 已下载的瓦片仍在磁盘缓存里（本方法不删缓存），可直接重试。
+     */
     private void saveAndShow(Bitmap bmp, int cached, int total) {
         progressPanel.setVisibility(View.GONE);
         emptyView.setVisibility(View.VISIBLE);
         String path = "";
         try {
             File dir = new File(getExternalFilesDir(null), "supermap");
-            if (!dir.exists()) dir.mkdirs();
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw new IllegalStateException("无法创建目录 " + dir.getAbsolutePath());
+            }
             File f = new File(dir, "super_" + System.currentTimeMillis() + ".png");
             FileOutputStream fos = new FileOutputStream(f);
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, fos);
-            fos.close();
+            try {
+                if (!bmp.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
+                    throw new IllegalStateException("PNG 编码失败");
+                }
+                fos.flush();
+            } finally {
+                fos.close();
+            }
+            if (!f.exists() || f.length() <= 0) {
+                throw new IllegalStateException("文件为空 " + f.getAbsolutePath());
+            }
             path = f.getAbsolutePath();
         } catch (Throwable t) {
-            Toast.makeText(this, R.string.lc_supermap_save_fail, Toast.LENGTH_SHORT).show();
+            Log.w(TAG, "save fail : " + t);
+            if (!bmp.isRecycled()) bmp.recycle();
+            failView.setVisibility(View.VISIBLE);
+            failView.setText(getString(R.string.lc_supermap_save_fail_detail,
+                    String.valueOf(t.getMessage()), total, cached));
+            return;
         }
         final String p = path;
         progressText.setText(getString(R.string.lc_supermap_done,
@@ -411,23 +431,12 @@ public class SuperMapActivity extends LcFeatureActivity {
         }
     }
 
+    /**
+     * 瓦片下载：走 {@link LcHttp#bytes}，与 JSON/图片请求共用 UA、超时和 **8 MB 字节上限**（审查 C-03）。
+     * 原先这里自带一份 HttpURLConnection + 无上限 ByteArrayOutputStream，是第二个实现。
+     */
     private static byte[] httpBytes(String url) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(8000);
-        c.setReadTimeout(12000);
-        c.setRequestProperty("User-Agent", LcHttp.UA);
-        try {
-            if (c.getResponseCode() != 200) throw new IllegalStateException("HTTP " + c.getResponseCode());
-            InputStream in = c.getInputStream();
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
-            in.close();
-            return bos.toByteArray();
-        } finally {
-            c.disconnect();
-        }
+        return LcHttp.bytes(url);
     }
 
     static double lon2tx(double lon, int z) {

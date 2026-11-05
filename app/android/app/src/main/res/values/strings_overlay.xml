@@ -31,8 +31,8 @@
     <string name="lc_overlay_no_rail">无公开等价数据源：原版为私有铁路线瓦片</string>
     <string name="lc_overlay_no_water_line">无公开等价数据源：天地图水系只有栅格图面与点位，无线/面矢量</string>
     <string name="lc_overlay_no_heritage">无公开等价数据源：世界遗产专题未找到权威免费图层</string>
-    <string name="lc_overlay_no_volcano">无公开等价数据源：火山专题为会员数据</string>
-    <string name="lc_overlay_no_vegetation">无公开等价数据源：植被专题为会员数据</string>
+    <string name="lc_overlay_no_volcano">无公开等价数据源：原版该专题未公开数据来源，LC 未提供</string>
+    <string name="lc_overlay_no_vegetation">无公开等价数据源：原版该专题未公开数据来源，LC 未提供</string>
     <string name="lc_overlay_no_silk">无公开等价数据源：丝绸之路为 21at 专属专题</string>
     <string name="lc_overlay_no_ten">无公开等价数据源：十线专题为 21at 专属专题</string>
 

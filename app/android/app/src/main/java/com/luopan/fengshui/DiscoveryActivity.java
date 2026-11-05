@@ -3,7 +3,6 @@ package com.luopan.fengshui;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,6 +22,7 @@ import org.json.JSONObject;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -106,7 +106,26 @@ public class DiscoveryActivity extends LcFeatureActivity {
     }
 
     private final Map<String, Info> infoCache = new HashMap<>();
-    private final Map<String, Bitmap> bmpCache = new HashMap<>();
+
+    /**
+     * 位图缓存有界（审查 C-11）：原先是无上限 HashMap，翻三个页签、图片越来越大时只增不减。
+     *
+     * 上限取两条中最先到的一条（双保险，写进注释便于复核）：
+     *   - 张数 ≤ {@link #BMP_MAX_COUNT}（32 张：三个页签共 15 个主题，够来回切换不重下）；
+     *   - 字节 ≤ {@link #BMP_MAX_BYTES}（48 MB：按采样后 ~720px 宽的照片算，约 25–30 张占满）。
+     * 淘汰只丢引用、**不 recycle**——被淘汰的那张可能正显示在某个 ImageView 上，
+     * 立刻回收会触发「trying to use a recycled bitmap」。回收统一放在 onDestroy。
+     */
+    private static final int BMP_MAX_COUNT = 32;
+    private static final long BMP_MAX_BYTES = 48L * 1024 * 1024;
+
+    private final LinkedHashMap<String, Bitmap> bmpCache =
+            new LinkedHashMap<String, Bitmap>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Bitmap> eldest) {
+                    return size() > BMP_MAX_COUNT || cachedBytes() > BMP_MAX_BYTES;
+                }
+            };
 
     private boolean disabled;
     private LinearLayout listBox;
@@ -241,9 +260,32 @@ public class DiscoveryActivity extends LcFeatureActivity {
         return card;
     }
 
+    /** 缓存当前占用字节（淘汰判据用；最多 32 张，逐张求和的开销可忽略）。 */
+    private long cachedBytes() {
+        long sum = 0;
+        for (Bitmap b : bmpCache.values()) {
+            if (b != null && !b.isRecycled()) sum += b.getByteCount();
+        }
+        return sum;
+    }
+
+    /** 卡片图片的目标宽度 px：屏幕宽 - 列表左右 padding - 卡片左右 padding（列表不会横向滚动）。 */
+    private int cardTargetWidthPx() {
+        int w = getResources().getDisplayMetrics().widthPixels - dp(12) * 2 - dp(10) * 2;
+        return Math.max(dp(120), w);
+    }
+
+    private synchronized Bitmap cachedBitmap(String key) {
+        return bmpCache.get(key);
+    }
+
+    private synchronized void cacheBitmap(String key, Bitmap bmp) {
+        bmpCache.put(key, bmp);
+    }
+
     private void loadImage(Topic t, ImageView iv, TextView credit) {
-        Bitmap cached = bmpCache.get(t.title);
-        if (cached != null) {
+        Bitmap cached = cachedBitmap(t.title);
+        if (cached != null && !cached.isRecycled()) {
             iv.setImageBitmap(cached);
             Info ci = infoCache.get(t.title);
             if (ci != null) credit.setText(creditLine(ci));
@@ -257,11 +299,10 @@ public class DiscoveryActivity extends LcFeatureActivity {
                     if (info != null) infoCache.put(t.title, info);
                 }
                 if (info == null) throw new IllegalStateException("no image");
-                byte[] bytes = LcHttp.bytes(info.url);
-                Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                if (bmp == null) throw new IllegalStateException("decode");
+                /* C-02：流式 + 按卡片宽度采样解码，不再 bytes() 整包再 decodeByteArray */
+                Bitmap bmp = LcImage.decodeSampled(info.url, cardTargetWidthPx());
                 final Info fi = info;
-                bmpCache.put(t.title, bmp);
+                cacheBitmap(t.title, bmp);
                 MAIN.post(() -> {
                     iv.setImageBitmap(bmp);
                     credit.setText(creditLine(fi));
@@ -328,10 +369,13 @@ public class DiscoveryActivity extends LcFeatureActivity {
 
     @Override
     protected void onDestroy() {
-        for (Bitmap b : bmpCache.values()) {
-            if (b != null && !b.isRecycled()) b.recycle();
+        /* 与下载线程的 cacheBitmap() 互斥：避免边回收边 put 触发 ConcurrentModificationException */
+        synchronized (this) {
+            for (Bitmap b : bmpCache.values()) {
+                if (b != null && !b.isRecycled()) b.recycle();
+            }
+            bmpCache.clear();
         }
-        bmpCache.clear();
         super.onDestroy();
     }
 }

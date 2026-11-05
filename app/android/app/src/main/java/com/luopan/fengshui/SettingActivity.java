@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
@@ -29,6 +30,8 @@ import java.util.function.IntConsumer;
  * - 结构/语义/默认值：docs/gap-modules/MapSettingActivity.md（§1 内容顺序、§2 预设、§3 枚举、§4 MMKV）；
  * - 参数面板量程/粒度：逆向 f93ddbb（H0 三参 ×100 于 h0.b、setter ÷100；亮度 0..1、饱和/对比 -1..1、
  *   色相 -180..180；显示 %.1f / %.0f），仅「自定义」态组合（C0 的 L0("自定义",3,…) → AnimatedVisibility）；
+ * - 「恢复默认」：逆向 beaa585（$c.c @0x0000 sget MapColorParamEnum;->COMMON → 依次 setRaster*），
+ *   回填常规 0/1/0/0/0，且不写 currentColorMode（模式仍停留自定义）；图标 svg_refresh2 与文字整行可点；
  * - 视觉尺寸/颜色：lc-gap-evidence/nav/mapsetting/INDEX.md 真机实测
  *   （页面白 #FFFFFF、区块间隔 #F0F3F7 39px、标题栏 52dp、开关 156×78px、行距 157px、
  *    chip 245×97px、预览 1148×636px、选中蓝 #1C45A5、开关蓝 #2E53AC、关闭灰 #C0C4CC）。
@@ -197,9 +200,10 @@ public class SettingActivity extends Activity {
         }
     }
 
-    // ---------------- 参数面板（仅「自定义」展开；量程/粒度按逆向字节码 f93ddbb） ----------------
+    // ---------------- 参数面板（仅「自定义」展开；量程/粒度按 f93ddbb，恢复默认按 beaa585） ----------------
     // 量程：亮度 min/max 0..1；饱和/对比 -1..1；色相 -180..180。
     // 粒度：写回处 round（亮度/饱和/对比 ×100→/100，色相 1°）；滑杆本身不设 step（原版 H0 无 steps 参数）。
+    // 恢复默认：回填常规 0/1/0/0/0，模式保持自定义。
 
     private void buildParams(LinearLayout list) {
         paramsPanel = new LinearLayout(this);
@@ -217,18 +221,33 @@ public class SettingActivity extends Activity {
         header.addView(title, new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        TextView reset = new TextView(this);
-        reset.setId(R.id.lc_setting_param_reset);
-        reset.setText("↺ " + getString(R.string.lc_setting_params_reset));
-        reset.setTextSize(14f);
-        reset.setTextColor(getColor(R.color.lc_blue));
-        reset.setPadding(LcUi.dp(this, 8), LcUi.dp(this, 4),
+        // 「恢复默认」：svg_refresh2 图标 + 文字整行可点（beaa585）。
+        // 回填常规预设 0/1/0/0/0，且不改 currentColorMode —— 模式仍停在「自定义」。
+        LinearLayout resetRow = new LinearLayout(this);
+        resetRow.setId(R.id.lc_setting_param_reset);
+        resetRow.setOrientation(LinearLayout.HORIZONTAL);
+        resetRow.setGravity(Gravity.CENTER_VERTICAL);
+        resetRow.setPadding(LcUi.dp(this, 8), LcUi.dp(this, 4),
                 LcUi.dp(this, 8), LcUi.dp(this, 4));
-        reset.setOnClickListener(v -> {
-            store.resetRasterToHighlight();
+
+        ImageView resetIcon = new ImageView(this);
+        resetIcon.setImageResource(R.drawable.svg_refresh2);
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(
+                LcUi.dp(this, 15f), LcUi.dp(this, 13f));
+        ilp.rightMargin = LcUi.dp(this, 4f);
+        resetRow.addView(resetIcon, ilp);
+
+        TextView resetText = new TextView(this);
+        resetText.setText(R.string.lc_setting_params_reset);
+        resetText.setTextSize(14f);
+        resetText.setTextColor(getColor(R.color.lc_reset_text));
+        resetRow.addView(resetText);
+
+        resetRow.setOnClickListener(v -> {
+            store.resetRasterToCommon();
             refreshParams();
         });
-        header.addView(reset);
+        header.addView(resetRow);
         paramsPanel.addView(header);
 
         addParamRow(0, R.string.lc_setting_param_brightness_min, 0f, 1f, false);

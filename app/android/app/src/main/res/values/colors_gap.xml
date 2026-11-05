@@ -13,6 +13,7 @@
     <color name="lc_blue">#FF1C45A5</color>
     <color name="lc_switch_off">#FFC0C4CC</color>
     <color name="lc_chevron">#FFB0BAC7</color>
+    <color name="lc_reset_text">#FF42464D</color>
     <color name="lc_setting_preview_bg">#FFEEF1F4</color>
 
     <!-- 工具管理页：页面底 #F0F3F7、卡片白、说明文字 #657389（ToolsManagerActivity.md §1） -->

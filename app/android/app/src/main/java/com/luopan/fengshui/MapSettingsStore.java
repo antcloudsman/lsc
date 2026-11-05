@@ -221,9 +221,13 @@ final class MapSettingsStore {
         p.edit().putFloat(K_RASTER_HUE_ROTATE, Math.round(v)).apply();
     }
 
-    /** 「恢复默认」：按高亮预设回填（自定义态无自身预设；截图 05 的初值即高亮值）。 */
-    void resetRasterToHighlight() {
-        float[] v = PRESETS[MODE_HIGHLIGHT];
+    /**
+     * 「恢复默认」：按逆向 beaa585 取证，回填的是 **常规预设** 0 / 1 / 0 / 0 / 0
+     * （亮度min/亮度max/饱和度/对比度/色相），不是高亮。
+     * 原版 $c.c 全程不写 currentColorMode，所以模式仍停在「自定义」，这里同样不改模式。
+     */
+    void resetRasterToCommon() {
+        float[] v = PRESETS[MODE_COMMON];
         p.edit()
                 .putFloat(K_RASTER_BRIGHTNESS_MIN, v[0])
                 .putFloat(K_RASTER_BRIGHTNESS_MAX, v[1])

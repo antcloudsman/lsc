@@ -265,6 +265,7 @@
     <item name="lc_track_discard" type="id" />
     <item name="lc_track_list" type="id" />
     <item name="lc_track_empty" type="id" />
+    <item name="lc_track_empty_illustration" type="id" />
     <item name="lc_track_item_0" type="id" />
     <item name="lc_track_item_1" type="id" />
     <item name="lc_track_item_2" type="id" />
@@ -278,6 +279,12 @@
 
     <!-- F-15 轨迹：列表页设置面板 -->
     <item name="lc_track_settings_sheet" type="id" />
+    <item name="lc_track_settings_title" type="id" />
+    <item name="lc_track_perm_title" type="id" />
+    <item name="lc_track_settings_bg_location" type="id" />
+    <item name="lc_track_settings_battery_go" type="id" />
+    <item name="lc_track_settings_bg_run" type="id" />
+    <item name="lc_track_params_title" type="id" />
     <item name="lc_track_settings_interval" type="id" />
     <item name="lc_track_settings_distance" type="id" />
     <item name="lc_track_settings_high_accuracy" type="id" />
@@ -309,5 +316,6 @@
     <item name="lc_track_replay_time" type="id" />
     <item name="lc_track_replay_speed" type="id" />
     <item name="lc_track_replay_legend" type="id" />
+    <item name="lc_track_replay_empty" type="id" />
 
 </resources>

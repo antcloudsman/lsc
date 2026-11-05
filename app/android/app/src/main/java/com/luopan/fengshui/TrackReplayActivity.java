@@ -32,6 +32,9 @@ import java.util.Locale;
  * lc_track_load(segments) / lc_track_progress(ratio) / lc_track_play(rate) /
  * lc_track_pause() / lc_track_follow(on) / lc_track_clear()；getState().track。
  * 文案禁词：不出现视频/会员字样；无门槛、无锁。
+ *
+ * 非 1:1（改进项）：原版无参启动是 toast「视频地址为空」+ 立即 finish，即「无数据就进不去」；
+ * LC 改成无数据也能进、显示空态引导（`lc_track_replay_empty`）。这一条是对原版的改进，不是复刻。
  */
 public class TrackReplayActivity extends LcFeatureActivity {
 
@@ -153,6 +156,21 @@ public class TrackReplayActivity extends LcFeatureActivity {
         map.loadUrl("file:///android_asset/map.html#in3d");
         content.addView(map, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+
+        // 非 1:1（改进项）：原版无数据直接 finish；这里给空态引导，控件仍可用（不锁）。
+        if (points.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setId(R.id.lc_track_replay_empty);
+            empty.setText(R.string.lc_track_replay_empty);
+            empty.setTextSize(13f);
+            empty.setTextColor(Color.rgb(235, 228, 215));
+            empty.setBackgroundColor(Color.argb(190, 24, 20, 16));
+            empty.setPadding(dp(12), dp(8), dp(12), dp(8));
+            FrameLayout.LayoutParams elp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+            elp.gravity = Gravity.CENTER;
+            content.addView(empty, elp);
+        }
 
         // 顶部：跟随开关
         LinearLayout top = new LinearLayout(this);

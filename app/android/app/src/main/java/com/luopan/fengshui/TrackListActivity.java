@@ -15,6 +15,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -26,10 +27,18 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * F-15 轨迹列表（免费、无门槛；记录态不换页）。
+ * F-15 历史轨迹列表（免费、无门槛；记录态不换页）。
  *
- * 结构：记录卡（开始/停止 + 记录中状态）→ 未完成卡（继续/结束保存/丢弃）→ 列表（查看/删除）
- * 设置：底部面板（采样/位移/高精度/后台保活/通知），不建 TrackSettingActivity。
+ * 1:1 取值（原版取证 `lc-gap-evidence/probe/F15-tracklist.png` / `F15-track-setting.png`）：
+ * - 列表页标题 **`历史轨迹`**（不是「轨迹记录」）；
+ * - 空态 = 插画（蓝星球 + 小人）+ 文案 **`暂无历史轨迹记录`**；
+ * - 整页底色 `#F0F3F7`；
+ * - 设置面板：标题 `轨迹设置`，分区 `权限设置`，四行原文
+ *   `后台定位`（开关，默认关）/ `忽略省电优化`（去设置）/ `后台运行权限`（状态）/ `通知栏权限`（状态）。
+ *
+ * 结构：记录卡（开始/停止 + 记录中状态）→ 未完成卡（继续/结束保存/丢弃）→ 列表（查看/删除）。
+ * LC 增量（非原版）：面板底部「记录参数」三项（采样间隔/最小位移/高精度定位），原版面板没有这三项，
+ * 保留是为了让方案 §4 的可调采样在真机上可改；原版四行权限行的位置/文案不变。
  */
 public class TrackListActivity extends LcFeatureActivity {
 
@@ -49,7 +58,7 @@ public class TrackListActivity extends LcFeatureActivity {
     private Button stopButton;
     private LinearLayout ongoingCard;
     private LinearLayout listBox;
-    private TextView emptyView;
+    private LinearLayout emptyBox;
 
     private final Runnable tick = new Runnable() {
         @Override
@@ -85,7 +94,7 @@ public class TrackListActivity extends LcFeatureActivity {
         settings = getSharedPreferences("lc_track", MODE_PRIVATE);
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(getColor(R.color.lc_setting_bg));
+        scroll.setBackgroundColor(getColor(R.color.lc_track_page_bg));
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(16), dp(8), dp(16), dp(24));
@@ -149,13 +158,26 @@ public class TrackListActivity extends LcFeatureActivity {
         listBox.setOrientation(LinearLayout.VERTICAL);
         root.addView(listBox);
 
-        emptyView = new TextView(this);
-        emptyView.setId(R.id.lc_track_empty);
-        emptyView.setText(R.string.lc_track_empty);
-        emptyView.setTextColor(getColor(R.color.lc_label_gray));
-        emptyView.setTextSize(14f);
-        emptyView.setPadding(0, dp(20), 0, 0);
-        root.addView(emptyView);
+        // 空态：插画（蓝星球 + 小人）+ `暂无历史轨迹记录`（原版取证 F15-tracklist.png）
+        emptyBox = new LinearLayout(this);
+        emptyBox.setOrientation(LinearLayout.VERTICAL);
+        emptyBox.setGravity(Gravity.CENTER_HORIZONTAL);
+        emptyBox.setPadding(0, dp(48), 0, dp(24));
+
+        ImageView emptyArt = new ImageView(this);
+        emptyArt.setId(R.id.lc_track_empty_illustration);
+        emptyArt.setImageResource(R.drawable.lc_track_empty_planet);
+        emptyBox.addView(emptyArt, new LinearLayout.LayoutParams(dp(120), dp(120)));
+
+        TextView emptyText = new TextView(this);
+        emptyText.setId(R.id.lc_track_empty);
+        emptyText.setText(R.string.lc_track_empty);
+        emptyText.setTextColor(getColor(R.color.lc_label_gray));
+        emptyText.setTextSize(14f);
+        emptyText.setPadding(0, dp(12), 0, 0);
+        emptyBox.addView(emptyText);
+
+        root.addView(emptyBox);
 
         content.addView(scroll, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -247,7 +269,7 @@ public class TrackListActivity extends LcFeatureActivity {
             listBox.addView(buildItem(m, shown));
             shown++;
         }
-        emptyView.setVisibility(shown == 0 ? View.VISIBLE : View.GONE);
+        emptyBox.setVisibility(shown == 0 ? View.VISIBLE : View.GONE);
     }
 
     private View buildItem(final TrackMeta m, int index) {
@@ -386,7 +408,7 @@ public class TrackListActivity extends LcFeatureActivity {
                 .show();
     }
 
-    // ---------------- 记录设置面板 ----------------
+    // ---------------- 轨迹设置面板（1:1 权限设置四行 + LC 增量记录参数） ----------------
 
     private void showSettingsSheet() {
         LinearLayout panel = new LinearLayout(this);
@@ -395,12 +417,70 @@ public class TrackListActivity extends LcFeatureActivity {
         panel.setPadding(dp(18), dp(10), dp(18), dp(8));
 
         TextView title = new TextView(this);
+        title.setId(R.id.lc_track_settings_title);
         title.setText(R.string.lc_track_settings);
         title.setTextSize(16f);
         title.setTextColor(getColor(R.color.lc_setting_text));
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         panel.addView(title);
 
-        final long[] intervals = {1000, 2000, 5000};
+        // 分区：权限设置（四行原文见 F15-track-setting.png）
+        TextView permTitle = new TextView(this);
+        permTitle.setId(R.id.lc_track_perm_title);
+        permTitle.setText(R.string.lc_track_perm_title);
+        permTitle.setTextSize(12f);
+        permTitle.setTextColor(getColor(R.color.lc_label_gray));
+        permTitle.setPadding(0, dp(8), 0, dp(2));
+        panel.addView(permTitle);
+
+        // 行1：后台定位（右侧开关，默认关）。
+        // 原版此开关申请「始终允许后台定位」；LC 用前台服务记录，manifest 不声明
+        // ACCESS_BACKGROUND_LOCATION（方案 §3：不申请持续定位门），所以开关只反映系统授权状态，
+        // 点它跳应用详情由用户自己决定，不替用户申请权限。
+        LinearLayout bgLocRow = permRow(R.string.lc_track_perm_bg_location,
+                R.id.lc_track_settings_bg_location);
+        LcPillSwitch bgLoc = new LcPillSwitch(this);
+        bgLoc.setChecked(hasBackgroundLocation());
+        bgLoc.setOnCheckedChangeListener((v, c) -> {
+            v.setChecked(hasBackgroundLocation()); // 状态以系统授权为准，不由开关自转
+            openAppDetails();
+        });
+        bgLocRow.addView(bgLoc, new LinearLayout.LayoutParams(dp(46.2f), dp(23.1f)));
+        panel.addView(bgLocRow);
+
+        // 行2：忽略省电优化（按钮「去设置」）
+        LinearLayout batteryRow = permRow(R.string.lc_track_perm_battery,
+                R.id.lc_track_settings_battery);
+        TextView batteryGo = statusButton(R.id.lc_track_settings_battery_go,
+                getString(R.string.lc_track_go_settings), true, v -> requestIgnoreBattery());
+        batteryRow.addView(batteryGo);
+        panel.addView(batteryRow);
+
+        // 行3：后台运行权限（状态按钮，点开应用详情）
+        LinearLayout bgRunRow = permRow(R.string.lc_track_perm_bg_run,
+                R.id.lc_track_settings_bg_run);
+        boolean bgRunOn = ignoringBatteryOptimizations();
+        bgRunRow.addView(statusButton(R.id.lc_track_settings_bg_run,
+                stateText(bgRunOn), bgRunOn, v -> openAppDetails()));
+        panel.addView(bgRunRow);
+
+        // 行4：通知栏权限（状态按钮，点开通知设置）
+        LinearLayout notifyRow = permRow(R.string.lc_track_perm_notification,
+                R.id.lc_track_settings_notification);
+        boolean notifyOn = notificationsEnabled();
+        notifyRow.addView(statusButton(R.id.lc_track_settings_notification,
+                stateText(notifyOn), notifyOn, v -> openNotificationSettings()));
+        panel.addView(notifyRow);
+
+        // 以下为 LC 增量：原版面板没有「记录参数」，保留可调采样（方案 §4）
+        TextView paramsTitle = new TextView(this);
+        paramsTitle.setId(R.id.lc_track_params_title);
+        paramsTitle.setText(R.string.lc_track_params_title);
+        paramsTitle.setTextSize(12f);
+        paramsTitle.setTextColor(getColor(R.color.lc_label_gray));
+        paramsTitle.setPadding(0, dp(14), 0, dp(2));
+        panel.addView(paramsTitle);
+
         final TextView intervalBtn = new TextView(this);
         intervalBtn.setId(R.id.lc_track_settings_interval);
         intervalBtn.setTextSize(14f);
@@ -447,36 +527,6 @@ public class TrackListActivity extends LcFeatureActivity {
         highRow.addView(high, new LinearLayout.LayoutParams(dp(46.2f), dp(23.1f)));
         panel.addView(highRow);
 
-        TextView battery = new TextView(this);
-        battery.setId(R.id.lc_track_settings_battery);
-        battery.setText(R.string.lc_track_battery_guide);
-        battery.setTextSize(13f);
-        battery.setTextColor(getColor(R.color.lc_label_gray));
-        battery.setPadding(0, dp(10), 0, dp(4));
-        battery.setOnClickListener(v -> {
-            try {
-                startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
-            } catch (Throwable ignored) {
-            }
-        });
-        panel.addView(battery);
-
-        TextView notification = new TextView(this);
-        notification.setId(R.id.lc_track_settings_notification);
-        notification.setText(R.string.lc_track_settings_notification);
-        notification.setTextSize(13f);
-        notification.setTextColor(getColor(R.color.lc_label_gray));
-        notification.setPadding(0, dp(4), 0, dp(4));
-        notification.setOnClickListener(v -> {
-            try {
-                Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                        .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
-                startActivity(i);
-            } catch (Throwable ignored) {
-            }
-        });
-        panel.addView(notification);
-
         TextView note = new TextView(this);
         note.setId(R.id.lc_track_settings_note);
         note.setText(R.string.lc_track_settings_note);
@@ -496,5 +546,84 @@ public class TrackListActivity extends LcFeatureActivity {
 
         ref[0] = new AlertDialog.Builder(this).setView(panel).create();
         ref[0].show();
+    }
+
+    /** 权限行：左标签（带 id）+ 右侧控件由调用方追加。 */
+    private LinearLayout permRow(int labelRes, int labelId) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(10), 0, dp(10));
+        TextView label = new TextView(this);
+        label.setId(labelId);
+        label.setText(labelRes);
+        label.setTextSize(14f);
+        label.setTextColor(getColor(R.color.lc_setting_text));
+        row.addView(label, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        return row;
+    }
+
+    private TextView statusButton(int id, String text, boolean on, View.OnClickListener click) {
+        TextView v = new TextView(this);
+        v.setId(id);
+        v.setText(text);
+        v.setTextSize(13f);
+        v.setTextColor(on ? getColor(R.color.lc_blue) : getColor(R.color.lc_label_gray));
+        v.setPadding(dp(8), dp(5), dp(8), dp(5));
+        v.setOnClickListener(click);
+        return v;
+    }
+
+    private String stateText(boolean on) {
+        return getString(on ? R.string.lc_track_perm_on : R.string.lc_track_perm_off);
+    }
+
+    /** 后台定位授权状态（manifest 未声明该权限，正常恒为未授予）。 */
+    private boolean hasBackgroundLocation() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false;
+        return checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean ignoringBatteryOptimizations() {
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+        return pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
+    }
+
+    private boolean notificationsEnabled() {
+        android.app.NotificationManager nm =
+                (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        return nm == null || nm.areNotificationsEnabled();
+    }
+
+    private void requestIgnoreBattery() {
+        try {
+            Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    android.net.Uri.parse("package:" + getPackageName()));
+            startActivity(i);
+        } catch (Throwable ignored) {
+            try {
+                startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+            } catch (Throwable ignored2) {
+            }
+        }
+    }
+
+    private void openAppDetails() {
+        try {
+            startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:" + getPackageName())));
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void openNotificationSettings() {
+        try {
+            Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+            startActivity(i);
+        } catch (Throwable ignored) {
+        }
     }
 }

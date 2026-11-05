@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  历史轨迹空态插画（原版取证 F15-tracklist.png：蓝星球 + 小人）。
+  矢量近似复刻，不引第三方位图。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- 星球本体 -->
+    <path
+        android:fillColor="#FF2E75FE"
+        android:pathData="M60,104 a38,38 0 1,1 0,-76 a38,38 0 1,1 0,76z" />
+
+    <!-- 星球高光带（赤道附近，半透明白） -->
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M22,70 q38,16 76,0 q-8,12 -38,12 q-30,0 -38,-12z" />
+
+    <!-- 小人：头 -->
+    <path
+        android:fillColor="#FF657389"
+        android:pathData="M60,3 a5,5 0 1,1 0,10 a5,5 0 1,1 0,-10z" />
+
+    <!-- 小人：身体 -->
+    <path
+        android:fillColor="#FF657389"
+        android:pathData="M58,14 h4 v10 h-4z" />
+
+    <!-- 小人：手臂 -->
+    <path
+        android:fillColor="#FF657389"
+        android:pathData="M54,15 h2 v7 h-2z M64,15 h2 v7 h-2z" />
+
+    <!-- 小人：双腿（脚踩在星球顶部） -->
+    <path
+        android:fillColor="#FF657389"
+        android:pathData="M58,24 h2 v8 h-2z M60,24 h2 v8 h-2z" />
+</vector>

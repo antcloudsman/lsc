@@ -20,4 +20,7 @@
     <color name="lc_toolmgr_bg">#FFF0F3F7</color>
     <color name="lc_toolmgr_card">#FFFFFFFF</color>
     <color name="lc_toolmgr_desc">#FF657389</color>
+
+    <!-- 历史轨迹列表页：整页底 #F0F3F7（原版取证 F15-tracklist.png） -->
+    <color name="lc_track_page_bg">#FFF0F3F7</color>
 </resources>

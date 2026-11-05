@@ -208,6 +208,7 @@ if ($grantDump -notmatch 'ACCESS_FINE_LOCATION: granted=true') {
 Invoke-Adb @('shell', 'am', 'force-stop', $Pkg) | Out-Null
 Invoke-Adb @('logcat', '-c') | Out-Null
 $start = Invoke-Adb @('shell', 'am', 'start', '-W', '-n', "$Pkg/.MainActivity")
+$start | Set-Content -Path (Join-Path $OutDir 'am-start-w.txt') -Encoding UTF8
 $total = [regex]::Match($start, 'TotalTime:\s*(\d+)').Groups[1].Value
 Start-Sleep -Seconds 3
 $pid0 = (Invoke-Adb @('shell', 'pidof', $Pkg)).Trim()
@@ -224,6 +225,29 @@ if ($focusLine -notmatch [regex]::Escape($Pkg)) {
 }
 $ui = Get-Ui 'ui-first'
 if ($ui.ok -and ($ui.xml -match '跳过')) { Tap-Text $ui.xml '跳过' | Out-Null; Start-Sleep -Milliseconds 700 }
+# `-SkipInstall` 时磁盘包与设备上实际运行的包可能不是同一个：报告里的 APK 必须来自设备 pull 的 base.apk。
+# （smoke6/m4-only-b 都吃过这个亏：summary 写的是磁盘新包 sha，设备跑的还是旧包。）
+$devApkSha = ''; $devApkSize = 0
+$remoteApk = ((Invoke-Adb @('shell', 'pm', 'path', $Pkg)) -replace 'package:', '').Trim()
+$devTmp = Join-Path ([IO.Path]::GetTempPath()) ("lc_dev_" + [guid]::NewGuid().ToString('N') + ".apk")
+if ($remoteApk) {
+    Invoke-Adb @('pull', $remoteApk, $devTmp) | Out-Null
+    if (Test-Path $devTmp) {
+        $devApkSha = (Get-FileHash $devTmp -Algorithm SHA256).Hash
+        $devApkSize = (Get-Item $devTmp).Length
+        Remove-Item $devTmp -Force -ErrorAction SilentlyContinue
+    }
+}
+$diskApkSha = (Get-FileHash $Apk -Algorithm SHA256).Hash
+if ($devApkSha) {
+    $apkLine = "设备运行 APK（pull 自 $remoteApk）：sha256 ``$devApkSha`` / $devApkSize B"
+    if ($devApkSha -ne $diskApkSha) {
+        Add-Result 'ENV-APK' 'DIAG' '设备运行包 = 指定包' "设备 $devApkSha ≠ 磁盘 $diskApkSha；本轮结果只对设备上那只包成立" ''
+    }
+} else {
+    $apkLine = "设备 APK 未取到（pm path 为空）；磁盘包 sha256 ``$diskApkSha``（仅供参考）"
+    Add-Result 'ENV-APK' 'BLOCKED' '能从设备 pull 出 base.apk' 'pm path 为空，报告无法绑定到实际运行的包' ''
+}
 Set-Heading 0
 Add-Result 'ENV' $(if ($total) { 'PASS' } else { 'BLOCKED' }) '启动到前台' "pid=$pid0 TotalTime=${total}ms"
 
@@ -410,7 +434,7 @@ $pass = @($script:Results | Where-Object status -eq 'PASS').Count
 $fail = @($script:Results | Where-Object status -eq 'FAIL').Count
 $blocked = @($script:Results | Where-Object status -eq 'BLOCKED').Count
 $diag = @($script:Results | Where-Object status -eq 'DIAG').Count
-$lines = @("# Android 冒烟（K-01）", "", "- 时间：$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')", "- 设备：$Device", "- APK：$Apk（$((Get-FileHash $Apk -Algorithm SHA256).Hash)）", "", '| 用例 | 结果 | 期望 | 实际 |', '|---|---|---|---|')
+$lines = @("# Android 冒烟（K-01）", "", "- 时间：$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')", "- 设备：$Device", "- $apkLine", "- 磁盘 APK（参考）：``$Apk``（$diskApkSha）", "", '| 用例 | 结果 | 期望 | 实际 |', '|---|---|---|---|')
 foreach ($r in $script:Results) { $lines += "| $($r.id) | $($r.status) | $($r.expected) | $($r.actual) |" }
 $lines += ''
 $lines += "TOTAL PASS=$pass FAIL=$fail BLOCKED=$blocked DIAG=$diag"

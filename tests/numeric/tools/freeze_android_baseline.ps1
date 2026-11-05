@@ -202,6 +202,7 @@ if ($grantLine -notmatch 'ACCESS_FINE_LOCATION: granted=true') {
 }
 & $adb -s $Device logcat -c
 $start = & $adb -s $Device shell am start -W -n "$Pkg/.MainActivity" 2>&1
+$start | Set-Content -Path (Join-Path $OutDir "am-start-w.txt") -Encoding UTF8
 $total = ([regex]::Match(($start -join "`n"), "TotalTime:\s*(\d+)")).Groups[1].Value
 Start-Sleep -Seconds 4
 $appPid = (& $adb -s $Device shell pidof $Pkg).Trim()
@@ -229,6 +230,20 @@ $verCode = ([regex]::Match($pkgDump, "versionCode=(\d+)")).Groups[1].Value
 $lastUpdate = ([regex]::Match($pkgDump, "lastUpdateTime=([^\r\n]+)")).Groups[1].Value.Trim()
 $apkItem = Get-Item $Apk
 $apkHash = (Get-FileHash $Apk -Algorithm SHA256).Hash
+# 报告里的包必须绑定「设备上实际运行的包」：-SkipInstall 时磁盘 APK 可能已被重编成别的版本
+# （m4-only-b 的 summary 就写成磁盘新包、设备跑的是旧包）。pull 出 base.apk 现算 sha，取不到直接拒跑。
+$devApkSha = ''; $devApkSize = 0
+$remoteApk = ((& $adb -s $Device shell pm path $Pkg) -replace 'package:', '').Trim()
+$devTmp = Join-Path ([IO.Path]::GetTempPath()) ("lc_dev_" + [guid]::NewGuid().ToString('N') + ".apk")
+if ($remoteApk) {
+    & $adb -s $Device pull $remoteApk $devTmp 2>&1 | Out-Null
+    if (Test-Path $devTmp) {
+        $devApkSha = (Get-FileHash $devTmp -Algorithm SHA256).Hash
+        $devApkSize = (Get-Item $devTmp).Length
+        Remove-Item $devTmp -Force -ErrorAction SilentlyContinue
+    }
+}
+if (-not $devApkSha) { throw "无法从设备 pull 出 base.apk（pm path 为空）；报告无法绑定实际运行包，拒绝冻结" }
 $head = $BuildHead
 $treeHead = (& git -C $repo rev-parse --short HEAD 2>$null)
 if (-not $treeHead) { $treeHead = "unknown" }
@@ -315,7 +330,9 @@ $mapMissing = @($records | Where-Object { -not $_.found } | ForEach-Object { "$(
 $mapBadSide = @($records | Where-Object { $_.side -eq "wrong" } | ForEach-Object { "$($_.group):$($_.label)" })
 $mapBadOrder = @($records | Where-Object { $_.order -eq "out-of-order" } | ForEach-Object { "$($_.group):$($_.label)" })
 $mapOffTol = @($records | Where-Object { $_.offTol } | ForEach-Object { "$($_.group):$($_.label)(dx=$($_.dx),dy=$($_.dy))" })
-$mapMaxDrift = ($records | Where-Object { $_.found } | ForEach-Object { [math]::Max([math]::Abs([int]$_.dx), [math]::Abs([int]$_.dy)) } | Measure-Object -Maximum).Maximum
+$mapMaxAbsDx = ($records | Where-Object { $_.found } | ForEach-Object { [math]::Abs([double]$_.cx - [double]$_.expX) } | Measure-Object -Maximum).Maximum
+$mapMaxAbsDy = ($records | Where-Object { $_.found } | ForEach-Object { [math]::Abs([double]$_.cy - [double]$_.expY) } | Measure-Object -Maximum).Maximum
+$mapMaxDrift = [math]::Round([math]::Max($mapMaxAbsDx, $mapMaxAbsDy), 1)
 
 # ---- 2) 「更多」16 宫格 bottom sheet ----
 $moreOk = Tap-Text $mapUi.xml '^更多$'
@@ -404,10 +421,11 @@ $manifest = @"
 - 设备：$model / Android $release / ``$fingerprint``
 - 屏幕：$wm；$density
 - App：versionName $verName ($verCode)，lastUpdateTime $lastUpdate，pid $appPid
-- 构建：``$branchShown`` HEAD ``$head``；APK ``$($apkItem.FullName)``（$($apkItem.Length) B），SHA256 ``$apkHash``
+- 构建：``$branchShown`` HEAD ``$head``；磁盘 APK ``$($apkItem.FullName)``（$($apkItem.Length) B），SHA256 ``$apkHash``
+- 设备运行 APK（``pm path`` + pull 现算）：SHA256 ``$devApkSha`` / $devApkSize B$(if ($devApkSha -ne $apkHash) { "；**与磁盘包不一致**（以本行为准，磁盘包只是参考）" } else { "；与磁盘包一致" })
 - 脚本运行树：``$repo`` HEAD ``$treeHead``（仅诊断；APK 的构建来源以上一行 ``-BuildHead`` 为准）
 - 结构：$structureNote
-- 冷启动：am start -W TotalTime = ${total} ms；注入 heading = $InjectHeading（debug 广播）
+- 冷启动：am start -W TotalTime = ${total} ms（原文见 ``am-start-w.txt``）；注入 heading = $InjectHeading（debug 广播）
 - 数值门禁：``$gateSummary`` + ``CARGO: PASS``（``numeric-gate.txt``；原始输出见文末）
 - logcat：FATAL EXCEPTION（应用进程）**$fatal** / 已排除非应用 FATAL **$fatalOther** / ANR **$anr**（``logcat.txt``）
 - SW-006 面板裁切窗：$cropNote
@@ -421,10 +439,10 @@ $manifest = @"
 | 地图态左列 | 8 | $leftFound | $(($mapMissing | Where-Object { $_ -like 'left:*' }) -join ' ; ') |
 | 地图态右列 | 10 | $rightFound | $(($mapMissing | Where-Object { $_ -like 'right:*' }) -join ' ; ') |
 | 「更多」16 宫格 | 16 | $moreFound | $($moreMissing -join ' ; ') |
-| 罗盘态文字（dump 可读部分，非硬项） | 19 | $compassFound | 见 ``ui-compass-mode.xml``（自绘层不在 dump 属正常） |
+| 罗盘态文字（dump 可读部分，非硬项） | 19 | $compassFound | 见 ``ui-compass-mode.xml``；缺的 3 个是**原版顶部栏「返回/搜索/图层」未实现（K-02）**，不是 dump 采不到 |
 
 - 结构校验：侧别错误 $($mapBadSide.Count) 个 $(if ($mapBadSide.Count) { "（$($mapBadSide -join ' ; ')）" })；列内顺序异常 $($mapBadOrder.Count) 个 $(if ($mapBadOrder.Count) { "（$($mapBadOrder -join ' ; ')）" })
-- 中心偏差（参考坐标取自 `orig-main.xml`，分母**内容帧 2578**；容差 ±45px）：最大 **$mapMaxDrift px**；超差 $($mapOffTol.Count) 个 $(if ($mapOffTol.Count) { "（$($mapOffTol -join ' ; ')）" })
+- 中心偏差（参考坐标取自 `orig-main.xml`，分母**内容帧 2578**；容差 ±45px）：最大 **$mapMaxDrift px**（dx 最大 $([math]::Round($mapMaxAbsDx,1)) px，dy 最大 $([math]::Round($mapMaxAbsDy,1)) px）；超差 $($mapOffTol.Count) 个 $(if ($mapOffTol.Count) { "（$($mapOffTol -join ' ; ')）" })
 
 ## 冻结物（SHA256 见 ``SHA256SUMS.txt``）
 

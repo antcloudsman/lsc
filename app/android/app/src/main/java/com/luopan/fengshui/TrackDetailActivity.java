@@ -142,8 +142,9 @@ public class TrackDetailActivity extends LcFeatureActivity {
     }
 
     private void openReplay() {
-        // 回放页在下一笔（F-15 第二笔）接入地图桥；本笔先如实提示，不锁功能。
-        Toast.makeText(this, "回放页下一笔接入", Toast.LENGTH_SHORT).show();
+        Intent i = new Intent(this, TrackReplayActivity.class);
+        i.putExtra("track_id", trackId);
+        startActivity(i);
     }
 
     private void exportGpx() {

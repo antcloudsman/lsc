@@ -109,6 +109,11 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <activity
+            android:name=".TrackReplayActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <service
             android:name=".TrackRecorderService"
             android:exported="false"

@@ -112,5 +112,10 @@
             android:exported="true"
             tools:replace="android:exported" />
 
+        <activity
+            android:name=".TrackReplayActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
     </application>
 </manifest>

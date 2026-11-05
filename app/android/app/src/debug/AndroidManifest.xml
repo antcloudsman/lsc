@@ -101,5 +101,16 @@
             android:exported="true"
             tools:replace="android:exported" />
 
+        <!-- F-15 轨迹：仅 debug 导出供 AT 直达 -->
+        <activity
+            android:name=".TrackListActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
+        <activity
+            android:name=".TrackDetailActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
     </application>
 </manifest>

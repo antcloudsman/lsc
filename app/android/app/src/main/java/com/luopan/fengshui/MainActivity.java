@@ -1167,6 +1167,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     startActivity(new android.content.Intent(this, FishingActivity.class));
                 } else if ("钓点".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
+                } else if ("轨迹记录".equals(t) && flags.isEnabled("f15")) {
+                    // F-15：更多 → 轨迹记录 → TrackListActivity（默认开；关掉回退旧 stub）
+                    startActivity(new android.content.Intent(this, TrackListActivity.class));
+                } else if ("轨迹记录".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
                 } else if ("画笔".equals(t) && flags.isEnabled("f13")) {
                     // F-13：更多 → 画笔 → 地图内绘制态（再点退出）
                     toggleDraw();

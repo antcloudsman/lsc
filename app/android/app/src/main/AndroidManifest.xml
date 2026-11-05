@@ -4,6 +4,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- F-15 轨迹记录：前台服务 + 常驻通知 + 保活引导（不申请「始终允许后台定位」） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:allowBackup="true"
@@ -92,6 +97,22 @@
             android:name=".DiscoveryActivity"
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
+
+        <!-- F-15 轨迹（LC 自建）：列表 → 详情 → 回放；记录态由前台服务承担 -->
+        <activity
+            android:name=".TrackListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
+        <activity
+            android:name=".TrackDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
+        <service
+            android:name=".TrackRecorderService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
 
         <activity
             android:name=".ToolsManagerActivity"

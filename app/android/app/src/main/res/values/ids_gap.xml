@@ -243,4 +243,61 @@
     <item name="lc_compasslist_del_8" type="id" />
     <item name="lc_compasslist_del_9" type="id" />
 
+    <!-- F-15 轨迹：列表 -->
+    <item name="lc_track_back" type="id" />
+    <item name="lc_track_title" type="id" />
+    <item name="lc_track_settings" type="id" />
+    <item name="lc_track_start" type="id" />
+    <item name="lc_track_recording" type="id" />
+    <item name="lc_track_stop" type="id" />
+    <item name="lc_track_ongoing" type="id" />
+    <item name="lc_track_resume" type="id" />
+    <item name="lc_track_finish" type="id" />
+    <item name="lc_track_discard" type="id" />
+    <item name="lc_track_list" type="id" />
+    <item name="lc_track_empty" type="id" />
+    <item name="lc_track_item_0" type="id" />
+    <item name="lc_track_item_1" type="id" />
+    <item name="lc_track_item_2" type="id" />
+    <item name="lc_track_item_3" type="id" />
+    <item name="lc_track_item_4" type="id" />
+    <item name="lc_track_item_5" type="id" />
+    <item name="lc_track_item_6" type="id" />
+    <item name="lc_track_item_7" type="id" />
+    <item name="lc_track_item_8" type="id" />
+    <item name="lc_track_item_9" type="id" />
+
+    <!-- F-15 轨迹：列表页设置面板 -->
+    <item name="lc_track_settings_sheet" type="id" />
+    <item name="lc_track_settings_interval" type="id" />
+    <item name="lc_track_settings_distance" type="id" />
+    <item name="lc_track_settings_high_accuracy" type="id" />
+    <item name="lc_track_settings_battery" type="id" />
+    <item name="lc_track_settings_notification" type="id" />
+    <item name="lc_track_settings_note" type="id" />
+    <item name="lc_track_settings_close" type="id" />
+
+    <!-- F-15 轨迹：详情 -->
+    <item name="lc_track_detail_back" type="id" />
+    <item name="lc_track_detail_title" type="id" />
+    <item name="lc_track_detail_distance" type="id" />
+    <item name="lc_track_detail_duration" type="id" />
+    <item name="lc_track_detail_avg_speed" type="id" />
+    <item name="lc_track_detail_max_speed" type="id" />
+    <item name="lc_track_detail_meta" type="id" />
+    <item name="lc_track_detail_replay" type="id" />
+    <item name="lc_track_detail_export" type="id" />
+    <item name="lc_track_detail_delete" type="id" />
+
+    <!-- F-15 轨迹：回放 -->
+    <item name="lc_track_replay_map" type="id" />
+    <item name="lc_track_replay_back" type="id" />
+    <item name="lc_track_replay_title" type="id" />
+    <item name="lc_track_replay_follow" type="id" />
+    <item name="lc_track_replay_play" type="id" />
+    <item name="lc_track_replay_slider" type="id" />
+    <item name="lc_track_replay_time" type="id" />
+    <item name="lc_track_replay_speed" type="id" />
+    <item name="lc_track_replay_legend" type="id" />
+
 </resources>

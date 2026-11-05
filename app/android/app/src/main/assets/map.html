@@ -60,6 +60,7 @@
   <button onclick="pitchStep(10)">俯仰 +</button>
   <div id="pitchWrap"><input id="pitchRange" type="range" min="0" max="60" step="1" value="45" oninput="setPitch(this.value)"></div>
   <button onclick="openSources()">底图源</button>
+  <button id="btn_road" onclick="toggleRoadNet()">路网视图</button>
   <button id="btn_needle" class="active" onclick="toggleNeedle()">指针</button>
   <button id="btn_sit" onclick="toggleSitNorth()">坐南朝北</button>
   <button id="btn_contour" onclick="toggleContour()">等高线</button>
@@ -94,6 +95,8 @@ var KEY = "dd18858b33229f5837ad1d97b8d3105e";
 var SUB = ["t0","t1","t2","t3","t4","t5","t6","t7"];
 var base = "ter";              // vec=矢量 img=影像 ter=地形(默认)
 var anno = "cta";              // 注记层
+var roadNet = false;           // F-04 路网视图：vec 路网图面 + cva 路名注记（无实时路况）
+var baseBeforeRoad = null;     // 进入路网视图前的底图，关闭时恢复
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -181,6 +184,13 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
 }
 
 function setBase(b) {
+  if (roadNet && b !== "vec") {
+    /* 路网视图下切到别的底图 = 退出路网视图（F-04） */
+    roadNet = false;
+    baseBeforeRoad = null;
+    syncRoadBtn();
+    emit({ type: "roadnet", on: false, mode: "base" });
+  }
   base = b;
   anno = (b === "img") ? "cia" : (b === "ter" ? "cta" : "cva");
   document.getElementById("btn_vec").className = (b === "vec") ? "active" : "";
@@ -194,6 +204,36 @@ function setBase(b) {
     render();
   }
   updateSrcInfo();
+}
+
+/* ---- F-04 路网视图 ----------------------------------------------------------
+ * 免费替代：天地图 vec 路网图面 + cva 路名注记；进入前记住 base，关闭时恢复。
+ * 3D 下 setBase 会重建贴面，所以「路网视图」在 3D 同样生效。
+ * 边界：天地图没有实时路况服务，这里不画任何红/黄/绿路况线（不做假数据）。
+ * 事件走 LCAndroid.onEvent：{"type":"roadnet","on":bool,"mode":"vec|base"}
+ * -------------------------------------------------------------------------- */
+function toggleRoadNet() { setRoadNet(!roadNet); }
+
+function setRoadNet(on) {
+  on = !!on;
+  if (on === roadNet) { syncRoadBtn(); return roadNet; }
+  roadNet = on;
+  if (on) {
+    baseBeforeRoad = base;
+    setBase("vec");
+  } else {
+    setBase(baseBeforeRoad || "ter");
+    baseBeforeRoad = null;
+  }
+  syncRoadBtn();
+  emit({ type: "roadnet", on: roadNet, mode: on ? "vec" : "base" });
+  console.log("LC3D roadnet on=" + roadNet + " base=" + base);
+  return roadNet;
+}
+
+function syncRoadBtn() {
+  var b = document.getElementById("btn_road");
+  if (b) b.className = roadNet ? "active" : "";
 }
 
 /* ---------------- 模式 / 视角 ---------------- */
@@ -1387,7 +1427,7 @@ function getState() {
     demZoom: patch ? patch.z : null, hasTexture: !!(patch && patch.tex),
     sitMode: sitMode, sitNorth: sitMode !== 0,
     contour: contourOn, ground: groundMode, needle: needleOn,
-    base: base, drape: drape,
+    base: base, drape: drape, roadNet: roadNet,
     uiMode: uiMode,
     attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
@@ -1407,6 +1447,7 @@ window.__LC3D = {
   setMode: setMode,
   setUiMode: setUiMode,
   attribution: getAttribution,
+  setRoadNet: setRoadNet,
   state: getState,
   fps: getFps,
   screenshot: function () {
@@ -1515,7 +1556,7 @@ render();
 applyUiModeHash(location.hash);
 
 /* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
- * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet
  * 页面初始化与 hashchange 都会应用，所以客户端一次 `loadUrl(...#in3d&sit)` 即可生效
  * （同文档导航只改 hash、不触发 onload 的情况也覆盖）。 */
 function hashHas(h, name) {
@@ -1552,6 +1593,7 @@ function applyIn3D(hash) {
       applySit();
     }
     if (hashHas(h, "srcpanel")) openSources();
+    if (hashHas(h, "roadnet") && !roadNet) setRoadNet(true);
     if (hashHas(h, "fs") && !fullScreen) toggleFullScreen();
     var msi = h.match(/src=(\d+)/);
     if (msi) selectSource(parseInt(msi[1], 10));
@@ -1607,7 +1649,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "getAttribution"];
+    "getState", "getFps", "setUiMode", "getAttribution", "setRoadNet"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

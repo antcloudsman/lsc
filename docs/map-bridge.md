@@ -70,6 +70,7 @@
 | `zoomIn()` / `zoomOut()` | — | 缩放 |
 | `locate()` | — | 浏览器 geolocation 定位（权限由 MainActivity 申请） |
 | `clearMarkers()` | — | 清除 2D 立向点 |
+| `setRoadNet(on)` | `true`/`false` | **F-04 路网视图**：`on` 切天地图 `vec`（路网图面 + `cva` 路名注记），`off` 恢复进入前底图；3D 下重建贴面；发 `roadnet` 事件（§5.5） |
 | `getState()` | — | 返回 JSON（mode/lat/lng/zoom/pitch/bearing/fps/elev） |
 | `getFps()` | — | 最近 1 s 的 rAF 实测帧率 |
 
@@ -79,7 +80,7 @@
 
 | 接口 | 返回 |
 |---|---|
-| `getState()` | 对象 `{mode, lat, lng, zoom, pitch, bearing, fps, elev, demZoom, hasTexture, sitMode, sitNorth, contour, ground, needle, base, drape, uiMode, attribution, source}` |
+| `getState()` | 对象 `{mode, lat, lng, zoom, pitch, bearing, fps, elev, demZoom, hasTexture, sitMode, sitNorth, contour, ground, needle, base, drape, roadNet, uiMode, attribution, source}` |
 | `getFps()` | 数字（最近 1 s rAF 实测帧率） |
 | `window.sitNorth` | 只读布尔（`sitMode!==0`，即坐向对齐是否开启） |
 | `window.__LC3D.*` | 兼容别名：`setView/state/fps/screenshot` |
@@ -97,6 +98,7 @@
 | `&sit=1` / `&sit=0` | 启动即对齐：`1`=坐南朝北（向朝上）、`0`=坐北朝南（坐朝上）；裸 `&sit` 等同 `sit=1` |
 | `&fs` | 启动即全屏（保留「退出全屏」） |
 | `&srcpanel` / `&src=N` | 打开底图源面板 / 直接选第 N 个源（0 基） |
+| `&roadnet` | 启动即开「路网视图」（F-04，切 `vec`） |
 
 例：`file:///android_asset/map.html#in3d`（3D 桥对拍用）。自测入口 `#selftest` 仍保留（会等 DEM 就绪后自动点选一次）。
 
@@ -188,6 +190,19 @@ python -m http.server 8765 --bind 127.0.0.1
 - **审图号按源绑定**：`MAP_SOURCES[i].review`，真相未核对前一律填 `"未确认"`，界面右下角常显「底图：X · 审图号：Y」。**不得照抄世纪空间/高德的号**——那是合规问题，等 LC产品 核对天地图官方号后回填。
 - 面板入口 = 控件栏「底图源」。
 
+### 5.5 路网视图（F-04，2026-11-05）
+
+原版左列「路网」是底图/叠加切换（`MapWebInterface` 33 个方法里没有路网专用方法），不是独立矢量图层。LC 实现：
+
+- **接口**：`setRoadNet(on)`（`on` 为布尔）。`on` → `setBase('vec')`（天地图矢量图面含路网 + `cva` 路名注记）；`off` → 恢复进入前的 `base`（默认 `ter`）。3D 下走同一条 `setBase`，贴面会重建。
+- **事件**（走 `LCAndroid.onEvent`）：
+  ```json
+  {"type":"roadnet","on":true,"mode":"vec"}
+  ```
+  `mode`：`"vec"`（打开）或 `"base"`（关闭/被其他底图切换顶掉）。
+- **状态**：`getState().roadNet` 布尔；`window.__LC3D.setRoadNet` 同义。
+- **边界**：天地图**没有实时路况服务**，本视图只画路网图面与路名，**不画任何红/黄/绿路况线**，文案统一叫「路网视图」。若以后引入免费路况源，另立项，不在此接口塞假数据。
+
 ## 6. 截图
 
 - 3D canvas 创建时已设 `preserveDrawingBuffer:true`，页面内 `window.__LC3D.screenshot()` 可返回 `toDataURL('image/png')`。
@@ -207,6 +222,7 @@ python -m http.server 8765 --bind 127.0.0.1
 6. 定速 60 fps 上限受 WebView vsync；实测见 §8。
 7. 等高线只在 3D 生效；2D 平铺瓦片没有高程网格，按钮会先切 3D。
 8. 坐南朝北/贴地是等价实现，原版行为未取证（见 §5.3）。
+9. **路网视图没有实时路况**：天地图公开服务无路况图层（`GetCapabilities` 每端点仅 1 个底图图层），只做 `vec` 路网图面 + `cva` 注记，不画假红绿线（见 §5.5）。
 
 ## 8. 验收与证据
 

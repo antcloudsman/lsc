@@ -128,6 +128,12 @@ var elevQuery = { on: false };
 /* F-05 叠加：多图层，id 独立开关 + 每层透明度 */
 var ovLayers = {};              // id -> {id,on,opacity,items,els,container}
 var ovLayersEl = null;
+/* F-15 轨迹回放（客户端做记录/列表/详情，这里只做桥与渲染） */
+var track = {
+  loaded: false, segments: [], t0: 0, t1: 0, t: 0,
+  playing: false, rate: 2, follow: true, raf: 0, lastTs: 0, lastEmit: 0
+};
+var trackSvgEl = null;
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -206,6 +212,7 @@ function render() {
   updateOverlay(null);
   updateFish(null);
   updateOverlayLayers();
+  updateTrack();
   renderOverlays();
 }
 
@@ -745,6 +752,277 @@ function getOverlays() {
 function round2(v) { return Math.round(v * 100) / 100; }
 
 /* F-05 内置层：等高线（DEM 着色器）显式开关，供叠加页统一调用 */
+/* ---- F-15 轨迹回放桥 --------------------------------------------------------
+ * 客户端负责记录/列表/详情；这里只吃「分段点列」并做动画回放。
+ * 数据形态：segments = [[{lat,lng,t}, …], …]，按段分开、不跨段连线；t 为毫秒。
+ * 渲染：全段暗色底 + 已播放段按速度 5 档着色（<3 灰 / 3–6 绿 / 6–12 蓝 / 12–25 橙 / >25 红）
+ *       + 播放光标；**不插值补点**（线只连真实点，只有光标按时间在相邻点间移动）。
+ * 事件：track-loaded、track-tick、track-clear；getState().track。
+ * -------------------------------------------------------------------------- */
+var TRACK_BANDS = [
+  { max: 3, color: "#9aa0a6" },
+  { max: 6, color: "#2ecc71" },
+  { max: 12, color: "#3498db" },
+  { max: 25, color: "#f39c12" },
+  { max: Infinity, color: "#e74c3c" }
+];
+
+function trackColor(kmh) {
+  for (var i = 0; i < TRACK_BANDS.length; i++) {
+    if (kmh < TRACK_BANDS[i].max) return TRACK_BANDS[i].color;
+  }
+  return TRACK_BANDS[TRACK_BANDS.length - 1].color;
+}
+
+function ensureTrackSvg() {
+  if (trackSvgEl) return trackSvgEl;
+  trackSvgEl = document.createElementNS(SVGNS, "svg");
+  trackSvgEl.setAttribute("id", "trackSvg");
+  trackSvgEl.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;";
+  mapEl.appendChild(trackSvgEl);
+  return trackSvgEl;
+}
+
+function trackTotalPoints() {
+  var n = 0;
+  for (var i = 0; i < track.segments.length; i++) n += track.segments[i].length;
+  return n;
+}
+
+/** 取 t 时刻的插值位置（只在相邻真实点之间移动，不造点）。 */
+function trackPosAt(t) {
+  for (var s = 0; s < track.segments.length; s++) {
+    var seg = track.segments[s];
+    if (!seg.length) continue;
+    if (t <= seg[0].t) return { lat: seg[0].lat, lng: seg[0].lng, spd: seg[0].spd || 0, seg: s };
+    if (t >= seg[seg.length - 1].t) {
+      if (s === track.segments.length - 1) {
+        var last = seg[seg.length - 1];
+        return { lat: last.lat, lng: last.lng, spd: last.spd || 0, seg: s };
+      }
+      continue;
+    }
+    for (var i = 1; i < seg.length; i++) {
+      if (t <= seg[i].t) {
+        var a = seg[i - 1], b = seg[i];
+        var dt = b.t - a.t;
+        var k = dt > 0 ? (t - a.t) / dt : 0;
+        return {
+          lat: a.lat + (b.lat - a.lat) * k,
+          lng: a.lng + (b.lng - a.lng) * k,
+          spd: (a.spd || 0) + ((b.spd || 0) - (a.spd || 0)) * k,
+          seg: s
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function lc_track_load(segments) {
+  track.playing = false;
+  track.loaded = false;
+  track.segments = [];
+  track.t0 = 0;
+  track.t1 = 0;
+  track.t = 0;
+  var list = segments || [];
+  for (var s = 0; s < list.length; s++) {
+    var raw = list[s];
+    if (!raw || !raw.length) continue;
+    var seg = [];
+    for (var i = 0; i < raw.length; i++) {
+      var p = raw[i];
+      if (!p || typeof p.lat !== "number" || typeof p.lng !== "number" || typeof p.t !== "number") continue;
+      seg.push({ lat: p.lat, lng: p.lng, t: p.t, spd: 0 });
+    }
+    if (!seg.length) continue;
+    /* 段内按时间排序（客户端可能乱序），再算逐点速度（前后点平均） */
+    seg.sort(function (a, b) { return a.t - b.t; });
+    for (var k = 0; k < seg.length; k++) {
+      var a = seg[Math.max(0, k - 1)], b = seg[Math.min(seg.length - 1, k + 1)];
+      var dt = (b.t - a.t) / 1000;
+      seg[k].spd = dt > 0 ? haversineM(a, b) / dt * 3.6 : 0;
+    }
+    track.segments.push(seg);
+  }
+  var t0 = Infinity, t1 = -Infinity;
+  for (var m = 0; m < track.segments.length; m++) {
+    var sg = track.segments[m];
+    if (sg[0].t < t0) t0 = sg[0].t;
+    if (sg[sg.length - 1].t > t1) t1 = sg[sg.length - 1].t;
+  }
+  track.loaded = track.segments.length > 0;
+  track.t0 = track.loaded ? t0 : 0;
+  track.t1 = track.loaded ? t1 : 0;
+  track.t = track.t0;
+  if (track.loaded && track.follow) {
+    var st = trackPosAt(track.t0);
+    if (st) {
+      center = { lat: st.lat, lng: st.lng };
+      if (mode === "3d") ensurePatch(); else render();
+    }
+  }
+  updateTrack();
+  emit({
+    type: "track-loaded", segments: track.segments.length, points: trackTotalPoints(),
+    t0: Math.round(track.t0), t1: Math.round(track.t1)
+  });
+  console.log("LC3D track loaded seg=" + track.segments.length + " pts=" + trackTotalPoints());
+  return track.loaded;
+}
+
+function lc_track_progress(t0) {
+  if (!track.loaded) return false;
+  var v = Number(t0);
+  if (!isFinite(v)) return false;
+  track.t = (v >= 0 && v <= 1)
+    ? track.t0 + v * (track.t1 - track.t0)
+    : Math.max(track.t0, Math.min(track.t1, v));
+  var p = trackPosAt(track.t);
+  if (track.follow && p) {
+    center = { lat: p.lat, lng: p.lng };
+    if (mode === "3d") ensurePatch(); else render();
+  }
+  updateTrack();
+  emit({
+    type: "track-tick", t: Math.round(track.t), atEnd: track.t >= track.t1,
+    lat: p ? p.lat : null, lng: p ? p.lng : null,
+    speedKmh: p ? Math.round(p.spd * 10) / 10 : 0
+  });
+  return true;
+}
+
+function lc_track_play(rate) {
+  if (!track.loaded) return false;
+  if (rate === 1 || rate === 2 || rate === 4 || rate === 8) track.rate = rate;
+  if (track.t >= track.t1) track.t = track.t0;
+  track.playing = true;
+  track.lastTs = 0;
+  if (!track.raf) track.raf = requestAnimationFrame(trackAnim);
+  return true;
+}
+
+function lc_track_pause() {
+  track.playing = false;
+  return true;
+}
+
+function lc_track_follow(on) {
+  track.follow = !!on;
+  return track.follow;
+}
+
+function lc_track_clear() {
+  track.playing = false;
+  track.loaded = false;
+  track.segments = [];
+  track.t0 = track.t1 = track.t = 0;
+  if (trackSvgEl) trackSvgEl.innerHTML = "";
+  emit({ type: "track-clear" });
+  console.log("LC3D track clear");
+}
+
+function trackAnim(ts) {
+  track.raf = 0;
+  if (!track.playing || !track.loaded) return;
+  if (!track.lastTs) track.lastTs = ts;
+  var dt = Math.min(0.5, (ts - track.lastTs) / 1000);
+  track.lastTs = ts;
+  track.t = Math.min(track.t1, track.t + dt * 1000 * track.rate);
+  var p = trackPosAt(track.t);
+  if (track.follow && p) {
+    center = { lat: p.lat, lng: p.lng };
+    if (mode === "3d") ensurePatch(); else render();
+  }
+  updateTrack();
+  var now = Date.now();
+  if (now - track.lastEmit > 120 || track.t >= track.t1) {
+    track.lastEmit = now;
+    emit({
+      type: "track-tick", t: Math.round(track.t), atEnd: track.t >= track.t1,
+      lat: p ? p.lat : null, lng: p ? p.lng : null,
+      speedKmh: p ? Math.round(p.spd * 10) / 10 : 0
+    });
+  }
+  if (track.t < track.t1) track.raf = requestAnimationFrame(trackAnim);
+  else { track.playing = false; track.raf = 0; }
+}
+
+function trackPolyline(svg, pts, color, width, opacity) {
+  if (pts.length < 2) return;
+  var line = document.createElementNS(SVGNS, "polyline");
+  var d = "";
+  for (var i = 0; i < pts.length; i++) d += pts[i].x.toFixed(1) + "," + pts[i].y.toFixed(1) + " ";
+  line.setAttribute("points", d);
+  line.setAttribute("fill", "none");
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-width", String(width));
+  line.setAttribute("stroke-opacity", String(opacity));
+  line.setAttribute("stroke-linecap", "round");
+  line.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(line);
+}
+
+function updateTrack() {
+  var svg = ensureTrackSvg();
+  var w = mapEl.clientWidth, h = mapEl.clientHeight;
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  if (!track.loaded) return;
+
+  for (var s = 0; s < track.segments.length; s++) {
+    var seg = track.segments[s];
+    var proj = [];
+    for (var i = 0; i < seg.length; i++) {
+      var p = screenPointOf(seg[i].lat, seg[i].lng);
+      if (!p) { proj.push(null); continue; }
+      proj.push({ x: p.x, y: p.y, t: seg[i].t, spd: seg[i].spd });
+    }
+    var plain = [];
+    for (var q = 0; q < proj.length; q++) if (proj[q]) plain.push(proj[q]);
+    trackPolyline(svg, plain, "#6b6b6b", 2, 0.45);
+
+    /* 已播放部分：按速度档分段着色 */
+    var run = [], runColor = null;
+    for (var r = 0; r < proj.length; r++) {
+      var pt = proj[r];
+      if (!pt) continue;
+      if (pt.t > track.t) break;
+      var c = trackColor(pt.spd);
+      if (runColor !== null && c !== runColor) {
+        trackPolyline(svg, run, runColor, 4, 0.95);
+        run = [];
+      }
+      runColor = c;
+      run.push(pt);
+    }
+    /* 光标头（同一段内做插值端点） */
+    var cur = trackPosAt(track.t);
+    if (cur && cur.seg === s && run.length) {
+      var hp = screenPointOf(cur.lat, cur.lng);
+      if (hp) run.push({ x: hp.x, y: hp.y });
+    }
+    if (run.length >= 2 && runColor) trackPolyline(svg, run, runColor, 4, 0.95);
+  }
+
+  var cursor = trackPosAt(track.t);
+  if (cursor) {
+    var cp = screenPointOf(cursor.lat, cursor.lng);
+    if (cp) {
+      var dot = document.createElementNS(SVGNS, "circle");
+      dot.setAttribute("cx", cp.x);
+      dot.setAttribute("cy", cp.y);
+      dot.setAttribute("r", "6");
+      dot.setAttribute("fill", "#ffffff");
+      dot.setAttribute("stroke", "#e74c3c");
+      dot.setAttribute("stroke-width", "2");
+      svg.appendChild(dot);
+    }
+  }
+}
+
 function setContour(on) {
   if (!!on !== contourOn) toggleContour();
   return contourOn;
@@ -2155,6 +2433,7 @@ function render3D() {
   updateOverlay(vp);
   updateFish(vp);
   updateOverlayLayers();
+  updateTrack();
   renderOverlays();
 }
 
@@ -2222,6 +2501,11 @@ function getState() {
     fish: { on: fish.on, count: fish.items.length },
     elevQuery: elevQuery.on,
     overlays: getOverlays(),
+    track: {
+      loaded: track.loaded, segments: track.segments.length, points: trackTotalPoints(),
+      t0: Math.round(track.t0), t1: Math.round(track.t1), t: Math.round(track.t),
+      playing: track.playing, rate: track.rate, follow: track.follow
+    },
     uiMode: uiMode,
     attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
@@ -2357,7 +2641,7 @@ render();
 applyUiModeHash(location.hash);
 
 /* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
- * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge&measure=dist|area&paint&fish&elev&overlay=id1,id2
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge&measure=dist|area&paint&fish&elev&overlay=id1,id2&track
  * 页面初始化与 hashchange 都会应用，所以客户端一次 `loadUrl(...#in3d&sit)` 即可生效
  * （同文档导航只改 hash、不触发 onload 的情况也覆盖）。 */
 function hashHas(h, name) {
@@ -2403,6 +2687,7 @@ function applyIn3D(hash) {
     if (hashHas(h, "paint")) lc_draw_start();
     if (hashHas(h, "fish")) setFishLayer(true, []);
     if (hashHas(h, "elev")) lc_elev_query(true);
+    if (hashHas(h, "track")) lc_track_follow(true);
     var mov = h.match(/[&#]overlay=([\w\-,]+)/);
     if (mov) {
       var ovIds = mov[1].split(",");
@@ -2470,7 +2755,9 @@ function runAT() {
     "lc_draw_start", "lc_draw_end", "lc_draw_style", "lc_draw_undo", "lc_draw_clear",
     "lc_draw_export", "setFishLayer", "lc_setFishLayer", "lc_elev_query",
     "queryElevation", "lc_queryElevation",
-    "setOverlayLayer", "setOverlayOpacity", "getOverlays", "setContour"];
+    "setOverlayLayer", "setOverlayOpacity", "getOverlays", "setContour",
+    "lc_track_load", "lc_track_progress", "lc_track_play", "lc_track_pause",
+    "lc_track_follow", "lc_track_clear"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

@@ -1602,6 +1602,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     private void captureMap() {
         final View target = compassTab;
+        android.util.Log.d("LCCAP", "captureMap target=" + (target == null ? "null" : target.getWidth() + "x" + target.getHeight())
+                + " webview=" + (compassMapView != null));
         if (target == null || target.getWidth() == 0 || target.getHeight() == 0) {
             toast("截图失败：罗盘页未就绪");
             return;
@@ -1640,13 +1642,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 target.getLocationInWindow(loc);
                 android.graphics.Rect rect = new android.graphics.Rect(loc[0], loc[1], loc[0] + w, loc[1] + h);
                 android.view.PixelCopy.request(getWindow(), rect, bmp, result -> {
+                    android.util.Log.d("LCCAP", "pixelCopy result=" + result + " blank=" + looksBlank(bmp));
                     if (result == android.view.PixelCopy.SUCCESS && !looksBlank(bmp)) {
                         saveCompassShot(composeAttribution(bmp));
                     } else {
+                        android.util.Log.d("LCCAP", "pixelCopy unusable -> captureViaJs");
                         captureViaJs();
                     }
                 }, new android.os.Handler(android.os.Looper.getMainLooper()));
             } catch (Throwable t) {
+                android.util.Log.e("LCCAP", "pixelCopy threw -> captureViaJs", t);
                 captureViaJs();
             }
         } else {
@@ -1677,7 +1682,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 "(function(){var c=document.querySelector('canvas');return c?c.toDataURL('image/png'):'';})()",
                 value -> {
                     try {
+                        int len = value == null ? -1 : value.length();
+                        android.util.Log.d("LCCAP", "captureViaJs dataUrl len=" + len);
                         if (value == null || value.length() < 32) {
+                            android.util.Log.w("LCCAP", "empty canvas dataURL");
                             toast("截图失败：地图未渲染");
                             return;
                         }
@@ -1685,11 +1693,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                 value.substring(1, value.length() - 1), android.util.Base64.DEFAULT);
                         android.graphics.Bitmap map = android.graphics.BitmapFactory.decodeByteArray(raw, 0, raw.length);
                         if (map == null) {
+                            android.util.Log.w("LCCAP", "decodeByteArray null, raw=" + raw.length);
                             toast("截图失败：解码图片失败");
                             return;
                         }
                         saveCompassShot(composeAttribution(map));
                     } catch (Throwable t) {
+                        android.util.Log.e("LCCAP", "captureViaJs failed", t);
                         toast("截图失败: " + t.getMessage());
                     }
                 });
@@ -1727,40 +1737,81 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         CompassData.Reading r = CompassData.read(compassView == null ? 0f : compassView.getHeading());
         String name = "坐向" + CompassData.MOUNTAINS[r.sitting] + "向" + CompassData.MOUNTAINS[r.mountain]
                 + "_" + new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(new java.util.Date());
-        try {
-            if (android.os.Build.VERSION.SDK_INT >= 29) {
+        android.util.Log.d("LCCAP", "save name=" + name + " size=" + bmp.getWidth() + "x" + bmp.getHeight());
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            android.net.Uri uri = null;
+            android.content.ContentResolver cr = getContentResolver();
+            try {
+                // 标准相册落盘：先 IS_PENDING=1 占位 → 写流 → 清 0，避免媒体库扫到半截文件。
                 android.content.ContentValues v = new android.content.ContentValues();
                 v.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, name + ".png");
                 v.put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png");
                 v.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH,
                         android.os.Environment.DIRECTORY_PICTURES + "/LC");
-                android.net.Uri uri = getContentResolver()
-                        .insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
-                if (uri == null) throw new java.io.IOException("MediaStore insert failed");
-                try (java.io.OutputStream os = getContentResolver().openOutputStream(uri)) {
-                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os);
+                v.put(android.provider.MediaStore.Images.Media.IS_PENDING, 1);
+                uri = cr.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+                android.util.Log.d("LCCAP", "insert -> " + uri);
+                if (uri == null) throw new java.io.IOException("MediaStore insert returned null");
+                java.io.OutputStream opened = cr.openOutputStream(uri);
+                if (opened == null) throw new java.io.IOException("openOutputStream returned null");
+                try (java.io.OutputStream os = opened) {
+                    if (!bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os)) {
+                        throw new java.io.IOException("PNG compress failed");
+                    }
                 }
-                shareShot(uri, name);
-            } else {
-                java.io.File dir = new java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES), "LC");
-                if (!dir.exists() && !dir.mkdirs()) throw new java.io.IOException("mkdirs failed");
-                java.io.File out = new java.io.File(dir, name + ".png");
-                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
-                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, fos);
+                android.content.ContentValues done = new android.content.ContentValues();
+                done.put(android.provider.MediaStore.Images.Media.IS_PENDING, 0);
+                cr.update(uri, done, null, null);
+                android.util.Log.d("LCCAP", "saved -> " + uri);
+                // 成功先给可查的提示，再走分享；分享失败不影响「已保存」这个事实。
+                toast("已保存 Pictures/LC/" + name + ".png");
+                shareShotSafely(uri, name);
+                return;
+            } catch (Throwable t) {
+                android.util.Log.e("LCCAP", "MediaStore save failed", t);
+                if (uri != null) {
+                    try {
+                        cr.delete(uri, null, null);
+                    } catch (Throwable ignored) {
+                    }
                 }
-                toast("已保存 " + out.getName());
+                // 落到兜底目录，保证「失败有提示、成功有可查文件」。
             }
+        }
+        saveShotToFallback(bmp, name);
+    }
+
+    /** 兜底：相册写入失败时写应用外部私有目录，并提示完整路径（用户可在文件管理器找到）。 */
+    private void saveShotToFallback(android.graphics.Bitmap bmp, String name) {
+        try {
+            java.io.File dir = new java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES), "LC");
+            if (!dir.exists() && !dir.mkdirs()) throw new java.io.IOException("mkdirs failed: " + dir);
+            java.io.File out = new java.io.File(dir, name + ".png");
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
+                if (!bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, fos)) {
+                    throw new java.io.IOException("PNG compress failed");
+                }
+            }
+            android.util.Log.d("LCCAP", "fallback saved -> " + out.getAbsolutePath());
+            toast("已保存 " + out.getAbsolutePath());
         } catch (Throwable t) {
+            android.util.Log.e("LCCAP", "fallback save failed", t);
             toast("保存失败: " + t.getMessage());
         }
     }
 
-    private void shareShot(android.net.Uri uri, String name) {
-        android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_SEND);
-        i.setType("image/png");
-        i.putExtra(android.content.Intent.EXTRA_STREAM, uri);
-        i.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        startActivity(android.content.Intent.createChooser(i, "分享 " + name));
+    /** 分享单独兜底：失败只提示，不再被外层 catch 误报成「保存失败」。 */
+    private void shareShotSafely(android.net.Uri uri, String name) {
+        try {
+            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            i.setType("image/png");
+            i.putExtra(android.content.Intent.EXTRA_STREAM, uri);
+            i.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(android.content.Intent.createChooser(i, "分享 " + name));
+        } catch (Throwable t) {
+            android.util.Log.e("LCCAP", "share failed (image already saved)", t);
+            toast("分享面板不可用，图片已保存");
+        }
     }
 
     private void toast(String s) {

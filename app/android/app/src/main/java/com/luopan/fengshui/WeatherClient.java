@@ -9,13 +9,10 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,9 +37,8 @@ final class WeatherClient {
 
     /* 原站要求：中国天气网 d1 接口缺 Referer 一律 403（见类注释），不要删。 */
     private static final String REFERER = "https://www.weather.com.cn/";
-    /* UA 统一用 LcHttp.UA（天地图 WAF 只放行浏览器形态，见 LcHttp 注释） */
+    /* UA/超时/字节上限统一走 LcHttp（天地图 WAF 只放行浏览器形态 UA，见 LcHttp 注释） */
 
-    private static final int TIMEOUT_MS = 8000;
     private static final String PREFS = "lc_weather_cache";
 
     interface Callback {
@@ -130,26 +126,15 @@ final class WeatherClient {
 
     /* ---------------- HTTP ---------------- */
 
+    /**
+     * 走 {@link LcHttp}（与全仓其它请求同一份 UA/超时/**8 MB 字节上限**，MD-01 收口）。
+     * 中国天气网必须带 Referer，否则 403；Open-Meteo 不需要。
+     */
     private static String http(String url, String referer) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(TIMEOUT_MS);
-        c.setReadTimeout(TIMEOUT_MS);
-        c.setRequestProperty("User-Agent", LcHttp.UA);
-        c.setRequestProperty("Accept", "*/*");
-        if (referer != null) c.setRequestProperty("Referer", referer);
-        try {
-            int code = c.getResponseCode();
-            if (code != 200) throw new IllegalStateException("HTTP " + code);
-            InputStream in = c.getInputStream();
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
-            int n;
-            while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
-            in.close();
-            return new String(bos.toByteArray(), StandardCharsets.UTF_8);
-        } finally {
-            c.disconnect();
-        }
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Accept", "*/*");
+        if (referer != null) headers.put("Referer", referer);
+        return LcHttp.get(url, headers);
     }
 
     /* ---------------- 中国天气网解析 ---------------- */

@@ -86,8 +86,6 @@ android {
         buildConfigField "String", "TDT_SERVER_KEY", javaString(tdtKeys.server)
         // 网页端 key：地图页的瓦片 URL 用，由地图侧从 BuildConfig 传给 WebView。
         buildConfigField "String", "TDT_WEB_KEY", javaString(tdtKeys.web)
-        // 过渡别名：MapKeys.TDT 仍引用旧字段名，地图改完（改引用 TDT_SERVER_KEY）后删掉这行。
-        buildConfigField "String", "TDT_KEY", javaString(tdtKeys.server)
     }
 
     buildTypes {

@@ -42,13 +42,14 @@ tdt.web.key=<网页端 key>
 
 ## 2. 注入成什么
 
-构建期在 `BuildConfig` 生成三个字段：
+构建期在 `BuildConfig` 生成两个字段：
 
 | 字段 | 值 | 谁用 |
 |---|---|---|
-| `BuildConfig.TDT_SERVER_KEY` | 服务端 key | 原生侧（地图侧把 `MapKeys.TDT` 指到这） |
-| `BuildConfig.TDT_WEB_KEY` | 网页端 key | 地图侧传给 WebView（替换 `map.html` 里原来的明文 `var KEY`） |
-| `BuildConfig.TDT_KEY` | 同 `TDT_SERVER_KEY` | **过渡别名**，`MapKeys.TDT` 还引用旧名字；地图改完就删这行 |
+| `BuildConfig.TDT_SERVER_KEY` | 服务端 key | 原生侧（`MapKeys.TDT` 引用它） |
+| `BuildConfig.TDT_WEB_KEY` | 网页端 key | 地图侧传给 WebView（`map.html` 运行时 `?tk=` 注入，不再有明文 `var KEY`） |
+
+> 过渡别名（旧字段）已在 `1fdcb97` 之后删除；`MapKeys.TDT` 直接引用 `TDT_SERVER_KEY`。
 
 读不到 key 的行为（两条，都是**硬失败**，不静默打空包）：
 

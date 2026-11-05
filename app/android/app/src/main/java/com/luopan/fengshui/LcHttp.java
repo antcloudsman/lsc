@@ -20,7 +20,13 @@ final class LcHttp {
 
     private static final String TAG = "LCHTTP";
     private static final int TIMEOUT_MS = 8000;
-    private static final String UA =
+
+    /**
+     * 全局 UA（只此一份，别再写字面量）。
+     * 天地图 WAF 对 `Luopan/…`、`okhttp/…`、`Dalvik/…` 返回 403，
+     * 对浏览器形态 UA 返回 200（2026-11-05 实测，见 F-06-F-07 诊断）。
+     */
+    static final String UA =
             "Mozilla/5.0 (Linux; Android 12; LC) AppleWebKit/537.36 (KHTML, like Gecko) "
                     + "Chrome/120.0 Mobile Safari/537.36";
 

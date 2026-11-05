@@ -200,6 +200,15 @@
     <item name="lc_measure_area" type="id" />
     <item name="lc_measure_result" type="id" />
     <item name="lc_measure_clear" type="id" />
+    <item name="lc_measure_mode_distance" type="id" />
+    <item name="lc_measure_mode_area" type="id" />
+    <item name="lc_measure_add" type="id" />
+    <item name="lc_measure_undo" type="id" />
+    <item name="lc_measure_done" type="id" />
+    <item name="lc_measure_back" type="id" />
+    <item name="lc_measure_unit" type="id" />
+    <item name="lc_measure_readout" type="id" />
+    <item name="lc_measure_bearing" type="id" />
     <item name="lc_draw_panel" type="id" />
     <item name="lc_draw_color" type="id" />
     <item name="lc_draw_width" type="id" />

@@ -75,6 +75,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView measureResultView;
     private int drawColorIndex = 1;
     private int drawWidthIndex = 1;
+    // F-12 测量：具名模式 + 屏幕中心打点 + 风水方位角 + 单位切换。
+    private boolean measureAreaMode = false;
+    private int measureUnitIndex = 0;
+    private double bearingSitting = 180;
+    private double bearingFacing = 0;
+    private double lastMeasureD = 0;
+    private double lastMeasureA = 0;
+    private Button measureUnitButton;
+    private final java.util.ArrayList<double[]> measureCenters = new java.util.ArrayList<>();
     /** 原版精确 5 色（默认红=index1）；粗细 2/4/6（默认 4=index1）。 */
     private static final String[] DRAW_COLORS = {
             "#2E75FE", "#FF0000", "#36B44B", "#F9C30F", "#000000"};
@@ -86,14 +95,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         public void run() {
             if (!measureMode || compassMapView == null) return;
             compassMapView.evaluateJavascript(
-                    "(function(){var m=getState().measure;"
-                            + "if(m.mode==='area'){return m.areaM2<10000?(m.areaM2+' ㎡'):"
-                            + "((m.areaM2/666.7).toFixed(1)+' 亩');}"
-                            + "return m.distanceM<1000?(m.distanceM+' m'):"
-                            + "((m.distanceM/1000).toFixed(2)+' km');})()",
+                    "(function(){var m=getState().measure;return JSON.stringify({d:m.distanceM,a:m.areaM2});})()",
                     v -> {
-                        if (measureResultView != null) {
-                            measureResultView.setText(decodeJsString(v));
+                        try {
+                            org.json.JSONObject o = new org.json.JSONObject(decodeJsString(v));
+                            lastMeasureD = o.optDouble("d", 0);
+                            lastMeasureA = o.optDouble("a", 0);
+                            refreshMeasureReadout();
+                        } catch (Throwable ignored) {
                         }
                     });
             measureHandler.postDelayed(this, 500);
@@ -1030,9 +1039,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void enterMeasure() {
         exitDraw();
         measureMode = true;
+        measureAreaMode = false;
+        measureUnitIndex = 0;
+        measureCenters.clear();
+        bearingSitting = 180;
+        bearingFacing = 0;
         js("lc_measure_start('distance')");
         if (measureBar == null) measureBar = buildMeasureBar();
-        if (measureBar.getParent() == null) addBottomBar(measureBar);
+        if (measureBar.getParent() == null) addBottomBar(measureBar, 122);
+        refreshMeasureReadout();
         measureHandler.removeCallbacks(measurePoll);
         measureHandler.post(measurePoll);
     }
@@ -1047,24 +1062,151 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         measureBar = null;
         measureResultView = null;
+        measureUnitButton = null;
+        measureCenters.clear();
+        bearingSitting = 180;
+        bearingFacing = 0;
+    }
+
+    /** 屏幕中心打点：拖图把中心对到目标后点「添加点」，调地图 lc_measure_addCenter（不吸附）。 */
+    private void addMeasurePoint() {
+        if (compassMapView == null) return;
+        compassMapView.evaluateJavascript("typeof lc_measure_addCenter", v -> {
+            if (v == null || !v.contains("function")) {
+                toast("地图侧打点接口待接入");
+                return;
+            }
+            js("lc_measure_addCenter()");
+            compassMapView.evaluateJavascript(
+                    "(function(){var s=getState();return s.lat+','+s.lng;})()",
+                    c -> {
+                        String[] parts = decodeJsString(c).split(",");
+                        if (parts.length == 2) {
+                            try {
+                                measureCenters.add(new double[]{
+                                        Double.parseDouble(parts[0].trim()),
+                                        Double.parseDouble(parts[1].trim())});
+                                updateMeasureBearing();
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                    });
+        });
+    }
+
+    private void undoMeasurePoint() {
+        js("lc_measure_undo()");
+        if (!measureCenters.isEmpty()) measureCenters.remove(measureCenters.size() - 1);
+        updateMeasureBearing();
+    }
+
+    private void switchMeasureMode(boolean area) {
+        measureAreaMode = area;
+        measureUnitIndex = 0;
+        measureCenters.clear();
+        bearingSitting = 180;
+        bearingFacing = 0;
+        js("lc_measure_start('" + (area ? "area" : "distance") + "')");
+        refreshMeasureReadout();
+    }
+
+    private void updateMeasureBearing() {
+        if (measureCenters.size() >= 2) {
+            double[] a = measureCenters.get(measureCenters.size() - 2);
+            double[] b = measureCenters.get(measureCenters.size() - 1);
+            bearingFacing = initialBearing(a[0], a[1], b[0], b[1]);
+            bearingSitting = (bearingFacing + 180) % 360;
+        } else {
+            bearingSitting = 180;
+            bearingFacing = 0;
+        }
+        refreshMeasureReadout();
+    }
+
+    private static double initialBearing(double lat1, double lng1, double lat2, double lng2) {
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
+        double dl = Math.toRadians(lng2 - lng1);
+        double y = Math.sin(dl) * Math.cos(p2);
+        double x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+        return (Math.toDegrees(Math.atan2(y, x)) + 360) % 360;
+    }
+
+    private void refreshMeasureReadout() {
+        if (measureResultView == null) return;
+        String bear = String.format(java.util.Locale.US, "坐%.1f° 向%.1f°", bearingSitting, bearingFacing);
+        measureResultView.setText(bear + " · " + formatMeasureValue());
+        if (measureUnitButton != null) measureUnitButton.setText(unitLabel());
+    }
+
+    private String formatMeasureValue() {
+        if (measureAreaMode) {
+            double a = lastMeasureA;
+            if (measureUnitIndex == 1) return String.format(java.util.Locale.US, "%.1f 亩", a / 666.6667);
+            if (measureUnitIndex == 2) return String.format(java.util.Locale.US, "%.2f 公顷", a / 10000.0);
+            if (a < 1_000_000) return String.format(java.util.Locale.US, "%.0f ㎡", a);
+            return String.format(java.util.Locale.US, "%.2f km²", a / 1_000_000.0);
+        }
+        double d = lastMeasureD;
+        if (measureUnitIndex == 1) return String.format(java.util.Locale.US, "%.2f nmi", d / 1852.0);
+        if (d < 1000) return String.format(java.util.Locale.US, "%.0f m", d);
+        return String.format(java.util.Locale.US, "%.2f km", d / 1000.0);
+    }
+
+    private String unitLabel() {
+        if (!measureAreaMode) return measureUnitIndex == 0 ? "SI" : "NMI";
+        return measureUnitIndex == 0 ? "SI" : (measureUnitIndex == 1 ? "MU" : "HA");
     }
 
     private View buildMeasureBar() {
-        LinearLayout bar = bottomBar(R.id.lc_measure_panel);
-        bar.addView(barButton(R.string.lc_measure_distance, R.id.lc_measure_distance,
-                v -> js("lc_measure_start('distance')")));
-        bar.addView(barButton(R.string.lc_measure_area, R.id.lc_measure_area,
-                v -> js("lc_measure_start('area')")));
-        bar.addView(barButton(R.string.lc_measure_clear, R.id.lc_measure_clear,
-                v -> js("lc_measure_clear()")));
+        LinearLayout panel = new LinearLayout(this);
+        panel.setId(R.id.lc_measure_panel);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setBackgroundColor(Color.argb(210, 24, 20, 16));
+
+        LinearLayout row1 = new LinearLayout(this);
+        row1.setOrientation(LinearLayout.HORIZONTAL);
+        row1.addView(barButton(R.string.lc_measure_mode_distance, R.id.lc_measure_mode_distance,
+                v -> switchMeasureMode(false)));
+        row1.addView(barButton(R.string.lc_measure_mode_area, R.id.lc_measure_mode_area,
+                v -> switchMeasureMode(true)));
+        panel.addView(row1);
+
+        LinearLayout row2 = new LinearLayout(this);
+        row2.setOrientation(LinearLayout.HORIZONTAL);
+        row2.addView(barButton(R.string.lc_measure_add, R.id.lc_measure_add,
+                v -> addMeasurePoint()));
+        row2.addView(barButton(R.string.lc_measure_undo, R.id.lc_measure_undo,
+                v -> undoMeasurePoint()));
+        row2.addView(barButton(R.string.lc_measure_done, R.id.lc_measure_done, v -> {
+            toast("测量完成");
+            exitMeasure();
+        }));
+        row2.addView(barButton(R.string.lc_measure_back, R.id.lc_measure_back,
+                v -> exitMeasure()));
+        panel.addView(row2);
+
+        LinearLayout row3 = new LinearLayout(this);
+        row3.setOrientation(LinearLayout.HORIZONTAL);
+        row3.setGravity(android.view.Gravity.CENTER_VERTICAL);
         measureResultView = new TextView(this);
-        measureResultView.setId(R.id.lc_measure_result);
+        measureResultView.setId(R.id.lc_measure_readout);
         measureResultView.setTextSize(12f);
         measureResultView.setTextColor(Color.rgb(235, 228, 215));
         measureResultView.setPadding(dp(8), 0, dp(4), 0);
-        bar.addView(measureResultView, new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.2f));
-        return bar;
+        row3.addView(measureResultView, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        measureUnitButton = new Button(this);
+        measureUnitButton.setId(R.id.lc_measure_unit);
+        measureUnitButton.setTextSize(11f);
+        measureUnitButton.setOnClickListener(v -> {
+            int n = measureAreaMode ? 3 : 2;
+            measureUnitIndex = (measureUnitIndex + 1) % n;
+            refreshMeasureReadout();
+        });
+        row3.addView(measureUnitButton, new LinearLayout.LayoutParams(dp(72), dp(40)));
+        panel.addView(row3);
+        return panel;
     }
 
     private void toggleDraw() {
@@ -1142,6 +1284,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 FrameLayout.LayoutParams.MATCH_PARENT, dp(44));
         lp.gravity = android.view.Gravity.BOTTOM;
         lp.bottomMargin = dp(56); // 底部信息条之上，避免遮挡 trust row
+        content.addView(bar, lp);
+    }
+
+    /** F-12 三行测量条用：指定高度、贴底（靠「返回/完成」退出，不依赖左列按钮）。 */
+    private void addBottomBar(View bar, int heightDp) {
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, dp(heightDp));
+        lp.gravity = android.view.Gravity.BOTTOM;
+        lp.bottomMargin = 0;
         content.addView(bar, lp);
     }
 

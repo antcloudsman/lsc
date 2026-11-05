@@ -175,6 +175,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         double lat = MapJump.doubleExtra(intent, MapJump.EXTRA_LAT);
         double lng = MapJump.doubleExtra(intent, MapJump.EXTRA_LNG);
         if (Double.isNaN(lat) || Double.isNaN(lng)) return;
+        // C-07：MainActivity 是 exported launcher，越界坐标直接丢弃。
+        if (lat < -85 || lat > 85 || lng < -180 || lng > 180) return;
         jumpLat = lat;
         jumpLng = lng;
         if (compassMode) setCompassMode(false);
@@ -1703,6 +1705,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         float x = d % 360f;
         if (x < 0f) x += 360f;
         return x;
+    }
+
+    @Override
+    protected void onDestroy() {
+        // C-05：主页面 WebView 也要销毁（新增页都已补，主页面此前漏着）。
+        measureHandler.removeCallbacks(measurePoll);
+        if (compassMapView != null) {
+            try {
+                compassMapView.removeJavascriptInterface("LCAndroid");
+                compassMapView.destroy();
+            } catch (Throwable ignored) {
+            }
+            compassMapView = null;
+        }
+        super.onDestroy();
     }
 
     @Override

@@ -33,6 +33,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-09 天气（LC地图 新建页）：主 manifest exported=false，AT 直达只在 debug 覆盖 -->
+        <activity
+            android:name=".WeatherActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

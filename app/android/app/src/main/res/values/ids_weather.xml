@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-09 天气页（LC地图 新建，2026-11-05）：AT 用稳定 id，前缀 lc_weather_* -->
+    <item name="lc_weather_back" type="id" />
+    <item name="lc_weather_title" type="id" />
+    <item name="lc_weather_content" type="id" />
+    <item name="lc_weather_city" type="id" />
+    <item name="lc_weather_status" type="id" />
+    <item name="lc_weather_now_temp" type="id" />
+    <item name="lc_weather_now_desc" type="id" />
+    <item name="lc_weather_now_wind" type="id" />
+    <item name="lc_weather_now_humidity" type="id" />
+    <item name="lc_weather_aqi" type="id" />
+    <item name="lc_weather_forecast_list" type="id" />
+    <item name="lc_weather_refresh" type="id" />
+</resources>

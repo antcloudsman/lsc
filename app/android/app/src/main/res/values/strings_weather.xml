@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-09 天气页文案（LC地图，2026-11-05）。只写事实，不出现会员/升级字样。 -->
+    <string name="lc_weather_title">天气</string>
+    <string name="lc_weather_city_label">城市</string>
+    <string name="lc_weather_refresh">刷新</string>
+    <string name="lc_weather_now">实况</string>
+    <string name="lc_weather_forecast">7 日预报</string>
+    <string name="lc_weather_loading">正在获取天气…</string>
+    <string name="lc_weather_fail">天气获取失败（网络或接口不可用），点「刷新」重试</string>
+    <string name="lc_weather_source_d1">数据源：中国天气网</string>
+    <string name="lc_weather_source_om">数据源：Open-Meteo（备源）</string>
+    <string name="lc_weather_cached">离线缓存</string>
+    <string name="lc_weather_aqi_label">空气质量</string>
+    <string name="lc_weather_humidity_label">湿度</string>
+    <string name="lc_weather_wind_label">风</string>
+    <string name="lc_weather_na">—</string>
+    <string name="lc_weather_disabled">该功能已在「功能开关（调试）」中关闭</string>
+</resources>

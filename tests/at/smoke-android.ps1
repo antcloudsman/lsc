@@ -161,6 +161,13 @@ if (-not $pid0) {
     Add-Result 'ENV' 'FAIL' 'App 存活' '启动后进程不存在'
     exit 1
 }
+# 前台校验：安装器/别的界面占前台时，后续 dump 全是别的界面，整批结果必须作废。
+$focusDump = Invoke-Adb @('shell', 'dumpsys', 'window')
+$focusLine = (($focusDump -split "`n") | Select-String 'mCurrentFocus' | Select-Object -First 1) -join ''
+if ($focusLine -notmatch [regex]::Escape($Pkg)) {
+    Add-Result 'ENV' 'BLOCKED' "mCurrentFocus 是 $Pkg" "前台不是应用（$focusLine）；可能被安装器占用，整批结果作废"
+    exit 2
+}
 $ui = Get-Ui 'ui-first'
 if ($ui.ok -and ($ui.xml -match '跳过')) { Tap-Text $ui.xml '跳过' | Out-Null; Start-Sleep -Milliseconds 700 }
 Set-Heading 0

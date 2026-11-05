@@ -14,6 +14,7 @@
 - 设备现状（installed）：**已装 target** —— `6,560,730 B / C4BF5550`，总监 `install -r` Success 后 pull 回逐字节核对，与本地一致；冒烟以 `-SkipInstall` 输出到 `E:\APPDetector\evidence\smoke-k01-target`。
 - **误装窗口作废**：17:48–17:53 设备上装的是 `feature/gap-client` 构建（6,880,925 B / `B3EFD676`），不是 K-01 target；该时段任何设备结果一律作废，不得引用。
 - **M4-3D / M4-rotate 记为「未判定」**：17:35 旧脚本（3 次重试）的结果不作数；`e6fda4a` 已改 `Get-MapState 10`，以本次冒烟重跑为准。地图侧已核 3D 调用链完整（`MainActivity.java:504` → `js("toggle3D()")` → `map.html:195-235`），**不得写「3D 没进去」**，只能写「状态读取超时/未判定」。
+- **执行前置（首跑作废原因）**：真机脚本必须先确认 `mCurrentFocus` 是 `com.luopan.fengshui`；首跑 `ui-first.xml` 采到 `InstallStaging` 安装器界面，整批结果作废。smoke 与 freeze 脚本已加前台闸（smoke BLOCKED exit 2 / freeze throw），不再靠人记。
 - **target（当前，默认盘面 dial 0）**：`53327d1` + `C4BF5550` / 6,560,730 B（17:45:42；体积与上一版相同、哈希不同）。`13106018` **作废**；冒烟/A1–A10 结果出来后本表逐项状态统一更新，在那之前不写「已过」。
 - A8 判据改为「`uiMode==='map'` 且浮层消失」，不再断言 `#controls` 恢复（map 模式下由原生壳承载控件，设计如此）。
 - 口径：不得用旧包跑出的 P-04/P-10 结果当 target 的验收；换包后重跑。

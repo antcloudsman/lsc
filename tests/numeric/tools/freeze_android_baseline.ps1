@@ -180,6 +180,12 @@ Start-Sleep -Seconds 4
 $appPid = (& $adb -s $Device shell pidof $Pkg).Trim()
 if (-not $appPid) { throw "App 未存活" }
 
+# 前台校验：安装器/别的界面占前台时拒绝采基线（否则 dump 采到别的界面，证据整批作废）。
+$focusDump = (& $adb -s $Device shell dumpsys window) -join "`n"
+if ($focusDump -notmatch [regex]::Escape($Pkg)) {
+    throw "前台不是 $Pkg（mCurrentFocus 未见应用，可能被安装器占用）；拒绝采基线"
+}
+
 $wm = (& $adb -s $Device shell wm size) -join " "
 $density = (& $adb -s $Device shell wm density) -join " "
 $sizeM = [regex]::Match($wm, "(\d+)x(\d+)")

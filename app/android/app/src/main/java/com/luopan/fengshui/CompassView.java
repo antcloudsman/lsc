@@ -344,7 +344,19 @@ public class CompassView extends View {
     }
 
     private void drawText(Canvas canvas, String s, float x, float y, Paint p) {
-        canvas.drawText(s, x, y - (p.ascent() + p.descent()) / 2f, p);
+        float by = y - (p.ascent() + p.descent()) / 2f;
+        // K-01 可读性：measurements.md 记录原版线稿是「白字/灰线/黑描边」。
+        // 删掉整盘填充后白字直接压在地形上会糊，这里先描 2px 深色再填字，属还原不是新增。
+        Paint.Style style = p.getStyle();
+        int color = p.getColor();
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(2f);
+        p.setColor(Color.argb(200, 0, 0, 0));
+        canvas.drawText(s, x, by, p);
+        p.setStyle(style);
+        p.setColor(color);
+        p.setStrokeWidth(1f);
+        canvas.drawText(s, x, by, p);
     }
 
     private static android.graphics.Path triangle(float cx, float top, float half) {

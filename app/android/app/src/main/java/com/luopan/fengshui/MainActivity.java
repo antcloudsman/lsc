@@ -272,6 +272,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         cp.gravity = android.view.Gravity.CENTER;
         compassView.setVisibility(View.GONE);
         frame.addView(compassView, cp);
+        // K-01 z 序与触摸（验收 P-08 必读）：浮层之后又加了 读数/状态/左列/罗盘左列/右列/隐藏/底部条，
+        // 它们都在浮层之上；其中工具列与「隐藏」是交互层，会正常吃掉落在按钮矩形内的触摸。
+        // 圆盘外径 0.733W ≈ 900px@1228，水平方向圆外 50px 已压到左右工具列上，
+        // 所以「圆外 50px 可平移」的验收点必须取**垂直方向**（如 (614,800)），否则失败原因会是工具列而不是罗盘。
 
         // 顶部读数（原版罗盘模式左上「坐180° 向0°」）+ P0-1 状态条
         readingView = new TextView(this);
@@ -294,6 +298,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         statusView.setId(R.id.sensor_status);
         statusView.setTextColor(Color.rgb(180, 170, 150));
         statusView.setTextSize(10f);
+        statusView.setClickable(false);   // 纯展示层，不拦截触摸（浮层之上的非交互层一律不消费事件）
+        statusView.setFocusable(false);
         statusView.setPadding(dp(8), dp(2), dp(8), dp(2));
         FrameLayout.LayoutParams svp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);

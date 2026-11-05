@@ -1,13 +1,15 @@
 # Android 基线 · round-k01
 
-- 冻结时间：2026-11-05 18:45:52（UTC+8），LC测试
+- 冻结时间：2026-11-05 19:12:22（UTC+8），LC测试
+- **基线状态**：K-02 后状态：罗盘态顶栏含 返回/搜索/图层/隐藏；单页三态（地图 / 罗盘浮层 / 更多）
 - 设备：JAD-AL00 / Android 12 / `HUAWEI/JAD-AL00/HWJAD-Q:12/HUAWEIJAD-AL00/104.2.0.186C00:user/release-keys`
 - 屏幕：Physical size: 1228x2700；Physical density: 540
-- App：versionName 1.0 (1)，lastUpdateTime 2026-11-05 18:44:51，pid 6046
-- 构建：`k01/integration` HEAD `bedea47`；APK `E:\APPDetector\wt\k01-int\app\android\app\build\outputs\apk\debug\app-debug.apk`（6562438 B），SHA256 `338D59F6EAC6BA3FD38C7276FCD78F37BC6F73203F4C7A7E511B5FC28F3E571E`
-- 脚本运行树：`E:\APPDetector\wt\k01-int` HEAD `bedea47`（仅诊断；APK 的构建来源以上一行 `-BuildHead` 为准）
-- 结构：单页全屏地图+左列8+右列10；点罗盘→同页半透明浮层（左6右4+底部切换/旋转/缩放/透明度/天支线）；更多=bottom sheet；无底部Tab
-- 冷启动：am start -W TotalTime = 623 ms；注入 heading = 0（debug 广播）
+- App：versionName 1.0 (1)，lastUpdateTime 2026-11-05 19:06:45，pid 21387
+- 构建：`k01/integration` HEAD `2696c19`；磁盘 APK `E:\APPDetector\wt\k01-int\app\android\app\build\outputs\apk\debug\app-debug.apk`（6564412 B），SHA256 `53A962EDB12FC34909097DBEEC817FEF7C7A7AEE1E4F5C3058F3BEA48E0FAC53`
+- 设备运行 APK（`pm path` + pull 现算）：SHA256 `53A962EDB12FC34909097DBEEC817FEF7C7A7AEE1E4F5C3058F3BEA48E0FAC53` / 6564412 B；与磁盘包一致
+- 脚本运行树：`E:\APPDetector\wt\k01-int` HEAD `73391fe`（仅诊断；APK 的构建来源以上一行 `-BuildHead` 为准）
+- 结构：单页全屏地图+左列8+右列10（两段锚定，中心±45px）；点罗盘→同页半透明浮层（顶栏 返回/搜索/图层/隐藏，左6右4+底部切换/旋转/缩放/透明度/天支线）；更多=bottom sheet；无底部Tab
+- 冷启动：am start -W TotalTime = 629 ms（原文见 `am-start-w.txt`）；注入 heading = 0（debug 广播）
 - 数值门禁：`tests=85 failures=0 errors=0 skipped=0` + `CARGO: PASS`（`numeric-gate.txt`；原始输出见文末）
 - logcat：FATAL EXCEPTION（应用进程）**0** / 已排除非应用 FATAL **0** / ANR **0**（`logcat.txt`）
 - SW-006 面板裁切窗：待客户端按 round-k01 新布局实测；**不得沿用旧裁切窗**（旧窗已随上一轮 UI 失效）
@@ -21,26 +23,27 @@
 | 地图态左列 | 8 | 8 |  |
 | 地图态右列 | 10 | 10 |  |
 | 「更多」16 宫格 | 16 | 16 |  |
-| 罗盘态文字（dump 可读部分，非硬项） | 19 | 16 | 见 `ui-compass-mode.xml`（自绘层不在 dump 属正常） |
+| 罗盘态文字（dump 可读部分，非硬项） | 19 | 19 | 全中（K-02 顶栏 返回/搜索/图层/隐藏 已实现） |
 
 - 结构校验：侧别错误 0 个 ；列内顺序异常 0 个 
-- 中心偏差（参考坐标取自 orig-main.xml，分母**内容帧 2578**；容差 ±45px）：最大 **8 px**；超差 0 个 
+- 中心偏差（参考坐标取自 orig-main.xml，分母**内容帧 2578**；容差 ±45px）：最大 **8.5 px**（dx 最大 8.5 px，dy 最大 0 px）；超差 0 个 
 
 ## 冻结物（SHA256 见 `SHA256SUMS.txt`）
 
-- `k01-compass-needle-off.png`：2739019 B
-- `k01-compass-needle-on.png`：2764629 B
-- `k01-compass.png`：2764629 B
-- `k01-map-after-hide.png`：2400824 B
-- `k01-map.png`：2397301 B
-- `k01-more.png`：1245495 B
-- `logcat.txt`：464027 B
-- `nodes-k01.csv`：2244 B
+- `am-start-w.txt`：177 B
+- `k01-compass-needle-off.png`：2755760 B
+- `k01-compass-needle-on.png`：2782003 B
+- `k01-compass.png`：2782003 B
+- `k01-map-after-hide.png`：2416539 B
+- `k01-map.png`：2413464 B
+- `k01-more.png`：1244099 B
+- `logcat.txt`：478086 B
+- `nodes-k01.csv`：2316 B
 - `numeric-gate.txt`：10477 B
-- `ui-compass-mode.xml`：30328 B
+- `ui-compass-mode.xml`：31713 B
 - `ui-first.xml`：6056 B
-- `ui-map-after-hide.xml`：30649 B
-- `ui-map.xml`：12996 B
+- `ui-map-after-hide.xml`：31348 B
+- `ui-map.xml`：13695 B
 - `ui-more.xml`：11852 B
 
 ## 限制
@@ -153,20 +156,20 @@ B-05：翻坐向的持久偏移只做合成，JVM 真执行两条向量。 ... o
 test_tilt_formula (test_sensor_math.SensorMathJvmTest.test_tilt_formula) ... ok
 
 ----------------------------------------------------------------------
-Ran 85 tests in 1.379s
+Ran 85 tests in 1.502s
 
 OK
 LC numeric suite — python 3.13.14
 repo root: E:\APPDetector\wt\k01-int
 ------------------------------------------------------------------------
 tests=85 failures=0 errors=0 skipped=0 expected_failures=0 unexpected_successes=0
-CARGO: HEAD=bedea47881158ac39bf798fe94477540194ec49b version=cargo 1.99.1 (5f94df478 2026-08-27)
+CARGO: HEAD=73391fe1588b89c1b4d1ba27008307a999f3e5e0 version=cargo 1.99.1 (5f94df478 2026-08-27)
 CARGO| running 5 tests
-CARGO| test mechanics_pin::b2_vectors_match_dex_tables ... ok
-CARGO| test mechanics_pin::table_lengths ... ok
 CARGO| test mechanics_pin::ring_scalars_match_reading_literals ... ok
-CARGO| test mechanics_pin::b2_all_780_cells ... ok
 CARGO| test mechanics_pin::readings_pinned_at_boundaries ... ok
+CARGO| test mechanics_pin::b2_vectors_match_dex_tables ... ok
+CARGO| test mechanics_pin::b2_all_780_cells ... ok
+CARGO| test mechanics_pin::table_lengths ... ok
 CARGO| test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 CARGO: test-binary=app\target\debug\deps\luopan-a3ff9c2d47b522fa.exe sha256=4fb4291af161e7845371ba5148699d48009ed642faaaca2c090a337b87903624
 CARGO: PASS

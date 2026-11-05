@@ -99,20 +99,20 @@ B-05：翻坐向的持久偏移只做合成，JVM 真执行两条向量。 ... o
 test_tilt_formula (test_sensor_math.SensorMathJvmTest.test_tilt_formula) ... ok
 
 ----------------------------------------------------------------------
-Ran 85 tests in 1.379s
+Ran 85 tests in 1.502s
 
 OK
 LC numeric suite — python 3.13.14
 repo root: E:\APPDetector\wt\k01-int
 ------------------------------------------------------------------------
 tests=85 failures=0 errors=0 skipped=0 expected_failures=0 unexpected_successes=0
-CARGO: HEAD=bedea47881158ac39bf798fe94477540194ec49b version=cargo 1.99.1 (5f94df478 2026-08-27)
+CARGO: HEAD=73391fe1588b89c1b4d1ba27008307a999f3e5e0 version=cargo 1.99.1 (5f94df478 2026-08-27)
 CARGO| running 5 tests
-CARGO| test mechanics_pin::b2_vectors_match_dex_tables ... ok
-CARGO| test mechanics_pin::table_lengths ... ok
 CARGO| test mechanics_pin::ring_scalars_match_reading_literals ... ok
-CARGO| test mechanics_pin::b2_all_780_cells ... ok
 CARGO| test mechanics_pin::readings_pinned_at_boundaries ... ok
+CARGO| test mechanics_pin::b2_vectors_match_dex_tables ... ok
+CARGO| test mechanics_pin::b2_all_780_cells ... ok
+CARGO| test mechanics_pin::table_lengths ... ok
 CARGO| test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 CARGO: test-binary=app\target\debug\deps\luopan-a3ff9c2d47b522fa.exe sha256=4fb4291af161e7845371ba5148699d48009ed642faaaca2c090a337b87903624
 CARGO: PASS

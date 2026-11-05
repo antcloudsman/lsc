@@ -477,7 +477,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "实景": js("setBase('img')"); break;
             case "坐南朝北": js("toggleSitNorth()"); break;
             case "指针开关":
-                toast("指针开关：罗盘北针由 CompassView 承担，接入待 step-2");
+                // 两针分离（map-bridge §10.3）：地图模式管 #needle；罗盘模式管浮层自绘北针。
+                if (compassMode) {
+                    boolean on = compassView != null && !compassView.isShowPointer();
+                    if (compassView != null) compassView.setShowPointer(on);
+                    toast(on ? "罗盘北针：开" : "罗盘北针：关");
+                } else {
+                    js("toggleNeedle()");
+                }
                 break;
             case "罗盘复位":
                 if (compassView != null) compassView.reset();

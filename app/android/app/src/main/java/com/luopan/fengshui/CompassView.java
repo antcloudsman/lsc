@@ -28,6 +28,18 @@ public class CompassView extends View {
     }
     private boolean followSensor = true;
     private boolean trustEnabled = false;
+    /** K-01：罗盘浮层自己的北针开关（地图层 #needle 不归这里管）。 */
+    private boolean showPointer = true;
+
+    /** 罗盘模式「指针开关」：只影响浮层自绘北针，不触发 followSensor 变化。 */
+    public void setShowPointer(boolean on) {
+        this.showPointer = on;
+        invalidate();
+    }
+
+    public boolean isShowPointer() {
+        return showPointer;
+    }
     /** P0-2: full artwork dial (null = vector mode). */
     private android.graphics.Bitmap artwork;
 
@@ -288,7 +300,11 @@ public class CompassView extends View {
         paint.setColor(Color.rgb(200, 40, 40));
         paint.setStyle(Paint.Style.FILL);
         float top = cy - r;
-        canvas.drawPath(triangle(cx, top, 10f), paint);
+        // K-01 / map-bridge §10.3：罗盘模式的「指针开关」由这里承担（两针分离）；
+        // 地图层的 #needle 仍由 toggleNeedle() 管，这里只关/开本浮层的北针（红三角）。
+        if (showPointer) {
+            canvas.drawPath(triangle(cx, top, 10f), paint);
+        }
 
         // Center readout.
         CompassData.Reading rd = CompassData.read(heading);

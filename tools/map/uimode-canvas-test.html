@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>回放页 uimode=canvas（藏地图自带工具列）</title></head>
+<body>
+<!--
+  验证：uimode=canvas / &ui=none / lc_setUiMode('canvas') 会隐藏地图自带控件（#controls 左侧工具列、
+  #hint、#srcInfo 角注、#needle 指针、#hud），只留地图与轨迹层；默认（不传）仍是 full，行为不变。
+
+  用法：仓库根目录 python -m http.server 8797，
+  打开 http://127.0.0.1:8797/tools/map/uimode-canvas-test.html?tk=<webKey>
+  （tk 由命令行传入，本页转发给两个 iframe，不落仓库）
+-->
+<iframe id="fc" width="400" height="700"></iframe>
+<iframe id="ff" width="400" height="700"></iframe>
+<script>
+var R = [];
+function ok(name, cond, info) {
+  R.push((cond ? "PASS " : "FAIL ") + name + (info ? " " + info : ""));
+  console.log("UC " + (cond ? "PASS" : "FAIL") + " " + name + (info ? " " + info : ""));
+}
+function disp(w, id) {
+  var el = w.document.getElementById(id);
+  return el ? (el.style.display || "(unset)") : "(missing)";
+}
+(function () {
+  var m = (location.search || '').match(/[?&]tk=([^&#]*)/);
+  var tk = m ? decodeURIComponent(m[1]) : '';
+  var q = tk ? ('?tk=' + encodeURIComponent(tk)) : '';
+  document.getElementById('fc').src = '../../app/android/app/src/main/assets/map.html' + q + '#in3d&uimode=canvas';
+  document.getElementById('ff').src = '../../app/android/app/src/main/assets/map.html' + q + '#in3d';
+})();
+setTimeout(function () {
+  var wc = document.getElementById('fc').contentWindow;
+  var wf = document.getElementById('ff').contentWindow;
+  try {
+    /* canvas 模式：自带控件全隐藏 */
+    ok('C1', wc.getState().uiMode === 'canvas', 'uiMode=' + wc.getState().uiMode);
+    ok('C2', disp(wc, 'controls') === 'none' && disp(wc, 'hint') === 'none' &&
+      disp(wc, 'srcInfo') === 'none', 'controls=' + disp(wc, 'controls') +
+      ' hint=' + disp(wc, 'hint') + ' srcInfo=' + disp(wc, 'srcInfo'));
+    ok('C3', disp(wc, 'needle') === 'none', 'needle=' + disp(wc, 'needle'));
+
+    /* 相机/轨迹层仍工作：能定位、能加载轨迹并渲染 */
+    wc.setView(39.9, 116.4, 12);
+    var st = wc.getState();
+    var seg = [[]];
+    for (var i = 0; i < 60; i++) seg[0].push({ lat: 39.9 + i * 0.0002, lng: 116.4 + i * 0.0002, t: 1700000000000 + i * 1000 });
+    wc.lc_track_load(seg);
+    var svgKids = wc.document.querySelectorAll('#trackSvg *').length;
+    ok('C4', Math.abs(st.lat - 39.9) < 0.01 && svgKids > 0 && wc.getState().track.loaded === true,
+      'center=' + st.lat.toFixed(3) + ',' + st.lng.toFixed(3) + ' trackNodes=' + svgKids);
+
+    /* 别名与 &ui=none 也认 */
+    wc.setUiMode('full');
+    var back = wc.getState().uiMode;
+    var r = wc.lc_setUiMode('canvas');
+    ok('C5', back === 'full' && r === 'canvas' && wc.getState().uiMode === 'canvas',
+      'back=' + back + ' alias->' + r);
+
+    /* 默认（不带 uimode）仍是 full，控件可见——不能影响主页面 */
+    ok('C6', wf.getState().uiMode === 'full' && disp(wf, 'controls') !== 'none',
+      'uiMode=' + wf.getState().uiMode + ' controls=' + disp(wf, 'controls'));
+
+    var fails = 0;
+    for (var q = 0; q < R.length; q++) if (R[q].indexOf('FAIL') === 0) fails++;
+    console.log('UC-RESULT ' + (fails === 0 ? 'PASS' : 'FAIL') + ' total=' + R.length + ' fails=' + fails);
+  } catch (e) { console.log('UCERR ' + e); }
+}, 6000);
+</script>
+</body>
+</html>

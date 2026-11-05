@@ -113,8 +113,8 @@ public class ElevationActivity extends LcFeatureActivity {
                 view.evaluateJavascript("setBase('img');lc_elev_query(true);", null);
             }
         });
-        web.loadUrl("file:///android_asset/map.html#in3d&uimode=map&lat=" + startLat
-                + "&lng=" + startLng + "&z=12");
+        web.loadUrl(MapAsset.url("#in3d&uimode=map&lat=" + startLat
+                + "&lng=" + startLng + "&z=12"));
         content.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 

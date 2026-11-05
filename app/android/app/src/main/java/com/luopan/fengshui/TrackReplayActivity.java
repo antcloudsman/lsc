@@ -153,7 +153,10 @@ public class TrackReplayActivity extends LcFeatureActivity {
                 view.evaluateJavascript("try{lc_track_load(" + segmentsJson + ");lc_track_follow(true);}catch(e){}", null);
             }
         });
-        map.loadUrl("file:///android_asset/map.html#in3d");
+        /* uimode=canvas：回放页只留地图与轨迹层——隐藏 map.html 左侧工具列/底图控件/角注/HUD。
+         * 布局这边已改成竖向分栏（控件不再浮在 WebView 上），这里再把地图自带工具列收掉，
+         * 双保险：点「1×」等原生按钮不会再被地图控件或 pick 吃掉。 */
+        map.loadUrl(MapAsset.url("#in3d&uimode=canvas"));
 
         // 控件不再浮在 WebView 上：本机 WebView 会把浮层上的点击全部吃掉（点播放/倍速无效、
         // 反而给地图发 pick）。改成竖向分栏——跟随行 / 地图（占满剩余）/ 底部控制栏，各占各的空间。

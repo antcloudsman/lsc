@@ -104,7 +104,25 @@
  * ============================================================ */
 
 /* ---------------- 公共状态 ---------------- */
-var KEY = "dd18858b33229f5837ad1d97b8d3105e";
+/* 天地图**网页端 key**：绝不进仓库（仓库是 public）。由原生侧加载本页时用 query 参数传入：
+ *   file:///android_asset/map.html?tk=<webKey>#in3d&measure=area
+ * 注意 query 与 hash 的顺序——hash 必须在 `?tk=` 之后，原有的 `#in3d&measure=…` 语义不变。
+ * 取不到就置空 + 一条明确警告，**不回退到任何硬编码 key**（回退等于又把 key 提交进 git）。 */
+var KEY = (function () {
+  try {
+    var q = location.search || "";
+    if (typeof URLSearchParams === "function") {
+      var v = new URLSearchParams(q).get("tk");
+      return v ? String(v) : "";
+    }
+    var m = q.match(/[?&]tk=([^&#]*)/);          /* 老 WebView 兜底 */
+    return m ? decodeURIComponent(m[1]) : "";
+  } catch (e) { return ""; }
+})();
+if (!KEY) {
+  console.warn("LC3D WARN 未收到天地图网页端 key（加载地址需带 ?tk=…），底图瓦片将无法加载；"
+    + "这是预期行为——仓库内不保存任何 key。");
+}
 var SUB = ["t0","t1","t2","t3","t4","t5","t6","t7"];
 var base = "ter";              // vec=矢量 img=影像 ter=地形(默认)
 var anno = "cta";              // 注记层
@@ -196,6 +214,7 @@ function tileUrl(layer, z, x, y) {
       + "/default028mm/MapServer/tile/" + encodeURIComponent(rel) + "/" + z + "/" + y + "/" + x;
   }
   var s = SUB[(((x + y) % 8) + 8) % 8];
+  if (!KEY) return "";                    /* 没 key 就不拼带空 tk 的请求（填图时直接跳过） */
   return "https://" + s + ".tianditu.gov.cn/" + layer + "_w/wmts" +
     "?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=" + layer +
     "&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles" +
@@ -245,6 +264,7 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
       var left = x * 256 - tx;
       var top = y * 256 - ty;
       var url = tileUrl(layer, zoom, xx, yy);
+      if (!url) continue;                 /* 无 key：不渲染破图，保持灰底并已 console.warn */
       var cached = tileCacheOn ? tileCache[url] : null;
       if (cached) {
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
@@ -1534,11 +1554,14 @@ function updateSrcInfo() {
 function applyNeedleVisibility() {
   var el = document.getElementById("needle");
   if (!el) return;
-  el.style.display = (needleOn && uiMode !== "compass") ? "" : "none";
+  el.style.display = (needleOn && uiMode !== "compass" && uiMode !== "canvas") ? "" : "none";
 }
 
 function setUiMode(m) {
-  uiMode = (m === "map" || m === "compass") ? m : "full";
+  /* full=自带全部控件（无头 AT/回退）；map/compass/罗盘浮层见 §10；
+   * canvas=轨迹回放页用：只留地图与轨迹层，左侧工具列/底图控件/角注/HUD 全部隐藏，
+   *        相机与轨迹层照常工作（默认行为不受影响，只有显式传 canvas 才生效）。 */
+  uiMode = (m === "map" || m === "compass" || m === "canvas") ? m : "full";
   var full = (uiMode === "full");
   var c = document.getElementById("controls");
   if (c) c.style.display = full ? "" : "none";
@@ -1550,10 +1573,17 @@ function setUiMode(m) {
   if (si) si.style.display = full ? "" : "none";
   var fx = document.getElementById("fsExit");
   if (fx) fx.style.display = (full && fullScreen) ? "block" : "none";
+  var hd = document.getElementById("hud");
+  if (hd) hd.style.display = (full && mode === "3d") ? "block" : "none";
+  var sp = document.getElementById("srcPanel");
+  if (sp) sp.style.display = "none";            /* 切模式时顺手收起底图源面板 */
   applyNeedleVisibility();
   updateHud();
   return uiMode;
 }
+
+/* 客户端习惯的别名（回放页直接用 lc_setUiMode('canvas')） */
+function lc_setUiMode(m) { return setUiMode(m); }
 
 /* ---------------- 罗盘坐向指针 ---------------- */
 function setHeading(deg) {
@@ -2790,8 +2820,10 @@ function hashHas(h, name) {
 }
 
 function applyUiModeHash(h) {
-  var m = (h || "").match(/[&#]uimode=(full|map|compass)/);
-  if (m) setUiMode(m[1]);
+  var m = (h || "").match(/[&#]uimode=(full|map|compass|canvas)/);
+  if (m) { setUiMode(m[1]); return; }
+  /* 回放页/兼容写法：&ui=none 等同 canvas（只留地图与轨迹层） */
+  if ((h || "").match(/[&#]ui=none\b/)) setUiMode("canvas");
 }
 
 function applyIn3D(hash) {
@@ -2889,7 +2921,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "getAttribution", "setRoadNet",
+    "getState", "getFps", "setUiMode", "lc_setUiMode", "getAttribution", "setRoadNet",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",
     "lc_measure_start", "lc_measure_clear", "lc_measure_undo", "lc_measure_addCenter",

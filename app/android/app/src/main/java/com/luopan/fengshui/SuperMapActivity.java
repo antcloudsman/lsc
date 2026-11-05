@@ -132,7 +132,7 @@ public class SuperMapActivity extends LcFeatureActivity {
                         null);
             }
         });
-        web.loadUrl("file:///android_asset/map.html#uimode=map");
+        web.loadUrl(MapAsset.url("#uimode=map"));
         content.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 

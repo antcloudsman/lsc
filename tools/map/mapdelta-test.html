@@ -91,6 +91,18 @@ setTimeout(function () {
     ok('F14-b', pick2 && pick2.address === '北京市顺义区' && pick2.typeCode === 308,
       'pick=' + JSON.stringify(pick2));
 
+    /* F14-c：**旧形状兼容**（只有 {name,type,lat,lng}，没有 address/typeCode）也要收下并推码 */
+    w.setFishLayer(true, [
+      { name: '老数据库', type: '库', lat: 40.4, lng: 116.8 },
+      { name: '老数据河', type: '河', lat: 40.1, lng: 116.6 }
+    ]);
+    var oldShaped = w.getState().fish.count;
+    var oldFish = w.document.querySelectorAll('#fishLayer .fish');
+    var pickOld = null;
+    if (oldFish.length >= 1) { oldFish[0].click(); pickOld = w.__LCBridgeTest.last('fish-pick'); }
+    ok('F14-c', oldShaped === 2 && pickOld && pickOld.typeCode === 303 && pickOld.address === '',
+      'count=' + oldShaped + ' pick=' + JSON.stringify(pickOld));
+
     /* ---------- MD-05：2D 跟随不每帧重建瓦片 ---------- */
     var renderCount = 0, trackCount = 0;
     var origRender = w.render, origTrack = w.updateTrack;

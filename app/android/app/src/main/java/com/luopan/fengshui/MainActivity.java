@@ -854,6 +854,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(label + "：原版为工具子页，本步未实现");
                 }
                 break;
+            case "探索":
+                // F-08：右列「探索」→ DiscoveryActivity（默认开，无门槛）；关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f08")) {
+                    startActivity(new android.content.Intent(this, DiscoveryActivity.class));
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "超清优化":
                 // F-02：左列「超清优化」→ SuperMapActivity（默认开，无门槛）；关掉回退旧 stub。
                 if (new FeatureFlags(this).isEnabled("f02")) {
@@ -1158,6 +1166,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // F-14：更多 → 钓点 → FishingActivity（默认开；关掉回退旧 stub）
                     startActivity(new android.content.Intent(this, FishingActivity.class));
                 } else if ("钓点".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
+                } else if ("轨迹记录".equals(t) && flags.isEnabled("f15")) {
+                    // F-15：更多 → 轨迹记录 → TrackListActivity（默认开；关掉回退旧 stub）
+                    startActivity(new android.content.Intent(this, TrackListActivity.class));
+                } else if ("轨迹记录".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("画笔".equals(t) && flags.isEnabled("f13")) {
                     // F-13：更多 → 画笔 → 地图内绘制态（再点退出）

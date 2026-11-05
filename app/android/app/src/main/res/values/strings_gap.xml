@@ -93,4 +93,46 @@
     <string name="lc_compasslist_cancel">取消</string>
     <string name="lc_compasslist_selected">已选择</string>
     <string name="lc_compasslist_import_fail">导入失败</string>
+
+    <!-- F-15 轨迹（免费、无门槛；禁词见方案文档 §6） -->
+    <string name="lc_track_title">轨迹记录</string>
+    <string name="lc_track_start">开始记录</string>
+    <string name="lc_track_stop">停止并保存</string>
+    <string name="lc_track_recording">正在记录</string>
+    <string name="lc_track_settings">记录设置</string>
+    <string name="lc_track_ongoing">未完成的轨迹</string>
+    <string name="lc_track_resume">继续记录</string>
+    <string name="lc_track_finish">结束保存</string>
+    <string name="lc_track_discard">丢弃</string>
+    <string name="lc_track_discard_msg">丢弃后这段轨迹不可恢复。</string>
+    <string name="lc_track_empty">还没有轨迹。点「开始记录」，走一段就会在这里出现。</string>
+    <string name="lc_track_permission">记录轨迹需要精确位置权限。轨迹只保存在本机，不会上传。</string>
+    <string name="lc_track_item_view">查看</string>
+    <string name="lc_track_item_delete">删除</string>
+    <string name="lc_track_delete_msg">删除后不可恢复，只删除本机文件。</string>
+    <string name="lc_track_settings_interval">采样间隔</string>
+    <string name="lc_track_settings_distance">最小位移</string>
+    <string name="lc_track_settings_high_accuracy">高精度定位</string>
+    <string name="lc_track_settings_battery">后台保活</string>
+    <string name="lc_track_settings_notification">通知权限</string>
+    <string name="lc_track_settings_note">轨迹只保存在本机，不会上传。</string>
+    <string name="lc_track_battery_guide">允许后台运行，锁屏后也能继续记录。</string>
+    <string name="lc_track_notification_off">通知被关闭，锁屏时系统可能提前结束记录。</string>
+    <string name="lc_track_go_settings">去设置</string>
+    <string name="lc_track_close">关闭</string>
+
+    <!-- F-15 轨迹：详情 -->
+    <string name="lc_track_detail_title">轨迹详情</string>
+    <string name="lc_track_detail_distance_label">总里程</string>
+    <string name="lc_track_detail_duration_label">总用时</string>
+    <string name="lc_track_detail_avg_label">平均速度</string>
+    <string name="lc_track_detail_max_label">最高速度</string>
+    <string name="lc_track_detail_replay">回放</string>
+    <string name="lc_track_detail_export">导出 GPX（可导入其它地图软件）</string>
+    <string name="lc_track_detail_delete">删除</string>
+
+    <!-- F-15 轨迹：回放 -->
+    <string name="lc_track_replay_title">回放</string>
+    <string name="lc_track_replay_follow">跟随</string>
+    <string name="lc_track_replay_legend">速度：&lt;3 灰 · 3–6 绿 · 6–12 蓝 · 12–25 橙 · &gt;25 红</string>
 </resources>

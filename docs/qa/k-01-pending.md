@@ -11,8 +11,8 @@
 |---|---|---|
 | 装包 | **真因是安装会话被占用**：18:42 起有一条 `adb install` 挂住（stdout 停在 `Performing Streamed Install`，进程不退出），后续每次安装都排队到超时，系统报 `INSTALL_FAILED_ABORTED: User rejected permissions`；点「继续安装」无效是因为会话根本轮不到新安装。**「纯净模式增强防护」最多只能解释更早那一次，不是最近几轮的因**，报告里不得再把它写成当前根因 | `adb kill-server` + 清残留 adb 进程、重启服务后重试即 `Success`。脚本已加两道前置闸：① 采集/装包前查主机侧残留 `adb install` 进程（本机 EMUI 的 `pm list sessions` 不支持，报 `unknown list type`）；② 装完从设备 pull `base.apk` 现算 sha 与磁盘对齐（`-SkipInstall` 时以设备 sha 为报告口径）。仍只由技术总监单人装包 |
 
-- 设备现状（installed）：**`68C481A8` / 6,564,424 B**（18:59:13，pull 回逐字节核对），对应 `d0b1f90`（含 K-02 顶栏四项）。
-- **最终 target（待装）**：`53A962ED` / 6,564,412 B（19:00:24，`2696c19`；与 `d0b1f90` 的 app 差异仅 javadoc 注释）。装上后按 `BuildHead 2696c19` 再冻一次即为最终基线；`C4BF5550`、`13106018`、`2667C765`、`A65581FA`、`338D59F6` 全部作废。
+- 设备现状（installed）：**`53A962ED` / 6,564,412 B**（19:06:45，pull 回逐字节核对），对应 `2696c19`（含 K-02 顶栏四项；与 `d0b1f90` 的 app 差异仅 javadoc 注释，非注释行 0）。
+- **最终 target（已装，19:06:45）**：`53A962ED` / 6,564,412 B，`BuildHead 2696c19`；磁盘与设备 pull 逐字节一致。`C4BF5550`、`13106018`、`2667C765`、`A65581FA`、`338D59F6` 全部作废。
 - **首冻 `round-k01`（18:10）作废**：`pm clear` 在本机连运行时权限一起清，冷启动弹「是否允许…访问位置信息」，`ui-map.xml` 采到的是 `com.android.permissioncontroller` 弹窗（36 节点、无一个应用控件）→ 左/右列判成 0/8。旧前台闸拿整份 `dumpsys window` 做子串匹配，应用窗口在后台也照样命中，所以没拦住；`DumpUi` 当时也没有 package 校验。产物移至 `E:\APPDetector\evidence\round-k01-void-1810`，**不得引用**。
 - **冒烟 smoke6（18:20）作废**：summary 记的 APK 是 `A65581FA`，而设备上装的是 `2667C765`——脚本 `-SkipInstall` 时把磁盘包 sha 写进报告，与设备实际运行包不一致；该轮 11 PASS/1 FAIL/8 BLOCKED 不采信。
 - **误装窗口作废**：17:48–17:53 设备上装的是 `feature/gap-client` 构建（6,880,925 B / `B3EFD676`），不是 K-01 target；该时段任何设备结果一律作废，不得引用。
@@ -20,21 +20,21 @@
 - **`338D59F6`（`bedea47`）冻结作废**：装 `68C481A8`（K-02 顶栏四项）后罗盘态结构已变，该版 16/19 不再代表最终包；产物留档 `E:\APPDetector\evidence\round-k01-bedea47-1856`，只作过程证据。
 - **K-02（罗盘态顶部栏）已实现并实测**：`d0b1f90` 起罗盘态 dump 含 `返回/搜索/图层/隐藏` 四项（`smoke9` 的 `M2-topbar` PASS），罗盘态「图层」能开 `#srcPanel` 12 源（`M2-compass-layer` PASS，与 `M4-layer` 同一判据）。搜索为**等价替代**（原版搜世纪空间地名/景观 POI，本实现搜盘面/圈层/知识条目），按总监口径签「等价替代」，注释已写清语义对照。
 - **执行前置（首跑作废原因）**：真机脚本必须先确认 `mCurrentFocus` 是 `com.luopan.fengshui`；首跑 `ui-first.xml` 采到 `InstallStaging` 安装器界面，整批结果作废。smoke 与 freeze 脚本已加前台闸（smoke BLOCKED exit 2 / freeze throw），不再靠人记。
-- **当前证据集**：`smoke9`（`68C481A8`）**22 PASS / 0 FAIL / 0 BLOCKED / 1 DIAG**（DIAG = 设备包 `68C481A8` ≠ 磁盘包 `53A962ED`，属预期，设备包为准）；`round-k01`@`d0b1f90`/`68C481A8` 左 8/右 10/更多 16/罗盘 19、`offTol=0`、dx 8.5 / dy 0、门禁 PASS、exit 0。最终包 `53A962ED` 装上后重冻出同一组数字即收口；A1–A10 单列 P-11，不混写。
+- **当前证据集（最终包）**：`smoke10`（`53A962ED`）**22 PASS / 0 FAIL / 0 BLOCKED / 0 DIAG**；`round-k01`@`2696c19`/`53A962ED` 左 8/右 10/更多 16/罗盘 **19**、`offTol=0`、dx **8.5** / dy **0**、门禁 PASS、`FATAL 0/0/0`、exit 0（commit `2f0c12d`）。与上一轮 `d0b1f90`/`68C481A8` 三项数字完全一致，两轮 `ui-map.xml` 逐字节相同（`19480613…`）。A1–A10 单列 P-11。
 - A8 判据改为「`uiMode==='map'` 且浮层消失」，不再断言 `#controls` 恢复（map 模式下由原生壳承载控件，设计如此）。
 - 口径：不得用旧包跑出的 P-04/P-10 结果当 target 的验收；换包后重跑。
 
 ## 1 待跑项
 
-> 状态口径：设备已装 `68C481A8`（`d0b1f90`），最终包 `53A962ED`（`2696c19`）待装。`smoke9` 的 22/0/0 只对 `68C481A8` 成立，**不得写成最终包的结果**；17:48–17:53 误装 `gap-client` 窗口的结果作废。
+> 状态口径：最终包 `53A962ED`（`2696c19`）已装，`smoke10` 22/0/0 与 `round-k01` 19/19 均在该包上取得；`smoke9`（`68C481A8`）只作 K-02 行为证据。17:48–17:53 误装 `gap-client` 窗口的结果作废。
 
 | # | 来源提交 | 条目 | 要跑的证据 | 判据 | 状态 |
 |---|---|---|---|---|---|
 | P-01 | `208023f`（B-02 静态+字节码） | B-02 运行态：release 无桥 / debug 对照 | `AT-P0-1` §1.1 四条命令原文；`logcat -d -s LCDEBUG LCJS` 原文；`aapt dump badging` release/debug 两段 | release 零输出；debug 出现 `bridge registered` 与两条 `LCJS … -> 2`；`aapt` release 无 `application-debuggable`、debug 有 | BLOCKED-纯模式（同 §0） |
-| P-02 | 客户端 K-01 step-1 `42f5cb7` + 布局修正 `ffb0938` | 删 Tab / 单页 / 左 8 右 10 | 静态：`BUILD SUCCESSFUL`、`activity_main.xml` 的 `bottom_bar|tab_` 0 命中、`createMapWebView` 1 定义+1 调用、XML well-formed；真机：`k01-map.png` + `ui-map.xml` | 无底部导航；左列 8 / 右列 10 命中，且 **18 个按钮中心与 `orig-main.xml` 参考坐标偏差 ≤45px**（分母用内容帧 2578，不用 2700；见 `96ea11b`） | 已过（`round-k01`@`d0b1f90`：18 钮 `offTol=0`、dx 8.5 / dy 0；最终包 `53A962ED` 重冻后复核同一组数字） |
+| P-02 | 客户端 K-01 step-1 `42f5cb7` + 布局修正 `ffb0938` | 删 Tab / 单页 / 左 8 右 10 | 静态：`BUILD SUCCESSFUL`、`activity_main.xml` 的 `bottom_bar|tab_` 0 命中、`createMapWebView` 1 定义+1 调用、XML well-formed；真机：`k01-map.png` + `ui-map.xml` | 无底部导航；左列 8 / 右列 10 命中，且 **18 个按钮中心与 `orig-main.xml` 参考坐标偏差 ≤45px**（分母用内容帧 2578，不用 2700；见 `96ea11b`） | **已过**（`round-k01`@`2696c19`/`53A962ED`：18 钮 `offTol=0`、dx 8.5 / dy 0；commit `2f0c12d`） |
 | P-03 | K-01 落地笔（客户端） | SW-006 第 4 条：面板区裁切窗重取 | 新参考图 + 新窗 `y0-y1` + 测量方法（谁量/哪张截图/怎么定面板上缘）+ 同航向同贴面 diff | 旧窗 `y1850-2500` 与旧参考 `round-d5/variant-p01` 作废；新窗判据由客户端测量后定，并写进 `round-k01/manifest.md` 的「裁切窗测量依据」 | BLOCKED-纯模式 |
 | P-04 | 地图侧 `measurements.md`（`64f8abc`）+ 构建树 `k01-int@8bb2ad4`（L296 直径） | 罗盘圆心/直径/外环/face alpha | 截图测量数据 + 采样点清单（RGB、推测背景色、alpha 上下界）；代码断言 `MainActivity` L296 `0.7378f * W + 16`（1228→906） | 圆心与屏幕中心偏差 ≤2% 屏宽；外径 **906 px**（判据 900–910）；圆内可见地图纹理（无 0.82 暗盘）；alpha 上界 0.15 为模型估计、线稿 0.90–1.00 | BLOCKED-纯模式 |
-| P-05 | 构建树 `k01/integration` @ `53327d1`（默认 dial 0 + A10 + B-05 预留 API） | K-01 全量验收 + `round-k01` 基线重冻 | `k01-int` 版 `freeze_android_baseline.ps1` 全量产物（`k01-map.png`/`k01-more.png`/`k01-compass.png`/`k01-map-after-hide.png`/`ui-*.xml`/`nodes-k01.csv`/`manifest.md`）+ F-01/F-02 门禁输出；APK `…\k01-int\…\app-debug.apk` 6,560,730 B / sha256 `C4BF5550…` | 见 `round-k01/manifest.md`：左 8/右 10/更多 16 硬项；浮层态截图；门禁 `tests=85 skipped=0 + CARGO: PASS`；manifest 写 `BuildHead=53327d1` + APK sha/bytes | 已跑（`round-k01`@`d0b1f90`/`68C481A8`，exit 0；最终包 `53A962ED` 重冻后记最终） |
+| P-05 | 构建树 `k01/integration` @ `53327d1`（默认 dial 0 + A10 + B-05 预留 API） | K-01 全量验收 + `round-k01` 基线重冻 | `k01-int` 版 `freeze_android_baseline.ps1` 全量产物（`k01-map.png`/`k01-more.png`/`k01-compass.png`/`k01-map-after-hide.png`/`ui-*.xml`/`nodes-k01.csv`/`manifest.md`）+ F-01/F-02 门禁输出；APK `…\k01-int\…\app-debug.apk` 6,560,730 B / sha256 `C4BF5550…` | 见 `round-k01/manifest.md`：左 8/右 10/更多 16 硬项；浮层态截图；门禁 `tests=85 skipped=0 + CARGO: PASS`；manifest 写 `BuildHead=53327d1` + APK sha/bytes | **已过**（`round-k01`@`2696c19`/`53A962ED`，exit 0，commit `2f0c12d`；门禁 `tests=85 skipped=0 + CARGO PASS`） |
 | P-06 | 审查遗留（本清单新增） | P2-06-vis 金色角注带 `y1400-1850` 复核 | K-01 后重截分享图；复核角注是否仍在面板上方、带窗是否需改 | `run-final.ps1` 旧固定带 `y1400-1850` 已停用（只记 `DIAGNOSTIC`，不判 PASS/FAIL）；复核新带后再决定恢复判据 | 已暂停（旧带停用，待复核新带） |
 | P-07 | 客户端 `70f6b1d`（step-3）+ `map-bridge.md` L262（`64f8abc`） | 指针开关两模式判定 | 地图模式：点右列「指针开关」，取 `__LC3D.getState().needle` 与 `#needle` 的 display；罗盘模式：`k01-compass-needle-on/off.png` 截图比对 | 地图模式两处状态同步翻转；罗盘模式 `#needle` 恒 none、北针由 `CompassView.setShowPointer`（L35）控制且只能靠截图判；不得用 `getState().needle` 代判罗盘北针 | BLOCKED-纯模式 |
 | P-08 | 客户端 `f3006f2`（step-4，`CompassView` L135；坐标经 z 序校正） | 圆盘外触摸透传（K-01 判据 4） | **垂直方向**：`input swipe 614 800 614 1100`（圆顶 y=900 之外 100px），前后取 `__LC3D.getState().lng/lat`；同点单击确认 `heading` 不变。**不再用水平 50px**：x≈114/1114 落在左右工具列矩形内（列宽 58dp≈174px），必然假失败 | `getState().lng/lat` 变化（地图被拖动）；圆外点击不被 `CompassView` 消费；圆内仍由罗盘处理 | BLOCKED-纯模式 |

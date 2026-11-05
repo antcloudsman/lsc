@@ -60,6 +60,39 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** 地图页是否已加载完（决定 setView 立即调还是等 onPageFinished）。 */
     private boolean mapPageReady = false;
 
+    // F-12 测量 / F-13 画笔：地图内交互态（不新建 Activity）
+    private boolean measureMode = false;
+    private boolean drawMode = false;
+    private View measureBar;
+    private View drawBar;
+    private TextView measureResultView;
+    private int drawColorIndex = 0;
+    private int drawWidthIndex = 0;
+    /** 6 色 / 3 档粗细（文档 F-13 §6：6 色 + 3 档；具体色值文档未列，取常用色板，待真机校正）。 */
+    private static final String[] DRAW_COLORS = {
+            "#ff5500", "#ffc800", "#00c853", "#2979ff", "#aa00ff", "#ffffff"};
+    private static final int[] DRAW_WIDTHS = {4, 8, 12};
+    private final android.os.Handler measureHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable measurePoll = new Runnable() {
+        @Override
+        public void run() {
+            if (!measureMode || compassMapView == null) return;
+            compassMapView.evaluateJavascript(
+                    "(function(){var m=getState().measure;"
+                            + "if(m.mode==='area'){return m.areaM2<10000?(m.areaM2+' ㎡'):"
+                            + "((m.areaM2/666.7).toFixed(1)+' 亩');}"
+                            + "return m.distanceM<1000?(m.distanceM+' m'):"
+                            + "((m.distanceM/1000).toFixed(2)+' km');})()",
+                    v -> {
+                        if (measureResultView != null) {
+                            measureResultView.setText(decodeJsString(v));
+                        }
+                    });
+            measureHandler.postDelayed(this, 500);
+        }
+    };
+
     // P0-1 reading trust
     private android.widget.TextView statusView;
     private android.content.SharedPreferences prefs;
@@ -688,6 +721,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(label + "：原版为工具子页，本步未实现");
                 }
                 break;
+            case "测量":
+                // F-12：更多 → 测量（地图内交互，再点退出）；默认开，关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f12")) {
+                    toggleMeasure();
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
+            case "画笔":
+                // F-13：更多 → 画笔（地图内交互，再点退出）；默认开，关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f13")) {
+                    toggleDraw();
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "截屏": captureMap(); break;
             case "山脉":
                 // F-06：右列入「山脉」→ MountainActivity（默认开，无门槛）；关掉回退旧 stub。
@@ -747,6 +796,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /** K-01：罗盘＝同一页面的浮层，切的是「表现」不是页面。 */
     private void setCompassMode(boolean on) {
+        if (on) {
+            // 进罗盘态前先退出测量/画笔态，避免浮条留在浮层上。
+            exitMeasure();
+            exitDraw();
+        }
         compassMode = on;
         if (compassView != null) compassView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
@@ -759,6 +813,125 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (topLayerButton != null) topLayerButton.setVisibility(on ? View.VISIBLE : View.GONE);
         js(on ? "setUiMode('compass')" : "setUiMode('map')");
         updateReading();
+    }
+
+    // ---------------- F-12 测量 / F-13 画笔（地图内交互，底部浮条） ----------------
+
+    private void toggleMeasure() {
+        if (measureMode) exitMeasure(); else enterMeasure();
+    }
+
+    private void enterMeasure() {
+        exitDraw();
+        measureMode = true;
+        js("lc_measure_start('distance')");
+        if (measureBar == null) measureBar = buildMeasureBar();
+        if (measureBar.getParent() == null) addBottomBar(measureBar);
+        measureHandler.removeCallbacks(measurePoll);
+        measureHandler.post(measurePoll);
+    }
+
+    /** 退出测量：原版 API 只有 lc_measure_clear 能关闭测量态，退出即清点。 */
+    private void exitMeasure() {
+        measureMode = false;
+        measureHandler.removeCallbacks(measurePoll);
+        js("lc_measure_clear()");
+        if (measureBar != null && measureBar.getParent() instanceof android.view.ViewGroup) {
+            ((android.view.ViewGroup) measureBar.getParent()).removeView(measureBar);
+        }
+        measureBar = null;
+        measureResultView = null;
+    }
+
+    private View buildMeasureBar() {
+        LinearLayout bar = bottomBar(R.id.lc_measure_panel);
+        bar.addView(barButton(R.string.lc_measure_distance, R.id.lc_measure_distance,
+                v -> js("lc_measure_start('distance')")));
+        bar.addView(barButton(R.string.lc_measure_area, R.id.lc_measure_area,
+                v -> js("lc_measure_start('area')")));
+        bar.addView(barButton(R.string.lc_measure_clear, R.id.lc_measure_clear,
+                v -> js("lc_measure_clear()")));
+        measureResultView = new TextView(this);
+        measureResultView.setId(R.id.lc_measure_result);
+        measureResultView.setTextSize(12f);
+        measureResultView.setTextColor(Color.rgb(235, 228, 215));
+        measureResultView.setPadding(dp(8), 0, dp(4), 0);
+        bar.addView(measureResultView, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.2f));
+        return bar;
+    }
+
+    private void toggleDraw() {
+        if (drawMode) exitDraw(); else enterDraw();
+    }
+
+    private void enterDraw() {
+        exitMeasure();
+        drawMode = true;
+        js("lc_draw_start()");
+        if (drawBar == null) drawBar = buildDrawBar();
+        if (drawBar.getParent() == null) addBottomBar(drawBar);
+    }
+
+    private void exitDraw() {
+        drawMode = false;
+        if (compassMapView != null) js("lc_draw_end()");
+        if (drawBar != null && drawBar.getParent() instanceof android.view.ViewGroup) {
+            ((android.view.ViewGroup) drawBar.getParent()).removeView(drawBar);
+        }
+        drawBar = null;
+    }
+
+    private View buildDrawBar() {
+        LinearLayout bar = bottomBar(R.id.lc_draw_panel);
+        bar.addView(barButton(R.string.lc_draw_color, R.id.lc_draw_color, v -> {
+            drawColorIndex = (drawColorIndex + 1) % DRAW_COLORS.length;
+            js("lc_draw_style('" + DRAW_COLORS[drawColorIndex] + "',0)");
+            toast("颜色 " + DRAW_COLORS[drawColorIndex]);
+        }));
+        bar.addView(barButton(R.string.lc_draw_width, R.id.lc_draw_width, v -> {
+            drawWidthIndex = (drawWidthIndex + 1) % DRAW_WIDTHS.length;
+            js("lc_draw_style(''," + DRAW_WIDTHS[drawWidthIndex] + ")");
+            toast("粗细 " + DRAW_WIDTHS[drawWidthIndex]);
+        }));
+        bar.addView(barButton(R.string.lc_draw_undo, R.id.lc_draw_undo,
+                v -> js("lc_draw_undo()")));
+        bar.addView(barButton(R.string.lc_draw_clear, R.id.lc_draw_clear,
+                v -> js("lc_draw_clear()")));
+        bar.addView(barButton(R.string.lc_draw_export, R.id.lc_draw_export,
+                v -> captureMap()));
+        return bar;
+    }
+
+    private LinearLayout bottomBar(int id) {
+        LinearLayout bar = new LinearLayout(this);
+        bar.setId(id);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        bar.setBackgroundColor(Color.argb(210, 24, 20, 16));
+        return bar;
+    }
+
+    private Button barButton(int textRes, int id, View.OnClickListener l) {
+        Button b = new Button(this);
+        b.setId(id);
+        b.setText(textRes);
+        b.setTextSize(12f);
+        b.setMinHeight(0);
+        b.setMinimumHeight(0);
+        b.setPadding(0, 0, 0, 0);
+        b.setOnClickListener(l);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(40), 1f);
+        b.setLayoutParams(lp);
+        return b;
+    }
+
+    private void addBottomBar(View bar) {
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, dp(44));
+        lp.gravity = android.view.Gravity.BOTTOM;
+        lp.bottomMargin = dp(56); // 底部信息条之上，避免遮挡 trust row
+        content.addView(bar, lp);
     }
 
     /** 「更多」＝底部面板（README §6），不是新页面。 */
@@ -806,6 +979,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // F-02：更多 → 超清地图 / 超清优化 → SuperMapActivity（默认开；关掉回退旧 stub）
                     startActivity(new android.content.Intent(this, SuperMapActivity.class));
                 } else if ("超清地图".equals(t) || "超清优化".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
+                } else if ("测量".equals(t) && flags.isEnabled("f12")) {
+                    // F-12：更多 → 测量 → 地图内测量态（再点退出）
+                    toggleMeasure();
+                } else if ("测量".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
+                } else if ("画笔".equals(t) && flags.isEnabled("f13")) {
+                    // F-13：更多 → 画笔 → 地图内绘制态（再点退出）
+                    toggleDraw();
+                } else if ("画笔".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("地理影像".equals(t) && flags.isEnabled("f16")) {
                     // F-16：更多 → 地理影像 → GeographicImageryActivity（默认开；关掉回退旧 stub）

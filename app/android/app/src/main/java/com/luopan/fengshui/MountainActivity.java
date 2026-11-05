@@ -40,6 +40,11 @@ public class MountainActivity extends LcFeatureActivity {
     private static final double DEF_LAT = 39.9042;
     private static final double DEF_LNG = 116.4074;
 
+    /** 初始中心：原版启动器 `MountainActivity$a.b(Context, double, double)` 本来带中心点，
+     *  这里读 `lc_lat`/`lc_lng`（缺失或越界才回退北京）；1:1 对齐，不是新增需求。 */
+    private double startLat = DEF_LAT;
+    private double startLng = DEF_LNG;
+
     private static final ExecutorService POOL = Executors.newSingleThreadExecutor();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
@@ -57,6 +62,13 @@ public class MountainActivity extends LcFeatureActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         disabled = !new FeatureFlags(this).isEnabled("f06");
+        startLat = getIntent().getDoubleExtra("lc_lat", DEF_LAT);
+        startLng = getIntent().getDoubleExtra("lc_lng", DEF_LNG);
+        if (Double.isNaN(startLat) || Double.isNaN(startLng)
+                || startLat < -85 || startLat > 85 || startLng < -180 || startLng > 180) {
+            startLat = DEF_LAT;
+            startLng = DEF_LNG;
+        }
         super.onCreate(savedInstanceState);
     }
 
@@ -99,11 +111,11 @@ public class MountainActivity extends LcFeatureActivity {
         web.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                MAIN.postDelayed(() -> loadMountains(DEF_LAT, DEF_LNG), 900);
+                MAIN.postDelayed(() -> loadMountains(startLat, startLng), 900);
             }
         });
-        web.loadUrl("file:///android_asset/map.html#in3d&uimode=map&lat=" + DEF_LAT
-                + "&lng=" + DEF_LNG + "&z=9");
+        web.loadUrl("file:///android_asset/map.html#in3d&uimode=map&lat=" + startLat
+                + "&lng=" + startLng + "&z=9");
         content.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -234,15 +246,15 @@ public class MountainActivity extends LcFeatureActivity {
 
     private void refreshFromView() {
         web.evaluateJavascript("JSON.stringify(getState())", value -> {
-            double lat = DEF_LAT, lng = DEF_LNG;
+            double lat = startLat, lng = startLng;
             try {
                 String v = value;
                 if (v != null && v.length() >= 2 && v.startsWith("\"")) {
                     v = v.substring(1, v.length() - 1).replace("\\\"", "\"");
                 }
                 JSONObject st = new JSONObject(v);
-                lat = st.optDouble("lat", DEF_LAT);
-                lng = st.optDouble("lng", DEF_LNG);
+                lat = st.optDouble("lat", startLat);
+                lng = st.optDouble("lng", startLng);
             } catch (Throwable ignored) {
                 // 取不到就用默认视野
             }

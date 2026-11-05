@@ -30,6 +30,35 @@ public class CompassView extends View {
     private boolean trustEnabled = false;
     /** K-01：罗盘浮层自己的北针开关（地图层 #needle 不归这里管）。 */
     private boolean showPointer = true;
+    /** B-05：座向翻转/手动修正的持久偏移量（不改 followSensor，传感器继续更新）。 */
+    private float headingOffset = 0f;
+    /** B-05：未超过 touch slop 的按下不算「拖动」，不得切手动。 */
+    private float downX = 0f, downY = 0f;
+    private boolean moving = false;
+    private final int touchSlop =
+            android.view.ViewConfiguration.get(getContext()).getScaledTouchSlop();
+
+    /** B-05：持久偏移量——`heading = normalize(azimuth + offset)`，仍跟随传感器。 */
+    public void setHeadingOffset(float deg) {
+        headingOffset = normalize(deg);
+        if (followSensor) invalidate();
+        notifyHeadingChanged();
+    }
+
+    public float getHeadingOffset() {
+        return headingOffset;
+    }
+
+    /** 「罗盘锁定」＝独立的冻结开关（原版左列单独一项，不兼职翻坐向）。 */
+    public void setFollowSensor(boolean follow) {
+        this.followSensor = follow;
+        invalidate();
+        notifyHeadingChanged();
+    }
+
+    public boolean isFollowingSensor() {
+        return followSensor;
+    }
 
     /** 罗盘模式「指针开关」：只影响浮层自绘北针，不触发 followSensor 变化。 */
     public void setShowPointer(boolean on) {
@@ -110,24 +139,24 @@ public class CompassView extends View {
 
     public void setSensorHeading(float azimuth) {
         if (followSensor) {
-            heading = azimuth;
+            // B-05：偏移量参与合成，翻转座向不再需要冻结传感器。
+            heading = normalize(azimuth + headingOffset);
             invalidate();
         }
     }
 
     public void reset() {
         followSensor = true;
+        headingOffset = 0f;
+        moving = false;
         heading = 0f;
         invalidate();
         notifyHeadingChanged();
     }
 
-    public void setHeadingManually(float h) {
-        followSensor = false;
-        heading = normalize(h);
-        invalidate();
-        notifyHeadingChanged();
-    }
+    // B-05：原 setHeadingManually() 已删除——它把「设置朝向」和「冻结传感器」捆在一起，
+    // 是「点一下/翻一次就永久退出跟随」的入口。手动修正走 setHeadingOffset()（保持跟随），
+    // 冻结只允许走 setFollowSensor(false)（罗盘锁定，独立控件）。
 
     private static float normalize(float d) {
         float x = d % 360f;
@@ -150,12 +179,26 @@ public class CompassView extends View {
         }
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                // B-05：按下只记起点，**不**切手动；单击/误触不再永久冻结罗盘。
                 dragging = true;
-                followSensor = false;
+                moving = false;
+                downX = event.getX();
+                downY = event.getY();
                 lastAngle = (float) Math.toDegrees(Math.atan2(event.getY() - cy, event.getX() - cx));
                 return true;
             case MotionEvent.ACTION_MOVE:
                 if (dragging) {
+                    if (!moving) {
+                        float dx = event.getX() - downX;
+                        float dy = event.getY() - downY;
+                        if (dx * dx + dy * dy > touchSlop * touchSlop) {
+                            moving = true;
+                            followSensor = false;   // 只有真正的拖动才退出跟随
+                        }
+                    }
+                    if (!moving) {
+                        return true;                 // slop 内的抖动不转盘、不改状态
+                    }
                     float a = (float) Math.toDegrees(Math.atan2(event.getY() - cy, event.getX() - cx));
                     float delta = a - lastAngle;
                     if (delta > 180f) delta -= 360f;
@@ -169,6 +212,7 @@ public class CompassView extends View {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 dragging = false;
+                moving = false;
                 return true;
         }
         return super.onTouchEvent(event);

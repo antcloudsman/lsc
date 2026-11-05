@@ -496,7 +496,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (compassView != null) compassView.reset();
                 break;
             case "罗盘锁定":
-                toast("罗盘锁定：待 B-05（锁定＝独立控件，不再兼职翻坐向）");
+                // B-05：锁定＝显式冻结开关（原版左列独立项），与「拖动/翻坐向」彻底分开。
+                if (compassView != null) {
+                    boolean lock = compassView.isFollowingSensor();
+                    compassView.setFollowSensor(!lock);
+                    toast(lock ? "罗盘已锁定（传感器不再更新）" : "罗盘已解锁（跟随传感器）");
+                }
                 break;
             case "切换":
                 startActivity(new android.content.Intent(this, CompassListActivity.class));
@@ -847,7 +852,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             String declText = trueNorth
                     ? String.format(java.util.Locale.US, "真北%+.1f°", declination)
                     : "磁北";
-            statusView.setText(declText + accText + tiltText);
+            // B-05：冻结/偏移状态必须可见，避免用户拿到过期读数还不知道。
+            String modeText = "";
+            if (compassView != null) {
+                if (!compassView.isFollowingSensor()) modeText = " · 锁定";
+                else if (compassView.getHeadingOffset() != 0f) modeText = " · 偏移";
+            }
+            statusView.setText(declText + accText + tiltText + modeText);
             statusView.setTextColor(acc <= 1 ? Color.rgb(230, 200, 90) : Color.rgb(180, 170, 150));
         }
 

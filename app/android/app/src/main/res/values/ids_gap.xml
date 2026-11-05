@@ -207,4 +207,11 @@
     <item name="lc_draw_clear" type="id" />
     <item name="lc_draw_export" type="id" />
 
+    <!-- F-17（LC 自建）：罗盘显示面板 -->
+    <item name="lc_compass_panel" type="id" />
+    <item name="lc_compass_alpha_slider" type="id" />
+    <item name="lc_compass_alpha_value" type="id" />
+    <item name="lc_compass_tianzhi_toggle" type="id" />
+    <item name="lc_compass_close" type="id" />
+
 </resources>

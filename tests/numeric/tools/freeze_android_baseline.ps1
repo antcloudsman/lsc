@@ -7,8 +7,11 @@
   → 「更多」采 16 宫格 bottom sheet → 点「罗盘」采浮层态（截图为准，dump 可能只有 1 个节点）
   → 「隐藏」回地图态 → 输出截图 / dump / 控件表 / manifest / SHA256SUMS。
 
-  控件位基准：`docs/evidence/original-apk/orig-main.xml`（1228×2700），按屏宽/屏高比例缩放后
-  与真机 dump 最近节点匹配；容差 45px。左列 8 / 右列 10 / 更多 16 是 K-01 验收硬项，缺一即 exit 1。
+  控件位基准：`docs/evidence/original-apk/orig-main.xml`（1228×2700）。K-01 起按下述判：
+  - 存在性：按文案（text / content-desc）精确匹配，`+`/`−` 也按文案；
+  - 结构：控件必须在正确半屏（左 < W/2 < 右），且列内 y 单调递增；
+  - 中心偏差：与 orig 参考坐标偏差 ≤45px（分母用内容帧 2578，见 F-17/判 A）；超差即 exit 1。
+  左列 8 / 右列 10 / 更多 16 是 K-01 验收硬项，缺一即 exit 1。
 
 .PARAMETER Apk
   待冻结的 APK（必须是 K-01 布局提交构建的 debug 包；heading 注入依赖 debug 广播）。
@@ -100,7 +103,10 @@ function Shot([string]$name) {
 }
 function DumpUi([string]$file) {
     $remote = "/sdcard/lc_k01_ui.xml"
-    for ($i = 1; $i -le 3; $i++) {
+    for ($i = 1; $i -le 6; $i++) {
+        # 上一轮 uiautomator 崩过会占着 automation 会话（"UiAutomationService ... already registered"），
+        # 后续 dump 全失败；每轮先清掉残留进程。
+        & $adb -s $Device shell pkill -f uiautomator 2>&1 | Out-Null
         & $adb -s $Device shell rm -f $remote | Out-Null
         $o = & $adb -s $Device shell uiautomator dump $remote 2>&1
         if (($o -join "`n") -match "dumped to") {
@@ -117,7 +123,7 @@ function DumpUi([string]$file) {
                 Remove-Item (Join-Path $OutDir $file) -ErrorAction SilentlyContinue
             }
         }
-        Start-Sleep -Milliseconds 600
+        Start-Sleep -Milliseconds 1000
     }
     return [pscustomobject]@{ ok = $false; xml = "" }
 }
@@ -176,7 +182,10 @@ if (-not $gateOk) {
 
 # ---- 设备与包 ----
 if (-not $SkipInstall) {
-    $install = (& $adb -s $Device install -r $Apk 2>&1 | Select-Object -Last 1)
+    # adb 有时在 "Success" 后面再吐一个空行，Select-Object -Last 1 会取到空串；
+    # 这里合并全部非空输出再判，失败时把原文带进异常。
+    $installOut = @(& $adb -s $Device install -r $Apk 2>&1 | Where-Object { "$_".Trim() -ne "" })
+    $install = ($installOut -join " / ")
     if ($install -notmatch "Success") { throw "install 失败: $install" }
 }
 & $adb -s $Device shell am force-stop $Pkg
@@ -437,5 +446,7 @@ $manifest | Set-Content -Encoding UTF8 (Join-Path $OutDir "manifest.md")
 
 Write-Host "FROZEN: $OutDir"
 Write-Host "left=$leftFound/8 right=$rightFound/10 more=$moreFound/16 compassText=$compassFound fatal=$fatal fatalOther=$fatalOther anr=$anr badSide=$($mapBadSide.Count) badOrder=$($mapBadOrder.Count) offTol=$($mapOffTol.Count) maxDrift=$mapMaxDrift"
+# 门禁：缺控件 / 侧别错 / 列内顺序错 / 中心超 ±45px 全部 exit 1。
+# 中心判据是总监 K-01 判 A 的硬项（18 钮逐个 Δ），不是「只报告」——F-17 修的是身份判定，不是取消位置判据。
 if ($mapMissing.Count -gt 0 -or $mapBadSide.Count -gt 0 -or $mapBadOrder.Count -gt 0 -or $mapOffTol.Count -gt 0 -or $moreFound -lt 16 -or $fatal -gt 0 -or $anr -gt 0) { exit 1 }
 exit 0

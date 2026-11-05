@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-06 看山脉（LC地图，2026-11-05）：AT 稳定 id，前缀 lc_mountain_* -->
+    <item name="lc_mountain_back" type="id" />
+    <item name="lc_mountain_title" type="id" />
+    <item name="lc_mountain_content" type="id" />
+    <item name="lc_mountain_empty" type="id" />
+    <item name="lc_mountain_status" type="id" />
+    <item name="lc_mountain_panel" type="id" />
+    <item name="lc_mountain_name" type="id" />
+    <item name="lc_mountain_desc" type="id" />
+    <item name="lc_mountain_ridge" type="id" />
+    <item name="lc_mountain_refresh" type="id" />
+    <item name="lc_mountain_center" type="id" />
+    <item name="lc_mountain_close" type="id" />
+</resources>

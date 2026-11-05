@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-06 看山脉文案（LC地图）。数据来自天地图分类搜索 + 本机 DEM，不出现会员/升级字样。 -->
+    <string name="lc_mountain_title">看山脉</string>
+    <string name="lc_mountain_loading">正在检索视野内的山名…</string>
+    <string name="lc_mountain_fail">山名检索失败（网络或天地图配额），点「刷新视野」重试</string>
+    <string name="lc_mountain_count">视野内山名 %1$d 个</string>
+    <string name="lc_mountain_empty">该区域没有检索到山名点（天地图分类数据未覆盖）</string>
+    <string name="lc_mountain_ridge">山脊</string>
+    <string name="lc_mountain_refresh">刷新视野</string>
+    <string name="lc_mountain_center">居中</string>
+    <string name="lc_mountain_close">关闭</string>
+    <string name="lc_mountain_elev">海拔 %1$s m</string>
+    <string name="lc_mountain_elev_unknown">海拔未知</string>
+    <string name="lc_mountain_hint">点山名查看详情；「山脊」为 DEM 曲率派生高亮</string>
+</resources>

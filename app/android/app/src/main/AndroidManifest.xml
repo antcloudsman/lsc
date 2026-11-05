@@ -39,6 +39,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-06 看山脉（LC地图 新建页）：同上，debug 才导出 -->
+        <activity
+            android:name=".MountainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

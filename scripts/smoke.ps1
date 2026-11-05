@@ -7,10 +7,11 @@
   summary lists every gate and returns exit code 0 only when all of them pass.
 
   Gates:
-    1. desktop  : scripts\build-desktop.ps1 (cargo build + 1100x780 screenshot + mechanics baseline)
-    2. numeric  : python tests\numeric\run_all.py (74 numeric/boundary tests, xfail-aware)
-    3. source   : tools\mechanics\gen-mechanics.ps1 -Check (generated regions match mechanics.json)
-    4. android  : scripts\build-android.ps1 (assembleDebug; install/launch/logcat unless -SkipDevice)
+    1. copy     : python tests\copy\copy_gate.py (user-visible strings zero paywall words + 2 static red lines)
+    2. desktop  : scripts\build-desktop.ps1 (cargo build + 1100x780 screenshot + mechanics baseline)
+    3. numeric  : python tests\numeric\run_all.py (74 numeric/boundary tests, xfail-aware)
+    4. source   : tools\mechanics\gen-mechanics.ps1 -Check (generated regions match mechanics.json)
+    5. android  : scripts\build-android.ps1 (assembleDebug; install/launch/logcat unless -SkipDevice)
 
   Usage (from anywhere):
     powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1
@@ -52,6 +53,7 @@ $desktopScript = Join-Path $PSScriptRoot 'build-desktop.ps1'
 $androidScript = Join-Path $PSScriptRoot 'build-android.ps1'
 $numericScript = Join-Path $repoRoot 'tests\numeric\run_all.py'
 $generatorScript = Join-Path $repoRoot 'tools\mechanics\gen-mechanics.ps1'
+$copyScript = Join-Path $repoRoot 'tests\copy\copy_gate.py'
 
 Write-Host "LC SMOKE | repo=$repoRoot"
 Write-Host "LC SMOKE | host=$hostExe"
@@ -84,16 +86,33 @@ function Resolve-Python {
     return $null
 }
 
-# --- 1/4 desktop ----------------------------------------------------------
+# --- 1/5 copy gate (user-visible strings + static red lines) --------------
+$copyLog = Join-Path $OutDir 'copy.log'
+$copyCode = 1
+$copyDetail = ''
+$python = Resolve-Python
+if (-not $python) {
+    Write-Host '[FAIL] Python 3.10+ not found on PATH; copy gate cannot run' -ForegroundColor Red
+} elseif (-not (Test-Path -LiteralPath $copyScript)) {
+    Write-Host "[FAIL] missing copy gate: $copyScript" -ForegroundColor Red
+} else {
+    $copyArgs = @()
+    $copyArgs += $python.Prefix
+    $copyArgs += $copyScript
+    $copyCode = Invoke-Gate 'copy gate (tests\copy\copy_gate.py)' $python.Exe $copyArgs $copyLog
+    $copyDetail = (Select-String -LiteralPath $copyLog -Pattern '^\[FAIL\] (copy|audi|tiles):' |
+        ForEach-Object { $_.Line -replace '^\[FAIL\]\s+', '' }) -join '; '
+}
+
+# --- 2/5 desktop ----------------------------------------------------------
 $desktopArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $desktopScript, '-OutDir', $desktopOut)
 & $hostExe @desktopArgs
 $desktopCode = $LASTEXITCODE
 
-# --- 2/4 numeric regression ----------------------------------------------
+# --- 3/5 numeric regression ----------------------------------------------
 $numericLog = Join-Path $OutDir 'numeric.log'
 $numericCode = 1
 $numericDetail = ''
-$python = Resolve-Python
 if (-not $python) {
     Write-Host '[FAIL] Python 3.10+ not found on PATH; numeric suite cannot run' -ForegroundColor Red
 } elseif (-not (Test-Path -LiteralPath $numericScript)) {
@@ -107,7 +126,7 @@ if (-not $python) {
     if ($detailLine) { $numericDetail = $detailLine.Line.Trim() }
 }
 
-# --- 3/4 single-source generator check -----------------------------------
+# --- 4/5 single-source generator check -----------------------------------
 $mechanicsLog = Join-Path $OutDir 'mechanics-source.log'
 $mechanicsCode = 1
 if (-not (Test-Path -LiteralPath $generatorScript)) {
@@ -117,7 +136,7 @@ if (-not (Test-Path -LiteralPath $generatorScript)) {
     $mechanicsCode = Invoke-Gate 'mechanics single-source (gen-mechanics.ps1 -Check)' $hostExe $generatorArgs $mechanicsLog
 }
 
-# --- 4/4 android ----------------------------------------------------------
+# --- 5/5 android ----------------------------------------------------------
 $androidArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $androidScript, '-OutDir', $androidOut)
 if ($DeviceId) { $androidArgs += @('-DeviceId', $DeviceId) }
 if ($SkipDevice) { $androidArgs += @('-SkipDevice') }
@@ -126,17 +145,23 @@ $androidCode = $LASTEXITCODE
 
 # --- summary -------------------------------------------------------------
 function Get-Result([int]$Code) { if ($Code -eq 0) { 'PASS' } else { 'FAIL' } }
+$copyResult = Get-Result $copyCode
 $desktopResult = Get-Result $desktopCode
 $numericResult = Get-Result $numericCode
 $mechanicsResult = Get-Result $mechanicsCode
 $androidResult = Get-Result $androidCode
 $overallCode = 0
-foreach ($code in @($desktopCode, $numericCode, $mechanicsCode, $androidCode)) {
+foreach ($code in @($copyCode, $desktopCode, $numericCode, $mechanicsCode, $androidCode)) {
     if ($code -ne 0) { $overallCode = 1 }
 }
 
 Write-Host ''
 Write-Host '================ LC SMOKE SUMMARY ================'
+if ($copyDetail) {
+    Write-Host ("copy     : {0}  ({1}; log: {2})" -f $copyResult, $copyDetail, $copyLog)
+} else {
+    Write-Host ("copy     : {0}  (log: {1})" -f $copyResult, $copyLog)
+}
 Write-Host ("desktop  : {0}  (logs: {1})" -f $desktopResult, $desktopOut)
 if ($numericDetail) {
     Write-Host ("numeric  : {0}  ({1})" -f $numericResult, $numericDetail)
@@ -155,6 +180,7 @@ $summary = @(
     'LC smoke',
     'time=' + (Get-Date).ToString('s'),
     "repo=$repoRoot",
+    "copy=$copyResult",
     "desktop=$desktopResult",
     "numeric=$numericResult",
     "mech_src=$mechanicsResult",

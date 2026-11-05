@@ -1,0 +1,11 @@
+# LC 文案门禁豁免表 tests/copy/allowlist.txt
+#
+# 格式（每行一条，`#` 开头为注释）：
+#   <rule> <glob> <理由>
+#   rule : copy | audi | tiles | all
+#   glob : 相对仓库根的 posix 路径，fnmatch 语义（`*` 会跨目录，`?` 单字符）
+#   理由 : 必填，写清为什么这一行不算违规；没有理由的豁免等于放宽红线
+#
+# 原则：能改文案就别加豁免；只给「负向断言 / 取证记录 / 第三方原文」开豁免。
+# 例：
+#   copy  app/android/app/src/main/res/values/strings_xxx.xml  用户在离线契约页必须看到原协议原文，签约方要求逐字保留

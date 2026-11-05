@@ -694,6 +694,37 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         compassMapView.evaluateJavascript("try{" + code + "}catch(e){}", null);
     }
 
+    /**
+     * 打开带中心点的功能页（F-06 山脉 / F-07 水系）：把当前地图中心作为 lc_lat/lc_lng 传入，
+     * 对齐原版 MountainActivity$a.b(Context, lat, lng) 的语义。取不到中心时退回不带 extras。
+     */
+    private void openFeatureAtCenter(Class<?> cls) {
+        if (compassMapView == null) {
+            startActivity(new android.content.Intent(this, cls));
+            return;
+        }
+        compassMapView.evaluateJavascript(
+                "(function(){var s=getState();return s.lat+','+s.lng;})()",
+                v -> {
+                    double lat = Double.NaN;
+                    double lng = Double.NaN;
+                    String[] parts = decodeJsString(v).split(",");
+                    if (parts.length == 2) {
+                        try {
+                            lat = Double.parseDouble(parts[0].trim());
+                            lng = Double.parseDouble(parts[1].trim());
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                    android.content.Intent i = new android.content.Intent(this, cls);
+                    if (!Double.isNaN(lat) && !Double.isNaN(lng)) {
+                        i.putExtra(MapJump.EXTRA_LAT, lat);
+                        i.putExtra(MapJump.EXTRA_LNG, lng);
+                    }
+                    startActivity(i);
+                });
+    }
+
     private void onToolClick(String label) {
         switch (label) {
             case "罗盘": setCompassMode(true); break;
@@ -708,7 +739,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "水系":
                 // F-07：右列入「水系」→ WaterActivity（默认开，无门槛）；关掉回退旧 stub。
                 if (new FeatureFlags(this).isEnabled("f07")) {
-                    startActivity(new android.content.Intent(this, WaterActivity.class));
+                    openFeatureAtCenter(WaterActivity.class);
                 } else {
                     toast(label + "：原版为工具子页，本步未实现");
                 }
@@ -741,7 +772,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "山脉":
                 // F-06：右列入「山脉」→ MountainActivity（默认开，无门槛）；关掉回退旧 stub。
                 if (new FeatureFlags(this).isEnabled("f06")) {
-                    startActivity(new android.content.Intent(this, MountainActivity.class));
+                    openFeatureAtCenter(MountainActivity.class);
                 } else {
                     toast(label + "：原版为工具子页，本步未实现");
                 }
@@ -961,12 +992,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     setCompassMode(true);
                 } else if ("看山脉".equals(t) && flags.isEnabled("f06")) {
                     // F-06：更多 → 看山脉 → MountainActivity（默认开；关掉回退旧 stub）
-                    startActivity(new android.content.Intent(this, MountainActivity.class));
+                    openFeatureAtCenter(MountainActivity.class);
                 } else if ("看山脉".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("看水系".equals(t) && flags.isEnabled("f07")) {
                     // F-07：更多 → 看水系 → WaterActivity（默认开；关掉回退旧 stub）
-                    startActivity(new android.content.Intent(this, WaterActivity.class));
+                    openFeatureAtCenter(WaterActivity.class);
                 } else if ("看水系".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("历史影像".equals(t) && flags.isEnabled("f10")) {

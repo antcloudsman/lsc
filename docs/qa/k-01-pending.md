@@ -9,22 +9,28 @@
 
 | 阻塞 | 原文 | 解除方式 |
 |---|---|---|
-| 装包 | `Failure [INSTALL_FAILED_ABORTED: User rejected permissions]`（焦点 `com.huawei.coauthservice/...UnifiedAuthenticationDialogActivity`） | **设备窗口只由技术总监单人操作**：逆向释放后由他统一装新包（`k01-int` 的 6,560,609 B / `3E7CA58B…`）并跑冒烟/A1–A10；其他人不申请窗口、不执行 `adb install`/`pm install`；装完本条移出阻塞 |
+| 装包 | 纯净模式增强防护拒绝安装。弹窗原文：**「纯净模式增强防护下，仅支持安装经过华为应用市场安全检测的应用」**，只有「查找类似应用 / 取消安装」，**没有「继续安装」**；`INSTALL_FAILED_ABORTED: User rejected permissions` 是它拒绝的结果，不是有人点掉弹窗。`settings list` 的 `pure_mode_state`/`pure_enhanced_mode_state` 是镜像值，不可作判据 | **等用户在设备上关闭纯净模式**（设置 → 系统和更新 → 纯净模式 → 退出，必要时关「增强防护」）；确认方式看装包弹窗是否出现「继续安装」（或 `pm install` 到 commit 前先 dump 看弹窗文案）。解除后只由技术总监单人装 target 包并跑冒烟/A1–A10；在此之前**任何人不要尝试装包** |
+
+- 设备现状（installed）：`D15BE329` / 6,580,242 B（`18415ae` 一代，含 B-05/step-3/4，**缺 `8bb2ad4` 的几何三项**）
+- 目标包（target）：`3E7CA58B` / 6,560,609 B（`8bb2ad4`，含几何；唯一装包点）
+- 口径：不得用设备上旧包跑出的 P-04/P-10 结果当 target 的验收；换包后重跑。
 
 ## 1 待跑项
 
+> 状态口径：`BLOCKED-纯模式` = 设备纯净模式未解除、target 包未装，证据未采；不得写成「已过」或「已跑」。
+
 | # | 来源提交 | 条目 | 要跑的证据 | 判据 | 状态 |
 |---|---|---|---|---|---|
-| P-01 | `208023f`（B-02 静态+字节码） | B-02 运行态：release 无桥 / debug 对照 | `AT-P0-1` §1.1 四条命令原文；`logcat -d -s LCDEBUG LCJS` 原文；`aapt dump badging` release/debug 两段 | release 零输出；debug 出现 `bridge registered` 与两条 `LCJS … -> 2`；`aapt` release 无 `application-debuggable`、debug 有 | BLOCKED-环境 |
-| P-02 | 客户端 K-01 step-1 `42f5cb7` | 删 Tab / 单页 / 左 8 右 10 | 静态：`BUILD SUCCESSFUL`、`activity_main.xml` 的 `bottom_bar|tab_` 0 命中、`createMapWebView` 1 定义+1 调用、XML well-formed；真机：`k01-map.png` + `ui-map.xml` | 无底部导航；左列 8 / 右列 10 命中（脚本按 `orig-main.xml` 比例位，容差 45px） | 待跑（静态已给，真机 dump/截图待跑） |
-| P-03 | K-01 落地笔（客户端） | SW-006 第 4 条：面板区裁切窗重取 | 新参考图 + 新窗 `y0-y1` + 测量方法（谁量/哪张截图/怎么定面板上缘）+ 同航向同贴面 diff | 旧窗 `y1850-2500` 与旧参考 `round-d5/variant-p01` 作废；新窗判据由客户端测量后定，并写进 `round-k01/manifest.md` 的「裁切窗测量依据」 | 待跑 |
-| P-04 | 地图侧 `measurements.md`（`64f8abc`）+ 客户端 `74348d1`（L270 直径） | 罗盘圆心/直径/外环/face alpha | 截图测量数据 + 采样点清单（RGB、推测背景色、alpha 上下界）；代码断言 `MainActivity` L270 `0.733f * width + 16` | 圆心与屏幕中心偏差 ≤2% 屏宽；外径 0.733W（@1228 验收 900–910 px，实测 900–906）；圆内可见地图纹理（无 0.82 暗盘）；alpha 上界 0.15 为模型估计、线稿 0.90–1.00 | 待跑 |
-| P-05 | 构建树 `k01/integration` @ `8bb2ad4`（含 B-05 `18415ae`） | K-01 全量验收 + `round-k01` 基线重冻 | `k01-int` 版 `freeze_android_baseline.ps1` 全量产物（`k01-map.png`/`k01-more.png`/`k01-compass.png`/`k01-map-after-hide.png`/`ui-*.xml`/`nodes-k01.csv`/`manifest.md`）+ F-01/F-02 门禁输出；APK `E:\APPDetector\wt\k01-int\…\app-debug.apk` 6,560,609 B / sha256 `3E7CA58B…` | 见 `round-k01/manifest.md`：左 8/右 10/更多 16 硬项；浮层态截图；门禁 `tests=82 skipped=0 + CARGO: PASS`；manifest 写 `BuildHead=8bb2ad4` + APK sha/bytes | 待跑 |
+| P-01 | `208023f`（B-02 静态+字节码） | B-02 运行态：release 无桥 / debug 对照 | `AT-P0-1` §1.1 四条命令原文；`logcat -d -s LCDEBUG LCJS` 原文；`aapt dump badging` release/debug 两段 | release 零输出；debug 出现 `bridge registered` 与两条 `LCJS … -> 2`；`aapt` release 无 `application-debuggable`、debug 有 | BLOCKED-纯模式（同 §0） |
+| P-02 | 客户端 K-01 step-1 `42f5cb7` | 删 Tab / 单页 / 左 8 右 10 | 静态：`BUILD SUCCESSFUL`、`activity_main.xml` 的 `bottom_bar|tab_` 0 命中、`createMapWebView` 1 定义+1 调用、XML well-formed；真机：`k01-map.png` + `ui-map.xml` | 无底部导航；左列 8 / 右列 10 命中（脚本按 `orig-main.xml` 比例位，容差 45px） | BLOCKED-纯模式（静态已给；真机待 target 包装好后跑） |
+| P-03 | K-01 落地笔（客户端） | SW-006 第 4 条：面板区裁切窗重取 | 新参考图 + 新窗 `y0-y1` + 测量方法（谁量/哪张截图/怎么定面板上缘）+ 同航向同贴面 diff | 旧窗 `y1850-2500` 与旧参考 `round-d5/variant-p01` 作废；新窗判据由客户端测量后定，并写进 `round-k01/manifest.md` 的「裁切窗测量依据」 | BLOCKED-纯模式 |
+| P-04 | 地图侧 `measurements.md`（`64f8abc`）+ 构建树 `k01-int@8bb2ad4`（L296 直径） | 罗盘圆心/直径/外环/face alpha | 截图测量数据 + 采样点清单（RGB、推测背景色、alpha 上下界）；代码断言 `MainActivity` L296 `0.7378f * W + 16`（1228→906） | 圆心与屏幕中心偏差 ≤2% 屏宽；外径 **906 px**（判据 900–910）；圆内可见地图纹理（无 0.82 暗盘）；alpha 上界 0.15 为模型估计、线稿 0.90–1.00 | BLOCKED-纯模式 |
+| P-05 | 构建树 `k01/integration` @ `8bb2ad4`（含 B-05 `18415ae`） | K-01 全量验收 + `round-k01` 基线重冻 | `k01-int` 版 `freeze_android_baseline.ps1` 全量产物（`k01-map.png`/`k01-more.png`/`k01-compass.png`/`k01-map-after-hide.png`/`ui-*.xml`/`nodes-k01.csv`/`manifest.md`）+ F-01/F-02 门禁输出；APK `E:\APPDetector\wt\k01-int\…\app-debug.apk` 6,560,609 B / sha256 `3E7CA58B…` | 见 `round-k01/manifest.md`：左 8/右 10/更多 16 硬项；浮层态截图；门禁 `tests=82 skipped=0 + CARGO: PASS`；manifest 写 `BuildHead=8bb2ad4` + APK sha/bytes | BLOCKED-纯模式 |
 | P-06 | 审查遗留（本清单新增） | P2-06-vis 金色角注带 `y1400-1850` 复核 | K-01 后重截分享图；复核角注是否仍在面板上方、带窗是否需改 | `run-final.ps1` 旧固定带 `y1400-1850` 已停用（只记 `DIAGNOSTIC`，不判 PASS/FAIL）；复核新带后再决定恢复判据 | 已暂停（旧带停用，待复核新带） |
-| P-07 | 客户端 `70f6b1d`（step-3）+ `map-bridge.md` L262（`64f8abc`） | 指针开关两模式判定 | 地图模式：点右列「指针开关」，取 `__LC3D.getState().needle` 与 `#needle` 的 display；罗盘模式：`k01-compass-needle-on/off.png` 截图比对 | 地图模式两处状态同步翻转；罗盘模式 `#needle` 恒 none、北针由 `CompassView.setShowPointer`（L35）控制且只能靠截图判；不得用 `getState().needle` 代判罗盘北针 | 待跑 |
-| P-08 | 客户端 `f3006f2`（step-4，`CompassView` L135；坐标经 z 序校正） | 圆盘外触摸透传（K-01 判据 4） | **垂直方向**：`input swipe 614 800 614 1100`（圆顶 y=900 之外 100px），前后取 `__LC3D.getState().lng/lat`；同点单击确认 `heading` 不变。**不再用水平 50px**：x≈114/1114 落在左右工具列矩形内（列宽 58dp≈174px），必然假失败 | `getState().lng/lat` 变化（地图被拖动）；圆外点击不被 `CompassView` 消费；圆内仍由罗盘处理 | 待跑 |
-| P-09 | 客户端 `f3006f2`（step-4，`CompassView.drawText` L346-360） | 线稿可读性（删整盘填充后的描边） | `k01-compass.png` 取亮绿/亮白地形处，检查山名/度数是否可辨；静态断言 2px `argb(200,0,0,0)` 描边 + FILL | 白字/灰线带 2px 深色描边（按 `measurements.md`「黑描边」还原）；无整盘暗底（不涉及 α≤0.15）；亮地形上文字不糊 | 待跑 |
-| P-10 | 客户端 `18415ae`（B-05，已含在 `k01-int@8bb2ad4` 包内；`CompassView` L34/42/53/143/196；`MainActivity` L498/502/858-859） | B-05：点按不再冻结传感器 / 锁定独立 / 偏移持久 | ① 单击罗盘中心后转动手机：`度数` 行继续变、状态条无「 · 锁定」；② 圆内拖动 <slop 不转盘，≥slop 只转盘且状态条出现「 · 锁定」；③ 点「罗盘锁定」冻结、再点恢复；④ 点「罗盘复位」：heading=0、offset=0、恢复跟随。证据：`ui-b05-*.xml`（`reading_text`/`statusView` 原生文本）+ 截图 | ① heading 变化且无「锁定」；② 抖动不转盘、过 slop 才转盘；③ 锁定状态与 `isFollowingSensor()` 一致；④ reset 后 `getHeadingOffset()==0` 且恢复跟随；`setHeadingManually` 无调用（仅 L157 注释说明） | 待跑 |
+| P-07 | 客户端 `70f6b1d`（step-3）+ `map-bridge.md` L262（`64f8abc`） | 指针开关两模式判定 | 地图模式：点右列「指针开关」，取 `__LC3D.getState().needle` 与 `#needle` 的 display；罗盘模式：`k01-compass-needle-on/off.png` 截图比对 | 地图模式两处状态同步翻转；罗盘模式 `#needle` 恒 none、北针由 `CompassView.setShowPointer`（L35）控制且只能靠截图判；不得用 `getState().needle` 代判罗盘北针 | BLOCKED-纯模式 |
+| P-08 | 客户端 `f3006f2`（step-4，`CompassView` L135；坐标经 z 序校正） | 圆盘外触摸透传（K-01 判据 4） | **垂直方向**：`input swipe 614 800 614 1100`（圆顶 y=900 之外 100px），前后取 `__LC3D.getState().lng/lat`；同点单击确认 `heading` 不变。**不再用水平 50px**：x≈114/1114 落在左右工具列矩形内（列宽 58dp≈174px），必然假失败 | `getState().lng/lat` 变化（地图被拖动）；圆外点击不被 `CompassView` 消费；圆内仍由罗盘处理 | BLOCKED-纯模式 |
+| P-09 | 客户端 `f3006f2`（step-4，`CompassView.drawText` L346-360） | 线稿可读性（删整盘填充后的描边） | `k01-compass.png` 取亮绿/亮白地形处，检查山名/度数是否可辨；静态断言 2px `argb(200,0,0,0)` 描边 + FILL | 白字/灰线带 2px 深色描边（按 `measurements.md`「黑描边」还原）；无整盘暗底（不涉及 α≤0.15）；亮地形上文字不糊 | BLOCKED-纯模式 |
+| P-10 | 客户端 `18415ae`（B-05，已含在 `k01-int@8bb2ad4` 包内；`CompassView` L34/42/53/143/196；`MainActivity` L498/502/858-859） | B-05：点按不再冻结传感器 / 锁定独立 / 偏移持久 | ① 单击罗盘中心后转动手机：`度数` 行继续变、状态条无「 · 锁定」；② 圆内拖动 <slop 不转盘，≥slop 只转盘且状态条出现「 · 锁定」；③ 点「罗盘锁定」冻结、再点恢复；④ 点「罗盘复位」：heading=0、offset=0、恢复跟随。证据：`ui-b05-*.xml`（`reading_text`/`statusView` 原生文本）+ 截图 | ① heading 变化且无「锁定」；② 抖动不转盘、过 slop 才转盘；③ 锁定状态与 `isFollowingSensor()` 一致；④ reset 后 `getHeadingOffset()==0` 且恢复跟随；`setHeadingManually` 无调用（仅 L157 注释说明） | BLOCKED-纯模式 |
 
 ## 2 跑批顺序（设备放行后）
 

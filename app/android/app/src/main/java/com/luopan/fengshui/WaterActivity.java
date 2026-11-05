@@ -66,8 +66,8 @@ public class WaterActivity extends LcFeatureActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         disabled = !new FeatureFlags(this).isEnabled("f07");
-        startLat = getIntent().getDoubleExtra("lc_lat", DEF_LAT);
-        startLng = getIntent().getDoubleExtra("lc_lng", DEF_LNG);
+        startLat = LcExtras.d(getIntent(), "lc_lat", DEF_LAT);
+        startLng = LcExtras.d(getIntent(), "lc_lng", DEF_LNG);
         if (Double.isNaN(startLat) || Double.isNaN(startLng)
                 || startLat < -85 || startLat > 85 || startLng < -180 || startLng > 180) {
             startLat = DEF_LAT;

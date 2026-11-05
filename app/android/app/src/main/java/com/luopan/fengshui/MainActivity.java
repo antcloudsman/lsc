@@ -854,6 +854,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(label + "：原版为工具子页，本步未实现");
                 }
                 break;
+            case "探索":
+                // F-08：右列「探索」→ DiscoveryActivity（默认开，无门槛）；关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f08")) {
+                    startActivity(new android.content.Intent(this, DiscoveryActivity.class));
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "超清优化":
                 // F-02：左列「超清优化」→ SuperMapActivity（默认开，无门槛）；关掉回退旧 stub。
                 if (new FeatureFlags(this).isEnabled("f02")) {

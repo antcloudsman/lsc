@@ -223,6 +223,7 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 
 - 帧率测量方法：页面 `requestAnimationFrame` 计数，每满 1 s 取 `frames*1000/Δt`，HUD 显示并每 5 s 打 `console.log("LC3D fps=...")`，由 `logcat`（tag `hwschromium-*`，`[INFO:CONSOLE]`）取出。**不是估算值**。
 - 证据文件：`checks\lc-map\final-45.png`（俯仰 45°）、`checks\lc-map\final-top0.png`（俯视 0°）、`checks\lc-map\*.png` 过程图；日志 `checks\lc-map\logcat-*.txt`。
+- **真机 `am` 参数（2026-11-05 实测）**：本机 `L2E0222531014833` 的 `am` **只认 `--ef`（float），不支持 `--ed`**（照抄 `--ed` 会被拒，报 `Unknown option: --ed`）。给 `heading`/`declination`/`pitch` 等 float extra 传值一律写 `--ef value <float>`，例如 `am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value 90.0`；正确写法见 `tests/at/smoke-android.ps1` 的 `Set-Heading()` 与 `docs/qa/device-method.md`。全树 `--ed` 现为 0 命中，新增示例不得引入。
 
 ## 9. 待办（下一轮）
 

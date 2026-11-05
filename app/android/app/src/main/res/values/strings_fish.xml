@@ -5,7 +5,7 @@
     <string name="lc_fish_loading">正在检索公开水域…</string>
     <string name="lc_fish_count">公开水域 %1$d 处 + 本机自建 %2$d 处</string>
     <string name="lc_fish_empty">该区域没有检索到公开水域；点「加钓点」把当前位置存成自己的钓点。</string>
-    <string name="lc_fish_note">数据：天地图公开水域（河 260204 / 湖 260205）+ 本机自建 · 非原版付费底库 · 审图号：未确认</string>
+    <string name="lc_fish_note">数据：天地图公开水域（河 260204 / 湖 260205）+ 本机自建 · 原版水域底库未公开 · 审图号：未确认</string>
     <string name="lc_fish_add">加钓点</string>
     <string name="lc_fish_refresh">刷新水域</string>
     <string name="lc_fish_close">关闭</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- F-09 天气页文案（LC地图，2026-11-05）。只写事实，不出现会员/升级字样。 -->
+    <!-- F-09 天气页文案（LC地图，2026-11-05）。只写事实与数据来源，不写门槛说明。 -->
     <string name="lc_weather_title">天气</string>
     <string name="lc_weather_city_label">城市</string>
     <string name="lc_weather_refresh">刷新</string>

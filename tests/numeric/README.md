@@ -5,15 +5,16 @@
 ## 一条命令
 
 ```powershell
-cd E:\APPDetector\output
+cd E:\APPDetector\fix-p0
 python tests\numeric\run_all.py
 ```
 
-- 退出码 `0` = 全绿，`1` = 有失败/错误；
+- 退出码 `0` = 全绿（含 `cargo test` 通过），`1` = 有失败/错误/跳过；
 - 输出末行 `RESULT: PASS/FAIL` 与计数（tests / failures / errors / skipped / expected_failures /
   unexpected_successes）；
 - 依赖：Python 3.10+；Java 对拍需要 JDK17（自动从 `JAVA_HOME` 或
-  `C:\Users\Administrator\tools\jdk17_tmp\jdk-17.0.21+9` 查找，找不到则跳过该组并计入 skipped）。
+  `C:\Users\Administrator\tools\jdk17_tmp\jdk-17.0.21+9` 查找）。**找不齐 JDK 时不会静默跳过**：
+  Java 真机代码对拍 / SensorMath JVM 断言属必需组，缺了按 FAIL 处理（F-01 口径，skipped 必须为 0）。
 
 单看两盘读数对照（缺陷证据收集）：
 

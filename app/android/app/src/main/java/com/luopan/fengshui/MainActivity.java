@@ -788,8 +788,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void applyCompassDisplay() {
         if (compassView == null || compassDisplay == null) return;
         boolean on = new FeatureFlags(this).isEnabled("f17");
-        compassView.setDialAlpha(on ? compassDisplay.alphaPercent() / 100f : 1f);
-        compassView.setTianzhiLines(on && compassDisplay.tianzhiLines());
+        int alpha = on ? compassDisplay.alphaPercent() : 100;
+        boolean tianzhi = on && compassDisplay.tianzhiLines();
+        android.util.Log.d("LCCOMPASS", "apply display f17=" + on + " alpha=" + alpha + " tianzhi=" + tianzhi);
+        compassView.setDialAlpha(alpha / 100f);
+        compassView.setTianzhiLines(tianzhi);
     }
 
     /** 罗盘工具条「透明度 / 天支线」打开的 LC 自建面板：滑杆 + 开关，即时生效并持久化。 */
@@ -872,6 +875,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 LcUi.dp(this, 46.2f), LcUi.dp(this, 23.1f)));
         sw.setOnCheckedChangeListener((v, checked) -> {
             compassDisplay.setTianzhiLines(checked);
+            android.util.Log.d("LCCOMPASS", "panel tianzhi toggle -> " + checked + " (persisted)");
             if (compassView != null) compassView.setTianzhiLines(checked);
         });
         panel.addView(tRow);

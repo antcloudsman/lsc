@@ -19,11 +19,12 @@
 | P-02 | 客户端 K-01 step-1 `42f5cb7` | 删 Tab / 单页 / 左 8 右 10 | 静态：`BUILD SUCCESSFUL`、`activity_main.xml` 的 `bottom_bar|tab_` 0 命中、`createMapWebView` 1 定义+1 调用、XML well-formed；真机：`k01-map.png` + `ui-map.xml` | 无底部导航；左列 8 / 右列 10 命中（脚本按 `orig-main.xml` 比例位，容差 45px） | 待跑（静态已给，真机 dump/截图待跑） |
 | P-03 | K-01 落地笔（客户端） | SW-006 第 4 条：面板区裁切窗重取 | 新参考图 + 新窗 `y0-y1` + 测量方法（谁量/哪张截图/怎么定面板上缘）+ 同航向同贴面 diff | 旧窗 `y1850-2500` 与旧参考 `round-d5/variant-p01` 作废；新窗判据由客户端测量后定，并写进 `round-k01/manifest.md` 的「裁切窗测量依据」 | 待跑 |
 | P-04 | 地图侧 `measurements.md`（`64f8abc`）+ 客户端 `74348d1`（L270 直径） | 罗盘圆心/直径/外环/face alpha | 截图测量数据 + 采样点清单（RGB、推测背景色、alpha 上下界）；代码断言 `MainActivity` L270 `0.733f * width + 16` | 圆心与屏幕中心偏差 ≤2% 屏宽；外径 0.733W（@1228 验收 900–910 px，实测 900–906）；圆内可见地图纹理（无 0.82 暗盘）；alpha 上界 0.15 为模型估计、线稿 0.90–1.00 | 待跑 |
-| P-05 | 客户端 K-01 step-4 `f3006f2` | K-01 全量验收 + `round-k01` 基线重冻 | `freeze_android_baseline.ps1` 全量产物（`k01-map.png`/`k01-more.png`/`k01-compass.png`/`k01-map-after-hide.png`/`ui-*.xml`/`nodes-k01.csv`/`manifest.md`）+ F-01/F-02 门禁输出；APK `app-debug.apk` 6,579,816 B / sha256 `39DBD20F…` | 见 `round-k01/manifest.md`：左 8/右 10/更多 16 硬项；浮层态截图；门禁 `tests=82 skipped=0 + CARGO: PASS` | 待跑 |
+| P-05 | 客户端 `18415ae`（B-05 之后的最新代码） | K-01 全量验收 + `round-k01` 基线重冻 | `freeze_android_baseline.ps1` 全量产物（`k01-map.png`/`k01-more.png`/`k01-compass.png`/`k01-map-after-hide.png`/`ui-*.xml`/`nodes-k01.csv`/`manifest.md`）+ F-01/F-02 门禁输出；APK `app-debug.apk` 6,580,242 B / sha256 `D15BE329…` | 见 `round-k01/manifest.md`：左 8/右 10/更多 16 硬项；浮层态截图；门禁 `tests=82 skipped=0 + CARGO: PASS` | 待跑 |
 | P-06 | 审查遗留（本清单新增） | P2-06-vis 金色角注带 `y1400-1850` 复核 | K-01 后重截分享图；复核角注是否仍在面板上方、带窗是否需改 | `run-final.ps1` 旧固定带 `y1400-1850` 已停用（只记 `DIAGNOSTIC`，不判 PASS/FAIL）；复核新带后再决定恢复判据 | 已暂停（旧带停用，待复核新带） |
 | P-07 | 客户端 `70f6b1d`（step-3）+ `map-bridge.md` L262（`64f8abc`） | 指针开关两模式判定 | 地图模式：点右列「指针开关」，取 `__LC3D.getState().needle` 与 `#needle` 的 display；罗盘模式：`k01-compass-needle-on/off.png` 截图比对 | 地图模式两处状态同步翻转；罗盘模式 `#needle` 恒 none、北针由 `CompassView.setShowPointer`（L35）控制且只能靠截图判；不得用 `getState().needle` 代判罗盘北针 | 待跑 |
 | P-08 | 客户端 `f3006f2`（step-4，`CompassView` L135；坐标经 z 序校正） | 圆盘外触摸透传（K-01 判据 4） | **垂直方向**：`input swipe 614 800 614 1100`（圆顶 y=900 之外 100px），前后取 `__LC3D.getState().lng/lat`；同点单击确认 `heading` 不变。**不再用水平 50px**：x≈114/1114 落在左右工具列矩形内（列宽 58dp≈174px），必然假失败 | `getState().lng/lat` 变化（地图被拖动）；圆外点击不被 `CompassView` 消费；圆内仍由罗盘处理 | 待跑 |
 | P-09 | 客户端 `f3006f2`（step-4，`CompassView.drawText` L346-360） | 线稿可读性（删整盘填充后的描边） | `k01-compass.png` 取亮绿/亮白地形处，检查山名/度数是否可辨；静态断言 2px `argb(200,0,0,0)` 描边 + FILL | 白字/灰线带 2px 深色描边（按 `measurements.md`「黑描边」还原）；无整盘暗底（不涉及 α≤0.15）；亮地形上文字不糊 | 待跑 |
+| P-10 | 客户端 `18415ae`（B-05，`CompassView` L34/42/53/143/196；`MainActivity` L498/502/858-859） | B-05：点按不再冻结传感器 / 锁定独立 / 偏移持久 | ① 单击罗盘中心后转动手机：`度数` 行继续变、状态条无「 · 锁定」；② 圆内拖动 <slop 不转盘，≥slop 只转盘且状态条出现「 · 锁定」；③ 点「罗盘锁定」冻结、再点恢复；④ 点「罗盘复位」：heading=0、offset=0、恢复跟随。证据：`ui-b05-*.xml`（`reading_text`/`statusView` 原生文本）+ 截图 | ① heading 变化且无「锁定」；② 抖动不转盘、过 slop 才转盘；③ 锁定状态与 `isFollowingSensor()` 一致；④ reset 后 `getHeadingOffset()==0` 且恢复跟随；`setHeadingManually` 无调用（仅 L157 注释说明） | 待跑 |
 
 ## 2 跑批顺序（设备放行后）
 
@@ -34,7 +35,8 @@
 5. P-07 指针开关两模式：地图模式取 `getState().needle` 与 `#needle` 的 display，罗盘模式用 `k01-compass-needle-on/off.png` 截图比对；
 6. P-08 圆外触摸透传：`input swipe 614 800 614 1100`（垂直，避开左右工具列），前后取 `getState().lng/lat`，同点单击确认 `heading` 不变；
 7. P-09 线稿可读性：`k01-compass.png` 亮地形处检查 2px 黑描边效果；
-8. P-06 新带复核后，再决定 `run-final.ps1` 的 P2-06-vis 是否恢复 PASS/FAIL 判据。
+8. P-10 B-05 行为：单击后转手机仍跟随；圆内拖动 <slop 不转、≥slop 转且「锁定」；锁定/恢复；复位后 offset=0；
+9. P-06 新带复核后，再决定 `run-final.ps1` 的 P2-06-vis 是否恢复 PASS/FAIL 判据。
 
 ## 3 登记纪律
 
@@ -46,8 +48,8 @@
 
 | 项 | 值 |
 |---|---|
-| `fix-p0` HEAD | `f3006f2`（step-4；step-3 = `70f6b1d`，step-2 = `74348d1`，step-1 = `42f5cb7`） |
-| debug APK | `app\android\app\build\outputs\apk\debug\app-debug.apk`，6,579,816 B |
-| APK sha256 | `39DBD20F6E96FF4615366346749E7ADB912F130CF6E72FBCAEC9CD24CD966991`（已实算，与客户端交接一致） |
-| 静态断言 | `bottom_bar|tab_` 0 命中；`createMapWebView` 1 定义+1 调用；`CompassView` 触摸守卫 L135、`argb(210` 仅 L175 注释、`showPointer` L32/`setShowPointer` L35/`isShowPointer` L40、`drawText` 描边 L346-360；`MainActivity` 直径 L270、`statusView.setClickable(false)` L301、`case "指针开关"` L485/`setShowPointer` L489 |
-| 待补 | SW-006 新裁切窗（P-03）；step-3/4 已完成（`70f6b1d`/`f3006f2`） |
+| `fix-p0` HEAD | `18415ae`（B-05；其下 K-01 step-4 = `f3006f2`、step-3 = `70f6b1d`、step-2 = `74348d1`、step-1 = `42f5cb7`） |
+| debug APK | `app\android\app\build\outputs\apk\debug\app-debug.apk`，6,580,242 B |
+| APK sha256 | `D15BE32917276DC6EA9B181C358FCE6E5CE1FD98DFBA32B969A9C4E6DE852586`（已实算，与客户端交接一致） |
+| 静态断言 | `bottom_bar|tab_` 0 命中；`createMapWebView` 1 定义+1 调用；`CompassView` 触摸守卫 L135、`argb(210` 仅 L175 注释、`showPointer` L32/`setShowPointer` L35/`isShowPointer` L40、`drawText` 描边 L346-360、`headingOffset` L34/`setHeadingOffset` L42/`setFollowSensor` L53/`setSensorHeading` L143、`followSensor=false` 仅 L196（MOVE 分支）；`MainActivity` 直径 L270、`statusView.setClickable(false)` L301、`case "指针开关"` L485/`setShowPointer` L489、`case "罗盘锁定"` L498/`setFollowSensor(!lock)` L502、状态条「 · 锁定/· 偏移」L858-859 |
+| 待补 | SW-006 新裁切窗（P-03）；`setHeadingManually` 仅剩注释 L157，无调用（已实核） |

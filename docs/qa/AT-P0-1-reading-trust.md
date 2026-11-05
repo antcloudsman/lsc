@@ -66,6 +66,9 @@ adb -s $DEV logcat -d -s LCDEBUG LCJS
 
 判定：**PASS** = 上述 logcat 无任何 `bridge registered` / `LCJS` 行，且界面读数不被 94.0 冻结；**FAIL** = 出现任一 `LCDEBUG`/`LCJS` 行（说明 release 注册了桥）。对照组：同一命令在 debug 包上必须打印 `bridge registered sdk=... action=com.luopan.fengshui.DEBUG`，否则是门槛写反了。
 
+> **debug 对照组 `LCJS` 条数判据（2026-11-05 技术总监定，写死，不得再按旧文判 FAIL）**：`LCJS` **≥1 条且返回值解析为 2** 即 PASS（新包为 `map -> 2`，旧双 WebView 包为 `mapView -> 2` / `compass -> 2`）。
+> 原因：K-01 step-1（`42f5cb7`）把「罗盘 Tab / 地图 Tab」两个 WebView 合成单 WebView，`js` 命令的回声自然从 2 条变 1 条；条数是页面实例数的函数，不是桥是否生效的判据。`bridge registered` 缺失或返回值不是 2 才 FAIL。
+
 **参考读数（JVM 真实现，不手算分金/龙）**：
 
 ```powershell

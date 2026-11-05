@@ -79,6 +79,40 @@ function Get-Texts([string]$xml) {
     } | Where-Object { $_ -ne '' }
 }
 
+function Get-UiNodes([string]$xml) {
+    # 逐节点取 class/text/resource-id/bounds：判据要看「哪个控件」而不是「全文里有没有这个词」
+    # （旧 M4-layer 用 -match '矢量|影像|地形' 被源名「天地图地形」命中，判出假绿）。
+    foreach ($m in [regex]::Matches($xml, '<node\b[^>]*>')) {
+        $n = $m.Value
+        [pscustomobject]@{
+            class  = [regex]::Match($n, 'class="([^"]*)"').Groups[1].Value
+            text   = [regex]::Match($n, 'text="([^"]*)"').Groups[1].Value
+            rid    = [regex]::Match($n, 'resource-id="([^"]*)"').Groups[1].Value
+            bounds = [regex]::Match($n, 'bounds="([^"]*)"').Groups[1].Value
+        }
+    }
+}
+
+function Test-SrcPanelLayer([string]$PreXml, [string]$PanelXml) {
+    # 「图层」判据：只认 map.html #srcPanel 真的打开了，且瓦片 URL 没被画成可见文字。
+    # 抽成纯函数是为了能拿历史 dump 复算、做变异测试（断言必须能失败）。
+    $preTexts = if ($PreXml) { Get-Texts $PreXml } else { @() }
+    $prePanel = $preTexts -contains '底图源'      # 点之前面板必须关着，否则「点了才出现」无从判定
+    $nodes = if ($PanelXml) { @(Get-UiNodes $PanelXml) } else { @() }
+    $texts = @($nodes | Where-Object { $_.text -ne '' } | ForEach-Object { $_.text })
+    $hasPanel = [bool]($nodes | Where-Object { $_.rid -eq 'srcPanel' }) -and ($texts -contains '底图源')
+    $srcs = @($texts | Where-Object { $_ -match '^\d+\.\s' }).Count
+    # 瓦片 URL 只允许挂在 Image 节点上（WebView 把 <img class="tile" src=…> 的 URL 暴露成 text）；
+    # 一旦被 TextView/Button 画到屏幕上才是缺陷。
+    $urlNodes = @($nodes | Where-Object { $_.text -match 'wmts\?SERVICE' })
+    $urlShown = @($urlNodes | Where-Object { $_.bounds -ne '[0,0][0,0]' -and $_.class -match 'TextView|Button' }).Count
+    [pscustomobject]@{
+        prePanel = $prePanel; panel = $hasPanel; srcs = $srcs
+        urlNodes = $urlNodes.Count; urlShown = $urlShown
+        ok = ((-not $prePanel) -and $hasPanel -and ($srcs -ge 12) -and ($urlShown -eq 0))
+    }
+}
+
 function Tap-Text([string]$xml, [string]$text, [switch]$Last) {
     $hits = @()
     foreach ($m in [regex]::Matches($xml, '<node\b[^>]*>')) {
@@ -298,15 +332,18 @@ if (-not $s0) {
     Add-Result 'M4-base' $(if ($img -and $s2 -and $s2.base -eq 'img' -and $vec -and $s3 -and $s3.base -eq 'vec') { 'PASS' } else { 'FAIL' }) '点「实景」→base=img；点「地图」→base=vec' "img=$($s2.base) vec=$($s3.base)" $u.path
 
     # 4.4 图层 / 定位 / 截屏 / 立向
+    # 「图层」的真行为：MainActivity.java:500 case "图层" → js("openSources()") → map.html:74 #srcPanel（12 源）。
+    # 不是「矢量/影像/地形」——那三项是 map.html:51-53 的 #btn_vec/#btn_img/#btn_ter 底图按钮。
+    # 旧判据 -match '矢量|影像|地形' 会被源名「7. 天地图地形」命中，smoke5 由此假绿（见 F-16）。
     $u = Get-Ui 'ui-map-tools3'
     if ($u.ok -and (Tap-Text $u.xml '隐藏')) { Start-Sleep -Milliseconds 800 }
     $u = Get-Ui 'ui-map-tools4'
     $layer = $u.ok -and (Tap-Text $u.xml '图层')
     Start-Sleep -Milliseconds 1200
     $lu = Get-Ui 'ui-layer-panel'
-    $layerTexts = if ($lu.ok) { Get-Texts $lu.xml } else { @() }
-    $layerOk = $layer -and ($layerTexts | Where-Object { $_ -match '矢量|影像|地形' })
-    Add-Result 'M4-layer' $(if ($layerOk) { 'PASS' } else { 'FAIL' }) '点「图层」→ 出现 矢量/影像/地形' "texts=$((($layerTexts | Select-Object -First 8) -join ','))" $lu.path
+    $lv = Test-SrcPanelLayer -PreXml $(if ($u.ok) { $u.xml } else { '' }) -PanelXml $(if ($lu.ok) { $lu.xml } else { '' })
+    $layerStatus = if (-not $lu.ok -or -not $layer) { 'BLOCKED' } elseif ($lv.ok) { 'PASS' } else { 'FAIL' }
+    Add-Result 'M4-layer' $layerStatus '点「图层」→ 底图源 #srcPanel 出现（「底图源」+12 条源），瓦片 URL 未被可见文本显示' "tapped=$layer prePanel=$($lv.prePanel) panel=$($lv.panel) srcs=$($lv.srcs) urlNodes=$($lv.urlNodes) urlShown=$($lv.urlShown)" $lu.path
     # 源面板是 WebView 覆盖层：返回键会直接退出 App，用 closeSources() 关
     Invoke-Js "closeSources();0" | Out-Null
     Start-Sleep -Milliseconds 600

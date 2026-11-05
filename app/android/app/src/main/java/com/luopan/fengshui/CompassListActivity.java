@@ -32,6 +32,8 @@ import java.util.List;
  * 口径（docs/features/F-18-盘面目录.md §6 / 总监指示）：
  * - 内置盘面 = drawable-nodpi 里实际存在的 5 幅（dial_full_0..4；dial0.png 与 dial_full_0 同图，dial1..4_min 是缩略图）；
  *   全部可选，无 VIP、无「上传到服务器」。
+ * - **无云端盘面库**：原版「内置 14 盘面」是线上盘面库，LC 不做服务器；因此口径是
+ *   「内置 5 幅全开放 + 本机导入」，台账不得写成「14 个盘面已齐」。
  * - 默认盘面保持 dial_index=0（线稿盘），不改默认值。
  * - 导入：系统文件选择器取图 → 复制到私有目录 files/compass_dials/ → 生成长边 ≤2048 缩略预览 →
  *   列表可选；选中后写 dial_custom_path，MainActivity 的 CompassView 直接换图并持久化。

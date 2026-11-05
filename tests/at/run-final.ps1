@@ -437,14 +437,12 @@ if ($ui.ok) {
 }
 else { Assert3 'SW-006-off-1' 'BLOCKED' '罗盘页' 'dump 失败' }
 
-# ---------- 4. 面板区裁剪 diff（诊断，不门禁）----------
-$refOff = Join-Path $repo 'docs\qa\baseline-android\round-d5\variant-p01\compass-p01-off.png'
-if ((Test-Path $refOff) -and (Test-Path (Join-Path $OutDir 'cw-off.png'))) {
-    $helper = Join-Path $repo 'tests\numeric\tools\img_diff.py'
-    $line = & python $helper $refOff (Join-Path $OutDir 'cw-off.png') 0 1850 1228 2500
-    Log "pixel(diagnostic) 面板区 y1850-2500: $line"
-    Assert3 'SW-006-off-3pix' 'DIAGNOSTIC' '面板区裁剪 diff（活地图污染，不作门禁）' "$line" ''
-}
+# ---------- 4. SW-006 第 4 条：面板区裁剪 diff（K-01 后暂停）----------
+# 旧窗 y1850-2500 与旧参考 round-d5/variant-p01 都按三 Tab + 底部面板量出；
+# K-01 单页 + 罗盘浮层后两者都失效。新窗/新参考在 round-k01 重冻后回填
+# （登记在 docs/qa/k-01-pending.md；旧窗不得再用于判 PASS）。
+Log "SW-006-4: SUSPENDED（旧窗 y1850-2500 与旧参考随 K-01 失效；待 round-k01 新窗+新参考）"
+Assert3 'SW-006-off-3pix' 'DIAGNOSTIC' '面板区裁剪 diff（K-01 后暂停，待重取）' '旧窗/旧参考已失效，不判 PASS' ''
 
 # ---------- 5. P0-2 P2-07/P2-08：读盘 14 行 + 顶部两行 ----------
 $golden = $null

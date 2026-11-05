@@ -20,6 +20,10 @@
   SW-006 面板区像素 diff 的新裁切窗（形如 `1400-1850`）。K-01 后旧窗 y1850-2500 失效，
   不传则在 manifest 写「待客户端按新布局实测」，不得默认沿用旧值。
 
+.PARAMETER PanelCropBasis
+  裁切窗的测量依据（谁量、哪张截图、怎么定面板上缘）。与 PanelCropY 一起写进 manifest；
+  缺依据时 manifest 明确标「未提供」，不许只给一个数字。
+
 .PARAMETER SkipInstall
   跳过装包（设备上已是同一 APK 时用）。
 
@@ -40,7 +44,8 @@ param(
     [Parameter(Mandatory = $true)][string]$OutDir,
     [switch]$SkipInstall,
     [float]$InjectHeading = 0.0,
-    [string]$PanelCropY = ""
+    [string]$PanelCropY = "",
+    [string]$PanelCropBasis = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -271,6 +276,7 @@ if (-not $PanelCropY) {
 } else {
     $cropNote = "``$PanelCropY``（客户端实测后回填；旧 y1850-2500 作废）"
 }
+$cropBasisNote = if ($PanelCropBasis) { $PanelCropBasis } else { "未提供——重取时必须写明测量方法/取样点（谁量、哪张截图、怎么定面板上缘）" }
 
 $rows = foreach ($f in (Get-ChildItem $OutDir -File | Where-Object { $_.Name -notin @("manifest.md", "SHA256SUMS.txt") } | Sort-Object Name)) {
     "{0}  {1}  {2}" -f (Get-FileHash $f.FullName -Algorithm SHA256).Hash, $f.Length, $f.Name
@@ -289,6 +295,8 @@ $manifest = @"
 - 数值门禁：``tests=82 failures=0 skipped=0`` + ``cargo 5 passed``（``numeric-gate.txt``）
 - logcat：FATAL EXCEPTION **$fatal** / ANR **$anr**（``logcat.txt``）
 - SW-006 面板裁切窗：$cropNote
+- 裁切窗测量依据：$cropBasisNote
+- 待跑清单：``docs/qa/k-01-pending.md``（设备放行后一次跑完；待跑不得写成已过）
 
 ## 采集结果（K-01 验收硬项）
 

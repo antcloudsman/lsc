@@ -117,6 +117,7 @@
 | 数据短轮 | `checks\accept-1fdc766\` | 六条全过：主地图瓦片 / 泰山 117 山名点 / 洞庭湖 116 河湖点 / F-14 80 处公开水域 / logcat 无 `301001`·`301013` / 回放 `uimode=canvas`；APK sha256 `94BC2BBF…C3C54FA` |
 | 全量验轮（第一批） | `checks\accept-121b2a8\` | 部分完成（缺口未补）：A 罗盘读数同口径+左右工具列锚定、B 16/18 入口与页面、C 三小项、门禁双绿、`FATAL(app)=0`；缺口见 `00-STATUS.md`「验收轮记录」；APK sha256 `89DF2F4E…2856A1B1` |
 | 全量补缺口轮 | 【待填：SUMMARY 目录】 | A 盘面切换/恢复默认过、D 批次（批量置 false，非逐 flag）过、E 部分（F-14 收藏/导航 ✓，关闭与 F-12 单位/F-13 五色未覆盖）；F-18 判非缺陷、取证恢复；截屏 `b366065` 已修待真机验；仍不写结论 |
+| F-17 独立验收 | `checks\accept-857a471-b\` | **通过（待最终全量轮统一定稿）**：dump `lc_compass_tianzhi_toggle checked=true` + logcat `panel tianzhi toggle -> true (persisted)` + `view tianzhiLines=true`；commit `857a471` |
 | 桌面门禁 | `scripts/build-desktop.ps1` | 构建 0 error + 1100×780 截图 |
 | Android 门禁 | `scripts/build-android.ps1` | assembleDebug + 真机冒烟无 FATAL |
 | 缺陷台账 | `docs/qa/bugs.md` | BUG / OBS 编号 |
@@ -176,3 +177,4 @@
 | v0.5 | 2026-11-05 | §5 增「数据短轮」证据行（`checks\accept-1fdc766\`，六条全过、APK sha `94BC2BBF…C3C54FA`）；§6 注明短轮只作「待复验」依据、全量轮基线 `121b2a8` 进行中 |
 | v0.6 | 2026-11-05 | §5 增「全量验轮（第一批）」证据行（`checks\accept-121b2a8\`，部分完成，APK sha `89DF2F4E…2856A1B1`）；§6 写明缺口清单与「补齐前不写结论」；F-18 与截屏按疑似缺陷派客户端 |
 | v0.7 | 2026-11-05 | §5 增「全量补缺口轮」行（A/D 过、E 部分、F-18 非缺陷、截屏 `b366065` 待验）；§6 更新缺口状态；新增 **§6.1 设置入口（已知差异）**：原版在抽屉、LC 落「更多」标题栏，入口位置有差异、页面 1:1 |
+| v0.8 | 2026-11-05 | §5 增「F-17 独立验收」行（`checks\accept-857a471-b\`，dump+logcat+view 三重证据，记通过待全量轮定稿） |

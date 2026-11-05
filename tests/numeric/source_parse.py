@@ -89,6 +89,19 @@ def java_method_body(source: str, name: str) -> str:
     return m.group(1)
 
 
+def java_method_body_any(source: str, name: str) -> str:
+    """任意 `public [static] ... name(...) { ... }` 的 Java 方法体（含实例方法）。
+
+    用于 `CompassView` 这类非静态方法的源码断言（JVM 不可实例化 android.view.View）。
+    """
+    m = re.search(
+        rf"public\s+(?:static\s+)?[^\n]{{0,100}}?\b{re.escape(name)}\s*\([^)]*\)\s*\{{(.*?)\n    \}}",
+        source, re.S)
+    if not m:
+        raise AssertionError(f"找不到 `public [static] ... {name}(...)`")
+    return m.group(1)
+
+
 def parse_rust_rings(source: str) -> dict:
     """解析生成的 `pub const RINGS: [RingDef; 14]` 为 {type: {text,interval,offset,labels}}。"""
     out = {}

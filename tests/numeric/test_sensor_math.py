@@ -2,7 +2,9 @@
 
 钉死总监裁决的倾角公式：`tilt = acos(cos(pitch)·cos(roll))`，
 `tilt(10,10) = 14.1060°`（不是 13.9，也不是 sqrt(p²+r²)=14.1421）。
-同时锁偏角管线：trueNorth=true 才加偏角、clamp ±30、normalize 回绕。
+同时锁偏角管线：trueNorth=true 才加偏角、clamp ±30、normalize 回绕；
+并锁 B-05 偏移合成 `applyOffset(az, offset)=normalize(az+offset)`（JVM 真执行），
+`followSensor` 不变用 `CompassView` 源码断言（android.view.View 不可 JVM 实例化）。
 """
 import math
 import os
@@ -14,6 +16,12 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import oracle as O
+import source_parse as SP
+
+COMPASS_VIEW_JAVA = (
+    O.ROOT / "app" / "android" / "app" / "src" / "main" / "java" / "com" / "luopan"
+    / "fengshui" / "CompassView.java"
+)
 
 JAVA_CANDIDATES = [
     os.environ.get("JAVA_HOME"),
@@ -92,6 +100,36 @@ class SensorMathJvmTest(unittest.TestCase):
         self.assertAlmostEqual(got[0], 352.49, places=2, msg="trueNorth 应加偏角并回绕")
         self.assertAlmostEqual(got[1], 0.0, places=2, msg="trueNorth=false 不加偏角")
         self.assertAlmostEqual(got[2], 99.0, places=2)
+
+    def test_offset_pipeline(self):
+        """B-05：翻坐向的持久偏移只做合成，JVM 真执行两条向量。"""
+        line = [l for l in self.out if l.startswith("offset ")][0].split()
+        got = [float(x) for x in line[1:]]
+        self.assertAlmostEqual(got[0], 170.0, places=3, msg="applyOffset(350,180) 应回绕为 170")
+        self.assertAlmostEqual(got[1], 180.0, places=3, msg="applyOffset(0,180) 应为 180")
+
+
+class CompassViewOffsetSourceTest(unittest.TestCase):
+    """B-05：偏移合成不得改 `followSensor`。
+
+    `CompassView` 依赖 `android.view.View`，纯 JVM 不能实例化，故用源码断言；
+    合成公式本身由 `SensorMath.applyOffset` 的 JVM 断言覆盖。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = SP.read_text(COMPASS_VIEW_JAVA)
+
+    def test_set_heading_offset_does_not_freeze(self):
+        body = SP.java_method_body_any(self.src, "setHeadingOffset")
+        self.assertIn("headingOffset = normalize(deg)", body)
+        self.assertNotRegex(body, r"followSensor\s*=", "setHeadingOffset 不得改 followSensor")
+
+    def test_set_sensor_heading_composes_offset_and_keeps_follow(self):
+        body = SP.java_method_body_any(self.src, "setSensorHeading")
+        self.assertIn("SensorMath.applyOffset(azimuth, headingOffset)", body)
+        self.assertRegex(body, r"if\s*\(\s*followSensor\s*\)")
+        self.assertNotRegex(body, r"followSensor\s*=", "setSensorHeading 不得改 followSensor")
 
 
 if __name__ == "__main__":

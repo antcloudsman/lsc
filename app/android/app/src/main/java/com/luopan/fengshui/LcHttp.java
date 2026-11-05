@@ -31,22 +31,27 @@ final class LcHttp {
                     + "Chrome/120.0 Mobile Safari/537.36";
 
     static String get(String url) throws Exception {
+        return new String(bytes(url), StandardCharsets.UTF_8);
+    }
+
+    /** 二进制下载（图片/瓦片）：与 get() 共用 UA 与超时。 */
+    static byte[] bytes(String url) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(TIMEOUT_MS);
-        c.setReadTimeout(TIMEOUT_MS);
+        c.setReadTimeout(TIMEOUT_MS * 2);
         c.setRequestProperty("User-Agent", UA);
         try {
             int code = c.getResponseCode();
             if (code != 200) throw new IllegalStateException("HTTP " + code);
             InputStream in = c.getInputStream();
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            byte[] buf = new byte[4096];
+            byte[] buf = new byte[8192];
             int n;
             while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
             in.close();
-            return new String(bos.toByteArray(), StandardCharsets.UTF_8);
+            return bos.toByteArray();
         } catch (Exception e) {
-            Log.w(TAG, "GET fail " + url + " : " + e);
+            Log.w(TAG, "GET bytes fail " + url + " : " + e);
             throw e;
         } finally {
             c.disconnect();

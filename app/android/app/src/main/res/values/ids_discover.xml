@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-08 探索（LC地图，2026-11-05）：AT 稳定 id，前缀 lc_discover_* -->
+    <item name="lc_discover_back" type="id" />
+    <item name="lc_discover_title" type="id" />
+    <item name="lc_discover_content" type="id" />
+    <item name="lc_discover_tabs" type="id" />
+    <item name="lc_discover_list" type="id" />
+    <item name="lc_discover_note" type="id" />
+    <item name="lc_discover_card_0" type="id" />
+    <item name="lc_discover_card_1" type="id" />
+    <item name="lc_discover_card_2" type="id" />
+    <item name="lc_discover_card_3" type="id" />
+    <item name="lc_discover_card_4" type="id" />
+    <item name="lc_discover_img_0" type="id" />
+    <item name="lc_discover_img_1" type="id" />
+    <item name="lc_discover_img_2" type="id" />
+    <item name="lc_discover_img_3" type="id" />
+    <item name="lc_discover_img_4" type="id" />
+</resources>

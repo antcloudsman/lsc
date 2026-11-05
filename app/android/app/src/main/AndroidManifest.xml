@@ -87,6 +87,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-08 探索（LC地图 新建页）：三页签 + Wikimedia CC 素材 -->
+        <activity
+            android:name=".DiscoveryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

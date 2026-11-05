@@ -19,7 +19,9 @@ param(
     # 默认不自装：人工装包后只跑验收，避免与人工装包重复触发安装弹窗（K-01 纯净模式踩坑）。
     # 需要脚本自装时显式传 -Install；-SkipInstall 显式跳过（兼容既有调用点）。
     [switch]$Install,
-    [switch]$SkipInstall
+    [switch]$SkipInstall,
+    # 只跑第 4 段（地图功能）：M1–M3 会改前台/站点状态，需要干净复验 M4 时用。
+    [switch]$OnlyM4
 )
 
 $ErrorActionPreference = 'Stop'
@@ -226,6 +228,8 @@ Set-Heading 0
 Add-Result 'ENV' $(if ($total) { 'PASS' } else { 'BLOCKED' }) '启动到前台' "pid=$pid0 TotalTime=${total}ms"
 
 # ---------- 1. 罗盘转动 ----------
+# -OnlyM4：M1–M3 会改变前台/站点状态（盘面列表、切换、返回），要单独复验 M4 时必须能跳过。
+if (-not $OnlyM4) {
 $expect = @{ 0 = '子'; 90 = '卯'; 180 = '午'; 270 = '酉' }
 $rotateOk = 0
 foreach ($h in 0, 90, 180, 270) {
@@ -283,8 +287,13 @@ for ($i = 0; $i -lt $dials.Count; $i++) {
     $prefs = Invoke-Adb @('shell', 'run-as', $Pkg, 'cat', 'shared_prefs/lc_prefs.xml')
     $m = [regex]::Match($prefs, 'name="dial_index"\s+value="(\d+)"')
     $got = if ($m.Success) { [int]$m.Groups[1].Value } else { -1 }
-    Add-Result "M3-dial$i" $(if ($tapped -and $got -eq $i) { 'PASS' } else { 'FAIL' }) "点「$($dials[$i])」→ dial_index=$i" "tapped=$tapped dial_index=$got" $list.path
+    # 第 0 盘：默认值就是 0，选中当前盘面时 prefs 可能根本没有这个键——「键缺失」与 dial_index=0 行为等价，
+    # 不能把等价记成 FAIL（smoke7 的 M3-dial0 就是这么假红的）。
+    $dialOk = $tapped -and (($got -eq $i) -or ($i -eq 0 -and $got -eq -1))
+    $gotShown = if ($got -eq -1) { '缺失(默认0)' } else { "$got" }
+    Add-Result "M3-dial$i" $(if ($dialOk) { 'PASS' } else { 'FAIL' }) "点「$($dials[$i])」→ dial_index=$i（第0盘允许键缺失=默认 0）" "tapped=$tapped dial_index=$gotShown" $list.path
 }
+}  # end if (-not $OnlyM4)
 
 # ---------- 4. 地图功能 ----------
 $u = Get-Ui 'ui-back-to-map'

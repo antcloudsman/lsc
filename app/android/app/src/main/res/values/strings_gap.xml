@@ -40,7 +40,21 @@
     <string name="lc_toolmgr_all_title">全部功能</string>
     <string name="lc_toolmgr_cap_toast">当前展示功能过多，请移除部分功能后尝试</string>
 
-    <!-- 收藏点列表/保存：标题与字段文案待 docs/gap-modules/interest.md -->
-    <string name="lc_interest_title"></string>
-    <string name="lc_save_title"></string>
+    <!-- 收藏点（本地最小闭环语义由技术总监定；原版字段/排序等 interest.md 落地后再对齐） -->
+    <string name="lc_interest_title">收藏点</string>
+    <string name="lc_interest_empty">暂无收藏点</string>
+    <string name="lc_interest_unnamed">未命名</string>
+    <string name="lc_interest_delete_title">删除收藏点</string>
+    <string name="lc_interest_delete_msg">删除后不可恢复，确认删除？</string>
+    <string name="lc_interest_delete_ok">删除</string>
+    <string name="lc_interest_cancel">取消</string>
+
+    <string name="lc_save_title">保存收藏点</string>
+    <string name="lc_save_name_hint">名称（可空）</string>
+    <string name="lc_save_coords">坐标</string>
+    <string name="lc_save_sitting">坐向</string>
+    <string name="lc_save_time">时间</string>
+    <string name="lc_save_confirm">保存</string>
+    <string name="lc_save_saved">已保存</string>
+    <string name="lc_save_no_point">未获取到当前坐标与坐向（需从地图页带入）</string>
 </resources>

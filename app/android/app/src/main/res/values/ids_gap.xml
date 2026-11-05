@@ -96,10 +96,36 @@
     <item name="lc_interest_back" type="id" />
     <item name="lc_interest_title" type="id" />
     <item name="lc_interest_list" type="id" />
+    <item name="lc_interest_empty" type="id" />
+    <item name="lc_interest_item_0" type="id" />
+    <item name="lc_interest_item_1" type="id" />
+    <item name="lc_interest_item_2" type="id" />
+    <item name="lc_interest_item_3" type="id" />
+    <item name="lc_interest_item_4" type="id" />
+    <item name="lc_interest_item_5" type="id" />
+    <item name="lc_interest_item_6" type="id" />
+    <item name="lc_interest_item_7" type="id" />
+    <item name="lc_interest_item_8" type="id" />
+    <item name="lc_interest_item_9" type="id" />
+    <item name="lc_interest_item_10" type="id" />
+    <item name="lc_interest_item_11" type="id" />
+    <item name="lc_interest_item_12" type="id" />
+    <item name="lc_interest_item_13" type="id" />
+    <item name="lc_interest_item_14" type="id" />
+    <item name="lc_interest_item_15" type="id" />
+    <item name="lc_interest_item_16" type="id" />
+    <item name="lc_interest_item_17" type="id" />
+    <item name="lc_interest_item_18" type="id" />
+    <item name="lc_interest_item_19" type="id" />
 
     <!-- 保存收藏点 SaveInterestActivity -->
     <item name="lc_save_back" type="id" />
     <item name="lc_save_title" type="id" />
     <item name="lc_save_form" type="id" />
+    <item name="lc_save_name" type="id" />
+    <item name="lc_save_coords" type="id" />
+    <item name="lc_save_sitting" type="id" />
+    <item name="lc_save_time" type="id" />
+    <item name="lc_save_confirm" type="id" />
 
 </resources>

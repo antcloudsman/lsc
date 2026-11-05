@@ -54,6 +54,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** last raw (un-calibrated) azimuth, for the master-switch recompute. */
     private float lastRaw = 0f;
 
+    /** 收藏点「点选跳地图」：待应用的视点（map.html setView）。 */
+    private double jumpLat = Double.NaN;
+    private double jumpLng = Double.NaN;
+    /** 地图页是否已加载完（决定 setView 立即调还是等 onPageFinished）。 */
+    private boolean mapPageReady = false;
+
     // P0-1 reading trust
     private android.widget.TextView statusView;
     private android.content.SharedPreferences prefs;
@@ -104,6 +110,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         if (p01Enabled && !calibrationDone) showCalibrationGuide();
         applyTrustState();
+        handleMapJump(getIntent());
+    }
+
+    // ---------------- 收藏点跳地图（缺口线，K-01 单页布局重挂） ----------------
+
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleMapJump(intent);
+    }
+
+    /**
+     * 收藏点列表点击 → 带 lat/lng 拉起本页：退出罗盘浮层、调 map.html 既有 setView。
+     * 单页布局下没有 Tab 可切；地图页未就绪时先挂起，等 onPageFinished 再应用。
+     */
+    private void handleMapJump(android.content.Intent intent) {
+        if (intent == null) return;
+        double lat = MapJump.doubleExtra(intent, MapJump.EXTRA_LAT);
+        double lng = MapJump.doubleExtra(intent, MapJump.EXTRA_LNG);
+        if (Double.isNaN(lat) || Double.isNaN(lng)) return;
+        jumpLat = lat;
+        jumpLng = lng;
+        if (compassMode) setCompassMode(false);
+        applyPendingMapView();
+    }
+
+    /** 地图页已就绪且有待跳视点时才执行；执行后清空，避免重复跳。 */
+    private void applyPendingMapView() {
+        if (compassMapView == null || !mapPageReady
+                || Double.isNaN(jumpLat) || Double.isNaN(jumpLng)) return;
+        String code = String.format(java.util.Locale.US, "setView(%.6f,%.6f,%d)",
+                jumpLat, jumpLng, MapJump.ZOOM);
+        jumpLat = Double.NaN;
+        jumpLng = Double.NaN;
+        js(code);
     }
 
     /**
@@ -863,6 +905,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 js(compassMode ? "setUiMode('compass')" : "setUiMode('map')");
                 // 重载后地图侧的 heading/坐向也丢了，立即重推一次（传感器下一帧还会再推）。
                 updateReading();
+                if (view == compassMapView) {
+                    mapPageReady = true;
+                    applyPendingMapView();
+                }
             }
         });
         webView.setWebChromeClient(new android.webkit.WebChromeClient() {

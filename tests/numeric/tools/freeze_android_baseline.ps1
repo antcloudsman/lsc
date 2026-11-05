@@ -409,6 +409,8 @@ $records | Export-Csv -Path (Join-Path $OutDir "nodes-k01.csv") -NoTypeInformati
 $leftFound = @($records | Where-Object { $_.mode -eq "map" -and $_.group -eq "left" -and $_.found }).Count
 $rightFound = @($records | Where-Object { $_.mode -eq "map" -and $_.group -eq "right" -and $_.found }).Count
 $compassFound = @($compassLabels | Where-Object { $_.found }).Count
+# 19 项全中时说「全中」；缺项时才写 K-02（避免 19/19 的 manifest 里还留着「缺的 3 个」这种自相矛盾的话）。
+$compassNote = if ($compassFound -ge 19) { "全中（K-02 顶栏 返回/搜索/图层/隐藏 已实现）" } else { "缺 $(19 - $compassFound) 个：K-02 顶栏未实现项（非 dump 采不到），见 ui-compass-mode.xml" }
 $moreFound = 16 - $moreMissing.Count
 if (-not $PanelCropY) {
     $cropNote = "待客户端按 $Round 新布局实测；**不得沿用旧裁切窗**（旧窗已随上一轮 UI 失效）"
@@ -450,7 +452,7 @@ $(if ($BaselineNote) { "- **基线状态**：$BaselineNote" } else { "" })
 | 地图态左列 | 8 | $leftFound | $(($mapMissing | Where-Object { $_ -like 'left:*' }) -join ' ; ') |
 | 地图态右列 | 10 | $rightFound | $(($mapMissing | Where-Object { $_ -like 'right:*' }) -join ' ; ') |
 | 「更多」16 宫格 | 16 | $moreFound | $($moreMissing -join ' ; ') |
-| 罗盘态文字（dump 可读部分，非硬项） | 19 | $compassFound | 见 ``ui-compass-mode.xml``；缺的 3 个是**原版顶部栏「返回/搜索/图层」未实现（K-02）**，不是 dump 采不到 |
+| 罗盘态文字（dump 可读部分，非硬项） | 19 | $compassFound | $compassNote |
 
 - 结构校验：侧别错误 $($mapBadSide.Count) 个 $(if ($mapBadSide.Count) { "（$($mapBadSide -join ' ; ')）" })；列内顺序异常 $($mapBadOrder.Count) 个 $(if ($mapBadOrder.Count) { "（$($mapBadOrder -join ' ; ')）" })
 - 中心偏差（参考坐标取自 `orig-main.xml`，分母**内容帧 2578**；容差 ±45px）：最大 **$mapMaxDrift px**（dx 最大 $([math]::Round($mapMaxAbsDx,1)) px，dy 最大 $([math]::Round($mapMaxAbsDy,1)) px）；超差 $($mapOffTol.Count) 个 $(if ($mapOffTol.Count) { "（$($mapOffTol -join ' ; ')）" })

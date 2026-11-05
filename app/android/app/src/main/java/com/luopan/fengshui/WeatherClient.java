@@ -40,9 +40,7 @@ final class WeatherClient {
 
     /* 原站要求：中国天气网 d1 接口缺 Referer 一律 403（见类注释），不要删。 */
     private static final String REFERER = "https://www.weather.com.cn/";
-    private static final String UA =
-            "Mozilla/5.0 (Linux; Android 12; LC) AppleWebKit/537.36 (KHTML, like Gecko) "
-                    + "Chrome/120.0 Mobile Safari/537.36";
+    /* UA 统一用 LcHttp.UA（天地图 WAF 只放行浏览器形态，见 LcHttp 注释） */
 
     private static final int TIMEOUT_MS = 8000;
     private static final String PREFS = "lc_weather_cache";
@@ -136,7 +134,7 @@ final class WeatherClient {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(TIMEOUT_MS);
         c.setReadTimeout(TIMEOUT_MS);
-        c.setRequestProperty("User-Agent", UA);
+        c.setRequestProperty("User-Agent", LcHttp.UA);
         c.setRequestProperty("Accept", "*/*");
         if (referer != null) c.setRequestProperty("Referer", referer);
         try {

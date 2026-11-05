@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-08 探索文案（LC地图）。素材 Wikimedia Commons（CC），页面不判 VIP、无会员角标。 -->
+    <string name="lc_discover_title">探索</string>
+    <string name="lc_discover_tab_map">专题地图</string>
+    <string name="lc_discover_tab_world">环球地理</string>
+    <string name="lc_discover_tab_war">历史战争</string>
+    <string name="lc_discover_note">图片与资料：Wikimedia Commons（CC 许可，署名见卡片）· 页面本身不判会员</string>
+    <string name="lc_discover_no_source">暂无免费数据源（Wikimedia 未返回可用图片）</string>
+    <string name="lc_discover_loading">正在获取公开素材…</string>
+    <string name="lc_discover_close">关闭</string>
+</resources>

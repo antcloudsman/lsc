@@ -415,7 +415,7 @@ public class SuperMapActivity extends LcFeatureActivity {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(8000);
         c.setReadTimeout(12000);
-        c.setRequestProperty("User-Agent", "Luopan/1.0 (Android)");
+        c.setRequestProperty("User-Agent", LcHttp.UA);
         try {
             if (c.getResponseCode() != 200) throw new IllegalStateException("HTTP " + c.getResponseCode());
             InputStream in = c.getInputStream();

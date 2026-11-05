@@ -38,7 +38,7 @@ public class TrackDetailActivity extends LcFeatureActivity {
 
     @Override
     protected int contentId() {
-        return R.id.lc_track_list;
+        return R.id.lc_track_detail_content;
     }
 
     @Override

@@ -1154,6 +1154,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     startActivity(new android.content.Intent(this, HistoryImageActivity.class));
                 } else if ("历史影像".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
+                } else if ("天气".equals(t) && flags.isEnabled("f09")) {
+                    // F-09：更多 → 天气 → WeatherActivity（默认开；关掉回退旧 stub）
+                    startActivity(new android.content.Intent(this, WeatherActivity.class));
+                } else if ("天气".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
                 } else if (("超清地图".equals(t) || "超清优化".equals(t))
                         && flags.isEnabled("f02")) {
                     // F-02：更多 → 超清地图 / 超清优化 → SuperMapActivity（默认开；关掉回退旧 stub）

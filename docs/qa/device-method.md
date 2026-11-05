@@ -94,6 +94,11 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
   同一包上 `--es cmd js --es value '1+1'` 返回 `LCJS mapView -> 2`，通道一直是活的。
 - **教训**：`result=0`、`Broadcast Records`、`Registered Receivers` 三段证据要一起看，
   且先发一条 `js 1+1` 当「通道探针」；别用一条缺 `cmd` 的广播去推断 receiver 死了。
+- **本机 `am` 只认 `--ef`，不认 `--ed`**（2026-11-05 总监实测，报 `Unknown option: --ed`）：
+  所有坐标/浮点注入一律写 `--ef`，例如 `--es cmd heading --ef value 90.0`；
+  经纬度参数写 `lc_lat=<纬度> lc_lng=<经度>`，别把经度填进纬度的位（会越界黑屏）。
+  全树已 grep 确认**零处 `--ed`**（`docs/qa`、`tests/at` 与全部 `.md/.ps1/.py` 均 0 命中），
+  今后新增示例不得引入。
 
 
 

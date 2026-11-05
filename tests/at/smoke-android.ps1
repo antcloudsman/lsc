@@ -186,6 +186,15 @@ if ($devs -notmatch [regex]::Escape($Device)) {
     Add-Result 'ENV' 'BLOCKED' '设备在线' "设备 $Device 不在线"
     exit 2
 }
+# 安装会话残留闸：18:42 有一条 `adb install` 挂住占着安装会话，后续安装全排队到超时、
+# 系统报 `INSTALL_FAILED_ABORTED: User rejected permissions`——看着像系统拒装，其实是会话被占。
+# 本机 pm 不支持 `list sessions`（unknown list type），所以查主机侧残留的 adb install 进程。
+$pendingInstall = @(Get-CimInstance Win32_Process -Filter "Name='adb.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -match '(\s|^)install(\s|$)' -and $_.CommandLine -notmatch 'fork-server' })
+if ($pendingInstall.Count -gt 0) {
+    Add-Result 'ENV' 'BLOCKED' '无挂起的 adb install 进程' ("发现 " + $pendingInstall.Count + " 个残留 install：" + (($pendingInstall | ForEach-Object { "pid=$($_.ProcessId)" }) -join ','))
+    exit 2
+}
 # 安装段：默认不自装（人工装包 + 脚本只跑验收）。-Install 显式自装，-SkipInstall 显式跳过。
 if ($Install -and -not $SkipInstall) {
     $inst = (Invoke-Adb @('install', '-r', $Apk)).Trim().Split("`n")[-1]
@@ -282,6 +291,23 @@ if (-not $opened) {
     $miss = @($need | Where-Object { $texts -notcontains $_ })
     Shot 'k01-compass-overlay.png' | Out-Null
     Add-Result 'M2-compass-overlay' $(if ($miss.Count -eq 0) { 'PASS' } else { 'FAIL' }) '浮层含 读盘/隐藏/切换/坐南朝北/罗盘复位' "缺: $($miss -join ',')" (Join-Path $OutDir 'k01-compass-overlay.png')
+    # K-02：罗盘态顶部栏应有 返回/搜索/图层/隐藏 四项（原版 bugs.md:264；此前只有「隐藏」）
+    $top = @('返回', '搜索', '图层', '隐藏')
+    $topMiss = @($top | Where-Object { $texts -notcontains $_ })
+    Add-Result 'M2-topbar' $(if ($topMiss.Count -eq 0) { 'PASS' } else { 'FAIL' }) '罗盘态顶部栏含 返回/搜索/图层/隐藏' "缺: $($topMiss -join ',')" $c.path
+    # K-02：罗盘态「图层」必须能开出底图源面板（复用 openSources），否则该控件是死按钮
+    if ($topMiss -notcontains '图层') {
+        $layTapped = Tap-Text $c.xml '图层'
+        Start-Sleep -Milliseconds 1200
+        $cl = Get-Ui 'ui-compass-layer'
+        $clv = Test-SrcPanelLayer -PreXml $c.xml -PanelXml $(if ($cl.ok) { $cl.xml } else { '' })
+        $clSt = if (-not $cl.ok -or -not $layTapped) { 'BLOCKED' } elseif ($clv.ok) { 'PASS' } else { 'FAIL' }
+        Add-Result 'M2-compass-layer' $clSt '罗盘态「图层」→ #srcPanel 出现（12 源）' "tapped=$layTapped panel=$($clv.panel) srcs=$($clv.srcs)" $cl.path
+        Invoke-Js "closeSources();0" | Out-Null
+        Start-Sleep -Milliseconds 600
+    } else {
+        Add-Result 'M2-compass-layer' 'BLOCKED' '罗盘态「图层」→ #srcPanel 出现（12 源）' '顶栏没有「图层」，无法判定' ''
+    }
 }
 
 # ---------- 3. 5 盘面切换 ----------

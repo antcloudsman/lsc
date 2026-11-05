@@ -181,6 +181,14 @@ if (-not $gateOk) {
 }
 
 # ---- 设备与包 ----
+# 安装会话残留闸：挂起的 `adb install` 会占住安装会话，后续安装排队到超时并报
+# `INSTALL_FAILED_ABORTED: User rejected permissions`（本机 18:42 那条就是），看着像系统拒装。
+# 本机 pm 不支持 `list sessions`，因此查主机侧残留的 adb install 进程。
+$pendingInstall = @(Get-CimInstance Win32_Process -Filter "Name='adb.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -match '(\s|^)install(\s|$)' -and $_.CommandLine -notmatch 'fork-server' })
+if ($pendingInstall.Count -gt 0) {
+    throw ("存在挂起的 adb install 进程：" + (($pendingInstall | ForEach-Object { "pid=$($_.ProcessId) $($_.CommandLine)" }) -join ' ; ') + " —— 先 adb kill-server 清残留再冻结")
+}
 if (-not $SkipInstall) {
     # adb 有时在 "Success" 后面再吐一个空行，Select-Object -Last 1 会取到空串；
     # 这里合并全部非空输出再判，失败时把原文带进异常。

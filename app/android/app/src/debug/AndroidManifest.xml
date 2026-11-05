@@ -30,5 +30,10 @@
             android:exported="true"
             tools:replace="android:exported" />
 
+        <activity
+            android:name=".FeatureFlagsActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
     </application>
 </manifest>

@@ -756,11 +756,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             });
             row.addView(b, new LinearLayout.LayoutParams(0, dp(48), 1f));
         }
-        new android.app.AlertDialog.Builder(this)
-                .setTitle("地图工具")
-                .setView(grid)
+
+        // 标题栏：左「地图工具」+ 右「功能开关（调试）」。
+        // 这是 LC 自用的调试/回退入口（D-001），不改 MapSettingActivity 的 1:1 页面。
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(16), dp(10), dp(8), dp(2));
+
+        TextView sheetTitle = new TextView(this);
+        sheetTitle.setText("地图工具");
+        sheetTitle.setTextSize(16f);
+        sheetTitle.setTextColor(Color.rgb(235, 228, 215));
+        header.addView(sheetTitle, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView flagsEntry = new TextView(this);
+        flagsEntry.setId(R.id.lc_featureflag_entry);
+        flagsEntry.setText(R.string.lc_featureflag_entry);
+        flagsEntry.setTextSize(12f);
+        flagsEntry.setTextColor(Color.rgb(220, 190, 130));
+        flagsEntry.setPadding(dp(8), dp(6), dp(8), dp(6));
+        header.addView(flagsEntry);
+
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.addView(header);
+        panel.addView(grid);
+
+        final android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setView(panel)
                 .setNegativeButton("关闭", null)
-                .show();
+                .create();
+        flagsEntry.setOnClickListener(v -> {
+            dialog.dismiss();
+            startActivity(new android.content.Intent(this, FeatureFlagsActivity.class));
+        });
+        dialog.show();
     }
 
     /** 知识＝弹层（原版是点圈层文字直达，不做 Tab）。 */

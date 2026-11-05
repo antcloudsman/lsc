@@ -17,14 +17,19 @@
             android:theme="@style/Theme.Luopan" />
 
         <!--
-          缺失模块页（设置 / 工具管理 / 收藏点）。
+          缺失模块页（设置 / 工具管理 / 收藏点 + 功能开关）。
           主 manifest 一律 exported=false（D-011：release 不许暴露调试面）；
           AT 的 `am start -n com.luopan.fengshui/.XxxActivity` 直达只在 debug 变体生效，
           由 src/debug/AndroidManifest.xml 用 tools:replace 覆盖。
-          入口何时挂到主界面，等原版导航表（LC逆向 Frida 抓 Activity.start）落地。
+          入口：设置/收藏点等按 00-UI-ROUTES.md，功能开关挂「更多」面板标题栏。
         -->
         <activity
             android:name=".SettingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
+        <activity
+            android:name=".FeatureFlagsActivity"
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 

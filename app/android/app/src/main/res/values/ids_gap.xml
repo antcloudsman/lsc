@@ -134,4 +134,64 @@
     <item name="lc_save_time" type="id" />
     <item name="lc_save_confirm" type="id" />
 
+    <!-- 功能开关（调试/回退，D-001）：入口 + 18 行 -->
+    <item name="lc_featureflag_entry" type="id" />
+    <item name="lc_featureflag_back" type="id" />
+    <item name="lc_featureflag_title" type="id" />
+    <item name="lc_featureflag_list" type="id" />
+    <item name="lc_feature_row_f01" type="id" />
+    <item name="lc_feature_row_f02" type="id" />
+    <item name="lc_feature_row_f03" type="id" />
+    <item name="lc_feature_row_f04" type="id" />
+    <item name="lc_feature_row_f05" type="id" />
+    <item name="lc_feature_row_f06" type="id" />
+    <item name="lc_feature_row_f07" type="id" />
+    <item name="lc_feature_row_f08" type="id" />
+    <item name="lc_feature_row_f09" type="id" />
+    <item name="lc_feature_row_f10" type="id" />
+    <item name="lc_feature_row_f11" type="id" />
+    <item name="lc_feature_row_f12" type="id" />
+    <item name="lc_feature_row_f13" type="id" />
+    <item name="lc_feature_row_f14" type="id" />
+    <item name="lc_feature_row_f15" type="id" />
+    <item name="lc_feature_row_f16" type="id" />
+    <item name="lc_feature_row_f17" type="id" />
+    <item name="lc_feature_row_f18" type="id" />
+    <item name="lc_feature_state_f01" type="id" />
+    <item name="lc_feature_state_f02" type="id" />
+    <item name="lc_feature_state_f03" type="id" />
+    <item name="lc_feature_state_f04" type="id" />
+    <item name="lc_feature_state_f05" type="id" />
+    <item name="lc_feature_state_f06" type="id" />
+    <item name="lc_feature_state_f07" type="id" />
+    <item name="lc_feature_state_f08" type="id" />
+    <item name="lc_feature_state_f09" type="id" />
+    <item name="lc_feature_state_f10" type="id" />
+    <item name="lc_feature_state_f11" type="id" />
+    <item name="lc_feature_state_f12" type="id" />
+    <item name="lc_feature_state_f13" type="id" />
+    <item name="lc_feature_state_f14" type="id" />
+    <item name="lc_feature_state_f15" type="id" />
+    <item name="lc_feature_state_f16" type="id" />
+    <item name="lc_feature_state_f17" type="id" />
+    <item name="lc_feature_state_f18" type="id" />
+    <item name="lc_feature_switch_f01" type="id" />
+    <item name="lc_feature_switch_f02" type="id" />
+    <item name="lc_feature_switch_f03" type="id" />
+    <item name="lc_feature_switch_f04" type="id" />
+    <item name="lc_feature_switch_f05" type="id" />
+    <item name="lc_feature_switch_f06" type="id" />
+    <item name="lc_feature_switch_f07" type="id" />
+    <item name="lc_feature_switch_f08" type="id" />
+    <item name="lc_feature_switch_f09" type="id" />
+    <item name="lc_feature_switch_f10" type="id" />
+    <item name="lc_feature_switch_f11" type="id" />
+    <item name="lc_feature_switch_f12" type="id" />
+    <item name="lc_feature_switch_f13" type="id" />
+    <item name="lc_feature_switch_f14" type="id" />
+    <item name="lc_feature_switch_f15" type="id" />
+    <item name="lc_feature_switch_f16" type="id" />
+    <item name="lc_feature_switch_f17" type="id" />
+    <item name="lc_feature_switch_f18" type="id" />
+
 </resources>

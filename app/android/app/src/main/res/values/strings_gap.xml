@@ -59,4 +59,10 @@
     <string name="lc_save_confirm">保存</string>
     <string name="lc_save_saved">已保存</string>
     <string name="lc_save_no_point">未获取到当前坐标与坐向（需从地图页带入）</string>
+
+    <!-- 功能开关（调试/回退，D-001）：入口挂「更多」面板标题栏 -->
+    <string name="lc_featureflag_title">功能开关（调试）</string>
+    <string name="lc_featureflag_entry">功能开关（调试）</string>
+    <string name="lc_feature_on">开启</string>
+    <string name="lc_feature_off">关闭</string>
 </resources>

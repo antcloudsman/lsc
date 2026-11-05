@@ -26,10 +26,26 @@ public class CompassView extends View {
         this.dialType = t;
         invalidate();
     }
+
+    /** F-17：透明度只改底盘位图 alpha（0..1），读数中心/指针/天池不受影响。 */
+    public void setDialAlpha(float alpha) {
+        this.dialAlpha = Math.max(0f, Math.min(1f, alpha));
+        invalidate();
+    }
+
+    /** F-17：天干地支辅助线开关。 */
+    public void setTianzhiLines(boolean on) {
+        this.tianzhiLines = on;
+        invalidate();
+    }
     private boolean followSensor = true;
     private boolean trustEnabled = false;
     /** K-01：罗盘浮层自己的北针开关（地图层 #needle 不归这里管）。 */
     private boolean showPointer = true;
+    /** F-17（LC 自建，非 1:1）：底盘位图 alpha 0..1；只作用于 artwork，不影响读数/指针层。 */
+    private float dialAlpha = 1f;
+    /** F-17（LC 自建，非 1:1）：天干地支辅助线开关，默认关。 */
+    private boolean tianzhiLines = false;
     /** B-05：座向翻转/手动修正的持久偏移量（不改 followSensor，传感器继续更新）。 */
     private float headingOffset = 0f;
     /** B-05：未超过 touch slop 的按下不算「拖动」，不得切手动。 */
@@ -103,7 +119,7 @@ public class CompassView extends View {
         // dial_full_1 实测 alpha=0 占 21.4%（透明处透出地图）、alpha=255 占 78.5%；dial_full_0 透明 81.8%。
         android.graphics.Paint bmp = new android.graphics.Paint(
                 android.graphics.Paint.ANTI_ALIAS_FLAG | android.graphics.Paint.FILTER_BITMAP_FLAG);
-        bmp.setAlpha(255);
+        bmp.setAlpha(Math.round(255f * dialAlpha));
         canvas.drawBitmap(artwork, null, dst, bmp);
         canvas.restore();
     }
@@ -332,6 +348,9 @@ public class CompassView extends View {
 
         }
 
+        // F-17（LC 自建，非 1:1）：天干地支辅助线；默认关。
+        if (tianzhiLines) drawTianzhiLines(canvas, cx, cy, r);
+
         // P0-1: 天池（仅读数可信包开启时）
         if (trustEnabled) {
             paint.setStyle(Paint.Style.STROKE);
@@ -370,6 +389,29 @@ public class CompassView extends View {
         textPaint.setTextSize(13f * density());
         drawText(canvas, rd.jian + " · " + CompassData.YINYANG[rd.mountain],
                 cx, cy + 34f * density(), textPaint);
+    }
+
+    /**
+     * F-17（LC 自建，非 1:1）：天干地支辅助线。
+     * 12 地支主线（30° 一条）+ 10 天干细线（36° 一条），随盘面旋转；只做对位参考，不画标注/图层。
+     */
+    private void drawTianzhiLines(Canvas canvas, float cx, float cy, float r) {
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1f);
+        paint.setColor(Color.argb(70, 220, 190, 130));
+        for (int i = 0; i < 12; i++) {
+            float deg = i * 30f;
+            float[] p0 = pos(cx, cy, r * 0.96f, deg, heading);
+            float[] p1 = pos(cx, cy, r * 0.28f, deg, heading);
+            canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
+        }
+        paint.setColor(Color.argb(45, 180, 200, 220));
+        for (int i = 0; i < 10; i++) {
+            float deg = i * 36f;
+            float[] p0 = pos(cx, cy, r * 0.96f, deg, heading);
+            float[] p1 = pos(cx, cy, r * 0.55f, deg, heading);
+            canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
+        }
     }
 
     /** B2: 指针下当前格的高亮刻度。 */

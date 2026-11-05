@@ -75,4 +75,10 @@
     <string name="lc_draw_undo">撤销</string>
     <string name="lc_draw_clear">清除</string>
     <string name="lc_draw_export">导出</string>
+
+    <!-- F-17（LC 自建，非 1:1）：罗盘显示 -->
+    <string name="lc_compass_display_title">罗盘显示（LC 自建）</string>
+    <string name="lc_compass_alpha">透明度</string>
+    <string name="lc_compass_tianzhi">天干地支辅助线</string>
+    <string name="lc_compass_close">关闭</string>
 </resources>

@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -59,6 +60,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double jumpLng = Double.NaN;
     /** 地图页是否已加载完（决定 setView 立即调还是等 onPageFinished）。 */
     private boolean mapPageReady = false;
+
+    /** F-17（LC 自建）：罗盘显示参数（底盘透明度 / 天干地支辅助线）。 */
+    private CompassDisplayStore compassDisplay;
 
     // F-12 测量 / F-13 画笔：地图内交互态（不新建 Activity）
     private boolean measureMode = false;
@@ -128,6 +132,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         compassTab = buildSinglePage();
         content.addView(compassTab);
+        compassDisplay = new CompassDisplayStore(this);
+        applyCompassDisplay();
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager != null) {
@@ -725,6 +731,110 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 });
     }
 
+    // ---------------- F-17（LC 自建，非 1:1）：罗盘显示 ----------------
+
+    /** 应用落盘值；flag 关闭时回退默认（100% / 天支线关），不出现任何控件。 */
+    private void applyCompassDisplay() {
+        if (compassView == null || compassDisplay == null) return;
+        boolean on = new FeatureFlags(this).isEnabled("f17");
+        compassView.setDialAlpha(on ? compassDisplay.alphaPercent() / 100f : 1f);
+        compassView.setTianzhiLines(on && compassDisplay.tianzhiLines());
+    }
+
+    /** 罗盘工具条「透明度 / 天支线」打开的 LC 自建面板：滑杆 + 开关，即时生效并持久化。 */
+    private void showCompassDisplayPanel() {
+        if (compassDisplay == null) compassDisplay = new CompassDisplayStore(this);
+        final android.app.AlertDialog[] ref = new android.app.AlertDialog[1];
+
+        LinearLayout panel = new LinearLayout(this);
+        panel.setId(R.id.lc_compass_panel);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(18), dp(10), dp(18), dp(8));
+
+        TextView title = new TextView(this);
+        title.setText(R.string.lc_compass_display_title);
+        title.setTextSize(16f);
+        title.setTextColor(Color.rgb(235, 228, 215));
+        panel.addView(title);
+
+        // 透明度：0–100%，只作用底盘 alpha。
+        LinearLayout alphaRow = new LinearLayout(this);
+        alphaRow.setOrientation(LinearLayout.HORIZONTAL);
+        alphaRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        alphaRow.setPadding(0, dp(10), 0, 0);
+        TextView alphaLabel = new TextView(this);
+        alphaLabel.setText(R.string.lc_compass_alpha);
+        alphaLabel.setTextSize(14f);
+        alphaLabel.setTextColor(Color.rgb(235, 228, 215));
+        alphaRow.addView(alphaLabel, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        final TextView alphaValue = new TextView(this);
+        alphaValue.setId(R.id.lc_compass_alpha_value);
+        alphaValue.setTextSize(14f);
+        alphaValue.setTextColor(Color.rgb(220, 190, 130));
+        alphaValue.setText(compassDisplay.alphaPercent() + "%");
+        alphaRow.addView(alphaValue);
+        panel.addView(alphaRow);
+
+        final SeekBar slider = new SeekBar(this);
+        slider.setId(R.id.lc_compass_alpha_slider);
+        slider.setMax(100);
+        slider.setProgress(compassDisplay.alphaPercent());
+        panel.addView(slider, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar s, int progress, boolean fromUser) {
+                alphaValue.setText(progress + "%");
+                if (compassView != null) compassView.setDialAlpha(progress / 100f);
+                compassDisplay.setAlphaPercent(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+            }
+        });
+
+        // 天干地支辅助线：默认关。
+        LinearLayout tRow = new LinearLayout(this);
+        tRow.setOrientation(LinearLayout.HORIZONTAL);
+        tRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        tRow.setPadding(0, dp(8), 0, dp(8));
+        TextView tLabel = new TextView(this);
+        tLabel.setText(R.string.lc_compass_tianzhi);
+        tLabel.setTextSize(14f);
+        tLabel.setTextColor(Color.rgb(235, 228, 215));
+        tRow.addView(tLabel, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        LcPillSwitch sw = new LcPillSwitch(this);
+        sw.setId(R.id.lc_compass_tianzhi_toggle);
+        sw.setChecked(compassDisplay.tianzhiLines());
+        tRow.addView(sw, new LinearLayout.LayoutParams(
+                LcUi.dp(this, 46.2f), LcUi.dp(this, 23.1f)));
+        sw.setOnCheckedChangeListener((v, checked) -> {
+            compassDisplay.setTianzhiLines(checked);
+            if (compassView != null) compassView.setTianzhiLines(checked);
+        });
+        panel.addView(tRow);
+
+        Button close = new Button(this);
+        close.setId(R.id.lc_compass_close);
+        close.setText(R.string.lc_compass_close);
+        close.setOnClickListener(v -> {
+            if (ref[0] != null) ref[0].dismiss();
+        });
+        panel.addView(close);
+
+        ref[0] = new android.app.AlertDialog.Builder(this)
+                .setView(panel)
+                .create();
+        ref[0].show();
+    }
+
     private void onToolClick(String label) {
         switch (label) {
             case "罗盘": setCompassMode(true); break;
@@ -827,8 +937,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 break;
             case "旋转": js("rotateBearing(15)"); break;
             case "缩放": js("zoomIn()"); break;
-            case "透明度": toast("透明度：待 measurements.md（face alpha 实测）"); break;
-            case "天支线": toast("天支线：圈层开关，待 step-3"); break;
+            case "透明度":
+                if (new FeatureFlags(this).isEnabled("f17")) {
+                    showCompassDisplayPanel();
+                } else {
+                    toast("透明度：待 measurements.md（face alpha 实测）");
+                }
+                break;
+            case "天支线":
+                if (new FeatureFlags(this).isEnabled("f17")) {
+                    showCompassDisplayPanel();
+                } else {
+                    toast("天支线：圈层开关，待 step-3");
+                }
+                break;
             default: toast(label + "：原版为工具子页，本步未实现");
         }
     }

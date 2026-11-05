@@ -45,6 +45,9 @@ public class CompassListActivity extends Activity {
 
     private static final int REQ_PICK_IMAGE = 4301;
     private static final int MAX_THUMB = 2048;
+    /** C-01：单文件与累计上限（内部存储，防大文件写满）。 */
+    private static final long MAX_FILE_BYTES = 20L * 1024 * 1024;
+    private static final long MAX_TOTAL_BYTES = 200L * 1024 * 1024;
 
     private static final int[] THUMBS = {
             R.drawable.dial0, R.drawable.dial1_min, R.drawable.dial2_min,
@@ -300,15 +303,40 @@ public class CompassListActivity extends Activity {
     private void importFromUri(Uri uri) throws Exception {
         File dir = new File(getFilesDir(), "compass_dials");
         if (!dir.exists() && !dir.mkdirs()) throw new Exception("mkdir failed");
+        // C-01：单文件 ≤20MB、累计 ≤200MB，超限直接拒绝，不写盘。
+        long declared = querySize(uri);
+        if (declared > MAX_FILE_BYTES) {
+            Toast.makeText(this, R.string.lc_compasslist_too_large, Toast.LENGTH_LONG).show();
+            return;
+        }
+        long total = dirBytes(dir);
+        long remaining = MAX_TOTAL_BYTES - total;
+        if (remaining <= 0 || (declared > 0 && declared > remaining)) {
+            Toast.makeText(this, R.string.lc_compasslist_no_space, Toast.LENGTH_LONG).show();
+            return;
+        }
         String stamp = String.valueOf(System.currentTimeMillis());
 
         File raw = new File(dir, "dial_" + stamp + ".img");
-        try (InputStream in = getContentResolver().openInputStream(uri);
-             FileOutputStream out = new FileOutputStream(raw)) {
-            if (in == null) throw new Exception("open failed");
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+        long written = 0;
+        try {
+            try (InputStream in = getContentResolver().openInputStream(uri);
+                 FileOutputStream out = new FileOutputStream(raw)) {
+                if (in == null) throw new Exception("open failed");
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    written += n;
+                    if (written > MAX_FILE_BYTES || written > remaining) {
+                        throw new Exception("too large");
+                    }
+                    out.write(buf, 0, n);
+                }
+            }
+        } catch (Exception e) {
+            raw.delete();
+            Toast.makeText(this, R.string.lc_compasslist_too_large, Toast.LENGTH_LONG).show();
+            return;
         }
 
         // 生成长边 ≤2048 的预览，避免列表/盘面解码时 OOM。
@@ -337,8 +365,31 @@ public class CompassListActivity extends Activity {
                 Toast.LENGTH_SHORT).show();
     }
 
-    private String displayName(Uri uri) {
+    private long querySize(Uri uri) {
         Cursor c = null;
+        try {
+            c = getContentResolver().query(uri, null, null, null, null);
+            if (c != null && c.moveToFirst()) {
+                int idx = c.getColumnIndex(OpenableColumns.SIZE);
+                if (idx >= 0 && !c.isNull(idx)) return c.getLong(idx);
+            }
+        } catch (Throwable ignored) {
+        } finally {
+            if (c != null) c.close();
+        }
+        return -1;
+    }
+
+    private long dirBytes(File dir) {
+        long total = 0;
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File f : files) total += f.length();
+        }
+        return total;
+    }
+
+    private String displayName(Uri uri) {        Cursor c = null;
         try {
             c = getContentResolver().query(uri, null, null, null, null);
             if (c != null && c.moveToFirst()) {

@@ -70,6 +70,13 @@
     <string name="lc_measure_distance">测距</string>
     <string name="lc_measure_area">测面积</string>
     <string name="lc_measure_clear">清除</string>
+    <string name="lc_measure_mode_distance">测距与方位角</string>
+    <string name="lc_measure_mode_area">测面积与周长</string>
+    <string name="lc_measure_add">添加点</string>
+    <string name="lc_measure_undo">撤销</string>
+    <string name="lc_measure_done">完成</string>
+    <string name="lc_measure_back">返回</string>
+    <string name="lc_measure_unit">单位</string>
     <string name="lc_draw_color">颜色</string>
     <string name="lc_draw_width">粗细</string>
     <string name="lc_draw_undo">撤销</string>
@@ -93,6 +100,8 @@
     <string name="lc_compasslist_cancel">取消</string>
     <string name="lc_compasslist_selected">已选择</string>
     <string name="lc_compasslist_import_fail">导入失败</string>
+    <string name="lc_compasslist_too_large">图片过大，已取消导入（单张上限 20 MB）</string>
+    <string name="lc_compasslist_no_space">导入空间不足（累计上限 200 MB）</string>
 
     <!-- F-15 轨迹（免费、无门槛；禁词见方案文档 §6） -->
     <string name="lc_track_title">轨迹记录</string>

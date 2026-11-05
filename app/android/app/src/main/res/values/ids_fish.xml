@@ -10,4 +10,10 @@
     <item name="lc_fish_refresh" type="id" />
     <item name="lc_fish_empty" type="id" />
     <item name="lc_fish_close" type="id" />
+    <item name="lc_fish_detail_panel" type="id" />
+    <item name="lc_fish_detail_type" type="id" />
+    <item name="lc_fish_detail_address" type="id" />
+    <item name="lc_fish_detail_save" type="id" />
+    <item name="lc_fish_detail_nav" type="id" />
+    <item name="lc_fish_detail_close" type="id" />
 </resources>

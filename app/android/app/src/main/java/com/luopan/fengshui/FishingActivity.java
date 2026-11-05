@@ -2,7 +2,9 @@ package com.luopan.fengshui;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -320,27 +322,115 @@ public class FishingActivity extends LcFeatureActivity {
         final String name = o.optString("name", "");
         final double lat = o.optDouble("lat", 0);
         final double lng = o.optDouble("lng", 0);
-        boolean isUser = false;
+        final String kind = o.optString("kind", "");
+        boolean isUserFlag = false;
         for (JSONObject u : userPoints) {
             if (name.equals(u.optString("name"))
                     && Math.abs(u.optDouble("lat") - lat) < 1e-7
                     && Math.abs(u.optDouble("lng") - lng) < 1e-7) {
-                isUser = true;
+                isUserFlag = true;
                 break;
             }
         }
-        String msg = "类型：" + o.optString("kind", "") + "\n"
-                + "坐标：" + lat + ", " + lng + "\n"
-                + (isUser ? "来源：本机自建" : "来源：天地图公开水域");
-        AlertDialog.Builder b = new AlertDialog.Builder(this)
-                .setTitle(name)
-                .setMessage(msg)
-                .setPositiveButton(R.string.lc_fish_close, null);
-        if (isUser) {
-            final String n = name;
-            b.setNeutralButton(R.string.lc_fish_delete, (d, w) -> removeUserPoint(n, lat, lng));
+        final boolean isUser = isUserFlag;
+
+        LinearLayout panel = new LinearLayout(this);
+        panel.setId(R.id.lc_fish_detail_panel);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(18), dp(10), dp(18), dp(8));
+
+        TextView title = new TextView(this);
+        title.setText(name);
+        title.setTextSize(17f);
+        title.setTextColor(Color.rgb(235, 228, 215));
+        panel.addView(title);
+
+        TextView badge = new TextView(this);
+        badge.setId(R.id.lc_fish_detail_type);
+        badge.setText(badgeText(kind) + " · " + (isUser
+                ? getString(R.string.lc_fish_source_user)
+                : getString(R.string.lc_fish_source_public)));
+        badge.setTextSize(12f);
+        badge.setTextColor(Color.rgb(220, 190, 130));
+        badge.setPadding(0, dp(4), 0, dp(6));
+        panel.addView(badge);
+
+        final TextView address = new TextView(this);
+        address.setId(R.id.lc_fish_detail_address);
+        address.setText(isUser ? getString(R.string.lc_fish_source_user)
+                : getString(R.string.lc_fish_source_public));
+        address.setTextSize(12f);
+        address.setTextColor(Color.rgb(180, 190, 200));
+        address.setPadding(0, 0, 0, dp(8));
+        panel.addView(address);
+
+        // 天气/图片：桥事件暂无这两个字段，取不到就不显示（不造假）。
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        Button save = new Button(this);
+        save.setId(R.id.lc_fish_detail_save);
+        save.setText(R.string.lc_fish_detail_save);
+        Button nav = new Button(this);
+        nav.setId(R.id.lc_fish_detail_nav);
+        nav.setText(R.string.lc_fish_detail_nav);
+        Button close = new Button(this);
+        close.setId(R.id.lc_fish_detail_close);
+        close.setText(R.string.lc_fish_close);
+        actions.addView(save, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        actions.addView(nav, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        actions.addView(close, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        panel.addView(actions);
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(panel)
+                .create();
+        close.setOnClickListener(v -> dialog.dismiss());
+        save.setOnClickListener(v -> {
+            dialog.dismiss();
+            Intent i = new Intent(this, SaveInterestActivity.class);
+            i.putExtra(MapJump.EXTRA_LAT, lat);
+            i.putExtra(MapJump.EXTRA_LNG, lng);
+            i.putExtra(SaveInterestActivity.EXTRA_SITTING, 180.0);
+            i.putExtra(SaveInterestActivity.EXTRA_FACING, 0.0);
+            startActivity(i);
+        });
+        nav.setOnClickListener(v -> {
+            dialog.dismiss();
+            startActivity(MapJump.intent(this, lat, lng));
+        });
+        dialog.show();
+
+        // 「距我」用当前地图中心近似（桥事件不含用户位置）；只算距离，不改事实文案。
+        if (web != null) {
+            web.evaluateJavascript("JSON.stringify(getState())", value -> {
+                try {
+                    String s = value;
+                    if (s != null && s.startsWith("\"") && s.endsWith("\"")) {
+                        s = s.substring(1, s.length() - 1).replace("\\\"", "\"");
+                    }
+                    JSONObject st = new JSONObject(s);
+                    double d = TrackStats.haversine(st.optDouble("lat", lat),
+                            st.optDouble("lng", lng), lat, lng);
+                    address.setText((isUser ? getString(R.string.lc_fish_source_user)
+                            : getString(R.string.lc_fish_source_public))
+                            + " · " + getString(R.string.lc_fish_distance,
+                            String.format(java.util.Locale.US, "%.2f", d / 1000.0)));
+                } catch (Throwable ignored) {
+                }
+            });
         }
-        b.show();
+    }
+
+    /** 类型徽标映射（原版码 303 库钓 / 308 河钓 / 309 黑坑 / 其它塘钓）。 */
+    private static String badgeText(String kind) {
+        if (kind == null) return "塘钓";
+        if (kind.contains("黑")) return "黑坑(309)";
+        if (kind.contains("库")) return "库钓(303)";
+        if (kind.contains("河") || kind.contains("江") || kind.contains("溪")) return "河钓(308)";
+        return "塘钓";
     }
 
     private void removeUserPoint(String name, double lat, double lng) {
@@ -367,3 +457,4 @@ public class FishingActivity extends LcFeatureActivity {
         super.onDestroy();
     }
 }
+

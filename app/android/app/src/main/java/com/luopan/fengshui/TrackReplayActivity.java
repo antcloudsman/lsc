@@ -48,25 +48,49 @@ public class TrackReplayActivity extends LcFeatureActivity {
     private SeekBar slider;
     private TextView timeView;
     private TrackMeta meta;
+    private double t0 = 0;
+    private double t1 = 0;
+    private double curT = 0;
+    private double curSpeedKmh = 0;
+
+    /** 桥的 track-tick 事件（约 8 Hz）：当前点/速度只在这里有。 */
+    private final class TrackBridge {
+        @android.webkit.JavascriptInterface
+        public void onEvent(String json) {
+            if (json == null) return;
+            handler.post(() -> {
+                try {
+                    JSONObject o = new JSONObject(json);
+                    if (!"track-tick".equals(o.optString("type"))) return;
+                    curT = o.optDouble("t", curT);
+                    curSpeedKmh = o.optDouble("speedKmh", 0);
+                    boolean atEnd = o.optBoolean("atEnd", false);
+                    updateReplayUi();
+                    if (atEnd && playing) setPlaying(false);
+                } catch (Throwable ignored) {
+                }
+            });
+        }
+    }
 
     private final Runnable poll = new Runnable() {
         @Override
         public void run() {
             if (ready && map != null) {
+                // 契约（b58b2e6）：getState().track = {loaded,segments,points,t0,t1,t,playing,rate,follow}
                 map.evaluateJavascript("JSON.stringify(getState().track||{})", v -> {
                     try {
-                        String s = decode(v);
-                        JSONObject o = new JSONObject(s);
-                        boolean atEnd = o.optBoolean("atEnd", false);
-                        double speed = o.optDouble("speedKmh", 0);
-                        double progress = o.optDouble("progress", Double.NaN);
-                        if (!Double.isNaN(progress) && !dragging) {
-                            slider.setProgress((int) Math.round(progress * 1000));
+                        JSONObject o = new JSONObject(decode(v));
+                        t0 = o.optDouble("t0", t0);
+                        t1 = o.optDouble("t1", t1);
+                        curT = o.optDouble("t", curT);
+                        boolean serverPlaying = o.optBoolean("playing", playing);
+                        if (serverPlaying != playing) {
+                            playing = serverPlaying;
+                            playButton.setText(playing ? "❚❚" : "▶︎");
                         }
-                        timeView.setText(String.format(Locale.US, "%s · %.1f km/h",
-                                meta != null ? TrackListActivity.fmtDuration(meta.durationSec) : "",
-                                speed));
-                        if (atEnd && playing) setPlaying(false);
+                        updateReplayUi();
+                        if (t1 > t0 && curT >= t1 && playing) setPlaying(false);
                     } catch (Throwable ignored) {
                     }
                 });
@@ -74,6 +98,15 @@ public class TrackReplayActivity extends LcFeatureActivity {
             handler.postDelayed(this, 400);
         }
     };
+
+    private void updateReplayUi() {
+        double progress = t1 > t0 ? (curT - t0) / (t1 - t0) : 0;
+        progress = Math.max(0, Math.min(1, progress));
+        if (!dragging) slider.setProgress((int) Math.round(progress * 1000));
+        double elapsedSec = Math.max(0, (curT - t0) / 1000.0);
+        timeView.setText(String.format(Locale.US, "已走 %s · 当前 %.1f km/h",
+                TrackListActivity.fmtDuration(elapsedSec), curSpeedKmh));
+    }
 
     @Override
     protected int backId() {
@@ -105,6 +138,7 @@ public class TrackReplayActivity extends LcFeatureActivity {
 
         map = new WebView(this);
         map.setBackgroundColor(Color.rgb(24, 20, 16));
+        map.addJavascriptInterface(new TrackBridge(), "LCAndroid");
         WebSettings ws = map.getSettings();
         ws.setJavaScriptEnabled(true);
         ws.setDomStorageEnabled(true);

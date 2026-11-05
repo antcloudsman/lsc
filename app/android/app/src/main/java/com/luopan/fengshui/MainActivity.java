@@ -61,6 +61,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** 地图页是否已加载完（决定 setView 立即调还是等 onPageFinished）。 */
     private boolean mapPageReady = false;
 
+    /** F-04 路网：原版 MapManager.showRoad 默认 true；状态持久化在 MapManager prefs。 */
+    private boolean roadNetOn = true;
+
     /** F-17（LC 自建）：罗盘显示参数（底盘透明度 / 天干地支辅助线）。 */
     private CompassDisplayStore compassDisplay;
 
@@ -125,6 +128,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         content = findViewById(R.id.content);
 
         prefs = getSharedPreferences("lc_prefs", MODE_PRIVATE);
+        roadNetOn = getSharedPreferences("MapManager", MODE_PRIVATE)
+                .getBoolean("showRoad", true);
         declination = prefs.getFloat("declination", 0f);
         trueNorth = prefs.getBoolean("true_north", false);
         calibrationDone = prefs.getBoolean("calibration_done", false);
@@ -695,8 +700,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /** 所有地图侧调用统一走这里：先判函数存在，避免 map.html 版本落后时抛错。 */
-    private void js(String code) {
-        if (compassMapView == null) return;
+    /** F-04：路网图层开关；写入 MapManager.showRoad（与设置页「显示路网」同键），并真正调 setRoadNet。 */
+    private void toggleRoadNet() {
+        roadNetOn = !roadNetOn;
+        getSharedPreferences("MapManager", MODE_PRIVATE).edit()
+                .putBoolean("showRoad", roadNetOn).apply();
+        js("setRoadNet(" + roadNetOn + ")");
+        toast("路网：" + (roadNetOn ? "开" : "关"));
+    }
+
+    private void js(String code) {        if (compassMapView == null) return;
         compassMapView.evaluateJavascript("try{" + code + "}catch(e){}", null);
     }
 
@@ -862,6 +875,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(label + "：原版为工具子页，本步未实现");
                 }
                 break;
+            case "叠加":
+                // F-05：右列「叠加」→ OverlayActivity（默认开，无门槛）；关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f05")) {
+                    startActivity(new android.content.Intent(this, OverlayActivity.class));
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "超清优化":
                 // F-02：左列「超清优化」→ SuperMapActivity（默认开，无门槛）；关掉回退旧 stub。
                 if (new FeatureFlags(this).isEnabled("f02")) {
@@ -910,6 +931,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "更多": showMoreSheet(); break;
             case "图层": js("openSources()"); break;
             case "等高线": js("toggleContour()"); break;
+            case "路网":
+                // F-04：左列「路网」= 路网图层开关（默认开，持久化 MapManager.showRoad）。
+                if (new FeatureFlags(this).isEnabled("f04")) {
+                    toggleRoadNet();
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "贴地": js("toggleGround()"); break;
             case "定位": js("locate()"); break;
             case "3D": js("toggle3D()"); break;
@@ -1146,6 +1175,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     startActivity(new android.content.Intent(this, HistoryImageActivity.class));
                 } else if ("历史影像".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
+                } else if ("天气".equals(t) && flags.isEnabled("f09")) {
+                    // F-09：更多 → 天气 → WeatherActivity（默认开；关掉回退旧 stub）
+                    startActivity(new android.content.Intent(this, WeatherActivity.class));
+                } else if ("天气".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
                 } else if (("超清地图".equals(t) || "超清优化".equals(t))
                         && flags.isEnabled("f02")) {
                     // F-02：更多 → 超清地图 / 超清优化 → SuperMapActivity（默认开；关掉回退旧 stub）
@@ -1166,6 +1200,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // F-14：更多 → 钓点 → FishingActivity（默认开；关掉回退旧 stub）
                     startActivity(new android.content.Intent(this, FishingActivity.class));
                 } else if ("钓点".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
+                } else if ("路网".equals(t) && flags.isEnabled("f04")) {
+                    // F-04：更多 → 路网 = 路网图层开关（默认开，持久化）
+                    toggleRoadNet();
+                } else if ("路网".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("轨迹记录".equals(t) && flags.isEnabled("f15")) {
                     // F-15：更多 → 轨迹记录 → TrackListActivity（默认开；关掉回退旧 stub）
@@ -1378,6 +1417,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (view == compassMapView) {
                     mapPageReady = true;
                     applyPendingMapView();
+                    // F-04：页面重载后按持久化状态重放路网开关。
+                    view.evaluateJavascript("try{setRoadNet(" + roadNetOn + ")}catch(e){}", null);
                 }
             }
         });

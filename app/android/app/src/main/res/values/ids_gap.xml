@@ -280,6 +280,7 @@
     <!-- F-15 轨迹：详情 -->
     <item name="lc_track_detail_back" type="id" />
     <item name="lc_track_detail_title" type="id" />
+    <item name="lc_track_detail_content" type="id" />
     <item name="lc_track_detail_distance" type="id" />
     <item name="lc_track_detail_duration" type="id" />
     <item name="lc_track_detail_avg_speed" type="id" />

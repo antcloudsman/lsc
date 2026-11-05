@@ -57,7 +57,14 @@ function Get-Ui([string]$tag, [int]$tries = 5) {
         if ($o -match 'dumped to') {
             Invoke-Adb @('pull', '/sdcard/lc_smoke.xml', (Join-Path $OutDir "$tag.xml")) | Out-Null
             $p = Join-Path $OutDir "$tag.xml"
-            if (Test-Path $p) { return [pscustomobject]@{ ok = $true; xml = (Get-Content $p -Raw -Encoding UTF8); path = $p } }
+            if (Test-Path $p) {
+                $raw = Get-Content $p -Raw -Encoding UTF8
+                # 采完校验：dump 必须是本应用的界面（安装器/别的界面不算数）。
+                if ($raw -match ('package="' + [regex]::Escape($Pkg) + '"')) {
+                    return [pscustomobject]@{ ok = $true; xml = $raw; path = $p }
+                }
+                Remove-Item $p -ErrorAction SilentlyContinue
+            }
         }
         Start-Sleep -Milliseconds 900
     }
@@ -245,11 +252,15 @@ if (-not $s0) {
 } else {
     # 4.1 3D
     $u = Get-Ui 'ui-map-tools'
-    $ok3d = $u.ok -and (Tap-Text $u.xml '3D')
-    Start-Sleep -Milliseconds 1500
-    $s = Get-MapState 10
-    Add-Result 'M4-3D' $(if ($ok3d -and $s -and $s.mode -eq '3d') { 'PASS' } else { 'FAIL' }) '点「3D」→ state.mode=3d' "mode=$($s.mode) pitch=$($s.pitch)" $u.path
-    if ($s -and $s.mode -eq '3d') { Shot 'k01-3d.png' | Out-Null }
+    if (-not $u.ok) {
+        Add-Result 'M4-3D' 'BLOCKED' '点「3D」→ state.mode=3d' 'ui-map-tools dump 失败（uiautomator/前台异常），未判定' $u.path
+    } else {
+        $ok3d = Tap-Text $u.xml '3D'
+        Start-Sleep -Milliseconds 1500
+        $s = Get-MapState 10
+        Add-Result 'M4-3D' $(if ($ok3d -and $s -and $s.mode -eq '3d') { 'PASS' } else { 'FAIL' }) '点「3D」→ state.mode=3d' "mode=$($s.mode) pitch=$($s.pitch)" $u.path
+        if ($s -and $s.mode -eq '3d') { Shot 'k01-3d.png' | Out-Null }
+    }
 
     # 4.2 回 2D，进罗盘浮层：旋转 / 坐南朝北 / 底图（这三项都在浮层工具里）
     $u = Get-Ui 'ui-map-tools2'
@@ -258,13 +269,17 @@ if (-not $s0) {
     $u = Get-Ui 'ui-reopen-compass'
     if ($u.ok) { Tap-Text $u.xml '罗盘' | Out-Null; Start-Sleep -Milliseconds 900 }
     $u = Get-Ui 'ui-compass-rotate'
-    # M4-rotate 时序修正：基线必须紧邻「旋转」点击前读取，且给足重试。
-    # 原实现把 b0 放在进罗盘前约 2s（且默认 3 次重试），3D→2D 后 WebView 仍在忙时会拿到空/旧值。
-    $b0 = if ($u.ok) { (Get-MapState 10).bearing } else { $null }
-    $rot = $u.ok -and (Tap-Text $u.xml '旋转')
-    Start-Sleep -Milliseconds 800
-    $b1 = (Get-MapState 10).bearing
-    Add-Result 'M4-rotate' $(if ($rot -and ($null -ne $b0) -and ($null -ne $b1) -and (([double]$b1 - [double]$b0 + 360) % 360) -eq 15) { 'PASS' } else { 'FAIL' }) '点「旋转」→ bearing +15°' "before=$b0 after=$b1" $u.path
+    if (-not $u.ok) {
+        Add-Result 'M4-rotate' 'BLOCKED' '点「旋转」→ bearing +15°' 'ui-compass-rotate dump 失败（uiautomator/未进罗盘态），未判定' $u.path
+    } else {
+        # M4-rotate 时序修正：基线必须紧邻「旋转」点击前读取，且给足重试。
+        # 原实现把 b0 放在进罗盘前约 2s（且默认 3 次重试），3D→2D 后 WebView 仍在忙时会拿到空/旧值。
+        $b0 = (Get-MapState 10).bearing
+        $rot = Tap-Text $u.xml '旋转'
+        Start-Sleep -Milliseconds 800
+        $b1 = (Get-MapState 10).bearing
+        Add-Result 'M4-rotate' $(if ($rot -and ($null -ne $b0) -and ($null -ne $b1) -and (([double]$b1 - [double]$b0 + 360) % 360) -eq 15) { 'PASS' } else { 'FAIL' }) '点「旋转」→ bearing +15°' "before=$b0 after=$b1" $u.path
+    }
 
     $u = Get-Ui 'ui-compass-right'
     $sit = $u.ok -and (Tap-Text $u.xml '坐南朝北')
@@ -319,9 +334,19 @@ if (-not $s0) {
 # ---------- 5. logcat ----------
 $log = Invoke-Adb @('logcat', '-d')
 $log | Set-Content -Path (Join-Path $OutDir 'logcat.txt') -Encoding UTF8
-$fatal = ([regex]::Matches($log, 'FATAL EXCEPTION')).Count
+$logLines = $log -split "`n"
+# FATAL 只认本应用进程：uiautomator 自身的 FATAL 不算应用崩溃。
+$fatal = 0
+$fatalOther = 0
+for ($i = 0; $i -lt $logLines.Count; $i++) {
+    if ($logLines[$i] -match 'FATAL EXCEPTION') {
+        $end = [math]::Min($i + 6, $logLines.Count - 1)
+        $block = $logLines[$i..$end] -join "`n"
+        if ($block -match ('Process:\s*' + [regex]::Escape($Pkg))) { $fatal++ } else { $fatalOther++ }
+    }
+}
 $anr = ([regex]::Matches($log, 'ANR in ' + [regex]::Escape($Pkg))).Count
-Add-Result 'M5-logcat' $(if ($fatal -eq 0 -and $anr -eq 0) { 'PASS' } else { 'FAIL' }) 'FATAL=0 ANR=0' "FATAL=$fatal ANR=$anr" (Join-Path $OutDir 'logcat.txt')
+Add-Result 'M5-logcat' $(if ($fatal -eq 0 -and $anr -eq 0) { 'PASS' } else { 'FAIL' }) 'FATAL(app)=0 ANR(app)=0' "FATAL(app)=$fatal FATAL(other)=$fatalOther ANR=$anr" (Join-Path $OutDir 'logcat.txt')
 
 # ---------- 汇总 ----------
 $pass = @($script:Results | Where-Object status -eq 'PASS').Count

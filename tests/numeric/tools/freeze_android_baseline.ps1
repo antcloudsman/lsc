@@ -140,8 +140,8 @@ function Get-NodeInfos([string]$xml) {
             desc    = [regex]::Match($n, 'content-desc="([^"]*)"').Groups[1].Value
             cls     = ([regex]::Match($n, 'class="([^"]*)"').Groups[1].Value -replace '.*\.', '')
             bounds  = $b.Value
-            cx      = [int]$cx
-            cy      = [int]$cy
+            cx      = [math]::Round($cx, 1)
+            cy      = [math]::Round($cy, 1)
             click   = ($n -match 'clickable="true"')
         }
     }
@@ -306,7 +306,7 @@ function Check-Slots($mode, $group, $slots) {
             $sideOk = if ($group -eq "left") { $node.cx -lt ($W / 2) } else { $node.cx -gt ($W / 2) }
             $orderOk = ($node.cy -gt $prevY)
             if ($orderOk) { $prevY = $node.cy }
-            $dx = [int]($node.cx - $ex); $dy = [int]($node.cy - $ey)
+            $dx = [math]::Round($node.cx - $ex, 1); $dy = [math]::Round($node.cy - $ey, 1)
         }
         $offTol = ($node -and ([math]::Abs($dx) -gt 45 -or [math]::Abs($dy) -gt 45))
         $script:records += [pscustomobject]@{

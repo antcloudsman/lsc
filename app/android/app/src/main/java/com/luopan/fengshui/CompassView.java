@@ -15,7 +15,7 @@ import android.view.View;
 public class CompassView extends View {
 
     private float heading = 0f;
-    private int dialType = 1; // 0..4 (常用罗盘 default)
+    private int dialType = 0; // 0..4（默认 0 = 线稿盘，与 MainActivity 的 dial_index 默认一致）
 
     public void setTrustEnabled(boolean enabled) {
         this.trustEnabled = enabled;

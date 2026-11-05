@@ -942,7 +942,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         applyImmersiveFullscreen();
         registerDebugBridge();
         if (compassView != null && prefs != null) {
-            int dial = prefs.getInt("dial_index", 1);
+            // K-01：默认盘面改 0（线稿盘）。原版从地图点「罗盘」进入时就是线稿透出态
+            // （orig-06-read.png）；1–4 号是整圆不透明的彩色皮肤（alpha opaque_frac=0.785），
+            // 会让地图在盘内透不出来，不能做默认。「切换」仍在 0–4 之间循环
+            // （CompassListActivity 写回 idx=0..4，无钳位）。
+            int dial = prefs.getInt("dial_index", 0);
             compassView.setDialType(dial);
             compassView.setArtwork(dial);
         }

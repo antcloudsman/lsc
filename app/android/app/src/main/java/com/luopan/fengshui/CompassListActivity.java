@@ -33,7 +33,8 @@ public class CompassListActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         SharedPreferences prefs = getSharedPreferences("lc_prefs", MODE_PRIVATE);
-        selected = prefs.getInt("dial_index", 1);
+        // K-01：与 MainActivity 的默认盘面保持一致（0 = 线稿盘，见 onResume 注释）
+        selected = prefs.getInt("dial_index", 0);
 
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(Color.rgb(24, 20, 16));

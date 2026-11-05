@@ -3,28 +3,76 @@ plugins {
 }
 
 /**
- * 天地图 key 的**单一来源**（MD-01）：`assets/map.html` 顶部的 `var KEY = "…";`。
+ * 天地图 key 的**单一来源**（MD-01 / 公开仓库）：仓库是 PUBLIC，key 一律不入库，
+ * 只放仓库外的 secrets 文件，构建期注入 BuildConfig。
  *
- * 为什么在这里解析：key 同时被地图页（JS 拼瓦片 URL）和原生侧（分类搜索/超清拼接）用。
- * 以前 Java 的 `MapKeys.TDT` 复制了一份字面量，换 key 要改两处、漏一处就半瘫；
- * 现在构建时从 map.html 读出来生成 `BuildConfig.TDT_KEY`，Java 侧不再有第二份字面量。
- * 换 key 只改 map.html 一行；解析失败直接让构建失败，避免悄悄发出一个没有 key 的包。
- * key 值本身仍是原版内置的第三方 key（换 key 不在本轮，见 docs/map-bridge.md §2.3）。
+ * 取值优先级：
+ *   1. 环境变量 DSH_SECRET_TDT_SERVER_KEY / DSH_SECRET_TDT_WEB_KEY（CI 用；任一缺失则回落到文件补）
+ *   2. secrets 文件 `tdt.server.key` / `tdt.web.key`
+ *      默认 E:/APPDetector/secrets/tdt.properties（仓库外）
+ *      可用 gradle 属性 `-Ptdt.keysFile=<路径>` 或环境变量 TDT_KEYS_FILE 改
+ *
+ * 读不到 key 就直接 GradleException（不许静默发出空包）。为什么、怎么轮换、CI 怎么配，
+ * 见 docs/BUILD-SECRETS.md。
  */
-def tdtKeyFromMapHtml = {
-    def f = file('src/main/assets/map.html')
-    if (!f.exists()) throw new GradleException("缺少 assets/map.html，无法取得天地图 key")
-    def m = (f.getText('UTF-8') =~ /(?m)^\s*var\s+KEY\s*=\s*"([^"]+)"\s*;/)
-    if (!m.find()) throw new GradleException("assets/map.html 里没有 `var KEY = \"…\";`，无法取得天地图 key")
-    return m.group(1)
+def tdtKeysFile = (
+    project.findProperty('tdt.keysFile')
+        ?: System.getenv('TDT_KEYS_FILE')
+        ?: 'E:/APPDetector/secrets/tdt.properties'
+).toString()
+def tdtEnvServer = System.getenv('DSH_SECRET_TDT_SERVER_KEY')
+def tdtEnvWeb = System.getenv('DSH_SECRET_TDT_WEB_KEY')
+
+def loadTdtKeys = {
+    def server = tdtEnvServer != null ? tdtEnvServer.trim() : ''
+    def web = tdtEnvWeb != null ? tdtEnvWeb.trim() : ''
+    def keysFile = file(tdtKeysFile)
+    def fromFile = false
+
+    if (!server || !web) {
+        if (!keysFile.isFile()) {
+            throw new GradleException(
+                "TDT_KEYS_FILE_NOT_FOUND: missing Tianditu key file: ${keysFile.absolutePath}\n" +
+                "  This repo is PUBLIC, so keys must stay OUTSIDE git. Three ways to fix:\n" +
+                "   1) create that file with two lines:\n" +
+                "        tdt.server.key=<server key>\n" +
+                "        tdt.web.key=<web key>\n" +
+                "   2) -Ptdt.keysFile=<path to tdt.properties>  (relative path resolves from ${project.projectDir})\n" +
+                "   3) set env DSH_SECRET_TDT_SERVER_KEY / DSH_SECRET_TDT_WEB_KEY\n" +
+                "  Details: docs/BUILD-SECRETS.md"
+            )
+        }
+        def props = new Properties()
+        keysFile.withReader('UTF-8') { props.load(it) }
+        if (!server) server = (props.getProperty('tdt.server.key') ?: '').trim()
+        if (!web) web = (props.getProperty('tdt.web.key') ?: '').trim()
+        fromFile = true
+    }
+
+    def missing = []
+    if (!server) missing << 'tdt.server.key（或 DSH_SECRET_TDT_SERVER_KEY）'
+    if (!web) missing << 'tdt.web.key（或 DSH_SECRET_TDT_WEB_KEY）'
+    if (!missing.isEmpty()) {
+        def where = fromFile ? "file ${keysFile.absolutePath}" : 'environment variables'
+        throw new GradleException(
+            "TDT_KEYS_INCOMPLETE: missing Tianditu key(s): ${missing.join(', ')} (source: ${where})\n" +
+            "  Refusing to build a package with an empty key. Fix the file / env vars, see docs/BUILD-SECRETS.md"
+        )
+    }
+    return [server: server, web: web]
 }
+
+def tdtKeys = loadTdtKeys()
+
+/** 生成 Java 字符串字面量（key 本身是十六进制，这里只是防注入/引号逃逸）。 */
+def javaString = { String s -> '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"' }
 
 android {
     namespace 'com.luopan.fengshui'
     compileSdk 34
 
     buildFeatures {
-        buildConfig true          // 只为 BuildConfig.TDT_KEY（由上面的 map.html 解析而来）
+        buildConfig true          // 只为 TDT_SERVER_KEY / TDT_WEB_KEY（构建期从仓库外注入）
     }
 
     defaultConfig {
@@ -34,7 +82,12 @@ android {
         versionCode 1
         versionName "1.0"
 
-        buildConfigField "String", "TDT_KEY", "\"${tdtKeyFromMapHtml()}\""
+        // 原生侧（分类搜索 / 逆地理 / 超清拼接）用的服务端 key。
+        buildConfigField "String", "TDT_SERVER_KEY", javaString(tdtKeys.server)
+        // 网页端 key：地图页的瓦片 URL 用，由地图侧从 BuildConfig 传给 WebView。
+        buildConfigField "String", "TDT_WEB_KEY", javaString(tdtKeys.web)
+        // 过渡别名：MapKeys.TDT 仍引用旧字段名，地图改完（改引用 TDT_SERVER_KEY）后删掉这行。
+        buildConfigField "String", "TDT_KEY", javaString(tdtKeys.server)
     }
 
     buildTypes {

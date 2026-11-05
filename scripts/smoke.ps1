@@ -8,10 +8,11 @@
 
   Gates:
     1. copy     : python tests\copy\copy_gate.py (user-visible strings zero paywall words + 2 static red lines)
-    2. desktop  : scripts\build-desktop.ps1 (cargo build + 1100x780 screenshot + mechanics baseline)
-    3. numeric  : python tests\numeric\run_all.py (74 numeric/boundary tests, xfail-aware)
-    4. source   : tools\mechanics\gen-mechanics.ps1 -Check (generated regions match mechanics.json)
-    5. android  : scripts\build-android.ps1 (assembleDebug; install/launch/logcat unless -SkipDevice)
+    2. secret   : python tests\secrets\secret_gate.py (Tianditu keys must not appear in tracked files)
+    3. desktop  : scripts\build-desktop.ps1 (cargo build + 1100x780 screenshot + mechanics baseline)
+    4. numeric  : python tests\numeric\run_all.py (74 numeric/boundary tests, xfail-aware)
+    5. source   : tools\mechanics\gen-mechanics.ps1 -Check (generated regions match mechanics.json)
+    6. android  : scripts\build-android.ps1 (assembleDebug; install/launch/logcat unless -SkipDevice)
 
   Usage (from anywhere):
     powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1
@@ -54,6 +55,7 @@ $androidScript = Join-Path $PSScriptRoot 'build-android.ps1'
 $numericScript = Join-Path $repoRoot 'tests\numeric\run_all.py'
 $generatorScript = Join-Path $repoRoot 'tools\mechanics\gen-mechanics.ps1'
 $copyScript = Join-Path $repoRoot 'tests\copy\copy_gate.py'
+$secretScript = Join-Path $repoRoot 'tests\secrets\secret_gate.py'
 
 Write-Host "LC SMOKE | repo=$repoRoot"
 Write-Host "LC SMOKE | host=$hostExe"
@@ -104,12 +106,29 @@ if (-not $python) {
         ForEach-Object { $_.Line -replace '^\[FAIL\]\s+', '' }) -join '; '
 }
 
-# --- 2/5 desktop ----------------------------------------------------------
+# --- 2/6 secret gate (Tianditu keys must not be committed) ----------------
+$secretLog = Join-Path $OutDir 'secret.log'
+$secretCode = 1
+$secretDetail = ''
+if (-not $python) {
+    Write-Host '[FAIL] Python 3.10+ not found on PATH; secret gate cannot run' -ForegroundColor Red
+} elseif (-not (Test-Path -LiteralPath $secretScript)) {
+    Write-Host "[FAIL] missing secret gate: $secretScript" -ForegroundColor Red
+} else {
+    $secretArgs = @()
+    $secretArgs += $python.Prefix
+    $secretArgs += $secretScript
+    $secretCode = Invoke-Gate 'secret gate (tests\secrets\secret_gate.py)' $python.Exe $secretArgs $secretLog
+    $secretDetail = (Select-String -LiteralPath $secretLog -Pattern '^\[FAIL\] key:' |
+        ForEach-Object { $_.Line -replace '^\[FAIL\]\s+', '' }) -join '; '
+}
+
+# --- 3/6 desktop ----------------------------------------------------------
 $desktopArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $desktopScript, '-OutDir', $desktopOut)
 & $hostExe @desktopArgs
 $desktopCode = $LASTEXITCODE
 
-# --- 3/5 numeric regression ----------------------------------------------
+# --- 4/6 numeric regression ----------------------------------------------
 $numericLog = Join-Path $OutDir 'numeric.log'
 $numericCode = 1
 $numericDetail = ''
@@ -126,7 +145,7 @@ if (-not $python) {
     if ($detailLine) { $numericDetail = $detailLine.Line.Trim() }
 }
 
-# --- 4/5 single-source generator check -----------------------------------
+# --- 5/6 single-source generator check -----------------------------------
 $mechanicsLog = Join-Path $OutDir 'mechanics-source.log'
 $mechanicsCode = 1
 if (-not (Test-Path -LiteralPath $generatorScript)) {
@@ -136,7 +155,7 @@ if (-not (Test-Path -LiteralPath $generatorScript)) {
     $mechanicsCode = Invoke-Gate 'mechanics single-source (gen-mechanics.ps1 -Check)' $hostExe $generatorArgs $mechanicsLog
 }
 
-# --- 5/5 android ----------------------------------------------------------
+# --- 6/6 android ----------------------------------------------------------
 $androidArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $androidScript, '-OutDir', $androidOut)
 if ($DeviceId) { $androidArgs += @('-DeviceId', $DeviceId) }
 if ($SkipDevice) { $androidArgs += @('-SkipDevice') }
@@ -146,12 +165,13 @@ $androidCode = $LASTEXITCODE
 # --- summary -------------------------------------------------------------
 function Get-Result([int]$Code) { if ($Code -eq 0) { 'PASS' } else { 'FAIL' } }
 $copyResult = Get-Result $copyCode
+$secretResult = Get-Result $secretCode
 $desktopResult = Get-Result $desktopCode
 $numericResult = Get-Result $numericCode
 $mechanicsResult = Get-Result $mechanicsCode
 $androidResult = Get-Result $androidCode
 $overallCode = 0
-foreach ($code in @($copyCode, $desktopCode, $numericCode, $mechanicsCode, $androidCode)) {
+foreach ($code in @($copyCode, $secretCode, $desktopCode, $numericCode, $mechanicsCode, $androidCode)) {
     if ($code -ne 0) { $overallCode = 1 }
 }
 
@@ -161,6 +181,11 @@ if ($copyDetail) {
     Write-Host ("copy     : {0}  ({1}; log: {2})" -f $copyResult, $copyDetail, $copyLog)
 } else {
     Write-Host ("copy     : {0}  (log: {1})" -f $copyResult, $copyLog)
+}
+if ($secretDetail) {
+    Write-Host ("secret   : {0}  ({1}; log: {2})" -f $secretResult, $secretDetail, $secretLog)
+} else {
+    Write-Host ("secret   : {0}  (log: {1})" -f $secretResult, $secretLog)
 }
 Write-Host ("desktop  : {0}  (logs: {1})" -f $desktopResult, $desktopOut)
 if ($numericDetail) {
@@ -181,6 +206,7 @@ $summary = @(
     'time=' + (Get-Date).ToString('s'),
     "repo=$repoRoot",
     "copy=$copyResult",
+    "secret=$secretResult",
     "desktop=$desktopResult",
     "numeric=$numericResult",
     "mech_src=$mechanicsResult",

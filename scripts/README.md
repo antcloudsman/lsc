@@ -45,18 +45,22 @@ powershell -File scripts\smoke.ps1 -SkipDevice
 powershell -File scripts\smoke.ps1 -DeviceId L2E0222531014833
 ```
 
-依次跑 5 个门禁，每个门禁独立子进程，一个红不会截断其它门禁：
+依次跑 6 个门禁，每个门禁独立子进程，一个红不会截断其它门禁：
 
 | # | 门禁 | 命令 | 失败含义 |
 |---|---|---|---|
 | 1 | copy | `python tests\copy\copy_gate.py` | 用户可见文案出现「会员/付费/…」或发行面出现原版审图号、私有瓦片域（见 `tests\copy\README.md`） |
-| 2 | desktop | `scripts\build-desktop.ps1` | 桌面构建/截图/mechanics 基线红 |
-| 3 | numeric | `python tests\numeric\run_all.py` | 数值回归红（含未清理的 xfail → unexpected success） |
-| 4 | mech-src | `tools\mechanics\gen-mechanics.ps1 -Check` | 生成区与 `mechanics.json` 不同源/被手改 |
-| 5 | android | `scripts\build-android.ps1` | APK 构建/真机启动/logcat 红 |
+| 2 | secret | `python tests\secrets\secret_gate.py` | 天地图 key 出现在已跟踪文件里（public 仓库，必须删并轮换，见 `tests\secrets\README.md`） |
+| 3 | desktop | `scripts\build-desktop.ps1` | 桌面构建/截图/mechanics 基线红 |
+| 4 | numeric | `python tests\numeric\run_all.py` | 数值回归红（含未清理的 xfail → unexpected success） |
+| 5 | mech-src | `tools\mechanics\gen-mechanics.ps1 -Check` | 生成区与 `mechanics.json` 不同源/被手改 |
+| 6 | android | `scripts\build-android.ps1` | APK 构建/真机启动/logcat 红（key 缺失会在这里报 `TDT_KEYS_FILE_NOT_FOUND`） |
 
-最后汇总 `copy / desktop / numeric / mech-src / android / overall` 并写
+最后汇总 `copy / secret / desktop / numeric / mech-src / android / overall` 并写
 `checks\smoke-<时间戳>\summary.txt`；全部绿才 `SMOKE: PASS`（exit 0）。
+
+> Android 门禁要在**有天地图 key** 的机器上跑：key 放仓库外的 `E:\APPDetector\secrets\tdt.properties`
+> 或用 `DSH_SECRET_TDT_*` 环境变量，见 `docs/BUILD-SECRETS.md`。
 
 ## 提交前路径守卫（手动，不装 hook）
 
@@ -81,6 +85,7 @@ powershell -File scripts\check-staged-paths.ps1 -Branch feature/lc-server-smoke-
 ```
 checks\smoke-<时间戳>\
   copy.log                 # 文案/红线门禁输出（文件:行:词）
+  secret.log               # 密钥闸门输出（文件:行，不打印 key 值）
   desktop\screenshot.png   # 1100×780 桌面截图
   desktop\cargo-build.log
   desktop\result.txt

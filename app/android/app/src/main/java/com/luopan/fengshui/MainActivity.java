@@ -492,15 +492,46 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         @Override
         protected void onLayout(boolean changed, int l, int t, int r, int b) {
             int h = b - t;
+            // 关键：本 Activity 现在拿到的是**整窗 2700**（内容画到导航栏下方），而锚点的分母
+            // REF_CONTENT_H=2578 是**内容帧**（原版 dump 根节点 [0,0][1228,2578]）。两者混乘就是
+            // 2700/2578=1.0473 倍的系统性放大（smoke 实测：474→496、2342→2453，18 个吻合 ≤0.6px）。
+            // 因此还原时必须用内容帧高，不能用列高。
+            int frameH = contentFrameHeight(h);
             int w = Math.max(0, r - l - getPaddingLeft() - getPaddingRight());
             for (int i = 0; i < getChildCount(); i++) {
                 View ch = getChildAt(i);
                 int chH = ch.getMeasuredHeight();
                 float ratio = i < anchors.length ? anchors[i] : 0.5f;
-                int top = Math.round(ratio * h) - chH / 2;
+                int top = Math.round(ratio * frameH) - chH / 2;
                 top = Math.max(0, Math.min(top, h - chH));
                 ch.layout(getPaddingLeft(), top, getPaddingLeft() + w, top + chH);
             }
+        }
+
+        /** 内容帧高 = 列高 − 系统栏占位（本机 2700−122=2578）；取不到时退回可见显示帧。 */
+        private int contentFrameHeight(int h) {
+            int insetBottom = 0;
+            if (android.os.Build.VERSION.SDK_INT >= 23) {
+                android.view.WindowInsets wi = getRootWindowInsets();
+                if (wi != null) {
+                    if (android.os.Build.VERSION.SDK_INT >= 30) {
+                        insetBottom = wi.getInsets(
+                                android.view.WindowInsets.Type.navigationBars()).bottom;
+                    } else {
+                        insetBottom = wi.getStableInsetBottom();
+                    }
+                }
+            }
+            if (insetBottom > 0 && h - insetBottom > 0) {
+                return h - insetBottom;
+            }
+            android.graphics.Rect vis = new android.graphics.Rect();
+            getWindowVisibleDisplayFrame(vis);
+            int vh = vis.height();
+            if (vh > 0 && vh <= h) {
+                return vh;
+            }
+            return h;
         }
     }
 

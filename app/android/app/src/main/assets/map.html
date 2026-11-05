@@ -104,6 +104,9 @@ var roadNet = false;           // F-04 路网视图：vec 路网图面 + cva 路
 var baseBeforeRoad = null;     // 进入路网视图前的底图，关闭时恢复
 var ridgeOn = false;           // F-06 山脊：DEM 曲率派生高亮（非官方山脉边界）
 var ovKind = "", ovPoints = [], ovEls = [], ovLayer = null;   // F-06/F-07 点标叠加
+var wbOn = false;              // F-10 历史影像：Esri Wayback 近似（Google 历年影像不可得）
+var wbRelease = "";            // Wayback 释放号（来自 waybackconfig.json）
+var baseBeforeWb = null;       // 进入历史影像前的底图
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -140,6 +143,13 @@ mapEl.appendChild(annoLayer);
 
 /* ---------------- 2D 瓦片 ---------------- */
 function tileUrl(layer, z, x, y) {
+  if (layer === "wayback") {
+    /* F-10：Esri Wayback 历史影像（释放号来自 waybackconfig.json，见 docs/features/map-free-sources.md）。
+     * 来源/许可：Esri, Maxar, Earthstar Geographics 等；仅自用展示，页面/客户端需标注来源。 */
+    if (!wbRelease) return "";
+    return "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0"
+      + "/default028mm/MapServer/tile/" + wbRelease + "/" + z + "/" + y + "/" + x;
+  }
   var s = SUB[(((x + y) % 8) + 8) % 8];
   return "https://" + s + ".tianditu.gov.cn/" + layer + "_w/wmts" +
     "?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=" + layer +
@@ -176,6 +186,7 @@ function render() {
 }
 
 function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
+  if (!layer) { layerEl.innerHTML = ""; return; }
   var html = "";
   for (var y = y0; y <= y1; y++) {
     for (var x = x0; x <= x1; x++) {
@@ -200,7 +211,7 @@ function setBase(b) {
     emit({ type: "roadnet", on: false, mode: "base" });
   }
   base = b;
-  anno = (b === "img") ? "cia" : (b === "ter" ? "cta" : "cva");
+  anno = (b === "img") ? "cia" : (b === "ter" ? "cta" : (b === "wayback" ? "" : "cva"));
   document.getElementById("btn_vec").className = (b === "vec") ? "active" : "";
   document.getElementById("btn_img").className = (b === "img") ? "active" : "";
   document.getElementById("btn_ter").className = (b === "ter") ? "active" : "";
@@ -255,6 +266,36 @@ function setRidge(on) {
   updateHud();
   console.log("LC3D ridge on=" + ridgeOn);
   return ridgeOn;
+}
+
+/* ---- F-10 历史影像（Esri Wayback 近似） -------------------------------------
+ * 原版是 Google Earth 历年影像（dex: GoogleHistoryHelper/DBRootV5/QTree），不可合规接入；
+ * 免费近似只有 Esri Wayback（公开历年影像瓦片，释放号见 waybackconfig.json），
+ * 来源/许可：Esri, Maxar, Earthstar Geographics 等（Esri 服务条款，自用展示需标注）。
+ * 另一个可选近似是 Sentinel-2（Copernicus），但需注册/下载、非在线瓦片，这里不接。
+ * -------------------------------------------------------------------------- */
+function setWayback(on, release) {
+  on = !!on;
+  if (release) wbRelease = String(release);
+  wbOn = on;
+  if (on) {
+    if (base !== "wayback") baseBeforeWb = base;
+    setBase("wayback");
+  } else {
+    setBase(baseBeforeWb || "img");
+    baseBeforeWb = null;
+  }
+  emit({ type: "wayback", on: wbOn, release: wbRelease });
+  console.log("LC3D wayback on=" + wbOn + " release=" + wbRelease);
+  return wbOn;
+}
+
+function setWaybackRelease(release) {
+  wbRelease = String(release || "");
+  if (wbOn) {
+    if (mode === "3d") { drape = "wayback"; refreshPatchTexture(); } else render();
+  }
+  return wbRelease;
 }
 
 /* ---- F-06/F-07 点标叠加 ----------------------------------------------------
@@ -1589,6 +1630,7 @@ function getState() {
     contour: contourOn, ground: groundMode, needle: needleOn,
     base: base, drape: drape, roadNet: roadNet,
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind,
+    wayback: wbOn, waybackRelease: wbRelease,
     uiMode: uiMode,
     attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
@@ -1610,6 +1652,8 @@ window.__LC3D = {
   attribution: getAttribution,
   setRoadNet: setRoadNet,
   setRidge: setRidge,
+  setWayback: setWayback,
+  setWaybackRelease: setWaybackRelease,
   overlay: setOverlay,
   clearOverlay: clearOverlay,
   elevAt: elevAt,
@@ -1760,6 +1804,8 @@ function applyIn3D(hash) {
     if (hashHas(h, "srcpanel")) openSources();
     if (hashHas(h, "roadnet") && !roadNet) setRoadNet(true);
     if (hashHas(h, "ridge") && !ridgeOn) setRidge(true);
+    var mwb = h.match(/[&#]wayback=([\w-]+)/);
+    if (mwb) setWayback(true, mwb[1]);
     if (hashHas(h, "fs") && !fullScreen) toggleFullScreen();
     var msi = h.match(/src=(\d+)/);
     if (msi) selectSource(parseInt(msi[1], 10));
@@ -1816,7 +1862,8 @@ function runAT() {
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
     "getState", "getFps", "setUiMode", "getAttribution", "setRoadNet",
-    "setRidge", "setOverlay", "clearOverlay", "elevAt"];
+    "setRidge", "setOverlay", "clearOverlay", "elevAt",
+    "setWayback", "setWaybackRelease"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

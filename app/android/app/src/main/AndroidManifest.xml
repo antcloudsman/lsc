@@ -51,6 +51,18 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-10 历史影像（LC地图 新建页）：Esri Wayback 时相 + 本机快照 -->
+        <activity
+            android:name=".HistoryImageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
+        <!-- F-16 地理影像（LC地图 新建页）：公开图库（Bing 每日壁纸）+ 署名 -->
+        <activity
+            android:name=".GeographicImageryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

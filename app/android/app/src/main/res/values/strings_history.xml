@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-10 历史影像文案（LC地图）。Google 历年影像不可得；Esri Wayback 近似并标注来源/许可。 -->
+    <string name="lc_history_title">历史影像</string>
+    <string name="lc_history_note">原版为 Google Earth 历年影像（不可合规接入）。这里用 Esri Wayback 公开历史影像近似，来源：Esri、Maxar、Earthstar Geographics 等，许可：Esri 服务条款（自用展示并标注来源）。</string>
+    <string name="lc_history_attribution">影像来源：Esri Wayback · © Esri / Maxar / Earthstar Geographics</string>
+    <string name="lc_history_source">历史影像：Esri Wayback · %1$s</string>
+    <string name="lc_history_current">当前影像（天地图单期）</string>
+    <string name="lc_history_prev">更早</string>
+    <string name="lc_history_next">较新</string>
+    <string name="lc_history_today">今日</string>
+    <string name="lc_history_snapshot">保存快照</string>
+    <string name="lc_history_list">快照列表</string>
+    <string name="lc_history_loading">正在加载 Esri Wayback 时相列表…</string>
+    <string name="lc_history_fail">历史影像时相列表加载失败（网络），点「今日」重试</string>
+    <string name="lc_history_saved">快照已保存：%1$s</string>
+    <string name="lc_history_save_fail">快照保存失败（系统版本限制）</string>
+    <string name="lc_history_empty">还没有快照。点「保存快照」把当前视野存下来，以后可对比。</string>
+    <string name="lc_history_close">关闭</string>
+    <string name="lc_history_no_more">没有更早的时相了</string>
+</resources>

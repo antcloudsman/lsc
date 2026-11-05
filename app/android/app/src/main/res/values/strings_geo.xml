@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-16 地理影像文案（LC地图）。公开图库替代：Bing 每日壁纸（署名随图展示）。 -->
+    <string name="lc_geo_title">地理影像</string>
+    <string name="lc_geo_loading">正在获取每日影像…</string>
+    <string name="lc_geo_fail">影像获取失败（网络或图源不可用），点「今日」重试</string>
+    <string name="lc_geo_source">图源：Bing 每日壁纸（公开接口）· 版权归原作者/图库（署名见图片下方）</string>
+    <string name="lc_geo_today">今日</string>
+    <string name="lc_geo_download">下载</string>
+    <string name="lc_geo_share">分享</string>
+    <string name="lc_geo_map">地图（无坐标）</string>
+    <string name="lc_geo_saved">已保存到：%1$s</string>
+    <string name="lc_geo_save_fail">保存失败</string>
+    <string name="lc_geo_no_more">没有更早的影像了</string>
+    <string name="lc_geo_share_text">%1$s · %2$s</string>
+</resources>

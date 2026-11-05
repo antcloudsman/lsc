@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-16 地理影像（LC地图，2026-11-05）：AT 稳定 id，前缀 lc_geo_* -->
+    <item name="lc_geo_back" type="id" />
+    <item name="lc_geo_title" type="id" />
+    <item name="lc_geo_content" type="id" />
+    <item name="lc_geo_status" type="id" />
+    <item name="lc_geo_date" type="id" />
+    <item name="lc_geo_image" type="id" />
+    <item name="lc_geo_title_text" type="id" />
+    <item name="lc_geo_credit" type="id" />
+    <item name="lc_geo_prev" type="id" />
+    <item name="lc_geo_next" type="id" />
+    <item name="lc_geo_download" type="id" />
+    <item name="lc_geo_share" type="id" />
+    <item name="lc_geo_map" type="id" />
+</resources>

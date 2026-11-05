@@ -36,6 +36,7 @@ public class CompassView extends View {
     /** F-17：天干地支辅助线开关。 */
     public void setTianzhiLines(boolean on) {
         this.tianzhiLines = on;
+        android.util.Log.d("LCCOMPASS", "view tianzhiLines=" + on);
         invalidate();
     }
     private boolean followSensor = true;
@@ -454,19 +455,24 @@ public class CompassView extends View {
      * 12 地支主线（30° 一条）+ 10 天干细线（36° 一条），随盘面旋转；只做对位参考，不画标注/图层。
      */
     private void drawTianzhiLines(Canvas canvas, float cx, float cy, float r) {
+        // 2026-11-05 复核：原实现 α70/α45 + 1px（不乘 density），叠在整幅盘面位图上基本看不见，
+        // 所以「开了但看不到」不是绘制顺序问题（本方法在 artwork 之后调用），是对比度太低。
+        // 现提高对比度并按密度缩放线宽；半径都落在盘面可见区内（0.98r→0.30r / 0.98r→0.55r）。
+        float d = density();
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1f);
-        paint.setColor(Color.argb(70, 220, 190, 130));
+        paint.setStrokeWidth(1.4f * d);
+        paint.setColor(Color.argb(165, 240, 217, 168));
         for (int i = 0; i < 12; i++) {
             float deg = i * 30f;
-            float[] p0 = pos(cx, cy, r * 0.96f, deg, heading);
-            float[] p1 = pos(cx, cy, r * 0.28f, deg, heading);
+            float[] p0 = pos(cx, cy, r * 0.98f, deg, heading);
+            float[] p1 = pos(cx, cy, r * 0.30f, deg, heading);
             canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
         }
-        paint.setColor(Color.argb(45, 180, 200, 220));
+        paint.setStrokeWidth(1.0f * d);
+        paint.setColor(Color.argb(130, 159, 208, 255));
         for (int i = 0; i < 10; i++) {
             float deg = i * 36f;
-            float[] p0 = pos(cx, cy, r * 0.96f, deg, heading);
+            float[] p0 = pos(cx, cy, r * 0.98f, deg, heading);
             float[] p1 = pos(cx, cy, r * 0.55f, deg, heading);
             canvas.drawLine(p0[0], p0[1], p1[0], p1[1], paint);
         }

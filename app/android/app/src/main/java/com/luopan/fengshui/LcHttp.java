@@ -48,6 +48,25 @@ final class LcHttp {
         return bytes(url, MAX_BYTES);
     }
 
+    /**
+     * 日志/异常里的 URL 脱敏（MD-01）：只保留 `scheme://host/path`，**剔掉整个 query**。
+     *
+     * 天地图接口的 `tk=` 就在 query 里；以前失败日志把整条 URL 打进 logcat，
+     * 任何能读 logcat 的通道都能把 key 取走。异常文案也走这里，
+     * 免得调用方 `Log.w(..., e)` 又把带 tk 的 message 漏出去。
+     */
+    static String redact(String url) {
+        if (url == null) return "";
+        try {
+            URL u = new URL(url);
+            String path = u.getPath() == null ? "" : u.getPath();
+            return u.getProtocol() + "://" + u.getHost() + path;
+        } catch (Exception e) {
+            int q = url.indexOf('?');
+            return q < 0 ? url : url.substring(0, q);
+        }
+    }
+
     static byte[] bytes(String url, int maxBytes) throws Exception {
         InputStream in = openStream(url, maxBytes);
         try {
@@ -79,12 +98,12 @@ final class LcHttp {
             code = c.getResponseCode();
         } catch (Exception e) {
             c.disconnect();
-            Log.w(TAG, "GET open fail " + url + " : " + e);
+            Log.w(TAG, "GET open fail " + redact(url) + " : " + e);
             throw e;
         }
         if (code != 200) {
             c.disconnect();
-            throw new IOException("HTTP " + code + " " + url);
+            throw new IOException("HTTP " + code + " " + redact(url));
         }
         InputStream raw = new FilterInputStream(c.getInputStream()) {
             @Override
@@ -146,7 +165,7 @@ final class LcHttp {
             total += n;
             if (total > maxBytes) {
                 throw new IOException("响应超过上限 " + maxBytes + " 字节（已读 " + total
-                        + " 字节）：" + url);
+                        + " 字节）：" + redact(url));
             }
         }
     }

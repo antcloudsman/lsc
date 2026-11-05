@@ -2,9 +2,30 @@ plugins {
     id 'com.android.application'
 }
 
+/**
+ * 天地图 key 的**单一来源**（MD-01）：`assets/map.html` 顶部的 `var KEY = "…";`。
+ *
+ * 为什么在这里解析：key 同时被地图页（JS 拼瓦片 URL）和原生侧（分类搜索/超清拼接）用。
+ * 以前 Java 的 `MapKeys.TDT` 复制了一份字面量，换 key 要改两处、漏一处就半瘫；
+ * 现在构建时从 map.html 读出来生成 `BuildConfig.TDT_KEY`，Java 侧不再有第二份字面量。
+ * 换 key 只改 map.html 一行；解析失败直接让构建失败，避免悄悄发出一个没有 key 的包。
+ * key 值本身仍是原版内置的第三方 key（换 key 不在本轮，见 docs/map-bridge.md §2.3）。
+ */
+def tdtKeyFromMapHtml = {
+    def f = file('src/main/assets/map.html')
+    if (!f.exists()) throw new GradleException("缺少 assets/map.html，无法取得天地图 key")
+    def m = (f.getText('UTF-8') =~ /(?m)^\s*var\s+KEY\s*=\s*"([^"]+)"\s*;/)
+    if (!m.find()) throw new GradleException("assets/map.html 里没有 `var KEY = \"…\";`，无法取得天地图 key")
+    return m.group(1)
+}
+
 android {
     namespace 'com.luopan.fengshui'
     compileSdk 34
+
+    buildFeatures {
+        buildConfig true          // 只为 BuildConfig.TDT_KEY（由上面的 map.html 解析而来）
+    }
 
     defaultConfig {
         applicationId "com.luopan.fengshui"
@@ -12,6 +33,8 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+
+        buildConfigField "String", "TDT_KEY", "\"${tdtKeyFromMapHtml()}\""
     }
 
     buildTypes {

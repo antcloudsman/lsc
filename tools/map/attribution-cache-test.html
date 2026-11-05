@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>MD-02 attribution + MD-03 tile cache format</title></head>
+<body>
+<!--
+  MD-02 / MD-03 无头验证（Chrome headless + 本地 http）。
+  用法：仓库根目录起 `python -m http.server 8793`，打开
+  http://127.0.0.1:8793/tools/map/attribution-cache-test.html
+
+  期望（控制台）：
+    MC1 基线角注 = 天地图地形
+    MC2 setWayback(true) 后角注/#srcInfo/getState().source 全变 Esri Wayback（不再出现天地图）
+    MC3 setWayback(false) 恢复天地图地形
+    MC4 drapeLabel('wayback') = 历史影像(Esri)（HUD 贴面标签）
+    MC5 缓存里同时出现 data:image/png（注记，保 alpha）与 data:image/jpeg（底图）
+-->
+<iframe id="f" src="../../app/android/app/src/main/assets/map.html#lat=39.9&lng=116.4&z=10"
+        width="420" height="820"></iframe>
+<script>
+var R = [];
+function ok(name, cond, info) {
+  R.push((cond ? "PASS " : "FAIL ") + name + (info ? " " + info : ""));
+  console.log("MC " + (cond ? "PASS" : "FAIL") + " " + name + (info ? " " + info : ""));
+}
+function has(s, sub) { return (s || "").indexOf(sub) >= 0; }
+
+setTimeout(function () {
+  var w = document.getElementById('f').contentWindow;
+  try {
+    /* ---- MD-02 ---- */
+    var a0 = w.getAttribution();
+    ok('MC1', has(a0.text, '天地图') && a0.equivalent === true, 'text=' + a0.text);
+
+    w.setWayback(true, '43291');
+    var a1 = w.getAttribution();
+    var si = w.document.getElementById('srcInfo').textContent;
+    var st = w.getState();
+    ok('MC2',
+      has(a1.text, 'Esri Wayback') && has(a1.text, 'Maxar') && !has(a1.text, '天地图') &&
+      has(si, 'Esri Wayback') && !has(si, '天地图') &&
+      st.source === 'Esri 历史影像' && st.attribution.equivalent === false &&
+      st.attribution.original === null && st.wayback === true,
+      'attr=' + a1.text + ' | srcInfo=' + si + ' | source=' + st.source);
+
+    w.setWayback(false);
+    var a2 = w.getAttribution();
+    var st2 = w.getState();
+    ok('MC3', has(a2.text, '天地图') && !has(a2.text, 'Esri') && st2.source === '天地图地形',
+      'text=' + a2.text + ' | source=' + st2.source);
+
+    var dl = (typeof w.drapeLabel === 'function') ? w.drapeLabel('wayback') : '(no fn)';
+    ok('MC4', dl === '历史影像(Esri)', 'drapeLabel=' + dl);
+
+    /* ---- MD-03：开缓存后重新渲染，再看缓存命中的瓦片是 PNG 还是 JPEG ---- */
+    w.enableTileCache(true);
+    w.__LC3D.setView(39.9, 116.4, 10);
+    setTimeout(function () {
+      w.__LC3D.setView(39.905, 116.405, 10);
+      setTimeout(function () {
+        var imgs = w.document.querySelectorAll('img.tile');
+        var png = 0, jpg = 0, net = 0;
+        for (var i = 0; i < imgs.length; i++) {
+          var s = imgs[i].getAttribute('src') || '';
+          if (s.indexOf('data:image/png') === 0) png++;
+          else if (s.indexOf('data:image/jpeg') === 0) jpg++;
+          else net++;
+        }
+        console.log('MD3 tiles png=' + png + ' jpeg=' + jpg + ' network=' + net +
+          ' cacheCount=' + w.getState().cacheCount);
+        ok('MC5', png > 0 && jpg > 0 && w.getState().cache === true,
+          'png=' + png + ' jpeg=' + jpg + ' count=' + w.getState().cacheCount);
+
+        /* MC6：注记 PNG 缓存里透明像素真的还在（老实现走 JPEG 时 alpha 全丢） */
+        var zeroAlpha = -1;
+        for (var i2 = 0; i2 < imgs.length; i2++) {
+          var src2 = imgs[i2].getAttribute('src') || '';
+          if (src2.indexOf('data:image/png') !== 0) continue;
+          var cv = w.document.createElement('canvas');
+          cv.width = 256; cv.height = 256;
+          var cx = cv.getContext('2d');
+          cx.drawImage(imgs[i2], 0, 0);
+          var px = cx.getImageData(0, 0, 256, 256).data;
+          var z = 0;
+          for (var p = 3; p < px.length; p += 4) if (px[p] === 0) z++;
+          zeroAlpha = z;
+          break;
+        }
+        ok('MC6', zeroAlpha > 0, 'alpha0像素=' + zeroAlpha);
+
+        /* MC7：3D HUD 的贴面标签（等 DEM 就绪） */
+        w.setWayback(true, '43291');
+        w.setMode('3d');
+        var tries = 0;
+        var iv = setInterval(function () {
+          var ready = w.__LC3D.state().hasTexture && w.__LC3D.state().demZoom;
+          if (!ready && ++tries < 50) return;
+          clearInterval(iv);
+          var hud = w.document.getElementById('hud');
+          var txt = hud ? hud.textContent : '';
+          console.log('MD3 hud=' + txt.replace(/\n/g, ' / '));
+          ok('MC7', has(txt, '历史影像(Esri)') && !has(txt, '贴面 地形'), 'hud=' + txt.replace(/\n/g, ' / '));
+
+          var fails = 0;
+          for (var k = 0; k < R.length; k++) if (R[k].indexOf('FAIL') === 0) fails++;
+          console.log('MC-RESULT ' + (fails === 0 ? 'PASS' : 'FAIL') + ' total=' + R.length + ' fails=' + fails);
+        }, 500);
+      }, 5000);
+    }, 4000);
+  } catch (e) { console.log('MCERR ' + e); }
+}, 4000);
+</script>
+</body>
+</html>

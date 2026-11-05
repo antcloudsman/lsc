@@ -16,6 +16,32 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan" />
 
+        <!--
+          缺失模块页（设置 / 工具管理 / 收藏点）。
+          exported=true 是为了 AT 能用 `adb shell am start -n com.luopan.fengshui/.XxxActivity`
+          直达页面（未导出时 shell uid 2000 会被 SecurityException 拒）；页面本身无敏感数据。
+          入口何时挂到主界面，等原版导航表（LC逆向 Frida 抓 Activity.start）落地。
+        -->
+        <activity
+            android:name=".SettingActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Luopan" />
+
+        <activity
+            android:name=".ToolsManagerActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Luopan" />
+
+        <activity
+            android:name=".InterestListActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Luopan" />
+
+        <activity
+            android:name=".SaveInterestActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Luopan" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

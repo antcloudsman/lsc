@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  缺失模块页面的稳定 id（AT 按 resource-id 定位，不依赖文案）。
+  规范：lc_<page>_<element>[_<index>]，index 从 0 起，顺序与页面自上而下一致。
+  单独成文件，避免和 ids.xml（其它分支）冲突。
+-->
+<resources>
+
+    <!-- 设置页 SettingActivity -->
+    <item name="lc_setting_back" type="id" />
+    <item name="lc_setting_title" type="id" />
+    <item name="lc_setting_list" type="id" />
+    <item name="lc_setting_groups" type="id" />
+    <item name="lc_setting_group_0" type="id" />
+    <item name="lc_setting_group_1" type="id" />
+    <item name="lc_setting_group_2" type="id" />
+    <item name="lc_setting_group_3" type="id" />
+    <item name="lc_setting_group_4" type="id" />
+    <item name="lc_setting_group_5" type="id" />
+    <item name="lc_setting_group_6" type="id" />
+    <item name="lc_setting_group_7" type="id" />
+    <item name="lc_setting_row_0" type="id" />
+    <item name="lc_setting_row_1" type="id" />
+    <item name="lc_setting_row_2" type="id" />
+    <item name="lc_setting_row_3" type="id" />
+    <item name="lc_setting_row_4" type="id" />
+    <item name="lc_setting_row_5" type="id" />
+    <item name="lc_setting_row_6" type="id" />
+    <item name="lc_setting_row_7" type="id" />
+    <item name="lc_setting_row_8" type="id" />
+    <item name="lc_setting_row_9" type="id" />
+    <item name="lc_setting_row_10" type="id" />
+    <item name="lc_setting_row_11" type="id" />
+    <item name="lc_setting_switch_0" type="id" />
+    <item name="lc_setting_switch_1" type="id" />
+    <item name="lc_setting_switch_2" type="id" />
+    <item name="lc_setting_switch_3" type="id" />
+    <item name="lc_setting_switch_4" type="id" />
+    <item name="lc_setting_switch_5" type="id" />
+    <item name="lc_setting_switch_6" type="id" />
+    <item name="lc_setting_switch_7" type="id" />
+    <item name="lc_setting_switch_8" type="id" />
+    <item name="lc_setting_switch_9" type="id" />
+    <item name="lc_setting_switch_10" type="id" />
+    <item name="lc_setting_switch_11" type="id" />
+
+    <!-- 工具管理页 ToolsManagerActivity（16 项固定，顺序见 orig-more.xml） -->
+    <item name="lc_toolmgr_back" type="id" />
+    <item name="lc_toolmgr_title" type="id" />
+    <item name="lc_toolmgr_list" type="id" />
+    <item name="lc_toolmgr_item_0" type="id" />
+    <item name="lc_toolmgr_item_1" type="id" />
+    <item name="lc_toolmgr_item_2" type="id" />
+    <item name="lc_toolmgr_item_3" type="id" />
+    <item name="lc_toolmgr_item_4" type="id" />
+    <item name="lc_toolmgr_item_5" type="id" />
+    <item name="lc_toolmgr_item_6" type="id" />
+    <item name="lc_toolmgr_item_7" type="id" />
+    <item name="lc_toolmgr_item_8" type="id" />
+    <item name="lc_toolmgr_item_9" type="id" />
+    <item name="lc_toolmgr_item_10" type="id" />
+    <item name="lc_toolmgr_item_11" type="id" />
+    <item name="lc_toolmgr_item_12" type="id" />
+    <item name="lc_toolmgr_item_13" type="id" />
+    <item name="lc_toolmgr_item_14" type="id" />
+    <item name="lc_toolmgr_item_15" type="id" />
+
+    <!-- 收藏点列表 InterestListActivity -->
+    <item name="lc_interest_back" type="id" />
+    <item name="lc_interest_title" type="id" />
+    <item name="lc_interest_list" type="id" />
+
+    <!-- 保存收藏点 SaveInterestActivity -->
+    <item name="lc_save_back" type="id" />
+    <item name="lc_save_title" type="id" />
+    <item name="lc_save_form" type="id" />
+
+</resources>

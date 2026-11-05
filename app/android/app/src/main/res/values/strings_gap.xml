@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  缺失模块页面文案。证据未落地的标题/条目一律留空，禁止按想象填写；
+  待 docs/gap-modules/*.md 到位后只改这里，不改代码。
+-->
+<resources>
+    <string name="lc_back">←</string>
+
+    <!-- 设置页：标题待 docs/gap-modules/setting.md -->
+    <string name="lc_setting_title"></string>
+
+    <!-- 工具管理页：标题待 docs/gap-modules/tools.md -->
+    <string name="lc_toolmgr_title"></string>
+
+    <!-- 收藏点列表/保存：标题与字段文案待 docs/gap-modules/interest.md -->
+    <string name="lc_interest_title"></string>
+    <string name="lc_save_title"></string>
+</resources>

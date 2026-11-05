@@ -261,36 +261,14 @@ public class GeographicImageryActivity extends LcFeatureActivity {
         creditView.setText(it.credit);
         final String url = it.url;
         POOL.execute(() -> {
+            // C-02：走公共 LcImage（两遍流式：先 bounds 再按 2 的幂 inSampleSize），
+            // 全程不持有整包 byte[]；UA/超时/8MB 字节闸门由 LcHttp.openStream 统一管。
             Bitmap bmp = null;
-            HttpURLConnection c = null;
             try {
-                c = (HttpURLConnection) new URL(url).openConnection();
-                c.setConnectTimeout(8000);
-                c.setReadTimeout(12000);
-                c.setRequestProperty("User-Agent", LcHttp.UA);
-                java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
-                try (InputStream in = c.getInputStream()) {
-                    byte[] buf = new byte[8192];
-                    int n;
-                    while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
-                }
-                byte[] data = bos.toByteArray();
-                // C-02：外部图（Bing 4K）先 bounds 再按目标宽度采样，禁止全尺寸解码。
-                BitmapFactory.Options bounds = new BitmapFactory.Options();
-                bounds.inJustDecodeBounds = true;
-                BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
-                if (bounds.outWidth > 0 && bounds.outHeight > 0) {
-                    int target = Math.min(getResources().getDisplayMetrics().widthPixels, 1600);
-                    int sample = 1;
-                    while (bounds.outWidth / sample > target) sample *= 2;
-                    BitmapFactory.Options opts = new BitmapFactory.Options();
-                    opts.inSampleSize = sample;
-                    bmp = BitmapFactory.decodeByteArray(data, 0, data.length, opts);
-                }
+                int target = Math.min(getResources().getDisplayMetrics().widthPixels, 1600);
+                bmp = LcImage.decodeSampled(url, target);
             } catch (Throwable ignored) {
                 // 保持旧图
-            } finally {
-                if (c != null) c.disconnect();
             }
             final Bitmap b = bmp;
             MAIN.post(() -> {

@@ -1068,30 +1068,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         bearingFacing = 0;
     }
 
-    /** 屏幕中心打点：拖图把中心对到目标后点「添加点」，调地图 lc_measure_addCenter（不吸附）。 */
+    /**
+     * 屏幕中心打点：拖图把中心对到目标后点「添加点」，调地图 lc_measure_addCenter（不吸附）。
+     * lc_measure_addCenter 已在主线的 map.html 里（1c54aa3，早于本分支基点），无需探测回退。
+     */
     private void addMeasurePoint() {
         if (compassMapView == null) return;
-        compassMapView.evaluateJavascript("typeof lc_measure_addCenter", v -> {
-            if (v == null || !v.contains("function")) {
-                toast("地图侧打点接口待接入");
-                return;
-            }
-            js("lc_measure_addCenter()");
-            compassMapView.evaluateJavascript(
-                    "(function(){var s=getState();return s.lat+','+s.lng;})()",
-                    c -> {
-                        String[] parts = decodeJsString(c).split(",");
-                        if (parts.length == 2) {
-                            try {
-                                measureCenters.add(new double[]{
-                                        Double.parseDouble(parts[0].trim()),
-                                        Double.parseDouble(parts[1].trim())});
-                                updateMeasureBearing();
-                            } catch (NumberFormatException ignored) {
-                            }
+        js("lc_measure_addCenter()");
+        compassMapView.evaluateJavascript(
+                "(function(){var s=getState();return s.lat+','+s.lng;})()",
+                c -> {
+                    String[] parts = decodeJsString(c).split(",");
+                    if (parts.length == 2) {
+                        try {
+                            measureCenters.add(new double[]{
+                                    Double.parseDouble(parts[0].trim()),
+                                    Double.parseDouble(parts[1].trim())});
+                            updateMeasureBearing();
+                        } catch (NumberFormatException ignored) {
                         }
-                    });
-        });
+                    }
+                });
     }
 
     private void undoMeasurePoint() {

@@ -32,6 +32,9 @@ import java.util.Locale;
  * lc_track_load(segments) / lc_track_progress(ratio) / lc_track_play(rate) /
  * lc_track_pause() / lc_track_follow(on) / lc_track_clear()；getState().track。
  * 文案禁词：不出现视频/会员字样；无门槛、无锁。
+ *
+ * 非 1:1（改进项）：原版无参启动是 toast「视频地址为空」+ 立即 finish，即「无数据就进不去」；
+ * LC 改成无数据也能进、显示空态引导（`lc_track_replay_empty`）。这一条是对原版的改进，不是复刻。
  */
 public class TrackReplayActivity extends LcFeatureActivity {
 
@@ -151,14 +154,30 @@ public class TrackReplayActivity extends LcFeatureActivity {
             }
         });
         map.loadUrl("file:///android_asset/map.html#in3d");
-        content.addView(map, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+
+        // 控件不再浮在 WebView 上：本机 WebView 会把浮层上的点击全部吃掉（点播放/倍速无效、
+        // 反而给地图发 pick）。改成竖向分栏——跟随行 / 地图（占满剩余）/ 底部控制栏，各占各的空间。
+        LinearLayout column = new LinearLayout(this);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.setBackgroundColor(Color.rgb(24, 20, 16));
+
+        // 非 1:1（改进项）：原版无数据直接 finish；这里给空态引导，控件仍可用（不锁）。
+        if (points.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setId(R.id.lc_track_replay_empty);
+            empty.setText(R.string.lc_track_replay_empty);
+            empty.setTextSize(13f);
+            empty.setTextColor(Color.rgb(235, 228, 215));
+            empty.setBackgroundColor(Color.argb(190, 24, 20, 16));
+            empty.setPadding(dp(12), dp(8), dp(12), dp(8));
+            column.addView(empty);
+        }
 
         // 顶部：跟随开关
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        top.setBackgroundColor(Color.argb(190, 24, 20, 16));
+        top.setBackgroundColor(Color.rgb(24, 20, 16));
         top.setPadding(dp(12), dp(6), dp(12), dp(6));
         TextView followLabel = new TextView(this);
         followLabel.setText(R.string.lc_track_replay_follow);
@@ -175,16 +194,14 @@ public class TrackReplayActivity extends LcFeatureActivity {
         });
         top.addView(followSwitch, new LinearLayout.LayoutParams(
                 LcUi.dp(this, 46.2f), LcUi.dp(this, 23.1f)));
-        FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-        tlp.gravity = Gravity.TOP;
-        tlp.topMargin = dp(4);
-        content.addView(top, tlp);
+        column.addView(top);
+        column.addView(map, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
         // 底部：播放/时间轴/倍速/图例
         LinearLayout bottom = new LinearLayout(this);
         bottom.setOrientation(LinearLayout.VERTICAL);
-        bottom.setBackgroundColor(Color.argb(200, 24, 20, 16));
+        bottom.setBackgroundColor(Color.rgb(24, 20, 16));
         bottom.setPadding(dp(10), dp(6), dp(10), dp(10));
 
         LinearLayout controls = new LinearLayout(this);
@@ -244,10 +261,9 @@ public class TrackReplayActivity extends LcFeatureActivity {
         legend.setTextColor(Color.rgb(180, 190, 200));
         bottom.addView(legend);
 
-        FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-        blp.gravity = Gravity.BOTTOM;
-        content.addView(bottom, blp);
+        column.addView(bottom);
+        content.addView(column, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
         handler.post(poll);
     }

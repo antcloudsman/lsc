@@ -793,6 +793,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     startActivity(new android.content.Intent(this, HistoryImageActivity.class));
                 } else if ("历史影像".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
+                } else if ("地理影像".equals(t) && flags.isEnabled("f16")) {
+                    // F-16：更多 → 地理影像 → GeographicImageryActivity（默认开；关掉回退旧 stub）
+                    startActivity(new android.content.Intent(this, GeographicImageryActivity.class));
+                } else if ("地理影像".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
                 } else if ("收藏点".equals(t) && flags.isEnabled("f11")) {
                     // F-11：默认开；关掉则回退旧 stub（调试/回退用）
                     startActivity(new android.content.Intent(this, InterestListActivity.class));

@@ -14,7 +14,7 @@
 | # | 要求 | 提供方 | 说明 |
 |---|---|---|---|
 | M1 | `window.__LC3D` 增：`probe(lat,lng)` → `{elev, slope, aspect, demZoom}`（纯 DEM 采样，不依赖渲染；**必须回报 demZoom**，否则数值不可复现）；`pick(px,py)` → `{lat,lng,elev,slope,aspect,demZoom}`；缺块返回 `null`；`state()` 增 `vexag`、`demZoom` | LC地图 | 现有 `window.__LC3D`/`debugSetView` 已有，扩展即可。**允许降级实现**：射线沿 `demAt` 网格步进 + 二分，而非精确三角面求交；TD-007 仍硬断言，TD-008 放宽到 2 网格 |
-| M2 | **统一 DebugBridge**（与 P0-0 K5、P0-1 S2 同一个 receiver）：`--es cmd js --es b64 <Base64(js)> --es target compass\|map\|both`（默认 `both`；**双 WebView 必须区分**，罗盘 Tab 与地图 Tab 各有一份 `map.html`）；`onConsoleMessage` 两个 WebView 都要挂 → logcat tag **`LCJS`**；结构化行：`LCPROBE ...`、`LCPICK ...`、`LCVEXAG x=..`、`LC3D marker n=..`、`LC3D NODATA lat=.. lng=..` | LC客户端 + LC地图 | 没有 target 区分，TD-010/014 会因另一个 WebView 留 marker 误判 |
+| M2 | **统一 DebugBridge**（与 P0-0 K5、P0-1 S2 同一个 receiver）：`--es cmd js --es value <js>`。**B-02 定案：契约只认 `value`**——基线从未读取 `b64`/`target`（`MainActivity.java` 的 `js` 分支只 `getStringExtra("value")`），旧写法 `--es b64 ... --es target ...` 是 no-op，已从本文件删除；注入同时求值到两个 WebView（`compassMapView` 与 `mapView`），不区分 target。`onConsoleMessage` 两个 WebView 都要挂 → logcat tag **`LCJS`**（基线未覆写 `onConsoleMessage`，因此示例改用 `evaluateJavascript` 的 ValueCallback 输出，见 §1）；结构化行：`LCPROBE ...`、`LCPICK ...`、`LCVEXAG x=..`、`LC3D marker n=..`、`LC3D NODATA lat=.. lng=..` | LC客户端 + LC地图 | `target` 区分能力已按 B-02 取消：TD-010/014 以**当前可见 Tab 的截图**判定，不依赖「只往其中一个 WebView 注入」 |
 | M3 | 同上 M2（合并，不再单列） | — | — |
 | M4 | **坡度/坡向用真实高程计算**，`VEXAG`（垂直放大）只影响渲染；HUD 文案含「垂直放大 2.5×」 | LC地图 | 否则 2.5× 会把坡度算成 2.5 倍虚高 |
 | M5 | 缺块（DEM 404/断网）显示「无数据」，**不得**返回 0 m；连带 `mesh/demoElev/HUD` 容错（约 30–50 行） | LC地图 | 现 `demAt()` 缺块返回 0，会造「假海平面」 |
@@ -33,16 +33,17 @@ $PKG = 'com.luopan.fengshui'
 pwsh -File scripts\build-android.ps1 -DeviceId $DEV -OutDir checks\at-p0-4
 adb -s $DEV logcat -c
 
-# 执行任意 JS（b64；target 区分双 WebView：compass|map|both）
-function Invoke-LCJs([string]$Js, [string]$Target = 'map') {
-  $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Js))
-  adb -s $DEV shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es b64 $b64 --es target $Target | Out-Null
+# 执行任意 JS（B-02 定案：契约只认 value；同一段 JS 会同时求值到两个 WebView）
+# 引号：整条 am 命令用双引号包住，JS 内的单引号先转成 '\''（POSIX 单引号转义）再交给设备 shell
+function Invoke-LCJs([string]$Js) {
+  $payload = $Js.Replace("'", "'\''")
+  adb -s $DEV shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value '$payload'" | Out-Null
   Start-Sleep -Milliseconds 400
 }
 
-# 例：进 3D、固定视角、读状态（地图 Tab）
+# 例：进 3D、固定视角（无返回值）；读状态用「表达式返回值」走 ValueCallback → logcat tag LCJS
 Invoke-LCJs "__LC3D.setMode('3d'); __LC3D.setView(39.9042,116.4074,12,45,0);"
-Invoke-LCJs "console.log('LCSTATE '+JSON.stringify(__LC3D.state()))"
+Invoke-LCJs "JSON.stringify(__LC3D.state())"
 
 # 读日志（只取本功能相关行）
 adb -s $DEV logcat -d -s LCJS | Select-String 'LCPROBE|LCPICK|LCVEXAG|LC3D marker|LC3D NODATA|LCSTATE'
@@ -55,7 +56,7 @@ adb -s $DEV logcat -d -s LCJS | Select-String 'LCPROBE|LCPICK|LCVEXAG|LC3D marke
 **取画布中心像素**（用于 `pick`）：先 `Invoke-LCJs "__LC3D.setView(...)"`，再读 `window.innerWidth/innerHeight`：
 
 ```powershell
-Invoke-LCJs "console.log('LCSIZE '+window.innerWidth+'x'+window.innerHeight)"
+Invoke-LCJs "window.innerWidth+'x'+window.innerHeight"
 ```
 
 ---

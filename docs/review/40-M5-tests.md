@@ -5,10 +5,10 @@
 - **基线**：`develop` @ `d752efaf7936f887a70577681c703497e74e8b57`（tag `review-20261105`）
 - **工作区**：`E:\APPDetector\review-base`（只读；本次未改任何源码）
 - **已读**：22/22 文件逐行读（清单见 §8）；另为取证读了 6 处业务/文档片段（见 §9，未做整文审查）
-- **批次**：第一批（高 2 条 + 交叉引用 1 条 + 5 条必查项结论）已交；第二批（中 7 / 低 5，共 12 条）在 §4；**文件级覆盖与必查项缺口见 §11**
+- **批次**：第一批（高 2 条 + 交叉引用 1 条 + 5 条必查项结论）已交；第二批（中 7 / 低 5，共 12 条）在 §4；第三批（复核补遗：中 1 / 低 3，F-16～F-19）与三处数值修正见 §12；第四批（f6e97dc / ac08694 两笔修复的独立复核 + F-20 + 1440/2267 口径并列 + Q-04/Q-05）见 §13；**文件级覆盖与必查项缺口见 §11**
 - **实测环境**：Python 3.13.14；JDK 17 位于硬编码路径 `C:\Users\Administrator\tools\jdk17_tmp\jdk-17.0.21+9`；`pwsh` 7.6.9；无真机、无 APK
 
-**本批计数**：阻断 0 / 高 2（已证实 2）/ 交叉引用 1（F-03→B-10，不计入 M5 正式数）/ 中 7（已证实 7）/ 低 5（已证实 5）/ 高度可疑待确认 3 / 风险改进 4。
+**本批计数**：阻断 0 / 高 3（已证实 3，含 §13 的 F-20）/ 交叉引用 1（F-03→B-10，不计入 M5 正式数）/ 中 8（已证实 8，含 F-17）/ 低 8（已证实 8，含 F-16、F-18、F-19）/ 高度可疑待确认 4（Q-04 新增）/ 风险改进 6（R-05、R-06 新增）。
 
 **复现总账**（本机实跑）：
 
@@ -65,7 +65,7 @@ M5 的 86 条数值用例在本机全绿，**但它绿的覆盖面比它自表�
 
 ### ⑤ 是否覆盖「读数跨方位一致性」而非只测少数点 —— 未达标
 
-- **实现侧航向点**：`oracle.CORPUS`（`tests/numeric/oracle.py` L107-L112）共 41 个，边界密集（0/4.5/5.625/7.5/352.5/359.99/负数/跨圈），但**不是全周扫描**；`test_ends_parity.py`、`test_divergences.py` 仅遍历这 41 点。
+- **实现侧航向点**：`oracle.CORPUS`（`tests/numeric/oracle.py` L107-L112）共 **40** 个（实测 `len(O.CORPUS)==40`；初稿写 41，§12.1 C-1 已更正），边界密集（0/4.5/5.625/7.5/352.5/359.99/负数/跨圈），但**不是全周扫描**；`test_ends_parity.py`、`test_divergences.py` 仅遍历这 40 点。
 - **圈层文字**：`test_b2_golden.py` 只验 4 个向量（L21-L26、L41-L49），其余 776 条只验长度/同源。
 - **绘制与读数一致性**：`tests/numeric/test_divergences.py` L5-L7 自述「圈层不再整圈画字，『指针处标签 == 读数』不变量随之失效——文字校验移到 test_b2_golden」，而 `test_b2_golden.py` 对 `ring_center` 仅断言函数体含 `"0.5"` 与 `offset`（L109-L114），**绘制角与取表下标的一致性没有任何执行级断言**。
 - **AT 侧**：读盘面板只在单一航向 `94.04°` 校验（`run-final.ps1` L451-L461，默认 `$ReadSheetHeading = 94.04`），截图固定 `94.04`（L526），开关固定 `0`（L295）。即真机侧跨方位一致性 = 0 个额外点。
@@ -664,7 +664,7 @@ if ($dumpOk) {
 
 **建议**：覆盖清单加一列「触达源码（是/否）」；把 oracle-only 用例单独成组，套件输出分 `oracle_self=37 / impl=46 / java=3` 三类计数。
 
-### R-02（P1）跨方位一致性只有 41 个航向 + 4 个文字向量，无全周/全格扫描
+### R-02（P1）跨方位一致性只有 40 个航向 + 4 个文字向量，无全周/全格扫描
 
 见 §2⑤。实现侧 `ring_index` 的 14×格数（8+8+8+24+72+120+60+24+24+120+64+64+64+120 = 780 格）没有任何一条用例遍历；绘制角 `ring_center` 无执行级断言。
 
@@ -700,7 +700,7 @@ if ($dumpOk) {
 | # | 文件（相对 `review-base`） | 行数 | 结论 |
 |---|---|---|---|
 | 1 | `tests/at/golden_readsheet.py` | 100 | 读盘 golden 由 `mechanics.json` 生成；`jfmt1` HALF_UP 与 Java 对齐；无独立证据 |
-| 2 | `tests/at/run-final.ps1` | 743 | 19 个 `Assert3` 入口；F-05～F-09、F-13 证据 |
+| 2 | `tests/at/run-final.ps1` | 743 | **20 个用例 ID**（`ENV`+19 个；全通过时 19 行 = 18 PASS + 1 DIAG；初稿写「19 个 `Assert3` 入口」，§12.1 C-2 已更正）；F-05～F-09、F-13 证据 |
 | 3 | `tests/numeric/.gitignore` | 2 | 仅忽略 pycache |
 | 4 | `tests/numeric/java/CompassProbe.java` | 45 | 直接调 `CompassData.read`，输出 CSV；无问题 |
 | 5 | `tests/numeric/java/SensorMathProbe.java` | 27 | 三行 ASCII 输出；无问题 |
@@ -854,3 +854,305 @@ $ git ls-files tests/at tests/numeric | wc -l
 - **F-04～F-15 共 12 条（中 7 / 低 5），全部「已证实」**，字段齐全（路径+行号+原文+触发条件+预期vs实际+修复方向），已在 §4 落盘。
 - 母条归属：**F-03 已转交叉引用（母条 B-10，高）**；F-10、F-12 建议母条归 G（M6 文档），M5 只主张「测试资产缺口」。
 - 本批未新增文件/行号引用；所有引用的行号均落在基线文件总行数内（本地机器核对 35 处引用，全部命中）。
+
+---
+
+## 12 第三批：复核补遗（F-16～F-19）+ 数值修正
+
+> 触发：技术总监 2026-11-05 要求「回到 `E:\APPDetector\review-base` 重新确认行号」。本轮把 §3/§4 的 15 条发现的 60 处行号引用逐条回基线复核（结果见 §12.2），并用三组实测（Python 3.13.14 / JDK 17.0.21+9 / 4 万点数值扫描）发现 4 条新问题。本轮**只改本报告文件**，未触碰任何源码（`git status` 仅本文件）。
+
+### 12.1 三处数值修正
+
+**C-1（更正）** `oracle.CORPUS` 是 **40** 个航向，不是 41。实测：
+
+```
+CORPUS len = 40
+unique = 40
+```
+
+受影响位置：§2⑤ 与 R-02（已就地改为 40 并留痕）。§2⑤「41 个」是初稿计数错误，结论方向不变（40 点仍非全周扫描）。
+
+**C-2（更正）** `run-final.ps1` 的用例编号是 **20 个 ID**，不是「19 个 `Assert3` 入口」。实测 `Assert3` 共有 44 行/45 个调用点（含函数定义行、以及 L506 一行两个调用），去重后 ID 为：
+
+```
+ENV, P2-01, P2-03, P2-04, P2-05, P2-06, P2-06-vis, P2-07, P2-08,
+RT-005-UI45, RT-011-diff, RT-011-mechanics, RT-011-numeric,
+SW-006-off-1, SW-006-off-2, SW-006-off-3, SW-006-off-3pix, SW-006-on-1, SW-006-on-2, TD-016
+```
+
+全通过时输出 19 行（18 PASS + 1 DIAG），与 `docs/qa/AT-final-round.md` L28 的「18 PASS / 0 FAIL / 0 BLOCKED / 1 诊断」自洽；初稿把「入口」与「ID」混写，已改。
+
+**C-3（口径说明，非错误）** §8 的行号/总行数是 `wc -l` 口径（文件末尾无换行时按实际行数计），22 文件合计 2974，与 `00-MATRIX.md` 的 M5 合计一致。若用 PowerShell 复核，注意 `Get-Content <f> | Measure-Object -Line` **会跳过空行**（`run-final.ps1` 得 681、`oracle.py` 得 192、22 文件合计 2546），与本报告口径不同；两者都对，但引用行号时请沿用 `wc -l`/`(Get-Content $f).Count` 口径。
+
+### 12.2 行号复核记录（抽检 21 处，全部命中）
+
+| 引用位置 | 断言内容 | 复核结果 |
+|---|---|---|
+| `run_all.py` L31-L35 | `wasSuccessful()` 判绿、返回 0/1 | ✅ 原文一致 |
+| `test_ends_parity.py` L44-L47 / L145-L147 | 无 JDK → `SkipTest`；派生跳过 | ✅ |
+| `test_sensor_math.py` L46-L51 | 文件缺失/无 JDK → 跳过 | ✅ |
+| `run-final.ps1` L698 | `failures=0` + `PASS` 双正则 | ✅ |
+| `run-final.ps1` L740-L742 | `FAIL→1 / BLOCKED→2 / 其余→0` | ✅ |
+| `run-final.ps1` L306-L311 | 缺 prefs 时 `$on = $true` | ✅ |
+| `run-final.ps1` L490-L501 | P2-08 宽松回退 + 两布尔同源 | ✅ |
+| `run-final.ps1` L530-L547 | 无产物判 BLOCKED 并连带 4 项 | ✅ |
+| `run-final.ps1` L583-L589 | 只判 chooser 存在 | ✅ |
+| `run-final.ps1` L375-L379 | `PASS(等价路径)` 未进计数 | ✅ |
+| `at_p0_0_check.ps1` L73-L78 | prefs 缺失默认 true | ✅ |
+| `at_p0_0_check.ps1` L110-L124 | `$hasTrueNorth` 不参与判定 | ✅ |
+| `at_p0_0_check.ps1` L144-L157 | 1/2/0 退出码 | ✅ |
+| `test_b2_golden.py` L90-L97 / L116-L121 | token 断言 / 向量字符串存在性 | ✅ |
+| `oracle.py` L191 | `d60name = JIAZI[dragon60]` | ✅ |
+| `test_formula.py` L124 | 硬写 `JIAZI[59] == "癸亥"` | ✅ |
+| `test_mechanics.py` L112-L121 / L157 | 子串断言 / 自填 `labels_status` | ✅ |
+| `freeze_android_baseline.ps1` L70-L80、L128 | 无条件声明含 `disc-dial-list.png` | ✅ |
+| `main.rs` L241/L387、L643-L650、L671-L674 | 两个 `let m`、常量与四向量 `assert_eq!` | ✅ |
+| `CompassData.java` L221、`CompassReadSheet.java` L27-L29/L47-L49 | `JIAZI[dragon60]`、`%.1f` 头部两行 | ✅ |
+| AT 文档三处 `run-at.ps1` 承诺（L51/L48/L53） | `git ls-files tests/at` 仅 2 个文件 | ✅ |
+
+### F-16（低，已证实）读盘 golden 的 `%.1f` 按十进制 HALF_UP，与 Java `float` 格式化不等价（4% 航向会算错期望值）
+
+**文件行号**：`tests/at/golden_readsheet.py` L22-L24；`app/android/app/src/main/java/com/luopan/fengshui/CompassReadSheet.java` L27-L29、L47-L49；`tests/at/run-final.ps1` L490-L501。
+
+**代码片段原文**（`golden_readsheet.py` L22-L24）：
+
+```python
+def jfmt1(x):
+    """Java String.format("%.1f") 是 HALF_UP，python round 是 half-even，这里对齐 Java。"""
+    return str(Decimal(repr(float(x))).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+```
+
+（`CompassReadSheet.java` L27-L29、L47-L49）：
+
+```java
+public static void show(Activity activity, float heading) {
+    float h = SensorMath.normalize(heading);
+    float back = SensorMath.normalize(heading + 180f);
+...
+    head.setText(String.format(java.util.Locale.US,
+            "向北 %.1f°    坐南 %.1f°\n坐%s山  向%s山",
+```
+
+**触发条件**：`run-final.ps1 -ReadSheetHeading <h>` 传入一个十进制末位为 `x5` 的航向（如 `1.15`、`1.05`、`0.35`）。`jfmt1` 用 `Decimal(repr(float(x)))`——取**十进制字面值**再 HALF_UP；Java 用 `String.format("%.1f", float)`——先按 float32 取实际二进制值再 HALF_UP。二者在 `1.15f`（实际 1.14999997615814208984375）这类值上方向相反。
+
+**预期 vs 实际**（本机 JDK 17 实测 + golden 实跑）：
+
+| 航向 | Java `%.1f` | golden `head1` |
+|---|---|---|
+| `1.15` | `1.1` | `向北 1.2°    坐南 181.2°` |
+| `1.05` | `1.0` | `向北 1.1°    坐南 181.1°` |
+| `94.04`（默认） | `94.0` | `向北 94.0°    坐南 274.0°`（一致） |
+
+0.01° 网格全扫：**1440 / 36000 个航向（4.0%）** golden 与 Java 不一致（口径：**仅「向北」单值、字面值 repr**；若按 App 顶部两行算为 **2267**，两者都对、口径不同，见 §13.4 C-4）；首个不一致点是 `0.35`（golden `0.4`，Java `0.3`），前 10 个为 `0.35/0.45/0.65/0.95/1.05/1.15/1.55/1.65/2.05/2.35`。
+
+**影响与现状**：当前被 F-06 的宽松回退掩盖——`P2-08` 先按整串精确比较（必不中），再回退到「含『向北』且含『坐南』即命中」→ 仍判 PASS。也就是说：**现在这条错 golden 不会报错，但按 F-06 收紧回退后，换任意非默认航向都会误判 FAIL**（F-16 与 F-06 必须同批修）。
+
+**修复方向**：`jfmt1` 改为按 float32 实际值取整（`struct.unpack('f', struct.pack('f', x))` 后 `Decimal(实际值)` + `ROUND_HALF_UP`，与本报告 §12 实验脚本同法）；或 golden 只输出原始角度，比较时再在 PowerShell 侧用同一 `String.Format` 生成期望串。
+
+### F-17（中，已证实）基线冻结脚本硬编码「D5 重冻 / develop HEAD / 5 个盘面按钮」，K-01 重冻会写出错误 manifest
+
+**文件行号**：`tests/numeric/tools/freeze_android_baseline.ps1` L6-L7、L12、L107、L119、L124、L128。
+
+**代码片段原文**：
+
+```powershell
+# L119
+# Android 基线（真机 $Device）· D5 重冻
+# L124
+- 构建：``develop`` HEAD ``$head``；APK ``$($apkItem.Name)`` $($apkItem.Length) B，SHA256 ``$apkHash``
+# L128
+- 说明：D5 起底部「5 个盘面按钮」换成「盘面（4 组 · 常用 5）」入口，本基线含 ``disc-dial-list.png``。
+```
+
+（`$head` 的来源，L107）：
+
+```powershell
+$head = (& git -C (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))) rev-parse --short HEAD 2>$null)
+```
+
+**触发条件**：按 `docs/product/PRD-v0.1.md` §6 的 K-01 重冻流程，用本脚本产出 `docs/qa/baseline-android/round-k01/`（技术总监 2026-11-05 已指定在 `fix-p0\tests\numeric\tools\` 上改该脚本）。
+
+**预期 vs 实际**：
+- 预期：manifest 的轮次名、结构描述、构建来源由参数给出；「构建：X HEAD」必须与 `-Apk` 的实际构建提交一致，否则基线溯源失效。
+- 实际：三处写死——标题永远「D5 重冻」（K-01 重冻会产出 `round-k01/manifest.md` 标题写 D5）、说明永远描述「底部 5 个盘面按钮」（K-01 落地后底部导航已删除，描述与基线内容相反）、构建永远写 `develop`；`$head` 取的是**脚本所在 worktree** 的 HEAD（L107），与 `-Apk` 传入的包没有绑定校验——若 APK 由 `fix-p0` 构建而脚本在 `develop` 树运行，manifest 会把 `develop` 的 HEAD 记成该 APK 的构建提交。
+- 与 F-13 的关系：F-13 是「无条件声明含 `disc-dial-list.png`」，本条是「轮次/结构/构建来源写死」，同属 manifest 失真，但修复点不同。
+
+**修复方向**：新增 `-Round <round-k01>`、`-Branch <fix/p0-review-findings>`、`-BuildHead <sha>` 三个参数（无默认值时进 manifest 的「未提供」段）；`$head` 与 `-BuildHead` 不一致时 `throw`；L128 的结构说明改为参数或条件句。
+
+### F-18（低，已证实）`check_mechanics.py` 的黑名单缺「待确认」，与 `test_mechanics` 判据不同源，单跑该工具会误判 PASS
+
+**文件行号**：`tests/numeric/tools/check_mechanics.py` L19；`tests/numeric/test_mechanics.py` L11-L12；`tests/at/run-final.ps1` L703-L708。
+
+**代码片段原文**（`check_mechanics.py` L19）：
+
+```python
+FORBIDDEN = ("估计", "估算", "estimate", "estimated", "unconfirmed", "TODO", "未确认")
+```
+
+（`test_mechanics.py` L11-L12）：
+
+```python
+FORBIDDEN_SOURCE_TOKENS = ("估计", "估算", "estimate", "estimated", "unconfirmed",
+                           "TODO", "待确认", "未确认")
+```
+
+**触发条件**：`app/mechanics.json` 任一 `values[].source` 出现「待确认」四字。
+
+**预期 vs 实际**：
+- 预期：`RT-011-mechanics` 的判据（`run-final.ps1` L706 匹配 `estimated=0`）与 `test_mechanics` 的黑名单一致。
+- 实际：`check_mechanics.py` 的黑名单少一个 token，会打印 `estimated=0` + `PASS`，`$mechOk` 为真 → `RT-011-mechanics` 判 PASS；同轮 `RT-011-numeric` 依赖 `test_mechanics` 才变红。两处判据不同源，单跑工具（或在别的流水线里只调工具）会得到「19 项 0 估计」的错误结论；README L60 的「0 估计」红线因此有两个版本。
+
+**修复方向**：黑名单抽到共享模块（如 `oracle.py` 常量），`check_mechanics.py` 与 `test_mechanics.py` 都 import 它；`run-final.ps1` L706 的匹配串改为工具输出里的固定字段（`estimated=0 sourced=19` 两者同判）。
+
+### F-19（低，已证实）`img_diff.py` 依赖 Pillow 未登记，缺库时诊断项静默失真
+
+**文件行号**：`tests/numeric/tools/img_diff.py` L9-L11；`tests/numeric/README.md` L15-L16；`tests/at/run-final.ps1` L441-L446；`tests/numeric/tools/at_p0_0_check.ps1` L136-L139。
+
+**代码片段原文**（`img_diff.py` L9-L11）：
+
+```python
+import sys
+
+from PIL import Image
+```
+
+（`README.md` L15-L16 的依赖清单）：
+
+```markdown
+- 依赖：Python 3.10+；Java 对拍需要 JDK17（自动从 `JAVA_HOME` 或
+  `C:\Users\Administrator\tools\jdk17_tmp\jdk-17.0.21+9` 查找，找不到则跳过该组并计入 skipped）。
+```
+
+**触发条件**：干净机器/容器只有 Python 标准库（未装 Pillow），跑 `run-final.ps1` 第 4 段或 `at_p0_0_check.ps1` 的像素 diff。
+
+**预期 vs 实际**：
+- 预期：README 的依赖清单覆盖所有被调用的脚本；诊断项失败时在证据里写明「工具不可用」。
+- 实际：依赖清单无 Pillow；两处调用都用 `$line = & python $helper ...` 直接接 stdout，Pillow 缺失时 `$line` 变成 traceback 文本，仍写进 `DIAGNOSTIC` 行（`run-final.ps1` L445-L446）/`pixel(diagnostic)`（`at_p0_0_check.ps1` L138），看不出「没测成」。`img_diff.py` 只在参数/读图失败时返回 2（L15-L27），import 失败直接抛异常（退出码 1），调用方也没查退出码。
+
+**修复方向**：README 依赖清单补 Pillow（或把 `img_diff.py` 改为纯 stdlib 实现）；两个调用点检查 `$LASTEXITCODE`，非 0 时把诊断项写成 `BLOCKED(工具缺失: Pillow)`。
+
+### 12.3 第三批计数
+
+| 级别 | 数量 | 条目 |
+|---|---|---|
+| 中 | 1 | F-17 |
+| 低 | 3 | F-16、F-18、F-19 |
+| 合计 | 4 | 全部「已证实」 |
+
+补遗后 M5 合计（截至第三批）：**高 2 / 中 8 / 低 8 / 交叉引用 1（F-03→B-10）/ 待确认 3 / 风险改进 4**；F 编号 19 条（F-03 不计入 M5 正式数，故**正式 18 条**）。§13 在此基础上再加 F-20、Q-04/Q-05、R-05/R-06。
+
+---
+
+## 13 第四批：两笔修复的独立复核（f6e97dc / ac08694）+ F-20
+
+> 触发：技术总监 2026-11-05 12:23 交付 `f6e97dc`（F-17）与 `ac08694`（F-16+F-06），要求「审查角色独立复核，不能只有实现方一面之词」。本节所有数字均为本人本机独立重算：**不调用 fix-p0 新增的 verify 脚本**，用自写 Java 探针 + 自写 Python 口径脚本（见 §13.4）；仅在最后一步交叉执行他们的自测作为对照。
+
+### F-20（高，已证实）冻结脚本 `function Adb` 与 `& $adb` 同名 → 无限递归，基线脚本从未执行到设备段
+
+**文件行号**（基线 `review-base` HEAD `78449e1`；该文件最后一次变更是 `7b3175b`）：`tests/numeric/tools/freeze_android_baseline.ps1` L22-L23、L26、L31-L32、L56、L59-L61、L64、L72、L76、L84、L87、L94、L98-L102。
+
+**代码片段原文**（L22-L26）：
+
+```powershell
+$adb = "adb"
+function Adb { & $adb -s $Device @args }
+function Shot([string]$name) {
+    $path = Join-Path $OutDir $name
+    & $adb -s $Device exec-out screencap -p > $path
+```
+
+**触发条件**：脚本执行后的第一条 adb 命令——`-SkipInstall` 时是 L59 `& $adb -s $Device shell am force-stop …`，否则是 L56 的 `install`。**任何一次运行都会触发，没有前置条件。**
+
+**预期 vs 实际**：
+- 预期：`& $adb` 启动 `adb.exe` 子进程，脚本走完装包 → 截图 → dump → manifest。
+- 实际：PowerShell 命令解析顺序是 alias → **function** → cmdlet → 外部命令；`$adb` 的值是字符串 `"adb"`，`& $adb` 按名字解析时**先命中同名函数 `Adb`**（大小写不敏感），函数体里又执行 `& $adb` → 自递归，永远到不了 `adb.exe`。
+- 实测（隔离探针：只含 `$adb = "adb"`、`function Adb { & $adb -s $Device @args }` 和一次 `& $adb -s $Device shell echo hi`，本机 `pwsh` 7.6.9）：**120 秒未返回**，进程 CPU **150.31 s**、工作集涨到 **10.1 GB**，期间**没有产生任何 adb 子进程**；强杀才恢复。
+- 面：基线全仓 `function Adb` 只此 1 处；`& $adb` 共 19 处（L23/26/31/32/56/59/60/61/64/72/76/84/87/94/98/99/100/101/102）。
+
+**「脚本没产出 round-d5」的反证**：`docs/qa/baseline-android/round-d5/manifest.md` 标题行「# Android 基线（真机 L2E0222531014833）· D5 重冻」与本脚本 L119 的模板串（`# Android 基线（真机 $Device）· D5 重冻`）一致，冻结时间写 **2026-11-05 04:07:59**；而 `7b3175b`（含 `function Adb`）提交时间为 **03:58:09**，`git show 7b3175b:tests/numeric/tools/freeze_android_baseline.ps1` 第 23 行即该函数。即 04:07 那批产物**不可能是这份提交版跑出来的**（要么当时跑的是 `output` 树里未提交的另一版，要么 manifest 系手写）——与「`output` 树两份漂移」一致。
+
+**修复与验收**：`f6e97dc` 删除该函数；fix-p0 全仓 `function Adb` 命中 0 处，`& $adb` 仍指向字符串 `"adb"`，不会再被劫持。
+**措辞更正**：提交说明写「删掉这条从未被调用的 Adb 函数」——不准确。它从未被**显式**调用，但被**每一条** `& $adb` 隐式命中，这正是故障根因；台账/报告引用时请按后者写，否则会被读成「删除死代码」。
+
+### 13.1 F-17（f6e97dc）独立复核
+
+| 验收点 | 我的复核方法与结果 | 结论 |
+|---|---|---|
+| `-Round` 必传 | 不传跑真脚本 → `ERROR: 缺少 -Round…`、exit 1、未产出 manifest | ✅ |
+| `-BuildHead` 必传 | 不传 → `ERROR: 缺少 -BuildHead：必须传入构建该 APK 的提交 sha…`、exit 1 | ✅ |
+| sha 合法性 | `-BuildHead zz-12` → `ERROR: -BuildHead 不是合法提交 sha：zz-12`、exit 1 | ✅ |
+| `-Apk` 存在性 | 指向不存在路径 → `ERROR: -Apk 不存在：…`、exit 1 | ✅ |
+| manifest 标题/构建来源由参数生成 | 代码核对：标题 `# Android 基线 · $Round`；`$head = $BuildHead`；`$branchShown`/`$structureNote` 缺省写「未提供」；「脚本运行树 HEAD」单列并标注「仅诊断」 | ✅ |
+| 写死的 D5/develop/5 个盘面已删 | `Select-String 'D5|develop|5 个盘面'` 只剩 L365 一条历史目录说明（`round-d5/` 仅作历史对照） | ✅ |
+| 门禁行改为解析实际输出 | 代码核对：`$gateSummary` 从 `numeric-gate.txt` 正则取 `tests=… failures=…`；`$gateOk` 另判 `RESULT: PASS` 与 `CARGO: PASS`，原文附 manifest 文末 | ✅ |
+| 正路径实产 manifest | **未复现**：需真机；`docs/qa/baseline-android/` 下只有 `round-d5`，`round-f17-a/b` 未入库（Q-05） | ⏳ |
+| `-BuildHead` 存在性 | **残余**：只做 `^[0-9a-fA-F]{7,40}$`，不 `git cat-file -e`；实测 `-BuildHead deadbeef1`（不存在的 sha）**通过参数校验并进入设备段** | R-06 |
+| 设备在线前置 | **残余**：无 `adb devices` 断言；把不存在的序列号传给 `-Device`，脚本在 `adb -s FAKE0 logcat -c` 上**挂住 120 s 未返回**，而不是快速报错 | R-05 |
+
+结论：F-17 的三项诉求（轮次可追溯、构建来源必须显式给出、结构描述不臆造）已实现，负路径可复现；正路径与 manifest 实产还需真机证据，按 Q-05 挂起。
+
+### 13.2 F-16 + F-06（ac08694）独立复核
+
+**F-16 数值口径（本人重算，不用他们的 verify 脚本）**：自写 Java 探针（`IndepHead.java`：`Float.parseFloat` → `norm(raw)` → `norm(raw+180f)` → `String.format(Locale.ROOT, "向北 %.1f°    坐南 %.1f°")`，即 `CompassReadSheet.show` 的 float 路径）跑 0.01° 网格 36000 点，再用自写 Python 逐字比较：
+
+| 口径 | 不一致数 |
+|---|---|
+| 旧 golden（`Decimal(repr(double字面值))`）vs Java，**顶部两行** | **2267 / 36000** |
+| 旧 golden vs Java，**仅「向北」单值** | **1440 / 36000** |
+| 新口径（float32 精确值 HALF_UP，两行）vs Java | **0 / 36000** |
+| 交叉执行他们的 `verify_readsheet_fmt.py` | `headings=36000 mismatches=0`、`RESULT: 0 mismatch`、exit 0 |
+
+即 **1440 与 2267 都对，但口径不同**（§13.4 / C-4）。「仅向北 1800」这个数我**没有复现**（同网格同口径得 1440，`round()` 口径同），见 Q-04。
+
+**F-06 判定收紧**：`run-final.ps1` L492 起改为 `Get-ReadSheetHeadResult`（`tests/at/lib/ReadSheetHead.ps1` L23-L77）：先 `-ceq` 整串逐字；回退只归一 CRLF/CR、U+200B/200C/200D、BOM、NBSP（NBSP→普通空格），**不合并/不删任何可见空格**；其余一律 FAIL，并把「首行逐字=…；次行逐字=…」写进 actual。旧「含『向北』且含『坐南』即命中」已删除（diff 已核），`$hasHead1/$hasHead2` 同布尔的双行独立性问题随之消失。
+交叉执行 `pwsh -File tests\at\test-readsheet-head.ps1` → `cases=7 bad=0`、exit 0（含「舍入差 1.2 vs 1.1 判 FAIL」「可见空格数不同判 FAIL」「只有一行判 FAIL」）。
+
+**门禁与用例数**：fix-p0 实跑 `python tests/numeric/run_all.py` → `tests=82 failures=0 errors=0 skipped=0` + `CARGO: 5 passed` + `RESULT: PASS`，exit 0；跑完 `git status --porcelain` 为空（未污染工作树）。
+**86→82 不是覆盖缩水**：`test_b2_golden.py` 删掉的 4 条是 token 存在性用例（`test_ring_index_uses_offset_interval`、`test_ring_text_delegates_to_ring_index`、`test_current_cell_center_formula`、`test_client_unit_vectors_present`），替换为 `run_all.py` 真跑 `cargo test` 的 `b2_all_780_cells`（14 圈层逐格执行 `ring_index/ring_text/ring_center`，780 格 + 每格界前 0.01 共 780 次断言），且 `run_all.py` 新增 `REQUIRED_GROUPS`、`skipped>0 → FAIL`、`cargo 未通过 → FAIL`（L41-L51、L119-L132）。**覆盖率是上升的**。
+
+**备注（不立条）**：`golden_readsheet.ring_index` 仍按 double 算（未 f32 化），而 `CompassData.ringIndex` 是「float 减法 → double 取模/除法」。我按两者语义对 14 圈层 × 36000 航向全扫：**0 差异**（14 张表格界都是 float32 可精确表示的 x.0 / x.5 / 5.625）。当前无影响，但这是第三处浮点口径不一致点；若以后出现非整格界（如 7.2°）会立刻爆，建议随 R-02 的 `test_sweep.py` 一起改成 f32。
+
+### 13.3 复核用的一次性脚本（不进仓库）
+
+- `C:\Users\Administrator\AppData\Local\Temp\indep_head\IndepHead.java`：自写 Java 探针（按 `CompassReadSheet.show` 的 float 路径生成顶部两行），stdin 读 36000 个航向。
+- `C:\Users\Administrator\AppData\Local\Temp\indep_head\check.py`：自写三口径比较（旧 golden 两行 / 旧 golden 仅向北 / 新口径）。
+- `C:\Users\Administrator\AppData\Local\Temp\indep_head\ring_idx.py`：14 圈层 × 36000 航向的 ring_index 语义扫描。
+- 隔离递归探针：`%TEMP%\lc_adb_recursion\probe.ps1`（12 行，见 F-20）。
+四个脚本只读基线/fix-p0 文件，**没有写回任何仓库文件**；跑完 fix-p0 的 `git status` 为空。
+
+### 13.4 C-4 口径并列：1440 与 2267 是两个不同的计数对象
+
+同一份「修复前 golden」在两个口径下得到两个数，二者都对、不可混用：
+
+| # | 比较对象 | 比较范围 | 计数 |
+|---|---|---|---|
+| A | 旧 golden（`Decimal(repr(double))`）vs Java float32 | 仅「向北」一个值 | **1440 / 36000**（§12.3 F-16 初稿用的这个；本次独立重算复现） |
+| B | 同上 | **顶部两行**（向北 + 坐南） | **2267 / 36000**（技术总监/LC测试用的这个；本次独立重算复现） |
+| C | 旧 golden vs Java | 仅「坐南」一个值（B 中 A 之外的部分） | **827 / 36000**（= 2267 − 1440，本次推导） |
+| D | 「仅向北 1800」 | — | **未复现** → Q-04 |
+
+为什么 B > A：`back = norm(raw + 180f)` 在 float32 下引入独立的舍入差，坐南行额外贡献 827 个不一致，两行合并为 2267。
+结论：**引用时必须带口径**——写「1440」要注明「仅向北、字面值 repr 口径」；写「2267」要注明「顶部两行、0.01° 全网格」。修复后两者都归零（新口径 0/36000）。
+
+### 13.5 新增待确认与风险
+
+**Q-04 「仅向北 1800」的口径不明**：技术总监转述与 LC测试 提交说明都出现 1800，但未给采样脚本；我按 0.01° 网格、旧 golden、仅向北重算得 1440（`round()` 口径同），B 中坐南新增 827。**缺什么证据**：产出 1800 的那段脚本（网格步长、是否含 +180、是否含 normalize）。**由谁补**：LC测试。**补齐判据**：脚本能复算出 1800，且与 A/B 的口径差被写明。
+
+**Q-05 `round-f17-a/b` 的实产 manifest 不在仓库**：`f6e97dc` 的验收依赖两次真机运行（同一 APK、两个 `-BuildHead`），但 `docs/qa/baseline-android/` 下只有 `round-d5`，`checks/` 未入库。**缺什么证据**：两次运行的 `manifest.md` + `SHA256SUMS.txt`（或整目录）。**由谁补**：LC测试 / LC审证据。**补齐判据**：两份 manifest 标题分别等于各自 `-Round`、构建 HEAD 分别等于各自 `-BuildHead`、APK 路径与 sha256 完全相同。
+
+**R-05（P2）冻结脚本没有「设备在线」前置校验**：脚本直接对 `$Device` 下命令，无 `adb devices` 断言。实测把不存在的序列号传给 `-Device`，脚本在 `adb -s FAKE0 logcat -c` 上挂住 120 s 未返回（adbd 侧等待），不是快速报错。建议开头加「`adb devices` 必须含 `$Device\s+device`，否则 `Fail '设备不在线'`」，并给每条 adb 调用加超时。
+
+**R-06（P2）`-BuildHead` 只校验格式、不校验存在性**：`^[0-9a-fA-F]{7,40}$` 挡住 `zz-12`，挡不住 `deadbeef1`。实测后者通过参数校验并进入设备段（随后因假设备挂住，见 R-05）。建议 `git -C $repo cat-file -e "$BuildHead^{commit}"`，可选再校验 `-Branch` 与 `-BuildHead` 的包含关系（`git merge-base --is-ancestor`）。
+
+### 13.6 第四批计数
+
+| 级别 | 数量 | 条目 |
+|---|---|---|
+| 高 | 1 | F-20 |
+| 待确认 | 2 | Q-04、Q-05 |
+| 风险 | 2 | R-05、R-06 |
+| 合计 | 5 | F-20 为「已证实」（代码路径 + 隔离探针实测） |
+
+全报告合计：**高 3（F-01、F-02、F-20）/ 中 8 / 低 8 / 交叉引用 1（F-03→B-10）/ 待确认 5（Q-01～Q-05）/ 风险改进 6（R-01～R-06）**；F 编号 20 条，正式 19 条（F-03 不计）。
+
+

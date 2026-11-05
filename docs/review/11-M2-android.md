@@ -1044,3 +1044,126 @@ M2 的 25 个文件里，**15 个文本文件全部逐行读完（15/15）**；1
 | **B-09** | `        for (int d = 0; d < 360; d += (int) CompassData.FENJIN_STEP) {`（`CompassView.java` L198；72 龙 L204 同构） | 无行号变化 | 转为母条（A-04/M1 交叉引用）：按裁定「双端同源归实现模块」，两侧同为中，级别不变 |
 | **B-01** | `                String.format("度数 %.2f°  %s  %s\n地盘 %s山  人盘 %s山  天盘 %s山  坐 %s山\n分金 %s  七十二龙 %s\n六十龙 %s  后天卦 %s  先天卦 %s",`（`MainActivity.java` L640） | 无行号变化 | 已撤（误报）：格式串实为 12 个占位符（`%.2f` + 11 个 `%s`，含连续两个匿名 `%s`），与 12 个实参逐位对应；保留空号，不得引用 |
 | **B-05** | `    public void setHeadingManually(float h) {` / `        followSensor = false;`（`CompassView.java` L113-L114）；`                compassView.setHeadingManually(normalize(compassView.getHeading() + 180f)));`（`MainActivity.java` L316-L317） | 无行号变化；级别「高」不变 | **删除**「`setHeadingManually` 才是显式退出跟随的入口」一句（该判断不成立）；改为「锁定走独立控件、翻坐向走持久偏移量且保持 `followSensor=true`」；补原版出处（`gap-matrix.md` L121 E6 清单无「转 180°」按钮、L132 F5 双标签两态几何未取证）；修复方向同步改为 `setHeadingOffset` 方案。主缺陷（`ACTION_DOWN` 即冻结）与定级未动 |
+
+---
+
+## 14 B-02 运行态验收（修复分支 · 2026-11-05 16:10–16:14）
+
+> **证据来源声明**：本节测的是修复分支产物（`fix/p0-review-findings` 线），不是基线 `d752efa`；只用于 B-02 修复的运行态验收，**不改** §1 的基线条目与定级。基线缺陷的静态结论见 `fix-p0/docs/qa/fix-b02-bytecode.md` §3，与本节的运行态结果互证。
+
+### 14.1 被测物（实测哈希）
+
+| 组 | APK | 字节 | SHA-256 | 构建时间 |
+|---|---|---|---|---|
+| release | `fix-p0\app\android\app\build\outputs\apk\release\app-release-signed.apk` | 5,864,083 | `E804C8F5EE4B459D07943CBBFE162EC1B857DE329A0ED0CBB89F1ABDAE714281` | 2026-11-05 11:30 |
+| debug | `fix-p0\app\android\app\build\outputs\apk\debug\app-debug.apk` | 6,580,242 | `D15BE32917276DC6EA9B181C358FCE6E5CE1FD98DFBA32B969A9C4E6DE852586` | 2026-11-05 11:51 |
+
+- release 哈希与 `fix-b02-bytecode.md` §2 被验产物**一致**（该文 `classes.dex` 哈希 `E00F98F9…`，本次解包复算相同），字节码证据可直接对到这一个包。
+- debug 安装后回拖 `/data/app/.../base.apk` 复算哈希 = `D15BE329…`，与 `fix-p0/docs/qa/k-01-pending.md` §4 交接值一致（即 K-01 线 `18415ae` 的包）。
+
+### 14.2 `aapt` 输出（build-tools 35.0.1，`aapt v0.2-12874835`）
+
+```
+> aapt dump badging app-release-signed.apk | Select-String 'application-debuggable'
+# 0 行
+> aapt dump badging app-debug.apk | Select-String 'application-debuggable'
+application-debuggable
+# 1 行
+```
+
+设备侧 `dumpsys package` 交叉核对：
+
+```
+release: flags=[ HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+debug:   flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+```
+
+DEX 字符串核对（证明 release 里桥代码**在**、只是被门槛挡住，不是「根本没编进去」）：
+
+| 包 | dex | `bridge registered sdk=` 命中 | `com.luopan.fengshui.DEBUG` 命中 |
+|---|---|---|---|
+| release | `classes.dex`（5,753,900 B） | 2 | 5 |
+| debug | `classes3.dex`（92,600 B；debug 为 multidex） | 2 | 5 |
+
+### 14.3 命令原文（`AT-P0-1` §1.1，逐字展开）
+
+```powershell
+adb -s L2E0222531014833 logcat -c
+adb -s L2E0222531014833 shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value 94.0
+adb -s L2E0222531014833 shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value "1+1"
+adb -s L2E0222531014833 logcat -d -s LCDEBUG LCJS
+```
+
+执行补充：每组测前 `am force-stop` + `am start -n com.luopan.fengshui/.MainActivity`（`registerDebugBridge` 的唯一调用点在 `onResume`，不重启则 `bridge registered` 行会被上一次 `logcat -c` 冲掉，无法作对照）。两组广播均返回 `Broadcast completed: result=0`。
+
+### 14.4 release 结果（负向用例）
+
+```
+== logcat -d -s LCDEBUG LCJS (release) ==
+（无任何输出，包括 bridge registered）
+```
+
+`Tee-Object` 未生成文件 = 输入 0 行（本次实测确认文件不存在，不是被覆盖）。同屏截图读数：
+
+- 注入 `heading 94.0` 之后，界面仍为 **`度数 337.44° 壬山九度内 亥`**（真实传感器值），未被 94.0 冻结；4 s 后复截字节哈希相同 `F690C7F4…`（手机静止、真实读数也静止，不构成异常）。
+- 证据：`E:\APPDetector\evidence\b02-runtime\b02-rel-1.png`、`b02-rel-2.png`。
+
+### 14.5 debug 结果（阳性对照）
+
+```
+== logcat -d -s LCDEBUG LCJS ==
+--------- beginning of main
+11-05 16:13:25.154 20537 20537 D LCDEBUG : bridge registered sdk=31 action=com.luopan.fengshui.DEBUG
+11-05 16:13:28.797 20537 20537 D LCDEBUG : cmd=heading
+11-05 16:13:28.843 20537 20537 D LCDEBUG : cmd=js
+11-05 16:13:28.859 20537 20537 D LCJS    : map -> 2
+```
+
+同屏截图读数：**`度数 94.00° 乙山九度内 卯`**（注入生效并保持）；随后 `--es cmd reset` 后回到真实值 `337.44°`。
+
+证据：`E:\APPDetector\evidence\b02-runtime\b02-dbg.png`（94.00 冻结态）、`restored.png`（reset 后）、`debug-logcat-2.txt`（上段原文）。
+
+### 14.6 判定
+
+| 组 | 判据 | 实测 | 判定 |
+|---|---|---|---|
+| release | 无 `bridge registered`、无 `LCJS`、读数不被 94.0 冻结 | 三条全满足 | **PASS** |
+| debug | 出现 `bridge registered sdk=… action=com.luopan.fengshui.DEBUG`；`js "1+1"` 有 `LCJS … -> 2` | 满足 | **PASS** |
+
+**B-02 运行态结论：PASS（附 14.7 两条口径限制）。**
+
+### 14.7 限制与需同步的口径（不得省略）
+
+1. **release 与 debug 不是同一次提交构建**：release 底层界面仍是旧三 Tab（截图可见 罗盘/地图/知识），早于 K-01 step-1（`42f5cb7`）；debug 为 `18415ae`（K-01 step-4/B-05）。本条判定不受影响——release 包哈希与字节码证据同源，且 `0x000a` 判零 → `0x000c return-void` 已静态证明注册不可达；但**正式归档应同一提交重建 release 再跑一遍**，否则「对照」严格说不成立。
+2. **`LCJS` 条数口径已变**：`AT-P0-1` §1.1 旧判据写「两条（`mapView -> 2` / `compass -> 2`）」，K-01 step-1 把双 WebView 合成一个后，实测只有一条 `LCJS map -> 2`。判据应改为「**≥1 条且返回值为 2**」；这是文档口径问题，不是缺陷。
+3. `uiautomator dump` 两次均 `ERROR: could not get idle state`（罗盘/地图持续动画），读数改用截图取证；B-02 的判据是日志，读数只是辅证，不影响结论。
+
+证据目录：`E:\APPDetector\evidence\b02-runtime\`（`installed-debug-base.apk`、`debug-logcat.txt`、`debug-logcat-2.txt`、`b02-rel-1.png`、`b02-rel-2.png`、`b02-dbg.png`、`restored.png`、`k01-struct.png`、`dex\classes-*.dex`）。
+
+---
+
+## 15 K-01 结构骨架进度（当前构建真机核对 · 2026-11-05）
+
+> 只报**结构骨架**（信息架构/叠加方式）的落地进度；像素、alpha、手势级判据仍归 `k-01-pending.md` 的 P-02/P-04/P-05/P-08/P-09，本报告不代判、不写「K-01 已修复」。
+
+### 15.1 目标骨架（用户口径 + §2.4）
+
+一个页面 = 地图全屏；罗盘是点「罗盘」后**浮动叠在地图中心**的组件；工具按原版逻辑放左右列、子页用合适的浮层呈现；**不存在底部「罗盘/地图/知识」导航**。
+
+### 15.2 当前构建实测（debug `18415ae`，D15BE329）
+
+| 骨架项 | 目标 | 实测 | 状态 |
+|---|---|---|---|
+| 底部三 Tab | 不存在 | 三 Tab 已无；底部条只在浮层态出现，内容为罗盘模式条「切换/旋转/缩放/透明度/天支线」 | 骨架已落地 |
+| 页面实例数 | 单 WebView | `cmd js` 回声仅一条 `LCJS map -> 2`（双实例时会两条） | 骨架已落地 |
+| 罗盘入口 | 点「罗盘」浮层出现 | 点左列「罗盘」→ 浮层出现（`k01-struct.png`） | 骨架已落地 |
+| 浮层位置 | 地图中心 | 水平居中、垂直约屏幕中部（**目测**；圆心/直径的像素判定未做，归 P-04） | 待 P-04 |
+| 工具列数量 | 左 8 / 右 10 | 普通态左 8（全地图工具/截屏/超清优化/海拔查询/罗盘/路网/等高线/更多）、右 10（图层/叠加/山脉/水系/探索/指北针/＋/－/定位/3D）；浮层态左 6 右 4 | 结构命中，判据由 P-02 收口 |
+| 圆外触摸透传 | 圆外手势交给地图 | 未验 | 待 P-08 |
+| 直径/alpha/线稿 | 0.733W、无暗盘、2px 描边 | 未验 | 待 P-04/P-09 |
+
+### 15.3 结论
+
+- 结构骨架（「三 Tab → 单页地图 + 罗盘浮层 + 左右工具列」）已在 `18415ae` 落地；基线报告 B-03 的「三 Tab 两份实例」、B-04 的「浮层贴顶部」现象在该构建上**不再出现**。
+- 仍未闭环：浮层几何/透明度/线稿（P-04/P-09）、圆外触摸（P-08）、全量基线重冻（P-05）。这些没过之前，K-01 只能写「结构骨架完成」，不能写「验收通过」。
+- 证据：`b02-dbg.png`（普通态，左 8 右 10）、`k01-struct.png`（浮层态，罗盘居中、隐藏按钮在右上）。

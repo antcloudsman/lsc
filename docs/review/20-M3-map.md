@@ -1,4 +1,4 @@
-# 20-M3 地图 / 3D 模块审查报告（第一批 + 第二批）
+# 20-M3 地图 / 3D 模块审查报告（第一批 + 第二批 + 复核新增）
 
 > 审查基线：`develop` @ `d752efaf7936f887a70577681c703497e74e8b57`（tag `review-20261105`），工作区 `E:\APPDetector\review-base`。
 > 范围（M3）：`app/android/app/src/main/assets/map.html`、`tools/map/**`、`docs/map-bridge.md`，以及对 Java 侧 JS 桥调用契约的只读核对（`MainActivity` / `LCAndroid` / `DebugBridge` / `MapMarker`，问题记在本模块）。
@@ -12,7 +12,10 @@
 - **去重裁定（总监 2026-11-05）**：DebugBridge 导出广播注入归 **B-02**；三 Tab/罗盘浮层归 **B-03 + B-04**（K-01 母条）；触摸停跟随归 **B-05**。本报告 C-02、C-07、C-16 只作交叉引用、**不计条**；天地图 key 明文归 **C**（C-01），M6 只引 D-006 冲突。
 - 第一批（去重后计条）**18 条：已证实 14 / 高度可疑 2 / 待确认 2**；高 5、中 10、低 3。
 - 第二批 **13 条：已证实 13**（中 8 / 低 5）：C-22…C-34。
-- 合计 **31 条 + 3 条交叉引用**：已证实 27 / 高度可疑 2 / 待确认 2。
+- 第三批（本轮复核新增）**3 条：已证实 3**（中 2 / 低 1）：C-35…C-37，见 §7.1。
+- 合计 **34 条 + 3 条交叉引用**：已证实 30 / 高度可疑 2 / 待确认 2；高 5 / 中 20 / 低 9。
+- **本轮复核（2026-11-05 第二轮）**：`git diff --stat review-20261105 HEAD -- app tools docs/map-bridge.md` 为空，源码与基线标签逐字一致；34 条逐条回源码核对行号与片段。订正 7 处：C-01 外部实测补可复现命令与本次结果、C-03 pick 出口补「elev:0」分支、C-08 贴地眼高公式与 z18 数值、C-09 纬度阈值 84.8°→84.93°、C-10 反经线越界量按 `patch.z` 分档、C-27 片段跨段拼接、§6.1 按钮计数 20→18 个按钮 + 1 个滑块。
+  **下游计数影响**：`60-FINAL.md`/`99-FINAL-REVIEW.md` 记 M3 为「31 计条 + 3 交叉引用」，本轮新增 C-35…C-37 后应为「34 计条 + 3 交叉引用」，需由成文侧按 delta（+3：中 2 / 低 1）更新，编号不复用。
 - 六项必查结论：① DEM 失败降级**不成立**（C-05）；② 相机/pick 边界有 3 处已证实问题（C-08/C-09/C-10）；③ `VEXAG` 与 pick **是同一变换空间**（无缺陷），另有精度偏差（C-11）；④ `__LC3D` **不互相污染**，但有 Java 侧共享字段与双份资源（C-12/C-13/C-19）；⑤ 天地图 key **明文、且是原版 key**（C-01），注入原语引 B-02；⑥ `map-bridge.md` 与实现**契约破裂**（C-06）。
 - 已知缺陷「底部三 Tab / 罗盘浮层」：**成立**，级别 **高**（母条 B-03 + B-04；C-07 交叉引用，专项见 §6）。
 
@@ -28,7 +31,7 @@
 | C-06 | 高 | 已证实 | 一 | `map-bridge.md` §5 声明的 ready/mode/error/fps 事件实现中不存在，§5/§7 桥状态已过期 |
 | C-07 | — | 已证实 | 交叉引用（母条 B-03+B-04，不计条；级别高） | 罗盘/地图是同一 map.html 的两个 WebView 实例；罗盘为 Tab 内常驻顶部覆盖层；三 Tab 无原版依据 |
 | C-08 | 中 | 已证实 | 一 | 「贴地」相机无地形高度约束，山地会把眼点压进山体；低缩放时实际是数十公里高空 |
-| C-09 | 中 | 已证实 | 一 | 纬度 >≈84.8° 时 DEM 瓦片 y<0 全部为空 → 3D 必然失败；`setView`/hash 的 lat 完全不校验 |
+| C-09 | 中 | 已证实 | 一 | 纬度 >≈84.9° 时 DEM 瓦片 y<0 全部为空 → 3D 必然失败；`setView`/hash 的 lat 完全不校验 |
 | C-10 | 中 | 已证实 | 一 | 跨反经线时 pick 的 lng 可越界（<-180），页面已 emit，Java 桥直接拒收 |
 | C-11 | 中 | 已证实 | 一 | `VEXAG` 与 pick 同一变换空间（无缺陷）；但 pick 高度用逐像素双线性，与 96×96 渲染网格插值不一致 |
 | C-12 | 中 | 已证实 | 一 | 双 WebView 的 `__LC3D` 互不污染；Java 侧 `mapMarker` 是唯一共享状态且从未被读取 |
@@ -54,6 +57,9 @@
 | C-32 | 低 | 已证实 | 二（本批） | 贴面构建 `ok<30` 即放弃且不重试（texCanvas 保持 null），只有 console 日志 |
 | C-33 | 低 | 已证实 | 二（本批） | `map.html` 单文件 1605 行、20+ 全局可变状态、无模块边界；测试入口 `#at/#selftest` 混在生产代码 |
 | C-34 | 中 | 已证实 | 二（本批） | 第二份 AT（probe）要求的 `__LC3D.probe/pick/state().vexag` 不存在，两份 AT 编号体系冲突 |
+| C-35 | 低 | 已证实 | 三（复核新增） | `setSitFace` 用 `data-sit` 单向锁存顶部标签，`setHeading` 的度数分支成为死代码、无清除路径 |
+| C-36 | 中 | 已证实 | 三（复核新增） | 2D 截图退路抓的是隐藏的 `#gl` 画布：API 24–25 的 2D 截图必为空白图 |
+| C-37 | 中 | 已证实 | 三（复核新增） | 3D 高 zoom 网格与 DEM 级别脱钩：zoom 18 时单屏宽不足 1 个网格单元，地形退化为单个面片 |
 
 ---
 
@@ -83,8 +89,14 @@ var KEY = "dd18858b33229f5837ad1d97b8d3105e";
 - **触发条件**：任何人解包 APK、读取仓库或本文档即可拿到 key；每次瓦片请求 URL 都带 `&tk=`（`map.html:127-133`），3D 贴面同样走 `tileUrl`（`map.html:894`）。
 - **预期 vs 实际**：
   - 预期：按 D-006 用**用户个人 key**，且 key 不进源码/不进 git 历史（构建注入或服务端代理）。
-  - 实际：key 是**原版 APK 内置 key**（文档自认「未改动」），明文写在 assets 与文档；`git log -S` 显示该 key 自基线提交 `4770c20` 起就在历史里，删代码无法撤回，只能换 key。
-- **补充实测证据（2026-11-05，非真机）**：用该 key 对 `t0.tianditu.gov.cn/img_w/...` 发 GET（带 `Origin: https://example.com`），返回 `200`、`Content-Type: image/jpg`、`18,041 B`、`Access-Control-Allow-Origin: *`。说明该 key 未被原版包名/域名限制，任何客户端可直接用其配额。
+  - 实际：key 是**原版 APK 内置 key**（文档自认「未改动」），明文写在 assets 与文档；`git log -S` 显示该 key 自基线提交 `4770c20` 起就在历史里，删代码无法撤回，只能换 key。章程自身还有第二口径：`docs/TEAM_CHARTER.md:94`（§7 风险 3）把「天地图 APIKEY 为内置常量」当现状接受、只要求「避免异常高频请求拖垮个人配额」，与 D-006「用个人 key」相互矛盾（此矛盾即 M6 `G-06` 交叉引用的对象，不另计条）。
+- **补充实测证据（2026-11-05 复核，非真机，单次 GET 不批量）**：命令如下（`<KEY>` = `map.html:92` 的值，此处不重复贴 key）：
+
+```powershell
+Invoke-WebRequest -Uri "https://t0.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX=10&TILEROW=388&TILECOL=843&tk=<KEY>" -Headers @{Origin="https://example.com"} -UseBasicParsing
+```
+
+  实测（z10/843/388 北京瓦片）：`STATUS=200`、`Content-Type=image/jpg`、`Bytes=21833`、`Access-Control-Allow-Origin=*`。说明该 key 未被原版包名/域名限制，任何客户端可直接用其配额。
 - **影响**：① 配额是原版开发者的，被滥用/被封会同时打断 LC 全部地图（含 3D 贴面）；② 违反本团队 D-006；③ key 随公开仓库/APK 扩散，构成供应链式的第三方资源滥用。
 - **修复方向**：向天地图申请 LC 自己的 key → 由构建脚本注入（如 `local.properties`→`BuildConfig`→`evaluateJavascript` 或 asset 模板替换），不写入 git；旧 key 立即在天地图控制台吊销/换新（历史已泄露）。
 
@@ -189,7 +201,12 @@ function demAt(z, gx, gy) {
 - **预期 vs 实际**：
   - 预期：边缘顶点钳到最后一个有效像素，或补取第 4 列/行瓦片；边缘高度应连续。
   - 实际：每个块的最外一列/一行被压到 0，形成一圈向下的断崖；边缘法线用 0 高邻居求差（`map.html:831-842`），法线方向也是错的。
-- **对 pick 的二次影响**：`pick3D` 用 `demAt(...)*VEXAG` 求交（`map.html:1099,1111`），射线打到这圈假 0 面时会「命中」；最终 `elevRaw` 在越界像素为 `null`（`map.html:1120-1121`），于是发出 `elev:null` 的 pick，经纬度落在块边缘。
+- **对 pick 的二次影响**（复核重写：pick 的高度场是逐像素 `demAt`，不是渲染网格，两者在此处并不一致）：
+  - **可见悬崖只存在于网格**：`demAt` 的 x0+1 只有在落点进入最外 1 个 DEM 像素时才跨到未加载的第 4 块；网格上那圈约 `8 px × mpp`（z12≈234 m）宽的斜坡由 GPU 在 i=95→96 之间把真实高程插值到 0。于是同一块边缘出现两个面：pick 认为地面仍是真实高程，渲染却已下陷到 0 → 标记会浮在可见崖面之上（与 C-11 同源）。
+  - **出口值两支，都违反 D-005**：射线贴边/掠射（y≈0 与边界相交）落到最外像素带时——
+    - `elev: 0`：落点像素在已加载块内 → `elevRaw` 非 null（`map.html:1120`），但 `demAt` 因邻像素缺失返回 0（`map.html:1121,593`）→ emit `elev:0`；`LCAndroid.java:51-55` 只拒绝 NaN，0 被当成真实海平面存进 `MapMarker.elevM`。
+    - `elev: null`：落点像素本身越界（第 4 块）→ `elevRaw` 为 null → emit `elev:null`。
+  两支的经纬度都落在块边缘，页面与 Java 侧都无法区分「真实海平面」与「缺数据」。
 - **产品 AT 已点名同一根因**：`docs/qa/AT-P0-4-3d-probe.md:20` 写「现 `demAt()` 缺块返回 0，会造『假海平面』」——基线 `map.html:593` 仍是 `return 0`，说明这是「要求了没实现」，不是评审新发现的口径分歧。
 - **修复方向**：取样像素钳到 `[ox*256, (ox+3)*256-1]`（或 `demPix` 对缺邻居退化为最近有效像素，而不是 0）；同时把 `demAt` 的「缺数据」与「海拔 0」区分开，不要共用 `return 0`。
 
@@ -288,7 +305,7 @@ var TERRARIUM = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/";
 - **触发条件**：进入 3D 后任一 DEM 瓦片两次失败（离线、S3 被阻断/限流、境外网络抖动、配额异常）。`demTile` 只有 2 次尝试、600 ms 间隔、无超时（`map.html:539-573`）。
 - **预期 vs 实际**：
   - 预期：保持 2D 可见，或降级到更低级别 DEM/纯高程配色，或自动回 2D 并给出可恢复提示。
-  - 实际：9 个 job 任一 `null` → HUD 写「DEM 加载失败」→ `patch` 不建立；因为 3D 下 `baseLayer/annoLayer` 已 `display:none`，画面只剩 `#788c9e` 清屏色；只有用户手动点「返回 2D」才恢复。首次失败后每次平移都会再试 9 块 ×2 次，持续打点。
+  - 实际：9 个 job 任一 `null` → HUD 写「DEM 加载失败」→ `patch` 不建立；因为 3D 下 `baseLayer/annoLayer` 已 `display:none`，画面只剩 `#788c9e` 清屏色；只有用户手动点「返回 2D」才恢复。首次失败后每次平移都会再试 9 块 ×2 次，持续打点。**且该提示只存活到下一次 FPS 刷新**：`loop` 每秒调一次 `updateHud()`（`map.html:1186-1189`），无 patch 时 `updateHud` 又写回「DEM 加载中…」（`map.html:1302`），故障信息 ≤1 s 即被覆盖成「加载中」。
 - **旧块滞留（同一路径的第二种表现）**：若之前已有 `patch`，新的 `startPatch` 失败时旧 `patch` 不会被清空，`render3D` 继续画旧块；但相机目标 `target` 已按新 `center` 计算（`map.html:1213-1221`），于是屏幕上是**旧位置的地形**，比空白更具误导性。
 - **文档冲突**：`docs/map-bridge.md:204` 写「跨块瞬间可能有 <1 s 空窗（旧块继续渲染直到新块就绪，无白屏）」——只覆盖成功路径；首块失败/换块失败时是纯色或错位旧块，文档没写。
 - **产品 AT 的验收口径（反证「降级只是可选」）**：`docs/qa/AT-P0-4-3d-probe.md:78` 的 TD-012 明确要求「飞行模式 → 进 3D，≤5 s 内回落 2D 并提示；`LC3D ERROR dem-load` 出现；不无限『加载中』」。基线没有回落逻辑，这一条按现状必然 FAIL——缺降级是「要求了没实现」。
@@ -432,10 +449,10 @@ var TERRARIUM = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/";
 - **触发条件**：3D +「贴地」+ 山区 + 较高 zoom；或目标点在山谷、相机背后有山脊。
 - **预期 vs 实际**：
   - 预期：眼点至少高于所在地形，且「贴地」是低机位。
-  - 实际：眼点只由 `D`/`pitch` 决定，从不查 `demAt(eye)`；贴地后 `pitch=60°`，`eye.y = target.y + 0.5·D`。按代码常量估算：z9 时 `D≈8.6×10^5·zMpp`（h≈800），`zMpp≈234 m` → `D≈2.0×10^5 m`，×0.35 后眼高约 **3.5×10^4 m**；z18 时约 135 m。低缩放不是「贴地」，高缩放时若背后有山则眼点直接进山体（近裁剪面 `near=max(1,D*0.01)`，不会剔除）。
+  - 实际：眼点只由 `D`/`pitch` 决定，从不查 `demAt(eye)`；贴地后 `pitch=60°`，`eye.y = target.y + 0.5·D`。按代码常量估算（h_css≈800、fov 50°）：`D = 800·zMpp/(2·tan25°) ≈ 858·zMpp`，贴地再 ×0.35，**眼高 = 0.175·D**。z9：`zMpp≈234 m` → `D≈2.0×10^5 m` → 眼高约 **3.5×10^4 m**；z18：`zMpp≈0.458 m` → `D≈393 m` → 眼高约 **69 m**（复核订正：原文写「约 135 m」是 `0.35·D`，漏乘 `cos60°`）。低缩放不是「贴地」，高缩放时若背后有 >69 m 的山脊则眼点直接进山体（近裁剪面 `near=max(1,D*0.01)`，不会剔除）。
 - **修复方向**：眼点高度取 `max(计算值, demAt(eye)+clearance)`；「贴地」按真实米制高度定义而不是 `D×0.35`；进入贴地时限制最小 zoom。
 
-### C-09 纬度 >≈84.8° 时 DEM 瓦片 y<0 全部为空 → 3D 必然失败；`setView`/hash 的 lat 完全不校验
+### C-09 纬度 >≈84.9° 时 DEM 瓦片 y<0 全部为空 → 3D 必然失败；`setView`/hash 的 lat 完全不校验
 
 - **严重度**：中　**证据等级**：已证实（数学推导）　**批次**：一（必查②）
 - **位置**：`map.html:751-776`（`oy=floor(t.y)-1` 与 `y<0` 分支）、`map.html:994-995`（3D 钳 ±85）、`map.html:1323-1330`（`debugSetView` 不校验 lat）、`map.html:1475-1483`（hash 参数）
@@ -459,7 +476,7 @@ function debugSetView(lat, lng, z, p, b) {
   if (typeof lng === "number") center.lng = lng;
   if (typeof z === "number") zoom = Math.max(2, Math.min(18, z));
 ```
-- **推导**：Web 墨卡托在 lat≈84.8° 时 `y<1`，`oy=floor(y)-1=-1`；3×3 中 `j=0` 的三块 `y=-1` 全部 `Promise.resolve(null)` → `startPatch` 的 `!tiles[i]` 分支必然触发 →「DEM 加载失败」。`pan3D` 钳到 85 仍在这个区间内，等于「允许拖到 85，但 3D 在那里永远失败」。
+- **推导**：以 3D 强制 z≥9 后的 `patch.z=8` 计，Web 墨卡托在 lat≈**84.93°** 时 `y<1`，`oy=floor(y)-1=-1`（`patch.z` 更大时阈值略升：z11≈85.04°；`&z<9` 绕过时 `patch.z=4`→82.68°）；3×3 中 `j=0` 的三块 `y=-1` 全部 `Promise.resolve(null)` → `startPatch` 的 `!tiles[i]` 分支必然触发 →「DEM 加载失败」。`pan3D` 钳到 85 仍在这个区间内，等于「允许拖到 85，但 3D 在那里永远失败」。
 - **触发条件**：拖到高纬（或 `setView(90,...)` / `#in3d&lat=90`）。
 - **预期 vs 实际**：预期极区给出降级/钳制提示；实际纯色空白，且 `setView` 不做 ±85 钳制，与 `pan3D` 不一致；2D 也无纬度钳制。
 - **修复方向**：`debugSetView` 与 hash 解析统一钳到 `pan3D` 的 ±85；`oy<0` 时补 `wrapX` 或钳到 0，不要直接判整块失败。
@@ -484,7 +501,7 @@ function debugSetView(lat, lng, z, p, b) {
                 return;
             }
 ```
-- **推导**：视点刚过 +180°（lng≈-179.9）时 `ox=-1`，网格左边缘 `gx=-256`（`worldToDem` 的边界判断是 `< ox*256` 才返回 null，`-256` 可通过），`tx=-1` → `lng = -1/n*360-180 = -180 - 360/n`（z4=-202.5°，z12=-180.088°），越界。
+- **推导**：视点刚过 +180°（如 lng≈-179.9°）时 `t.x<1` → `ox=-1`，网格左边缘 `gx=-256`（`worldToDem` 的边界判断是 `< ox*256` 才返回 null，`-256` 可通过），`tx=-1` → `lng = -1/n*360-180 = -180 - 360/n`（`n=2^patch.z`；复核订正：`patch.z=4` → -202.5°、`patch.z=11`（zoom 12）→ -180.18°、`patch.z=12`（zoom 13）→ -180.09°），越界。
 - **触发条件**：在 ±180° 附近点选地形块西边缘。
 - **预期 vs 实际**：预期 lng 归一到 `[-180,180)`；实际页面照常 `emit` 并画标记，Java 记 `reject out-of-range` 丢弃 → 页面与 Java 状态不一致。
 - **修复方向**：`lng` 计算后归一化（`((lng+180)%360+360)%360-180`），并在 `assertContract` 里加反经线用例。
@@ -755,7 +772,7 @@ function locate() {
 | ② 相机/投影/pick 边界（贴地平视、极区、地形空洞） | 贴地平视的 `up` 特判正确（`pitch<0.5` 用前向，避免万向锁，`map.html:1233`）；**贴地机位无地形约束**；**极区必然 DEM 失败且 lat 不钳制**；**反经线 lng 越界**；地形「空洞」在本实现表现为块边缘假 0 面（C-03）。 | C-08/C-09/C-10/C-03 |
 | ③ `VEXAG` 与 pick 是否同一变换空间 | **是**：网格顶点 `H*2.5`、射线 `demAt*2.5`、落点 `elev*2.5` 三处一致；输出 `elev` 为原始值。无缺陷。另有「pick 用逐像素双线性、渲染用 96×96 网格插值」的精度偏差。 | C-11 |
 | ④ 双 WebView 下 `__LC3D` 是否互相污染 | **不污染**：独立 JS 上下文，`window`/`__LC3D`/`DEM` 各自独立。**但**：Java 侧 `mapMarker` 共享且无人消费；每传感器样本 4 次注入（含隐藏实例）；隐藏实例是否停渲染未证实。 | C-12/C-13/C-19 |
-| ⑤ 天地图 APIKEY 明文外泄面 | **三个面叠加**：① APK/仓库明文（含 git 历史，自基线 `4770c20`）；② 用的是原版 key，非 D-006 要求的个人 key；③ 同机任意 App 可经导出广播注入 JS 读走 key（母条 B-02，交叉引用）。实测该 key 未被包名限制（带 Origin 请求返回 200）。 | C-01（注入面引 B-02） |
+| ⑤ 天地图 APIKEY 明文外泄面 | **三个面叠加**：① APK/仓库明文（含 git 历史，自基线 `4770c20`）；② 用的是原版 key，非 D-006 要求的个人 key；③ 同机任意 App 可经导出广播注入 JS 读走 key（母条 B-02，交叉引用）。实测该 key 未被包名限制（命令与结果见 C-01，带 Origin 请求返回 200 / image-jpg）。 | C-01（注入面引 B-02） |
 | ⑥ `docs/map-bridge.md` 与实现一致性 | **契约破裂**：`ready/mode/error/fps` 不存在；§5/§7 称桥未接（实际已接）；另有 4 处细节漂移。 | C-06/C-17 |
 
 ---
@@ -774,7 +791,7 @@ function locate() {
 4. **「地图」页 = 同一个 map.html 的第二个 WebView**：`MainActivity.java:567-569` `buildMapTab()` 直接 `return createMapWebView();`；`369-393` 的 `createMapWebView()` 统一 `loadUrl("file:///android_asset/map.html")`。两个实例都注册了 `LCAndroid` 桥。
 5. **Tab 切换只改可见性**：`MainActivity.java:630-634`（`setVisibility(VISIBLE/GONE)`），没有任何页面暂停/状态同步。
 6. **罗盘是常驻子视图，不是开关**：没有 `setVisibility(GONE)` 的代码路径；`CompassView` 画的是 `Color.argb(210,...)` 的实心圆盘（`CompassView.java:163-169`），82% 不透明，压在底图上。
-7. **底部面板与 map.html 自带控件并存**：`map.html:49-69` 有 20 个按钮（矢量/影像/地形/3D/旋转/缩放/俯仰/底图源/指针/坐向/等高线/贴地/全屏/清标记/定位），Android 底部面板又有一套（盘面/读盘/复位/翻/截图/真北/偏角/状态）→ 同一屏两套控制面。
+7. **底部面板与 map.html 自带控件并存**：`map.html:49-69` 有 **18 个 `<button>` + 1 个 `#pitchRange` 滑块**（复核订正：原文写「20 个按钮」；`<button` 全文 21 处，另 3 处在 `#fsExit`/`#srcPanel`，不在 `#controls`），Android 底部面板又有一套（盘面/读盘/复位/翻/截图/真北/偏角/状态）→ 同一屏两套控制面。
 
 ### 6.2 与原版的差距（档案依据）
 
@@ -807,6 +824,7 @@ function locate() {
 ## 7. 第二批（中/低，本批交付）
 
 > 13 条全部「已证实」，均已回源码现场复核行号与片段。中 8 条（C-22…C-27、C-29、C-34），低 5 条（C-28、C-30…C-33）。
+> **第三批（本轮复核新增）3 条：C-35（低）、C-36（中）、C-37（中）**，见 §7.1；合计口径变为「34 计条 + 3 交叉引用」。
 
 ### C-22 2D 立向点按屏幕像素定位，平移/缩放后不跟地图走
 
@@ -917,7 +935,9 @@ function updateSrcInfo() {
 ```
 ```powershell
 $picks = ($txt | Select-String -Pattern 'LC3D pick ').Count
-...
+```
+  `tools/map/run_td015_device.ps1:50`：
+```powershell
 if ($picks -ge 5 -and $fpsMin -ge 30 -and $fatal -eq 0) { Write-Host "TD015: PASS"; exit 0 }
 ```
 - **触发条件**：贴面只成功 30–35 块、一次点击合成双事件、断网导致 TD-002/003 红。
@@ -1064,6 +1084,103 @@ window.__LC3D = {
 
 ---
 
+## 7.1 第三批（本轮复核新增，已证实）
+
+> 3 条均在本轮逐行复核时发现，不在上一版 31 条内；编号接 C-34。C-35 为显示口径缺陷，C-36/C-37 为主路径功能缺陷。
+
+### C-35 `setSitFace` 用 `data-sit` 单向锁存顶部标签，`setHeading` 的度数分支成为死代码且无清除路径
+
+- **严重度**：低　**证据等级**：已证实　**批次**：三（复核新增）
+- **位置**：`map.html:349-352`（度数分支）、`map.html:413-418`（`setSitFace` 置位）、`map.html:363-384`（`applySit`/`toggleSitNorth` 均不清除）；调用方 `MainActivity.java:684-685`
+- **代码原文**：
+```js
+  var lbl = document.getElementById("heading-label");
+  if (lbl && lbl.getAttribute("data-sit") == null) {
+    lbl.textContent = "向 " + (Math.round(lastHeading) % 360) + "°";
+  }
+```
+```js
+function setSitFace(face, sit) {
+  var lbl = document.getElementById("heading-label");
+  if (!lbl) return;
+  lbl.setAttribute("data-sit", "1");
+  lbl.textContent = "向 " + face + " · 坐 " + sit;
+}
+```
+- **触发条件**：App 运行后第一个传感器样本——`updateReading()` 对两个 WebView 各推一次 `setSitFace(...)`（`MainActivity.java:682-686`），此后 `#heading-label` 的 `data-sit` 恒为 `"1"`；再点「坐南朝北」按钮循环 1→2→0 也不会清除它。
+- **预期 vs 实际**：
+  - 预期：标签随坐向对齐状态与航向变化；关闭对齐（`sitMode=0`）或未收到山名推送时，应回到「向 N°」或至少随 heading 更新。
+  - 实际：`data-sit` 只置不清，`setHeading` 的度数分支（`:350-352`）在首个样本后**不可达**（死代码）；`applySit()`（`:363-377`）与 `toggleSitNorth()`（`:379-384`）都只改 `btn_sit` 文案/Bearing，不动标签。标签永久停在上一次推送的「向 X山 · 坐 Y山」，与按钮态（关/向朝上/坐朝上）脱钩。
+- **影响**：低——不参与 pick 与读数计算；但界面显示口径与对齐状态不一致，排查「坐向为什么没转」时会误导（标签一直有山名，看不出对齐已关）。
+- **修复方向**：`applySit()` 在 `sitMode===0` 时 `removeAttribute("data-sit")` 后调 `setHeading(lastHeading)`；或把 `setHeading` 与 `setSitFace` 合并为一个 `setReading(heading, face, sit, sitMode)`，由 `sitMode` 决定标签格式，避免两个入口争同一个节点。
+
+### C-36 2D 截图退路抓的是隐藏的 `#gl` 画布：API 24–25 的 2D 截图必为空白图
+
+- **严重度**：中　**证据等级**：已证实（代码路径 + Canvas 规范行为）　**批次**：三（复核新增）
+- **位置**：
+  - `MainActivity.java:434-451`（`SDK_INT>=26` 才用 PixelCopy，否则直接 `captureViaJs()`）
+  - `MainActivity.java:468-493`（`querySelector('canvas')` + `toDataURL` + `length<32` 判据）
+  - `map.html:11`（`#gl{display:none}`）、`map.html:47`（canvas 常驻 DOM）、`map.html:1359-1361`（`toDataURL`）
+- **代码原文**：
+  `MainActivity.java:449-451`：
+```java
+        } else {
+            captureViaJs();
+        }
+```
+  `MainActivity.java:473-474`：
+```java
+        compassMapView.evaluateJavascript(
+                "(function(){var c=document.querySelector('canvas');return c?c.toDataURL('image/png'):'';})()",
+```
+  `MainActivity.java:477-479`：
+```java
+                        if (value == null || value.length < 32) {
+                            toast("截图失败：地图未渲染");
+                            return;
+                        }
+```
+  `map.html:11`：
+```css
+  #gl { position:absolute; inset:0; width:100%; height:100%; display:none; }
+```
+- **触发条件**：2D 模式下点「截图」，且满足任一：① 设备 API 24–25（`build.gradle:11` `minSdk 24`，`SDK_INT>=26` 为假 → 必走 `captureViaJs`）；② API≥26 但 PixelCopy 返回非 SUCCESS 或 `looksBlank` 判空（`MainActivity.java:439-445`）→ 同样落到 `captureViaJs`。
+- **预期 vs 实际**：
+  - 预期：2D 截图包含底图瓦片；失败时提示「截图失败」。
+  - 实际：`document.querySelector('canvas')` 命中的是唯一 canvas `#gl`；2D 下它从未 `resizeGL()`、从未绘制（`resizeGL` 仅在 3D 路径调用），保持默认 **300×150**，`toDataURL` 返回一张合法透明 PNG（长度远大于 32，通过判据）→ 解码成功 → 一张空白图被 `saveCompassShot()` 存进相册（角注照常画上）。若此前进过 3D，`preserveDrawingBuffer:true`（`map.html:601`）会保留最后一帧 3D 画面 → 2D 截库存下的是与当前视图无关的旧 3D 残影。
+- **影响**：中——API 24–25 上，**2D** 模式的「截图」主功能产出空白图且无任何失败提示（3D 下 `#gl` 已 resize/绘制，同路径正常）；API≥26 的退路在 2D 下同样可能静默存空白，用户以为已截到地图。
+- **修复方向**：`captureViaJs` 先判 `c && c.width>1 && c.height>1 && getComputedStyle(c).display!=="none"`，否则 `toast("截图失败：地图未渲染")` 并返回；2D 截图改用可见 WebView + PixelCopy，或按 `getState().mode` 走「3D 用 toDataURL、2D 必须 PixelCopy」的分流。
+
+### C-37 3D 高 zoom 下网格分辨率与 DEM 级别脱钩：zoom 18 时单屏宽不足 1 个网格单元
+
+- **严重度**：中　**证据等级**：已证实（代码常量 + 数学推导）　**批次**：三（复核新增）
+- **位置**：`map.html:753`（DEM 级别 clamp 到 12）、`map.html:520`（`GRID=96`）、`map.html:813`（`step=PATCH_PX/N`）、`map.html:1208-1210`（相机距离 `D`）；对照 `docs/map-bridge.md:49`
+- **代码原文**：
+```js
+  var zdem = Math.max(4, Math.min(12, Math.round(zoom) - 1));
+```
+```js
+var GRID = 96;                       // 网格 96×96 顶点
+```
+```js
+  var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
+  var hCss = Math.max(1, glCanvas.clientHeight);
+  var D = (hCss * zMpp) / (2 * Math.tan(FOV / 2));
+```
+- **推导**（纬度 39.9°、真机 1228×2700 / dpr 3.375 → CSS 宽 364；WebView 高取整屏 800 减底栏约 60 → **h_css≈740**，取 800 时结论同向）：
+  - 网格步长 = `768/96 = 8` 个 DEM 像素；`patch.z` 上限 12 → `mpp≈29.32 m/px` → **单元边长 234.6 m**。
+  - 相机距离 `D≈858·zMpp`；zoom≥13 时 `Math.round(zoom)-1>12` 被 clamp 到 12，`D` 继续随 `zMpp` 缩小，而单元边长不变。
+  - zoom 14：`zMpp≈7.33 m/px` → `D≈5.8 km`、单屏地面高≈5.4 km → 约 23 格（尚可）。
+  - zoom 18：`zMpp≈0.458 m/px` → `D≈364 m`、单屏地面高≈339 m → 纵向 **1.45 格**；CSS 宽 364 px → 地面宽 167 m → 横向 **0.71 格**。整屏地形只由 1–2 个网格四边形（2–4 个三角形）拼成。
+- **触发条件**：3D 内用「放大 +」、`#in3d&z=18` 或 `setView(lat,lng,18)` 进入 z≥14。
+- **预期 vs 实际**：
+  - 预期：放大后地形细节随 DEM 级别提升，至少维持每屏数十个网格单元；文档「一块覆盖约 1.6 屏」应可复算。
+  - 实际：网格恒用 z12 DEM（`:753`），z≥14 后地形退化为低模，山脊与等高线在屏幕上是折线；等高线（100 m/500 m）在不足 2 格/屏时基本画不出。`docs/map-bridge.md:49` 的「一块覆盖约 1.6 屏」在 364 px 视口下 zoom≤13 已是约 4.2 屏，zoom>13 后更不成立。
+- **影响**：中——主路径（放大看山势）可视质量失真；pick 与渲染仍同源（都 `demAt` z12），数值不因此错，但「看到的山形」与实际网格严重不符，用户无法判断点选落点。
+- **修复方向**：把 `zdem` 上限从 12 提到实测可达的源级别（先验证 z13–z15 瓦片）；或按 `zoom-patch.z` 提高 `GRID`/细分；文档补「覆盖屏数 = `768·2^zoom/(2^patch.z·视口CSS宽)`」，不要写死 1.6 屏。
+
+---
+
 ## 8. 必查项缺口（本批仍不能闭合的部分）
 
 | 必查项 | 已闭合 | 仍未闭合 | 缺什么证据/动作 |
@@ -1138,7 +1255,8 @@ window.__LC3D = {
 
 - 未运行 `tools/map/run_at_p04.ps1`（需本机 Chrome headless + Python HTTP + 外网）；未运行 `tools/map/run_td015_device.ps1`（需 D-002 单台真机，且在 LC测试 手上）。
 - 未构建 APK、未安装、未抓 logcat；未做飞行模式/断网实测（C-05 的 TD-012 缺口）。
-- 因此：帧率、内存量级（C-15）、隐藏实例是否停渲染（C-19）、定位真机行为（C-20）、`#extension` 实际行为（C-18）均为**代码推算或高度可疑**，不作为已证实结论。
+- **本轮已运行（2026-11-05 复核）**：① 天地图单瓦片 GET（C-01，命令与结果见该条）；② 用 Node 复现 C-03 的 193/9409 与 C-09/C-10/C-28/C-37 的数值推导（脚本放 `%TEMP%`，未写入基线工作区）。
+- 因此：帧率、内存量级（C-15）、隐藏实例是否停渲染（C-19）、定位真机行为（C-20）、`#extension` 实际行为（C-18）均为**代码推算或高度可疑**，不作为已证实结论；C-36 的「空白图」由代码路径 + Canvas 规范推导成立，但未在 API 24 设备实拍（实拍只改「是否真落到该退路」的概率，不改结论）。
 
 
 
@@ -1173,7 +1291,7 @@ window.__LC3D = {
 
 ## 11. 复现与验证缺口（下一步，按可执行性排序）
 
-1. **可用纯数学复现（不需真机）**：C-03（已用同函数复现 193/9409）、C-09（纬 84.8° → 9 块全空）、C-10（反经线 lng<-180）、C-15（内存量级）、C-28（pick 步数）。可整理成一个 `checks/` 下的 JS/Python 推演脚本（不在基线工作区生成构建产物）。
+1. **可用纯数学复现（不需真机）**：C-03（已用同函数复现 193/9409）、C-09（纬 84.93° → 9 块全空）、C-10（反经线 lng<-180）、C-15（内存量级）、C-28（pick 步数 1144）、C-37（zoom 18 单屏 <1 格）。可整理成一个 `checks/` 下的 JS/Python 推演脚本（不在基线工作区生成构建产物）。
 2. **需真机（D-002 单台 L2E0222531014833，排队）**：C-05（飞行模式 TD-012：≤5 s 回 2D）、C-19（隐藏实例 RAF）、C-20（定位）、C-18（WebView 对 `#extension` 的行为）、C-22/C-23/C-24（触摸/旋转手感）。
 3. **需服务端/控制台证据**：C-01（天地图日配额、绑包名/域名、吊销影响）。
 4. **文档侧（归 M6/地图）**：按 C-06/C-17 更新 `map-bridge.md`；按 C-34 统一两份 P0-4 AT 的编号与状态。

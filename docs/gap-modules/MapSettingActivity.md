@@ -171,3 +171,71 @@ MMKV 实例 ID：`"MapManager"`（`mmkv_delegate` @0x0000）。键与默认值�
 2. 客户端实现 `MapSettingActivity` 时：开关默认值照抄 §4；`坐标系` 默认 WGS84、`经纬度格式` 默认 度；若做数据迁移保留 `gjc02` 键值。
 3. 视觉：白底 SwitchItem、15sp Medium `#23272B`、行内边距 12/11dp，页面标题「地图设置」。
 4. 差距矩阵：本页 = **缺失（P0，待派单客户端）**；依赖「抽屉入口」与「地图组 MapManager 等价物」。
+
+## §参数面板滑杆量程（H0 / SeekBar 5 滑杆）
+
+来源：`classes06.dex` 内 `MapSettingActivity` 及其内部类，纯静态（无设备）。
+
+方法链：`o0`（trace `CustomParams (MapSettingActivity.kt:461)`）→ `H0`（trace `SeekBar (MapSettingActivity.kt:545)`）→ `setting.h0.b`（trace `ParamSeekBar (MapSettingActivity.kt:589)`，自定义 Canvas 滑杆，**不是** material3 `Slider`）。
+
+`H0` 签名（`android-class-show`）：`H0(String, F, F, F, Function0, Function1, Composer, int, int)`，三个 float 依次为 **min / max / value**（由 5 个调用点的常量与 getter 位置关系确定，见下表）。
+
+### 1. 五个滑杆的 min / max（H0 调用点常量）
+
+| # | 标签（界面顺序） | H0 调用 | v2 = min（常量 @ 偏移） | v3 = max（常量 @ 偏移） | v4 = 当前值 |
+|---|---|---|---|---|---|
+| 1 | 图层亮度最小值 | `o0` @0x036c | `const/4 v2, 0` @0x0367 = **0.0f**（`0x00000000`） | `const/high16 v3, 0x3f800000` @0x036a = **1.0f** | `e1()` @0x02eb → v4 @0x02ee |
+| 2 | 图层亮度最大值 | `o0` @0x03e1 | `const/4 v2, 0` @0x03de = **0.0f**（`0x00000000`） | `const/high16 v3, 0x3f800000` @0x03df = **1.0f** | `f1()` @0x036f → v4 @0x0372 |
+| 3 | 图层饱和度 | `o0` @0x0457 | `const/high16 v2, 0xffffffffbf800000` @0x0453 = **-1.0f**（`0xbf800000`） | `const/high16 v3, 0x3f800000` @0x0455 = **1.0f** | `g1()` @0x03e4 → v4 @0x03e7 |
+| 4 | 图层对比度 | `o0` @0x04cd | `const/high16 v2, 0xffffffffbf800000` @0x04c9 = **-1.0f** | `const/high16 v3, 0x3f800000` @0x04cb = **1.0f** | `h1()` @0x045a → v4 @0x045d |
+| 5 | 图层色相旋转 | `o0` @0x0541 | `const/high16 v2, 0xffffffffc3340000` @0x053d = **-180.0f**（`0xc3340000`） | `const/high16 v3, 0x43340000` @0x053f = **180.0f** | `i1()` @0x04d0 → v4 @0x04d3 |
+
+> 说明：反汇编里 `0xffffffffbf800000` 是 dex 对 `0xbf800000` 的 64 位符号扩展写法，实际 bit pattern 就是 `bf800000`（-1.0f）；`0xffffffffc3340000` 同理 = `c3340000`（-180.0f）。float 与 `MapColorParamEnum` 的字段序（min/max/saturation/contrast/hue）一一对应。
+
+### 2. 当前值从哪来（v4）
+
+5 个 getter 都是 `MutableFloatState.getFloatValue()`：
+
+| getter | 字段 | 参数 |
+|---|---|---|
+| `e1()` @0x0000 `iget-object …->o` | `o` | 亮度最小 |
+| `f1()` | `p` | 亮度最大 |
+| `g1()` | `q` | 饱和度 |
+| `h1()` | `r` | 对比度 |
+| `i1()` | `s` | 色相旋转 |
+
+`o..s` 的初值在 `MapSettingActivity.<init>` 里由 `mutableFloatStateOf(MapManager.getRasterBrightnessMin/getRasterBrightnessMax/getRasterSaturation/getRasterContrast/getRasterHueRotate)` 写入（对应偏移 0x0092/0x00bb/0x00e4/0x010d/0x0136）。因 `MapManager` 缺省取 `MapColorParamEnum.HIGHLIGHT`，所以自定义面板首次打开显示 **0.1 / 1.0 / 0.6 / 0.2 / 0**，与真机截图 `05-滤镜-自定义.png` 一致。
+
+### 3. 刻度与步长（step）
+
+- **H0 没有 step 入参**（签名只有三个 float）。`h0.b` 也只多一个 float：`h0.b(F, F, F, F, Function0, Function1, Modifier, Composer, int, int)`，其第 4 个 float 在 `H0` 的调用点恒为 **0f**（`const/4 v3, 0` @0x01d8，随后 `invoke-static/range {v0 .. v9}` @0x01e5），即"未传"，不是量程参数。
+- 内部刻度：`h0.b` 对三个入参各乘 **100.0f**（`const/high16 v2, 0x42c80000` @0x00ec；`mul-float` @0x0122 / 0x0125 / 0x0127），即滑杆自己按 0..100 的比例画；
+- 回写归一化：5 个 setter 都先 **÷100.0f**（`0x42c80000` @0x0002 + `div-float/2addr` @0x0004），再格式化：
+  - `q0`（亮度最小）`"%.1f"` @0x0012 → `w1(F)` → `rasterBrightnessMin`
+  - `s0`（亮度最大）`"%.1f"` → `x1(F)` → `rasterBrightnessMax`
+  - `u0`（饱和度）`"%.1f"` → `y1(F)` → `rasterSaturation`
+  - `w0`（对比度）`"%.1f"` → `z1(F)` → `rasterContrast`
+  - `y0`（色相旋转）**`"%.0f"`** @0x0012 → `A1(F)` → `rasterHueRotate`
+- 结论：**有效步长 = 0.1**（前四个参数），**色相 = 1°**（`%.0f` 取整）；不是由滑杆参数传入，而是 setter 舍入产生的。
+
+### 4. H0 是否只在「自定义」出现
+
+`H0` 本身是通用滑杆行（标签 + 滑杆 + 数值），**不做模式判断**；判断在滤镜面板 `C0`：
+
+1. 四个模式 chip 都由 `L0(String label, int modeIndex, MapColorParamEnum preset, Function1 onChange, …)` 渲染，其中 `const-string "自定义"` @0x02b8 配 `const/4 v2, 3` @0x02ba（modeIndex=3）；
+2. chip 之后 `invoke-virtual …->X0()I` @0x02c4 取当前 `currentColorMode`；`if-ne v1, v2, :02cc` @0x02c8 与 3 比较，决定可见性布尔 `v10`；
+3. 该布尔作为 `AnimatedVisibilityKt.AnimatedVisibility(ColumnScope, Z visible, …)` @0x02f1 的第 2 参，内容 lambda = `MapSettingActivity$c`（`Ctrace MapPreview.<anonymous>.<anonymous> (MapSettingActivity.kt:371)`）→ `N0` → `o0`（CustomParams）。
+
+⇒ **参数面板只在 `currentColorMode == 3`（自定义）时以 AnimatedVisibility 展开**；其他三态不组合 `o0`，因此也不存在滑杆。真机互证：`02/03/04` 三态无参数区，`05-自定义` 才有。
+
+### 5. 给客户端的实现口径
+
+| 参数 | 量程 | 显示/回写精度 |
+|---|---|---|
+| 图层亮度最小值 | 0.0 ～ 1.0 | 0.1（"%.1f"） |
+| 图层亮度最大值 | 0.0 ～ 1.0 | 0.1 |
+| 图层饱和度 | -1.0 ～ 1.0 | 0.1 |
+| 图层对比度 | -1.0 ～ 1.0 | 0.1 |
+| 图层色相旋转 | -180.0 ～ 180.0 | 1（"%.0f"） |
+
+若用 material3 `Slider` 复刻，建议 `valueRange = min..max`、不传 `steps`（连续），并在 `onValueChangeFinished`/回写处按上表精度 round，才与原版一致。

@@ -14,7 +14,21 @@
   待冻结的 APK（必须是 K-01 布局提交构建的 debug 包；heading 注入依赖 debug 广播）。
 
 .PARAMETER OutDir
-  证据目录，建议 `docs/qa/baseline-android/round-k01`。
+  证据目录，建议 `docs/qa/baseline-android/<Round>`（由调用方指定，脚本不拼默认轮次）。
+
+.PARAMETER Round
+  轮次名（如 `round-k01`）。manifest 标题、轮次行全部由它生成；不传则拒跑。
+
+.PARAMETER Branch
+  构建该 APK 的分支（如 `fix/p0-review-findings`）。不传时 manifest 写「未提供」。
+
+.PARAMETER BuildHead
+  构建该 APK 的提交 sha（完整或短 sha）。**必传**：脚本所在 worktree 的 HEAD 与 -Apk
+  没有绑定关系，不能顶替；不传则明确报错退出，绝不静默取当前树 HEAD。
+
+.PARAMETER Structure
+  本轮的界面结构描述（如「单页地图 + 罗盘浮层，无底部导航」）。manifest 原样引用；
+  不传时写「未提供」，脚本不臆造结构描述。
 
 .PARAMETER PanelCropY
   SW-006 面板区像素 diff 的新裁切窗（形如 `1400-1850`）。K-01 后旧窗 y1850-2500 失效，
@@ -42,6 +56,10 @@ param(
     [string]$Device = "L2E0222531014833",
     [Parameter(Mandatory = $true)][string]$Apk,
     [Parameter(Mandatory = $true)][string]$OutDir,
+    [string]$Round = "",
+    [string]$Branch = "",
+    [string]$BuildHead = "",
+    [string]$Structure = "",
     [switch]$SkipInstall,
     [float]$InjectHeading = 0.0,
     [string]$PanelCropY = "",
@@ -49,11 +67,31 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# ---- F-17：manifest 的轮次/构建来源/结构描述一律由参数生成，缺 BuildHead 直接拒跑 ----
+function Fail([string]$message) {
+    [Console]::Error.WriteLine("ERROR: $message")
+    exit 1
+}
+if (-not $Round) {
+    Fail "缺少 -Round（例：-Round round-k01）。manifest 标题与轮次必须能互相追溯，脚本不猜轮次。"
+}
+if (-not $BuildHead) {
+    Fail "缺少 -BuildHead：必须传入构建该 APK 的提交 sha。脚本所在 worktree 的 HEAD 与 -Apk 无关，不能顶替（F-17）。"
+}
+if ($BuildHead -notmatch '^[0-9a-fA-F]{7,40}$') {
+    Fail "-BuildHead 不是合法提交 sha：$BuildHead"
+}
+if (-not (Test-Path -LiteralPath $Apk)) {
+    Fail "-Apk 不存在：$Apk"
+}
+if (-not $Branch) {
+    Write-Host "WARN: 未传 -Branch，manifest 的构建分支将写「未提供」。"
+}
 $adb = "adb"
 $Pkg = "com.luopan.fengshui"
 $repo = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 
-function Adb { & $adb -s $Device @args }
 function Shot([string]$name) {
     $path = Join-Path $OutDir $name
     & $adb -s $Device exec-out screencap -p > $path
@@ -118,6 +156,8 @@ try {
 }
 $gateText = $gate -join "`n"
 $gateText | Set-Content -Path $gateOut -Encoding UTF8
+$gateSummary = ([regex]::Match($gateText, 'tests=\d+ failures=\d+ errors=\d+ skipped=\d+')).Value
+if (-not $gateSummary) { $gateSummary = "未解析到 tests= 摘要行" }
 $gateOk = ($gateCode -eq 0) -and ($gateText -match "(?m)^tests=\d+ failures=0 errors=0 skipped=0") `
     -and ($gateText -match "RESULT: PASS") -and ($gateText -match "CARGO: PASS")
 Write-Host "gate: exit=$gateCode ok=$gateOk -> $gateOut"
@@ -154,8 +194,11 @@ $verCode = ([regex]::Match($pkgDump, "versionCode=(\d+)")).Groups[1].Value
 $lastUpdate = ([regex]::Match($pkgDump, "lastUpdateTime=([^\r\n]+)")).Groups[1].Value.Trim()
 $apkItem = Get-Item $Apk
 $apkHash = (Get-FileHash $Apk -Algorithm SHA256).Hash
-$head = (& git -C $repo rev-parse --short HEAD 2>$null)
-if (-not $head) { $head = "unknown" }
+$head = $BuildHead
+$treeHead = (& git -C $repo rev-parse --short HEAD 2>$null)
+if (-not $treeHead) { $treeHead = "unknown" }
+$branchShown = if ($Branch) { $Branch } else { "未提供" }
+$structureNote = if ($Structure) { $Structure } else { "未提供（本次未传 -Structure；脚本不臆造结构描述）" }
 
 # 首次校准弹窗
 $u = DumpUi "ui-first.xml"
@@ -272,9 +315,9 @@ $rightFound = @($records | Where-Object { $_.mode -eq "map" -and $_.group -eq "r
 $compassFound = @($compassLabels | Where-Object { $_.found }).Count
 $moreFound = 16 - $moreMissing.Count
 if (-not $PanelCropY) {
-    $cropNote = "待客户端按 K-01 新布局实测；**不得沿用旧 y1850-2500**（SW-006 旧裁切窗已随三 Tab 失效）"
+    $cropNote = "待客户端按 $Round 新布局实测；**不得沿用旧裁切窗**（旧窗已随上一轮 UI 失效）"
 } else {
-    $cropNote = "``$PanelCropY``（客户端实测后回填；旧 y1850-2500 作废）"
+    $cropNote = "``$PanelCropY``（客户端实测后回填；旧窗作废）"
 }
 $cropBasisNote = if ($PanelCropBasis) { $PanelCropBasis } else { "未提供——重取时必须写明测量方法/取样点（谁量、哪张截图、怎么定面板上缘）" }
 
@@ -283,16 +326,20 @@ $rows = foreach ($f in (Get-ChildItem $OutDir -File | Where-Object { $_.Name -no
 }
 $rows | Set-Content -Encoding UTF8 (Join-Path $OutDir "SHA256SUMS.txt")
 
+$gateBlock = $gateText.TrimEnd()
+
 $manifest = @"
-# Android 基线（K-01 单页 UI）· round-k01
+# Android 基线 · $Round
 
 - 冻结时间：$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')（UTC+8），LC测试
 - 设备：$model / Android $release / ``$fingerprint``
 - 屏幕：$wm；$density
 - App：versionName $verName ($verCode)，lastUpdateTime $lastUpdate，pid $appPid
-- 构建：``fix-p0`` HEAD ``$head``；APK ``$($apkItem.Name)`` $($apkItem.Length) B，SHA256 ``$apkHash``
+- 构建：``$branchShown`` HEAD ``$head``；APK ``$($apkItem.FullName)``（$($apkItem.Length) B），SHA256 ``$apkHash``
+- 脚本运行树：``$repo`` HEAD ``$treeHead``（仅诊断；APK 的构建来源以上一行 ``-BuildHead`` 为准）
+- 结构：$structureNote
 - 冷启动：am start -W TotalTime = ${total} ms；注入 heading = $InjectHeading（debug 广播）
-- 数值门禁：``tests=82 failures=0 skipped=0`` + ``cargo 5 passed``（``numeric-gate.txt``）
+- 数值门禁：``$gateSummary`` + ``CARGO: PASS``（``numeric-gate.txt``；原始输出见文末）
 - logcat：FATAL EXCEPTION **$fatal** / ANR **$anr**（``logcat.txt``）
 - SW-006 面板裁切窗：$cropNote
 - 裁切窗测量依据：$cropBasisNote
@@ -315,7 +362,13 @@ $((Get-ChildItem $OutDir -File | Where-Object { $_.Name -notin @('manifest.md','
 
 1. 罗盘浮层与圆盘为自绘/WebView 层，``uiautomator`` 只能拿到少量原生节点；圆心/直径/透明度以截图测量为准（``k01-compass.png``）。
 2. 左列/右列按 ``docs/evidence/original-apk/orig-main.xml`` 的比例位匹配（容差 45px），不是按文案匹配；图标类控件也能计。
-3. 旧基线（``round-d5/`` 与根目录）为 K-01 前三 Tab 基线，已作废，仅历史对照；本目录为 K-01 新 UI 基线。
+3. 历史基线目录（如 ``round-d5/`` 及更早）仅作历史对照，不得作为本轮基线或裁切参考；本轮基线以 ``$Round`` 为准。
+
+## 数值门禁原始输出（F-01/F-02）
+
+~~~text
+$gateBlock
+~~~
 "@
 $manifest | Set-Content -Encoding UTF8 (Join-Path $OutDir "manifest.md")
 

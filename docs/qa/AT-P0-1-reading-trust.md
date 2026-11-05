@@ -98,7 +98,7 @@ Get-Content .\probe.csv
 | RT-008a | 界面·倾斜（**硬门禁**） | 注入 `tilt 0/0` → dump；`tilt 12/0` → dump；`reset` → dump | 0° 无提示；12° 出现「请端平」；reset 后消失 | 三份 ui.xml |
 | RT-008b | 界面·倾斜（人工，只记录） | 真机平放/手抬 10–15° 各截一张 | 现象与 RT-008a 一致；角度以手机水平仪为准（±1°），**不判失败** | 两张截图 + notes |
 | RT-009 | 8 字校准 | `pm clear` → 启动 → 首次进罗盘；点跳过；杀进程再进 | 首次出现一次引导；跳过后不再出现；`lc_prefs.xml` 的 `calibration_done=true` | 两张截图 + xml |
-| RT-010 | 全关回基线 | 注入固定 heading → 关闭 P0-1 开关 → dump `reading_text` | 与 `docs/qa/baseline-android/` 的同 heading 基线 dump **逐字相同**；无 `sensor_status`；罗盘中心无天池/十字线 | 基线 ui.xml vs 全关 ui.xml |
+| RT-010 | 全关回基线 | 注入固定 heading → 关闭 P0-1 开关 → dump `reading_text` | 与 `docs/qa/baseline-android/round-k01/`（K-01 单页基线；`round-d5/` 为 K-01 前三 Tab 基线，**已作废**，仅历史对照）的同 heading 基线 dump **逐字相同**；无 `sensor_status`；罗盘浮层中心无天池/十字线（K-01 后罗盘是同一页面的浮层，不是独立页） | 基线 ui.xml vs 全关 ui.xml |
 | RT-011 | 数值红线 | `python tests/numeric/tools/check_mechanics.py`；`python tests/numeric/run_all.py`；`git diff --stat app/mechanics.json` | 19 项有来源 0 估计；套件全绿（**当前 83 PASS**）；mechanics 0 改动；三盘取值只来自 `CompassData`/`plate()`，P0-1 **不得**引入第三套偏移 | 三条命令输出 |
 | RT-012 | 持久化 | 设 +5.0/真北 → `force-stop` → 重开 → 重新注入 raw=94.0 → dump | 仍是 +5.0、真北口径；读数 99.00° | xml + ui.xml |
 
@@ -114,7 +114,7 @@ Get-Content .\probe.csv
 - **PASS**：RT-001…RT-007、RT-008a、RT-009…RT-012 全过；RT-008b 有截图（只记录，不判）。
 - **FAIL**：任一预期不符。以下两条必须 FAIL：
   1. 只有「度数」变了、某个环没变（RT-002/003）——说明校准没进统一链路；
-  2. 全关状态还有状态条/天池（RT-010）——增量污染基线。
+  2. 全关状态还有状态条/浮层天池（RT-010；K-01 后罗盘是同一页面的浮层）——增量污染基线。
 - **BLOCKED**：S1–S5、S8 任一缺失，notes.md 写明缺哪条；**不要**用「人工拖动罗盘估角度」代替 S2/S8（误差 ±1° 会让 RT-002 失效）。
 
 ---

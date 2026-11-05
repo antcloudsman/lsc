@@ -79,7 +79,7 @@ Invoke-LCJs "window.innerWidth+'x'+window.innerHeight"
 | TD-012 | 断网降级 | 飞行模式 → 进 3D | ≤5 s 内回落 2D 并提示；`LC3D ERROR dem-load` 出现；不无限「加载中」 | 日志 + 截图 |
 | TD-013 | 性能 | 默认视角连续 10 s 采样 `state().fps`；再操作 5 min | ≥30 fps（允许 1 次瞬时低于 30）；无 FATAL EXCEPTION | 采样表 + logcat |
 | TD-014 | 全关 | 关闭 P0-4 开关后重复 TD-007，`target=both` 各查一次 | 两个 WebView 都无 `LCPICK`、无 marker、HUD 无倍率；3D 基本渲染与当前版本一致 | 日志 + 截图 |
-| TD-015 | 不碰基线 | 关掉 P0-4，回罗盘态（**LC 现状为罗盘 Tab；K-01 后为同页浮层**）dump `reading_text`；`git diff app/mechanics.json`；`python tests/numeric/run_all.py` | 与 `docs/qa/baseline-android/` 基线逐字一致；19 项 0 改动；全绿 | ui.xml + diff + 测试输出 |
+| TD-015 | 不碰基线 | 关掉 P0-4，回罗盘态（**K-01 已落地：同一页面的罗盘浮层，不再是罗盘 Tab**）dump `reading_text`；`git diff app/mechanics.json`；`python tests/numeric/run_all.py` | 与 `docs/qa/baseline-android/round-k01/` 基线逐字一致（待 LC测试 重冻后生效；`round-d5/` 已作废）；19 项 0 改动；全绿 | ui.xml + diff + 测试输出 |
 | TD-016 | **onEvent 契约** | 点选一个正常点，抓 `LCAndroid.onEvent` 的 JSON（JS 侧 `console.log` 同份 payload） | 字段齐全 `type=pick`、`lng/lat/elev/heading/src=3d`；`elev` 与同点 `probe.elev` 一致；类型为数字不是字符串 | 日志 JSON |
 | TD-017 | 缺高程传 null | 点一个 DEM 缺块位置（或断网后点选） | JSON 中 `elev: null`（**不是 0**）；界面显示「无数据」 | 日志 JSON + 截图 |
 | TD-018 | 单点覆盖 | 连点 3 个不同位置 | 标记始终只有 1 个（`n=1`），payload 为最后一点；无重叠堆积 | 日志 + 截图 |

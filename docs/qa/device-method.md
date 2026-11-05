@@ -53,8 +53,9 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 # 校验：文件 >10KB、尺寸 1228×2700
 ```
 
-- 基线参考：`docs/qa/baseline-android/round-d5/`（D5 后重冻，见其 `manifest.md` 与
-  `SHA256SUMS.txt`；旧 `docs/qa/baseline-android/` 为 02:56 版，不要再用）。
+- 基线参考：`docs/qa/baseline-android/round-k01/`（K-01 单页基线，见其 `manifest.md` 与
+  `SHA256SUMS.txt`）；`round-d5/` 为 K-01 前三 Tab 基线，**已作废**，仅历史对照；
+  更早的根目录 `docs/qa/baseline-android/`（02:56 版）不要再用。
 - 截图航向是**设备实际值**（基线为 273.85°），不是注入值；做像素 diff 必须同一航向、
   同一 P0-1 开关态，否则会全红。
 - 本轮冻结物里 `logcat.txt` 不入库（日志），证据放 `checks/qa-baseline-d5/logcat.txt`。
@@ -62,7 +63,8 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 ## 5. 本轮已知未完成
 
 - 知识页 dump 在 D5 后失败一次，未收录；需要时按 §1 先清远程文件、在知识页等 2s 再试。
-- AT-P0-0 的「P0-1 总开关全关」变体基线已补：`round-d5/variant-p01/`
+- AT-P0-0 的「P0-1 总开关全关」变体基线：`round-d5/variant-p01/` 随三 Tab 布局**作废**；
+  K-01 后需在 `round-k01/` 按「单页 + 罗盘浮层」重采（见 `docs/qa/k-01-pending.md` P-04/P-05）。
   （同 87654af 构建、同航向 273.85°、on/off 同会话；见其 `manifest.md`）。
 
 ## 6. adb 调试广播的 shell 吃参数坑（2026-11-05 客户端实测）

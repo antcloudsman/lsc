@@ -472,6 +472,23 @@ function lc_measure_clear() {
 function lc_measure_undo() {
   if (measure.pts.length) { measure.pts.pop(); measureEmit(); renderOverlays(); }
 }
+/* F-12 原版打点方式是「拖图把中心对到目标 → 点『添加点』」，不是点哪打哪
+ * （原版 JS addCenterPoint(){ map.getCenter() → eventClick }，逆向 2ba81d0 查实）。
+ * 这里取当前地图中心作为新测量点，落点与 placeMarker 的测量打点完全走同一条 measureAdd()：
+ *   - 2D：center 就是瓦片反算出的经纬度中心；
+ *   - 3D：render3D 里相机 lookAt 的 target 正是 center + 该点 DEM 高程，所以屏幕正中那一点
+ *     与点选拾取（demIntersectScreen）落在同一地表位置，海拔用 elevAt(center) 同源取得；
+ *   - 打点后不触发立向点：placeMarker 在 measure.on 时已直接 return，本接口根本不走 placeMarker。
+ * 未进入测量态时按「距离测量」起步（等价 lc_measure_start('distance')），避免客户端按钮点了没反应。 */
+function lc_measure_addCenter() {
+  if (!isFinite(center.lat) || !isFinite(center.lng)) return false;
+  if (!measure.on) { measure.on = true; measure.area = false; measure.pts = []; }
+  measureAdd(center.lat, center.lng);
+  console.log("LC3D measure addCenter lat=" + center.lat.toFixed(6) +
+    " lng=" + center.lng.toFixed(6) + " mode=" + (measure.area ? "area" : "distance") +
+    " elev=" + elevAt(center.lat, center.lng));
+  return true;
+}
 
 /* ---- F-13 API ---- */
 function paintStart(cx, cy) {
@@ -2751,7 +2768,7 @@ function runAT() {
     "getState", "getFps", "setUiMode", "getAttribution", "setRoadNet",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",
-    "lc_measure_start", "lc_measure_clear", "lc_measure_undo",
+    "lc_measure_start", "lc_measure_clear", "lc_measure_undo", "lc_measure_addCenter",
     "lc_draw_start", "lc_draw_end", "lc_draw_style", "lc_draw_undo", "lc_draw_clear",
     "lc_draw_export", "setFishLayer", "lc_setFishLayer", "lc_elev_query",
     "queryElevation", "lc_queryElevation",

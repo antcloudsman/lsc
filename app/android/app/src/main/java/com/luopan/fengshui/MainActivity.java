@@ -752,6 +752,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(label + "：原版为工具子页，本步未实现");
                 }
                 break;
+            case "海拔查询":
+                // F-03：左列「海拔查询」→ ElevationActivity（默认开，无门槛）；关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f03")) {
+                    startActivity(new android.content.Intent(this, ElevationActivity.class));
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "测量":
                 // F-12：更多 → 测量（地图内交互，再点退出）；默认开，关掉回退旧 stub。
                 if (new FeatureFlags(this).isEnabled("f12")) {
@@ -1013,6 +1021,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // F-02：更多 → 超清地图 / 超清优化 → SuperMapActivity（默认开；关掉回退旧 stub）
                     startActivity(new android.content.Intent(this, SuperMapActivity.class));
                 } else if ("超清地图".equals(t) || "超清优化".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
+                } else if ("海拔查询".equals(t) && flags.isEnabled("f03")) {
+                    // F-03：更多 → 海拔查询 → ElevationActivity（默认开；关掉回退旧 stub）
+                    startActivity(new android.content.Intent(this, ElevationActivity.class));
+                } else if ("海拔查询".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("测量".equals(t) && flags.isEnabled("f12")) {
                     // F-12：更多 → 测量 → 地图内测量态（再点退出）

@@ -73,12 +73,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private View measureBar;
     private View drawBar;
     private TextView measureResultView;
-    private int drawColorIndex = 0;
-    private int drawWidthIndex = 0;
-    /** 6 色 / 3 档粗细（文档 F-13 §6：6 色 + 3 档；具体色值文档未列，取常用色板，待真机校正）。 */
+    private int drawColorIndex = 1;
+    private int drawWidthIndex = 1;
+    /** 原版精确 5 色（默认红=index1）；粗细 2/4/6（默认 4=index1）。 */
     private static final String[] DRAW_COLORS = {
-            "#ff5500", "#ffc800", "#00c853", "#2979ff", "#aa00ff", "#ffffff"};
-    private static final int[] DRAW_WIDTHS = {4, 8, 12};
+            "#2E75FE", "#FF0000", "#36B44B", "#F9C30F", "#000000"};
+    private static final int[] DRAW_WIDTHS = {2, 4, 6};
     private final android.os.Handler measureHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable measurePoll = new Runnable() {
@@ -130,6 +130,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         prefs = getSharedPreferences("lc_prefs", MODE_PRIVATE);
         roadNetOn = getSharedPreferences("MapManager", MODE_PRIVATE)
                 .getBoolean("showRoad", true);
+        // F-13：画笔颜色/粗细记忆（原版 MMKV；LC 用独立 prefs，不与 lc_compass 混用）。
+        android.content.SharedPreferences paintPrefs = getSharedPreferences("lc_paint", MODE_PRIVATE);
+        drawColorIndex = Math.max(0, Math.min(DRAW_COLORS.length - 1,
+                paintPrefs.getInt("colorIndex", 1)));
+        drawWidthIndex = Math.max(0, Math.min(DRAW_WIDTHS.length - 1,
+                paintPrefs.getInt("widthIndex", 1)));
         declination = prefs.getFloat("declination", 0f);
         trueNorth = prefs.getBoolean("true_north", false);
         calibrationDone = prefs.getBoolean("calibration_done", false);
@@ -1069,6 +1075,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         exitMeasure();
         drawMode = true;
         js("lc_draw_start()");
+        js("lc_draw_style('" + DRAW_COLORS[drawColorIndex] + "'," + DRAW_WIDTHS[drawWidthIndex] + ")");
         if (drawBar == null) drawBar = buildDrawBar();
         if (drawBar.getParent() == null) addBottomBar(drawBar);
     }
@@ -1086,11 +1093,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         LinearLayout bar = bottomBar(R.id.lc_draw_panel);
         bar.addView(barButton(R.string.lc_draw_color, R.id.lc_draw_color, v -> {
             drawColorIndex = (drawColorIndex + 1) % DRAW_COLORS.length;
+            getSharedPreferences("lc_paint", MODE_PRIVATE).edit()
+                    .putInt("colorIndex", drawColorIndex).apply();
             js("lc_draw_style('" + DRAW_COLORS[drawColorIndex] + "',0)");
             toast("颜色 " + DRAW_COLORS[drawColorIndex]);
         }));
         bar.addView(barButton(R.string.lc_draw_width, R.id.lc_draw_width, v -> {
             drawWidthIndex = (drawWidthIndex + 1) % DRAW_WIDTHS.length;
+            getSharedPreferences("lc_paint", MODE_PRIVATE).edit()
+                    .putInt("widthIndex", drawWidthIndex).apply();
             js("lc_draw_style(''," + DRAW_WIDTHS[drawWidthIndex] + ")");
             toast("粗细 " + DRAW_WIDTHS[drawWidthIndex]);
         }));

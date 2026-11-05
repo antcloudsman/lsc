@@ -136,6 +136,7 @@
 
     <!-- 功能开关（调试/回退，D-001）：入口 + 18 行 -->
     <item name="lc_featureflag_entry" type="id" />
+    <item name="lc_settings_entry" type="id" />
     <item name="lc_featureflag_back" type="id" />
     <item name="lc_featureflag_title" type="id" />
     <item name="lc_featureflag_list" type="id" />

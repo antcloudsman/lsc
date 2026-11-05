@@ -45,6 +45,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-07 看水系（LC地图 新建页） -->
+        <activity
+            android:name=".WaterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

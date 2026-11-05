@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-07 看水系（LC地图，2026-11-05）：AT 稳定 id，前缀 lc_water_* -->
+    <item name="lc_water_back" type="id" />
+    <item name="lc_water_title" type="id" />
+    <item name="lc_water_content" type="id" />
+    <item name="lc_water_empty" type="id" />
+    <item name="lc_water_status" type="id" />
+    <item name="lc_water_panel" type="id" />
+    <item name="lc_water_name" type="id" />
+    <item name="lc_water_desc" type="id" />
+    <item name="lc_water_refresh" type="id" />
+    <item name="lc_water_center" type="id" />
+    <item name="lc_water_close" type="id" />
+    <item name="lc_water_gap" type="id" />
+</resources>

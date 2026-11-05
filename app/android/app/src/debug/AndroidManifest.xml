@@ -47,5 +47,11 @@
             android:exported="true"
             tools:replace="android:exported" />
 
+        <!-- F-07 看水系：只在 debug 变体导出 -->
+        <activity
+            android:name=".WaterActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
     </application>
 </manifest>

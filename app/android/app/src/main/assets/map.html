@@ -107,6 +107,8 @@ var ovKind = "", ovPoints = [], ovEls = [], ovLayer = null;   // F-06/F-07 点�
 var wbOn = false;              // F-10 历史影像：Esri Wayback 近似（Google 历年影像不可得）
 var wbRelease = "";            // Wayback 释放号（来自 waybackconfig.json）
 var baseBeforeWb = null;       // 进入历史影像前的底图
+/* F-02 瓦片内存缓存：命中时用 dataURL，不再走网络（Java 侧拼接还有磁盘缓存） */
+var tileCacheOn = false, tileCache = {}, tileCacheKeys = [], TILE_CACHE_MAX = 160;
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -195,11 +197,45 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
       if (yy < 0 || yy >= n) continue;
       var left = x * 256 - tx;
       var top = y * 256 - ty;
-      html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
-        'src="' + tileUrl(layer, zoom, xx, yy) + '" onerror="this.style.display=\'none\'">';
+      var url = tileUrl(layer, zoom, xx, yy);
+      var cached = tileCacheOn ? tileCache[url] : null;
+      if (cached) {
+        html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
+          'src="' + cached + '">';
+      } else {
+        html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
+          (tileCacheOn ? 'crossorigin="anonymous" ' : '') +
+          'src="' + url + '" onload="__tileLoaded(this,\'' + url + '\')" ' +
+          'onerror="this.style.display=\'none\'">';
+      }
     }
   }
   layerEl.innerHTML = html;
+}
+
+/* F-02 瓦片缓存：解码后存 dataURL（有上限），再渲染同一瓦片不再走网络。
+ * 注意：天地图瓦片带 CORS 头，才允许 `crossorigin` + canvas 取数据；失败就静默不缓存。 */
+function __tileLoaded(img, url) {
+  if (!tileCacheOn) return;
+  try {
+    var cv = document.createElement("canvas");
+    cv.width = 256; cv.height = 256;
+    cv.getContext("2d").drawImage(img, 0, 0);
+    var d = cv.toDataURL("image/jpeg", 0.85);
+    if (!tileCache[url]) {
+      tileCacheKeys.push(url);
+      if (tileCacheKeys.length > TILE_CACHE_MAX) delete tileCache[tileCacheKeys.shift()];
+    }
+    tileCache[url] = d;
+  } catch (e) { /* 不可取像素（CORS/格式）时放弃缓存，不影响显示 */ }
+}
+
+function enableTileCache(on) {
+  tileCacheOn = !!on;
+  if (!tileCacheOn) { tileCache = {}; tileCacheKeys = []; }
+  emit({ type: "cache", on: tileCacheOn, count: tileCacheKeys.length });
+  console.log("LC3D cache on=" + tileCacheOn);
+  return tileCacheOn;
 }
 
 function setBase(b) {
@@ -1631,6 +1667,7 @@ function getState() {
     base: base, drape: drape, roadNet: roadNet,
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind,
     wayback: wbOn, waybackRelease: wbRelease,
+    cache: tileCacheOn, cacheCount: tileCacheKeys.length,
     uiMode: uiMode,
     attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
@@ -1654,6 +1691,7 @@ window.__LC3D = {
   setRidge: setRidge,
   setWayback: setWayback,
   setWaybackRelease: setWaybackRelease,
+  enableTileCache: enableTileCache,
   overlay: setOverlay,
   clearOverlay: clearOverlay,
   elevAt: elevAt,
@@ -1863,7 +1901,7 @@ function runAT() {
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
     "getState", "getFps", "setUiMode", "getAttribution", "setRoadNet",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
-    "setWayback", "setWaybackRelease"];
+    "setWayback", "setWaybackRelease", "enableTileCache"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

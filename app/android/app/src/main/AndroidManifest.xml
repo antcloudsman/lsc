@@ -63,6 +63,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-02 超清地图（LC地图 新建页）：z18 本地拼接 + 磁盘/内存缓存 -->
+        <activity
+            android:name=".SuperMapActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

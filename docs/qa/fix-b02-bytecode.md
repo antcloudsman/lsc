@@ -190,13 +190,15 @@ Opened 'E:\APPDetector\tmp-b02dex\classes.dex', DEX version '037'
 
 ---
 
-## 6 运行态未验（**BLOCKED-环境**，不标 PASS）
+## 6 运行态未验（**BLOCKED-设备策略（纯净模式）**，不标 PASS）
 
-**结论没有运行态证据。** 原因：本机唯一在册设备 `L2E0222531014833`（Android 12，华为）对 ADB 安装强制走三道设备侧 UI，最后一道要求华为统一身份认证：
+> **2026-11-05 17:1x 根因更正（技术总监 dump 原文）**：设备开着**纯净模式增强防护**，弹窗原文「纯净模式增强防护下，仅支持安装经过华为应用市场安全检测的应用。未查询到此应用的 ICP 备案信息…」，且**没有「继续安装」按钮**（只有「查找类似应用」「取消安装」）。因此 `INSTALL_FAILED_ABORTED: User rejected permissions` 的真实含义是**纯净模式拒绝安装**，不是「弹窗被人点掉」，也不是「需要华为账号认证」。我此前把 `settings list` 的 `pure_mode_state=0` / `pure_enhanced_mode_state=0` 当权威状态是错的——那些是镜像值，权威状态在华为 `systemmanager`。本节原先把「统一身份认证」写成主因，按此更正。
+
+**结论没有运行态证据。** 设备 `L2E0222531014833`（Android 12，华为）的安装被上述纯净模式拦截。我当时逐层看到的现场记录保留如下，但**不是根因**：
 
 1. `com.android.packageinstaller/.InstallStaging` →「风险提示」对话框（`继续安装` @ `[629,2471][1133,2578]`）；
-2. `com.huawei.appmarket/...riskcheck.ui.activity.InstallDistActivity`（安装来源：PC 工具 / 应用备案状态未知，含广告位；勾选「已了解」@ `[81,2141][203,2258]` 后再点 `继续安装` @ `[81,2484][1147,2578]`）；
-3. `com.huawei.coauthservice/...UnifiedAuthenticationDialogActivity` —— 需要华为账号/生物认证，**未代做**。
+2. `com.huawei.appmarket/...riskcheck.ui.activity.InstallDistActivity`（安装来源：PC 工具 / 应用备案状态未知，含广告位）；
+3. `com.huawei.coauthservice/...UnifiedAuthenticationDialogActivity`（要求华为账号/生物认证，**未代做**）。
 
 已试无效的安装方式：`adb install`（streamed，>2 min 无返回）、`adb install --no-streaming`（>3 min）、`adb push` + `pm install`（>3 min）；期间 `pm list packages com.luopan.fengshui` 始终为空。**debug 包同样被拦在同一处**（对照组），说明是设备安装策略，不是本 APK 的问题。
 
@@ -214,9 +216,9 @@ adb -s L2E0222531014833 logcat -d -s LCDEBUG LCJS
 | 组 | 期望 | 判定 |
 |---|---|---|
 | release（本文件的 APK） | 上述 logcat **无** `bridge registered`、**无** `LCJS`；读数不被 94.0 冻结 | PASS |
-| debug（阳性对照） | 必须出现 `bridge registered sdk=... action=com.luopan.fengshui.DEBUG`，且 `js "1+1"` 出两条 `LCJS`（`mapView -> 2` / `compass -> 2`） | PASS |
+| debug（阳性对照） | 必须出现 `bridge registered sdk=... action=com.luopan.fengshui.DEBUG`，且 `js "1+1"` 出 **≥1 条** `LCJS` 且返回值解析为 **2**（新单 WebView 包 `map -> 2`；旧双 WebView 包 `mapView -> 2` / `compass -> 2`）。条数不再作为判据：K-01 step-1（`42f5cb7`）双 WebView 合一后由 2 变 1 是预期 | PASS |
 
-解除办法（二选一，均需设备侧操作，非本仓库改动）：设备「开发者选项 → 关闭『通过 USB 安装应用需要验证』」；或在该设备手动完成一次统一身份认证后再装。
+解除办法（设备侧操作，非本仓库改动）：设备「设置 → 系统和更新 → 纯净模式 → 退出」，必要时同时关闭「增强防护」；解除后由技术总监单人装包（`3E7CA58B…` / 6,560,609 B）。**解除前任何人不得再试装包**——每次尝试都会把焦点抢到华为应用市场并留下弹窗，既装不上也打断他人取证。
 
 ---
 

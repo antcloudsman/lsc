@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        applyImmersiveFullscreen();
 
         content = findViewById(R.id.content);
 
@@ -99,6 +100,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         if (p01Enabled && !calibrationDone) showCalibrationGuide();
         applyTrustState();
+    }
+
+    /**
+     * K-01 几何：原版是沉浸全屏（红线贯穿 y=0–2699、圆心＝屏幕中心）。
+     * 非沉浸时内容区被状态栏下压 126px，浮层圆心实测偏到 (612,1414) 而不是 (614,1350)。
+     * 只动窗口/视图层，不碰 map.html。
+     */
+    private void applyImmersiveFullscreen() {
+        getWindow().setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            android.view.WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode =
+                    android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
+        }
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
 
     /** P0-1 RT-010: master switch — off means no status bar / trust row / 天池. */
@@ -265,9 +290,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 罗盘浮层：圆心＝屏幕中心；直径与 face alpha 待 measurements.md（见本笔「待跑」块）。
         compassView = new CompassView(this);
         compassView.setOnHeadingChangeListener(h -> updateReading());
-        // 直径按 measurements.md 实测：D/W = 73.3–73.8%（orig-06-read.png，外径 900–906 px / 1228）。
-        // +16 抵消 CompassView 内 r = min(cx,cy) - 8f 的收缩，使绘制外径 = 0.733 屏宽。
-        int csize = (int) (getResources().getDisplayMetrics().widthPixels * 0.733f) + 16;
+        // 直径按 measurements.md 实测：orig-06-read.png 外径 906 px / 1228 = 73.78%
+        // （900–910 区间，独立复算一致）。+16 抵消 CompassView 内 r = min(cx,cy) - 8f 的收缩，
+        // 使绘制外径 = 0.7378 屏宽（1228 → 906），不再用旧的 0.733（900）。
+        int csize = Math.round(getResources().getDisplayMetrics().widthPixels * 0.7378f) + 16;
         FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(csize, csize);
         cp.gravity = android.view.Gravity.CENTER;
         compassView.setVisibility(View.GONE);
@@ -910,6 +936,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
+        applyImmersiveFullscreen();
         registerDebugBridge();
         if (compassView != null && prefs != null) {
             int dial = prefs.getInt("dial_index", 1);

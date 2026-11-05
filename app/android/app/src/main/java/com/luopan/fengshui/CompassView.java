@@ -97,7 +97,12 @@ public class CompassView extends View {
         canvas.rotate(-heading, cx, cy);
         float d = r * 2f;
         android.graphics.RectF dst = new android.graphics.RectF(cx - d / 2f, cy - d / 2f, cx + d / 2f, cy + d / 2f);
-        canvas.drawBitmap(artwork, null, dst, paint);
+        // K-01 face：盘面＝原版位图本身，按位图 alpha 合成，不做任何整盘填充/底色。
+        // dial_full_1 实测 alpha=0 占 21.4%（透明处透出地图）、alpha=255 占 78.5%；dial_full_0 透明 81.8%。
+        android.graphics.Paint bmp = new android.graphics.Paint(
+                android.graphics.Paint.ANTI_ALIAS_FLAG | android.graphics.Paint.FILTER_BITMAP_FLAG);
+        bmp.setAlpha(255);
+        canvas.drawBitmap(artwork, null, dst, bmp);
         canvas.restore();
     }
 

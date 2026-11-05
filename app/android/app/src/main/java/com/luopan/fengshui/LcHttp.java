@@ -14,10 +14,22 @@ import java.util.Map;
 /**
  * 极简 HTTP GET（原生图表数据用）：8 s 超时、UTF-8、响应字节上限。
  *
- * UA 必须是**浏览器形态**：2026-11-05 实测天地图 WAF 对
- * `Luopan/1.0 (Android)` / `okhttp/4.12` / `Dalvik/2.1.0` 一律返回 **403**，
- * 换成 `Mozilla/5.0 (...) Chrome/120 Mobile Safari/537.36` 才是 200。
- * 这不是参数问题——所有「某地搜不到、北京能搜到」的空结果都由此引起。
+ * **UA 策略（MD-10，2026-11-05 换用户个人 key 后重测）**：
+ * 原来为了绕开天地图 WAF 的 403，全局伪装成浏览器 UA。换成用户个人 key 后实测结论**反过来了**：
+ *
+ * | 目标 | key | 请求 UA | 结果 |
+ * |---|---|---|---|
+ * | `api.tianditu.gov.cn`（geocoder / v2/search） | 服务端 key | Dalvik/2.1.0（Android 原生默认） | **200**（山东 count=117） |
+ * | 同上 | 服务端 key | Java/1.8（JVM 默认） | 200 |
+ * | 同上 | 服务端 key | 浏览器 Chrome UA | **403** |
+ * | 同上 | 服务端 key | 不带 UA | 403 |
+ * | `t0.tianditu.gov.cn` WMTS 瓦片 | 网页端 key | WebView 浏览器 UA | 200（image/jpg, 12,033 B） |
+ * | 同上 | 网页端 key | Dalvik UA | 403 |
+ * | 同上 | 服务端 key | Dalvik UA | 200 |
+ *
+ * 即：**服务端 key 要客户端原生 UA（不要浏览器伪装），网页端 key 要浏览器 UA（WebView 自带）**。
+ * 所以伪装默认关闭（{@link #uaSpoof}），只在需要时用 {@link #setUaSpoof(boolean)} 兜底打开；
+ * 历史兼容用，不再是默认路径。注意：伪装对服务端 key **有害**（会 403）。
  *
  * 响应上限（C-03）：{@link #MAX_BYTES} 默认 8 MB，{@code get/bytes} 与
  * {@link #openStream} 共用同一道闸门；超限抛 {@link IOException} 并写明真实上限与 URL，
@@ -32,13 +44,25 @@ final class LcHttp {
     static final int MAX_BYTES = 8 * 1024 * 1024;
 
     /**
-     * 全局 UA（只此一份，别再写字面量）。
-     * 天地图 WAF 对 `Luopan/…`、`okhttp/…`、`Dalvik/…` 返回 403，
-     * 对浏览器形态 UA 返回 200（2026-11-05 实测，见 F-06-F-07 诊断）。
+     * 浏览器形态 UA —— **仅伪装开关打开时使用**（默认关，见类注释的实测矩阵）。
+     * 保留常量是因为 Bing 图片等个别接口仍显式引用它；天地图接口不要再默认套它。
      */
     static final String UA =
             "Mozilla/5.0 (Linux; Android 12; LC) AppleWebKit/537.36 (KHTML, like Gecko) "
                     + "Chrome/120.0 Mobile Safari/537.36";
+
+    /** UA 伪装开关：默认 **false** = 不设 User-Agent，用平台默认（Dalvik/…）。 */
+    private static volatile boolean uaSpoof = false;
+
+    /** 兜底开关：只有确认某接口必须浏览器 UA 时才打开；服务端 key 下打开会 403。 */
+    static void setUaSpoof(boolean on) {
+        uaSpoof = on;
+        Log.i(TAG, "ua-spoof=" + on);
+    }
+
+    static boolean isUaSpoof() {
+        return uaSpoof;
+    }
 
     static String get(String url) throws Exception {
         return get(url, null);
@@ -107,11 +131,11 @@ final class LcHttp {
         final HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(TIMEOUT_MS);
         c.setReadTimeout(TIMEOUT_MS * 2);
-        c.setRequestProperty("User-Agent", UA);
+        if (uaSpoof) c.setRequestProperty("User-Agent", UA);   /* 默认不设，用平台默认 UA */
         if (headers != null) {
             for (Map.Entry<String, String> e : headers.entrySet()) {
                 if (e.getKey() == null || e.getValue() == null) continue;
-                if ("User-Agent".equalsIgnoreCase(e.getKey())) continue;   // UA 只认全局那份
+                if ("User-Agent".equalsIgnoreCase(e.getKey())) continue;   // UA 只由上面统一决定
                 c.setRequestProperty(e.getKey(), e.getValue());
             }
         }

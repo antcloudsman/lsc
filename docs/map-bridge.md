@@ -36,11 +36,38 @@
 - 天地图瓦片同样返回 `Access-Control-Allow-Origin: *`，可作 WebGL 纹理上传。
 - 3D 贴面失败（断网/配额）时自动退回「高程配色 + 自研光照」，地形结构仍在。
 
-### 2.3 key
+### 2.3 key（仓库内零 key）
 
-天地图 key 沿用原版内置值（`dd18…105e`，**全仓唯一字面量在 `assets/map.html:107` 的 `var KEY`**；Java 侧由
-`app/build.gradle` 构建时解析成 `BuildConfig.TDT_KEY`，见 MD-01 修复）。未改动此 key；商用配额/换 key 属产品决策，未确认。
-日志与异常里的 URL 一律经 `LcHttp.redact()` 只留 host+path，不打印 `tk`。
+天地图两个 key 都是**用户个人 key**，存在仓库外（`secrets/tdt.properties`），由 LC服务端 在
+**构建期注入** `BuildConfig.TDT_SERVER_KEY` / `BuildConfig.TDT_WEB_KEY`（见 `docs/BUILD-SECRETS.md`）。
+仓库里**没有任何 key 字面量**（仓库是 public），`map.html` 也不再带 key。
+
+分工与传递方式：
+
+| key | 用途 | 传递/UA |
+|---|---|---|
+| `TDT_SERVER_KEY` | 原生侧 `api.tianditu.gov.cn`：逆地理、分类搜索、超清拼接瓦片 | `MapKeys.TDT` 引用；**不设 UA，用平台默认** |
+| `TDT_WEB_KEY` | WebView 里的 WMTS 瓦片 | `MapAsset.url(hash)` 拼成 `map.html?tk=<webKey>#…` 交给 JS；WebView 自带浏览器 UA |
+
+- `map.html` 顶部：`var KEY = new URLSearchParams(location.search).get("tk") || "";`，取不到就空 +
+  一条 `console.warn`，**没有任何硬编码回退**。
+- **query 在 hash 之前**：`map.html?tk=…` 是 search，`#in3d&measure=area` 是 hash，两者互不干扰。
+- 旧的原版内置 key（`dd18…105e`）已于 2026-11-05 失效（天地图返回 `301001 非法key`），所有走它的
+  山/水/钓点/逆地理请求当时全空——换成个人 key 后恢复。
+- 日志与异常里的 URL 一律经 `LcHttp.redact()`，只留 host+path，不打印 `tk`。
+- 自查：`grep dd1885` 在代码侧零命中；两个新 key 全仓零命中（构建期注入，不落盘）。
+
+**UA（MD-10，2026-11-05 实测矩阵，伪装已默认关闭）**：
+
+| 目标 | key | UA | 结果 |
+|---|---|---|---|
+| api.tianditu.gov.cn | 服务端 | Dalvik/Java 原生默认 | **200** |
+| api.tianditu.gov.cn | 服务端 | 浏览器 Chrome UA | **403**（`301013 权限类型错误：Key 为服务器端`） |
+| api.tianditu.gov.cn | 服务端 | 不带 UA | 403 |
+| t0.tianditu.gov.cn WMTS | 网页端 | WebView 浏览器 UA | 200（image/jpg, 12,033 B） |
+| t0.tianditu.gov.cn WMTS | 网页端 | Dalvik UA | 403 |
+
+即：**按 key 类型用天然 UA 即可**；`LcHttp.setUaSpoof(true)` 保留为兜底开关，默认关。
 
 ## 3. 3D 引擎参数（可复核）
 
@@ -101,8 +128,12 @@
 | `&fs` | 启动即全屏（保留「退出全屏」） |
 | `&srcpanel` / `&src=N` | 打开底图源面板 / 直接选第 N 个源（0 基） |
 | `&roadnet` | 启动即开「路网视图」（F-04，切 `vec`） |
+| `&uimode=canvas` / `&ui=none` | 回放页用：隐藏地图自带左侧工具列/底图控件/角注/HUD，只留地图与轨迹层（默认 `full` 不变）；也可运行期 `lc_setUiMode('canvas')` |
 
-例：`file:///android_asset/map.html#in3d`（3D 桥对拍用）。自测入口 `#selftest` 仍保留（会等 DEM 就绪后自动点选一次）。
+> **key 不在 hash 里**：网页端 key 走 `?tk=` 查询参数（`map.html?tk=<webKey>#in3d&measure=area`），
+> 由 Java `MapAsset.url("#…")` 拼好；hash 语义与顺序不变。
+> 例：`file:///android_asset/map.html#in3d`（3D 桥对拍用，无 key 时页面 console.warn 且不加载瓦片）。
+> 自测入口 `#selftest` 仍保留（会等 DEM 就绪后自动点选一次）。
 
 **hash 在页面初始化与 `hashchange` 时都会应用**，所以同文档导航只改 hash（不触发 onload）也能生效：客户端一次 `loadUrl("...#in3d&sit")` 即可。hash 片段按 token 匹配（`#in3d`/`&sit`/`&lat=`），不会被 `lat=` 之类误命中。
 > 实机注意：部分 WebView 对「仅 fragment 不同」的 `loadUrl` 不导航、也不发 `hashchange`；若客户端发现页面无反应，改用 `evaluateJavascript("location.hash='#in3d&sit'")` 即可走同一路径。
@@ -389,3 +420,29 @@ MC7 2D 取高程 elev=53.8（DEM 未就绪时为 null）
 - 瓦片缓存 `cacheDir/tdt_img18`：**6000 张 / 200 MB** 双上限，开跑前按 `lastModified` 做 LRU 清理；
 - 单瓦片失败重试（含首次最多 3 次，间隔 120/300 ms），三次都失败才计失败、才可能作废整图；
 - 成品改 **JPEG 95**（`.jpg`，影像无 alpha），成品目录保留最新 20 张且 ≤ 200 MB。
+
+### 12.7 回放页 `uimode=canvas`（2026-11-05）
+
+轨迹回放页原来露出 map.html 左侧整列工具（影像/地形/放大…），还挡原生「1×」按钮。新增模式：
+
+- `setUiMode('canvas')` / 别名 `lc_setUiMode('canvas')` / hash `&uimode=canvas` 或 `&ui=none`；
+- 隐藏 `#controls`（左侧工具列+底图控件）、`#hint`、`#heading-label`、`#srcInfo`、`#needle`、`#hud`、`#srcPanel`，
+  只留瓦片/canvas 与轨迹/测量覆盖层；相机的平移缩放**照常可用**；
+- `getState().uiMode === "canvas"` 供 AT 断言；**默认（不传）仍是 `full`**，主页面行为不变；
+- `TrackReplayActivity` 已改用 `MapAsset.url("#in3d&uimode=canvas")`。
+
+无头验收：`tools/map/uimode-canvas-test.html`（6/6 PASS）——
+`C1 uiMode=canvas` / `C2 controls/hint/srcInfo 全 none` / `C3 needle none` /
+`C4 相机与轨迹层仍工作（trackNodes>0）` / `C5 'full'→lc_setUiMode('canvas') 生效` /
+`C6 不带 uimode 的对照页仍是 full、#controls 可见`。
+
+### 12.8 key 迁移与 MD-10 收口（2026-11-05）
+
+- 旧的原版内置 key 已失效（天地图 `301001 非法key`，三种 UA 全 403），山/水/钓点/逆地理曾一起空——
+  **不是 F-14 字段改动导致的回归**。
+- 现方案：`MapKeys.TDT = BuildConfig.TDT_SERVER_KEY`（原生，默认 UA）；`MapAsset.url(hash)` 把
+  `BuildConfig.TDT_WEB_KEY` 以 `?tk=` 交给 map.html；仓库零 key。
+- MD-10 从「登记风险」改为**已消除**：`LcHttp` 默认不设 UA（伪装默认关），实测矩阵见 §2.3。
+- PC 复核（服务端 key + `okhttp/4.12`）：geocoder `HTTP 200 status=0 province_code=156370000`；
+  v2/search 山 260203/山东 `HTTP 200 infocode=1000 count=117`；湖 260205/湖南 `count=36`；
+  WMTS 瓦片 `HTTP 200 image/jpg 12,033 B`。

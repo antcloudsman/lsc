@@ -1,6 +1,8 @@
 # P0-4 3D 点选 AT 无头执行器（LC地图）
 # 用法: pwsh -File tools\map\run_at_p04.ps1 [-Chrome <path>] [-Port 8791] [-View 'lat=40.02&lng=115.45&z=12']
 # 原理: 本地 http 起静态服务 -> Chrome headless 打开 map.html#at -> 抓 console 的 LCAT/LCAT-RESULT
+# 天地图网页端 key 不在仓库里：从环境变量 LC_TDT_WEB_KEY 或仓库外 secrets/tdt.properties 取，
+# 拼成 ?tk=… 传给 map.html（否则瓦片 403，TD-003 纹理那条会失败）。
 param(
   [string]$Chrome = 'C:\Program Files\Google\Chrome\Application\chrome.exe',
   [int]$Port = 8791,
@@ -11,6 +13,19 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $assets = Join-Path $root 'app\android\app\src\main\assets'
 $shot = Join-Path $root 'checks\lc-map\at-run.png'
 
+# web key：环境变量优先，其次仓库外 secrets 文件（绝不打印 key 本身）
+$tk = $env:LC_TDT_WEB_KEY
+if (-not $tk) {
+  # $root 是工作树根（E:\...\wt\stub-map），secrets 在它的上两级（E:\...\secrets）
+  $props = Join-Path (Split-Path -Parent (Split-Path -Parent $root)) 'secrets\tdt.properties'
+  if (Test-Path $props) {
+    foreach ($line in Get-Content $props) {
+      if ($line -match '^\s*tdt\.web\.key\s*=\s*(\S+)\s*$') { $tk = $Matches[1] }
+    }
+  }
+}
+if (-not $tk) { Write-Host "AT-P04: WARN 没有天地图 web key（LC_TDT_WEB_KEY / secrets/tdt.properties），瓦片相关断言会失败" }
+
 if (-not (Test-Path $Chrome)) { Write-Host "AT-P04: FAIL (chrome not found: $Chrome)"; exit 2 }
 if (-not (Test-Path (Join-Path $assets 'map.html'))) { Write-Host "AT-P04: FAIL (map.html not found)"; exit 2 }
 
@@ -18,8 +33,9 @@ $srv = Start-Process -FilePath python -ArgumentList '-m', 'http.server', "$Port"
   -WorkingDirectory $assets -PassThru -WindowStyle Hidden
 try {
   Start-Sleep -Seconds 2
-  $url = "http://127.0.0.1:$Port/map.html#at&$View"
-  Write-Host "AT-P04: url=$url"
+  $q = if ($tk) { '?tk=' + [uri]::EscapeDataString($tk) } else { '' }
+  $url = "http://127.0.0.1:$Port/map.html$q#at&$View"
+  Write-Host ("AT-P04: url=" + ($url -replace 'tk=[^&#]+', 'tk=***'))
   $log = Join-Path $env:TEMP 'lc_at_p04.log'
   $cargs = "--headless=new --enable-unsafe-swiftshader --enable-logging=stderr --v=0 " +
     "--virtual-time-budget=34000 --window-size=500,800 --screenshot=`"$shot`" `"$url`""

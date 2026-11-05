@@ -191,8 +191,8 @@ public class OverlayActivity extends LcFeatureActivity {
                 restoreAll();
             }
         });
-        web.loadUrl("file:///android_asset/map.html#in3d&uimode=map&lat=" + startLat
-                + "&lng=" + startLng + "&z=11");
+        web.loadUrl(MapAsset.url("#in3d&uimode=map&lat=" + startLat
+                + "&lng=" + startLng + "&z=11"));
         root.addView(web, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 

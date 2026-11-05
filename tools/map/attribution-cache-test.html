@@ -14,8 +14,16 @@
     MC4 drapeLabel('wayback') = 历史影像(Esri)（HUD 贴面标签）
     MC5 缓存里同时出现 data:image/png（注记，保 alpha）与 data:image/jpeg（底图）
 -->
-<iframe id="f" src="../../app/android/app/src/main/assets/map.html#lat=39.9&lng=116.4&z=10"
-        width="420" height="820"></iframe>
+<iframe id="f" width="420" height="820"></iframe>
+<script>
+/* web key 不进仓库：本页把自身 URL 的 ?tk= 转发给 map.html（测试时由命令行传入） */
+(function () {
+  var m = (location.search || '').match(/[?&]tk=([^&#]*)/);
+  var tk = m ? decodeURIComponent(m[1]) : '';
+  document.getElementById('f').src = '../../app/android/app/src/main/assets/map.html'
+    + (tk ? ('?tk=' + encodeURIComponent(tk)) : '') + '#lat=39.9&lng=116.4&z=10';
+})();
+</script>
 <script>
 var R = [];
 function ok(name, cond, info) {

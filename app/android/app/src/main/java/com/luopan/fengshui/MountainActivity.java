@@ -116,8 +116,8 @@ public class MountainActivity extends LcFeatureActivity {
                 MAIN.postDelayed(() -> loadMountains(startLat, startLng), 900);
             }
         });
-        web.loadUrl("file:///android_asset/map.html#in3d&uimode=map&lat=" + startLat
-                + "&lng=" + startLng + "&z=9");
+        web.loadUrl(MapAsset.url("#in3d&uimode=map&lat=" + startLat
+                + "&lng=" + startLng + "&z=9"));
         content.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 

@@ -15,7 +15,11 @@
 param(
     [Parameter(Mandatory = $true)][string]$Apk,
     [string]$Device = 'L2E0222531014833',
-    [string]$OutDir
+    [string]$OutDir,
+    # 默认不自装：人工装包后只跑验收，避免与人工装包重复触发安装弹窗（K-01 纯净模式踩坑）。
+    # 需要脚本自装时显式传 -Install；-SkipInstall 显式跳过（兼容既有调用点）。
+    [switch]$Install,
+    [switch]$SkipInstall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -135,10 +139,15 @@ if ($devs -notmatch [regex]::Escape($Device)) {
     Add-Result 'ENV' 'BLOCKED' '设备在线' "设备 $Device 不在线"
     exit 2
 }
-$inst = (Invoke-Adb @('install', '-r', $Apk)).Trim().Split("`n")[-1]
-if ($inst -notmatch 'Success') {
-    Add-Result 'ENV' 'FAIL' 'install -r Success' $inst
-    exit 1
+# 安装段：默认不自装（人工装包 + 脚本只跑验收）。-Install 显式自装，-SkipInstall 显式跳过。
+if ($Install -and -not $SkipInstall) {
+    $inst = (Invoke-Adb @('install', '-r', $Apk)).Trim().Split("`n")[-1]
+    if ($inst -notmatch 'Success') {
+        Add-Result 'ENV' 'FAIL' 'install -r Success' $inst
+        exit 1
+    }
+} else {
+    Write-Host "ENV: 跳过安装段（默认不自装；人工装包或 -SkipInstall）"
 }
 Invoke-Adb @('shell', 'pm', 'grant', $Pkg, 'android.permission.ACCESS_FINE_LOCATION') | Out-Null
 Invoke-Adb @('shell', 'pm', 'grant', $Pkg, 'android.permission.ACCESS_COARSE_LOCATION') | Out-Null
@@ -231,7 +240,7 @@ if (-not $s0) {
     $u = Get-Ui 'ui-map-tools'
     $ok3d = $u.ok -and (Tap-Text $u.xml '3D')
     Start-Sleep -Milliseconds 1500
-    $s = Get-MapState
+    $s = Get-MapState 10
     Add-Result 'M4-3D' $(if ($ok3d -and $s -and $s.mode -eq '3d') { 'PASS' } else { 'FAIL' }) '点「3D」→ state.mode=3d' "mode=$($s.mode) pitch=$($s.pitch)" $u.path
     if ($s -and $s.mode -eq '3d') { Shot 'k01-3d.png' | Out-Null }
 

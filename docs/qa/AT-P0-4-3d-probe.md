@@ -20,7 +20,7 @@
 | M5 | 缺块（DEM 404/断网）显示「无数据」，**不得**返回 0 m；连带 `mesh/demoElev/HUD` 容错（约 30–50 行） | LC地图 | 现 `demAt()` 缺块返回 0，会造「假海平面」 |
 | M6 | **T-8 点选契约**（PRD §0.1）：JS 通过 `LCAndroid.onEvent(String json)` 发射 `{"type":"pick","lng":…,"lat":…,"elev":…,"heading":…,"src":"3d"}`，**缺高程传 `null`**；`{"type":"pick-clear"}` 清标记；客户端 `MapMarker` **单点覆盖**；**点选不联动罗盘读数**；3D 默认贴面为**影像**（`state().base === 'img'`），`ter` 留开关 | LC地图（JS 侧）+ LC客户端（桥，轮 C 后） | 桥未接前 TD-016…TD-019 判 BLOCKED；JS 侧用例可先跑 |
 
-> 基线对照物：`docs/qa/baseline-android/`（含 `probe.csv` 与三 Tab 截图）。TD-015/回归要用它。
+> 基线对照物：`docs/qa/baseline-android/`（含 `probe.csv` 与当前结构的截图；K-01 落地后须按「地图态 / 罗盘浮层态 / 面板态」重采）。TD-015/回归要用它。
 
 ---
 
@@ -79,7 +79,7 @@ Invoke-LCJs "window.innerWidth+'x'+window.innerHeight"
 | TD-012 | 断网降级 | 飞行模式 → 进 3D | ≤5 s 内回落 2D 并提示；`LC3D ERROR dem-load` 出现；不无限「加载中」 | 日志 + 截图 |
 | TD-013 | 性能 | 默认视角连续 10 s 采样 `state().fps`；再操作 5 min | ≥30 fps（允许 1 次瞬时低于 30）；无 FATAL EXCEPTION | 采样表 + logcat |
 | TD-014 | 全关 | 关闭 P0-4 开关后重复 TD-007，`target=both` 各查一次 | 两个 WebView 都无 `LCPICK`、无 marker、HUD 无倍率；3D 基本渲染与当前版本一致 | 日志 + 截图 |
-| TD-015 | 不碰基线 | 关掉 P0-4，回罗盘 Tab dump `reading_text`；`git diff app/mechanics.json`；`python tests/numeric/run_all.py` | 与 `docs/qa/baseline-android/` 基线逐字一致；19 项 0 改动；全绿 | ui.xml + diff + 测试输出 |
+| TD-015 | 不碰基线 | 关掉 P0-4，回罗盘态（**LC 现状为罗盘 Tab；K-01 后为同页浮层**）dump `reading_text`；`git diff app/mechanics.json`；`python tests/numeric/run_all.py` | 与 `docs/qa/baseline-android/` 基线逐字一致；19 项 0 改动；全绿 | ui.xml + diff + 测试输出 |
 | TD-016 | **onEvent 契约** | 点选一个正常点，抓 `LCAndroid.onEvent` 的 JSON（JS 侧 `console.log` 同份 payload） | 字段齐全 `type=pick`、`lng/lat/elev/heading/src=3d`；`elev` 与同点 `probe.elev` 一致；类型为数字不是字符串 | 日志 JSON |
 | TD-017 | 缺高程传 null | 点一个 DEM 缺块位置（或断网后点选） | JSON 中 `elev: null`（**不是 0**）；界面显示「无数据」 | 日志 JSON + 截图 |
 | TD-018 | 单点覆盖 | 连点 3 个不同位置 | 标记始终只有 1 个（`n=1`），payload 为最后一点；无重叠堆积 | 日志 + 截图 |
@@ -106,7 +106,7 @@ Invoke-LCJs "window.innerWidth+'x'+window.innerHeight"
 1. `scripts/build-android.ps1` 通过，无 FATAL。
 2. 2D：底图三选一、旋转、缩放、立向标记、定位、截图（截图依赖 B-09 修复状态，另见 PRD §2.1）。
 3. `python tests/numeric/run_all.py` 全绿。
-4. 开关全关三 Tab 截图 diff = 0。
+4. 开关全关：**当前结构**三 Tab 截图 diff = 0；K-01 落地后按「地图态 / 罗盘浮层态 / 面板态」重采基线。
 
 ---
 
@@ -115,4 +115,4 @@ Invoke-LCJs "window.innerWidth+'x'+window.innerHeight"
 - DEM 源是 Terrarium（`s3.amazonaws.com`），国内网络可能慢或超时：先单独测可达性；TD-012 必须在真实网络条件下跑一次，不能只在局域网。
 - 网格步长随 zoom 变化（z12 时约 234 m/格），所以 TD-007 的「1 网格」容差是**当前数据分辨率**决定的，不是实现误差；若 LC地图 后续提高 GRID 或 DEM 缩放级别，本容差要同步收紧。
 - `pick` 允许降级为「沿 `demAt` 网格步进 + 二分」，但必须在**同一 VEXAG 变换空间**里求交；否则 TD-008 必然错位。曲面按 2.5× 抬高后，屏幕射线与抬高后的地形求交，不是与平地求交。
-- **双 WebView**：罗盘 Tab（`MainActivity.buildCompassTab()`）与地图 Tab（`buildMapTab()`）各加载一份 `map.html`，`__LC3D` 是两个独立实例；任何 marker/倍率断言必须 `target=both` 两边都查。
+- **双 WebView**：罗盘态（LC 现状 `MainActivity.buildCompassTab()`）与地图态（`buildMapTab()`）各加载一份 `map.html`，`__LC3D` 是两个独立实例；任何 marker/倍率断言必须 `target=both` 两边都查。**K-01 落地后两 Tab 合并为单页（地图 + 罗盘浮层），WebView 可能只剩一个——届时应改为 `target=map`，先查 `__LC3D` 实例数再定**。

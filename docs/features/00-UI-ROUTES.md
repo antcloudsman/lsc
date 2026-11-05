@@ -56,7 +56,7 @@
 | F-12 | 更多「测量」 | `MeasureProveActivity` + 地图测量 | `MainActivity` 测量模式 + 底部结果面板；若文档证实 MeasureProve 是独立换算页再补 Activity | 覆盖层 | 可选 `MeasureProveActivity` | `f12` | 待 `F-12` 文档 |
 | F-13 | 更多「画笔」 | 地图标注/绘制 | `MainActivity` 绘制模式 + 底部工具条 | 覆盖层 | — | `f13` | 待 `F-13` 文档 |
 | F-14 | 更多「钓点」 | 钓点图层（原版会员） | 独立页直接开放：天地图 POI 等免费源能取则取；不可得处显式占位，不放假点 | Activity | `FishPointActivity`（实现名） | `f14` | 总纲 §4.1 |
-| F-15 | 更多「轨迹记录」 | `TrackListActivity` / `TrackSettingActivity` / `TrackReplayVideoActivity` | 三个独立页依次链路：列表 → 设置 → 回放 | Activity ×3 | `TrackListActivity` / `TrackSettingActivity` / `TrackReplayVideoActivity` | `f15` | 00-PLAN §1 |
+| F-15 | 更多「轨迹记录」 | `TrackListActivity` / `TrackSettingActivity` / `TrackReplayVideoActivity` | **定案（`F-15-轨迹-免费实现方案.md`）**：列表 → 详情 → 回放 三页；设置降为列表页底部面板；回放=地图内动画，**不做视频**（类名 `TrackReplayActivity`） | Activity ×3 + sheet | `TrackListActivity` / `TrackDetailActivity` / `TrackReplayActivity` | `f15` | F-15 方案 §1/§7 |
 | F-16 | 更多「地理影像」 | `GeographicImageryActivity` | 独立页直接开放 | Activity | `GeographicImageryActivity` | `f16` | 待 `F-16` 文档 |
 | F-17 | 罗盘工具条「透明度」「天支线」 | 浮层透明度 / 天支线圈层 | `MainActivity` 罗盘态：透明度滑杆浮层 + 天支线开关（`CompassView` 自绘圈层） | 覆盖层 | — | `f17` | 00-PLAN §1（未实现） |
 | F-18 | 盘面列表「自定义/简易/综合」 | `CompassListActivity` 目录 + 服务端目录 | 扩展现有 `CompassListActivity` 四组；本地内置目录（总纲 §4.1），自定义上传按文档 | 现有页扩展 | —（`CompassListActivity`） | `f18` | 数据依赖：服务端目录 → 本地内置 |
@@ -185,7 +185,7 @@
 1. F-01 已定：工具管理页（16 宫格 + 编辑/勾选/排序），原版付费分发页不实现。
 2. F-02 的 z18 降级是能力上限说明，非原版云端超清；文案不得写成「已实现云端超清」。
 3. F-03/F-12 的承载形式（覆盖层 vs 独立页）等单功能文档；当前表内为暂定。
-4. F-15 三个页面是否都需要独立入口，等 `F-15` 文档确认链路（列表→设置→回放）。
+4. ~~F-15 三个页面是否都需要独立入口~~ **已定（`F-15-轨迹-免费实现方案.md`）**：列表 → 详情 → 回放 三页；`TrackSettingActivity` 不建页，记录设置降为列表页底部面板；回放不做视频，`TrackReplayVideoActivity` 更名 `TrackReplayActivity`（详见方案 §1/§5/§7）。
 5. 抽屉尚未实现；设置页/功能开关是否迁入抽屉，等 K-01 后续与总监裁决。
 6. 本分支无 gap 线代码时，F-11 无法实现，只能先留路由。
 7. 数据替代矩阵（总纲 §4.1）里「公开天气 API」「天地图分类搜索」需 LC地图/服务端核对可用性与配额。

@@ -117,6 +117,13 @@ var wbRelease = "";            // Wayback 释放号（来自 waybackconfig.json�
 var baseBeforeWb = null;       // 进入历史影像前的底图
 /* F-02 瓦片内存缓存：命中时用 dataURL，不再走网络（Java 侧拼接还有磁盘缓存） */
 var tileCacheOn = false, tileCache = {}, tileCacheKeys = [], TILE_CACHE_MAX = 160;
+
+/* MD-09：桥入参条数上限（防调试注入通道/异常数据把 DOM 撑爆）。
+ * 超限按**先到先留**截断，并在对应事件里回传 dropped（被丢掉的条数），客户端可据此提示。 */
+var LIMIT_OVERLAY_POINTS = 2000;   // 单层点标（setOverlay / setOverlayLayer）
+var LIMIT_FISH_POINTS = 500;       // 钓点图层
+var LIMIT_TRACK_POINTS = 20000;    // 轨迹总点数
+var LIMIT_TRACK_SEGMENTS = 200;    // 轨迹段数
 /* F-12 测量 / F-13 画笔 */
 var measure = { on: false, area: false, pts: [] };
 var paint = { on: false, color: "#ff5500", width: 4, strokes: [], cur: null };
@@ -131,9 +138,10 @@ var ovLayersEl = null;
 /* F-15 轨迹回放（客户端做记录/列表/详情，这里只做桥与渲染） */
 var track = {
   loaded: false, segments: [], t0: 0, t1: 0, t: 0,
-  playing: false, rate: 2, follow: true, raf: 0, lastTs: 0, lastEmit: 0
+  playing: false, rate: 2, follow: true, raf: 0, lastTs: 0, lastEmit: 0, lastDraw: 0
 };
 var trackSvgEl = null;
+var trackCursorEl = null;      /* MD-05：光标是一个复用的 circle，逐帧只改 cx/cy */
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -168,14 +176,24 @@ annoLayer.style.position = "absolute";
 mapEl.appendChild(baseLayer);
 mapEl.appendChild(annoLayer);
 
+/* MD-11：Wayback 释放号来自外部 waybackconfig.json，只接受纯数字白名单（实测 198 个时相都是
+ * 5 位数字，如 43291/63116/26334）。非法的直接退回默认时相，绝不原样拼进 URL/HTML 属性。 */
+var WB_RELEASE_RE = /^\d{1,8}$/;
+var WB_DEFAULT_RELEASE = "43291";        /* 实测时相之一（2026-10-29 那一期） */
+
+function wbSafeRelease(r) {
+  var s = String(r == null ? "" : r).trim();
+  return WB_RELEASE_RE.test(s) ? s : WB_DEFAULT_RELEASE;
+}
+
 /* ---------------- 2D 瓦片 ---------------- */
 function tileUrl(layer, z, x, y) {
   if (layer === "wayback") {
     /* F-10：Esri Wayback 历史影像（释放号来自 waybackconfig.json，见 docs/features/map-free-sources.md）。
      * 来源/许可：Esri, Maxar, Earthstar Geographics 等；仅自用展示，页面/客户端需标注来源。 */
-    if (!wbRelease) return "";
+    var rel = wbSafeRelease(wbRelease);
     return "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0"
-      + "/default028mm/MapServer/tile/" + wbRelease + "/" + z + "/" + y + "/" + x;
+      + "/default028mm/MapServer/tile/" + encodeURIComponent(rel) + "/" + z + "/" + y + "/" + x;
   }
   var s = SUB[(((x + y) % 8) + 8) % 8];
   return "https://" + s + ".tianditu.gov.cn/" + layer + "_w/wmts" +
@@ -602,6 +620,7 @@ function setFishLayer(on, items) {
   fish.on = !!on;
   fish.items = [];
   fish.els = [];
+  var dropped = 0;
   var layer = ensureFishLayer();
   layer.innerHTML = "";
   if (fish.on) {
@@ -609,6 +628,8 @@ function setFishLayer(on, items) {
     for (var i = 0; i < list.length; i++) {
       var p = list[i];
       if (!p || typeof p.lat !== "number" || typeof p.lng !== "number") continue;
+      /* MD-09：条数上限；F-14：地址与类型码（303/308/309/0）一并透传给点击事件 */
+      if (fish.items.length >= LIMIT_FISH_POINTS) { dropped = list.length - i; break; }
       var type = fishChar(p.type);
       var el = document.createElement("div");
       el.className = "fish";
@@ -621,20 +642,38 @@ function setFishLayer(on, items) {
       lbl.textContent = String(p.name || "");
       layer.appendChild(el);
       layer.appendChild(lbl);
-      fish.items.push({ name: String(p.name || ""), type: type, lat: p.lat, lng: p.lng });
+      var typeCode = (typeof p.typeCode === "number") ? p.typeCode : fishTypeCode(type);
+      fish.items.push({
+        name: String(p.name || ""), type: type, typeCode: typeCode,
+        address: String(p.address || ""), lat: p.lat, lng: p.lng
+      });
       fish.els.push({ el: el, lbl: lbl });
       (function (pt) {
         el.addEventListener("click", function (ev) {
           ev.stopPropagation();
-          emit({ type: "fish-pick", name: pt.name, kind: pt.type, lat: pt.lat, lng: pt.lng });
+          /* F-14：补 address 与类型码，客户端详情卡不再空白 */
+          emit({
+            type: "fish-pick", name: pt.name, kind: pt.type, typeCode: pt.typeCode,
+            address: pt.address, lat: pt.lat, lng: pt.lng
+          });
         });
       })(fish.items[fish.items.length - 1]);
     }
   }
-  emit({ type: "fish", on: fish.on, count: fish.items.length });
+  emit({ type: "fish", on: fish.on, count: fish.items.length, dropped: dropped });
   updateFish(mode === "3d" ? lastVP : null);
-  console.log("LC3D fish on=" + fish.on + " count=" + fish.items.length);
+  console.log("LC3D fish on=" + fish.on + " count=" + fish.items.length + " dropped=" + dropped);
   return fish.items.length;
+}
+
+/* F-14 类型码（原版 payType：303 库钓 / 308 河钓 / 309 黑坑 / 其它=0 塘钓）。
+ * 只是**码位映射**，不携带原版任何数据；黑坑(309)没有公开数据源，不会由本层产出，
+ * 保留码位是为了客户端按原版展示同一套文字。 */
+var FISH_TYPE_CODES = { "库": 303, "河": 308, "黑": 309, "塘": 0 };
+
+function fishTypeCode(type) {
+  var c = FISH_TYPE_CODES[type];
+  return (typeof c === "number") ? c : 0;
 }
 
 function fishChar(t) {
@@ -693,19 +732,23 @@ function setOverlayLayer(id, on, opts) {
   layer.on = !!on;
   if (typeof opts.opacity === "number") layer.opacity = Math.max(0, Math.min(1, opts.opacity));
   if (opts.items) {
-    var list = opts.items, items = [];
+    var list = opts.items, items = [], dropped = 0;
     for (var i = 0; i < list.length; i++) {
       var p = list[i];
       if (!p || typeof p.lat !== "number" || typeof p.lng !== "number") continue;
+      if (items.length >= LIMIT_OVERLAY_POINTS) { dropped = list.length - i; break; }   /* MD-09 */
       items.push({ name: String(p.name || ""), lat: p.lat, lng: p.lng });
     }
     layer.items = items;
+    layer.dropped = dropped;
+  } else if (typeof layer.dropped !== "number") {
+    layer.dropped = 0;
   }
   ovLayers[id] = layer;
   ovLayerRebuild(layer);
-  emit({ type: "overlay-layer", id: layer.id, on: layer.on, opacity: layer.opacity, count: layer.items.length });
+  emit({ type: "overlay-layer", id: layer.id, on: layer.on, opacity: layer.opacity, count: layer.items.length, dropped: layer.dropped || 0 });
   updateOverlayLayers();
-  return { id: layer.id, on: layer.on, opacity: layer.opacity, count: layer.items.length };
+  return { id: layer.id, on: layer.on, opacity: layer.opacity, count: layer.items.length, dropped: layer.dropped || 0 };
 }
 
 function setOverlayOpacity(id, v) {
@@ -842,6 +885,20 @@ function trackPosAt(t) {
   return null;
 }
 
+/** 数一个段列表里「合法点」的总数（MD-09 上限判定与 dropped 统计用）。 */
+function countTrackPointsFrom(list, from) {
+  var n = 0;
+  for (var s = from; s < list.length; s++) {
+    var raw = list[s];
+    if (!raw || !raw.length) continue;
+    for (var i = 0; i < raw.length; i++) {
+      var p = raw[i];
+      if (p && typeof p.lat === "number" && typeof p.lng === "number" && typeof p.t === "number") n++;
+    }
+  }
+  return n;
+}
+
 function lc_track_load(segments) {
   track.playing = false;
   track.loaded = false;
@@ -850,16 +907,21 @@ function lc_track_load(segments) {
   track.t1 = 0;
   track.t = 0;
   var list = segments || [];
+  var totalIn = countTrackPointsFrom(list, 0);   /* 入参里合法点总数（截断后用于报 dropped） */
+  var kept = 0;
   for (var s = 0; s < list.length; s++) {
+    if (track.segments.length >= LIMIT_TRACK_SEGMENTS) break;   /* MD-09：段数上限 */
+    if (kept >= LIMIT_TRACK_POINTS) break;                      /* MD-09：总点数上限 */
     var raw = list[s];
     if (!raw || !raw.length) continue;
     var seg = [];
-    for (var i = 0; i < raw.length; i++) {
+    for (var i = 0; i < raw.length && (kept + seg.length) < LIMIT_TRACK_POINTS; i++) {
       var p = raw[i];
       if (!p || typeof p.lat !== "number" || typeof p.lng !== "number" || typeof p.t !== "number") continue;
       seg.push({ lat: p.lat, lng: p.lng, t: p.t, spd: 0 });
     }
     if (!seg.length) continue;
+    kept += seg.length;
     /* 段内按时间排序（客户端可能乱序），再算逐点速度（前后点平均） */
     seg.sort(function (a, b) { return a.t - b.t; });
     for (var k = 0; k < seg.length; k++) {
@@ -869,6 +931,7 @@ function lc_track_load(segments) {
     }
     track.segments.push(seg);
   }
+  var dropped = Math.max(0, totalIn - kept);
   var t0 = Infinity, t1 = -Infinity;
   for (var m = 0; m < track.segments.length; m++) {
     var sg = track.segments[m];
@@ -889,10 +952,28 @@ function lc_track_load(segments) {
   updateTrack();
   emit({
     type: "track-loaded", segments: track.segments.length, points: trackTotalPoints(),
+    dropped: dropped,
     t0: Math.round(track.t0), t1: Math.round(track.t1)
   });
-  console.log("LC3D track loaded seg=" + track.segments.length + " pts=" + trackTotalPoints());
+  console.log("LC3D track loaded seg=" + track.segments.length + " pts=" + trackTotalPoints() +
+    " dropped=" + dropped);
   return track.loaded;
+}
+
+/* 相机跟随（MD-05）：2D 下**不再每帧 render()**。
+ * 只让光标在画面上走，当前点离开画面中心 30% 安全框时才平移一次相机并重绘瓦片；
+ * 3D 下 ensurePatch() 自己按瓦片变化早退，保持原行为。 */
+function followTrack(p) {
+  if (mode === "3d") {
+    center = { lat: p.lat, lng: p.lng };
+    ensurePatch();
+    return;
+  }
+  var s = screenPointOf(p.lat, p.lng);
+  var w = mapEl.clientWidth, h = mapEl.clientHeight;
+  if (s && s.x >= w * 0.3 && s.x <= w * 0.7 && s.y >= h * 0.3 && s.y <= h * 0.7) return;
+  center = { lat: p.lat, lng: p.lng };
+  render();
 }
 
 function lc_track_progress(t0) {
@@ -903,10 +984,7 @@ function lc_track_progress(t0) {
     ? track.t0 + v * (track.t1 - track.t0)
     : Math.max(track.t0, Math.min(track.t1, v));
   var p = trackPosAt(track.t);
-  if (track.follow && p) {
-    center = { lat: p.lat, lng: p.lng };
-    if (mode === "3d") ensurePatch(); else render();
-  }
+  if (track.follow && p) followTrack(p);
   updateTrack();
   emit({
     type: "track-tick", t: Math.round(track.t), atEnd: track.t >= track.t1,
@@ -942,9 +1020,13 @@ function lc_track_clear() {
   track.segments = [];
   track.t0 = track.t1 = track.t = 0;
   if (trackSvgEl) trackSvgEl.innerHTML = "";
+  trackCursorEl = null;          /* SVG 已清空，光标引用一并作废 */
   emit({ type: "track-clear" });
   console.log("LC3D track clear");
 }
+
+/** 轨迹重绘间隔（MD-05）：光标每帧只改 cx/cy，整条轨迹按 ~8 Hz 重绘。 */
+var TRACK_REDRAW_MS = 120;
 
 function trackAnim(ts) {
   track.raf = 0;
@@ -954,11 +1036,14 @@ function trackAnim(ts) {
   track.lastTs = ts;
   track.t = Math.min(track.t1, track.t + dt * 1000 * track.rate);
   var p = trackPosAt(track.t);
-  if (track.follow && p) {
-    center = { lat: p.lat, lng: p.lng };
-    if (mode === "3d") ensurePatch(); else render();
+  /* MD-05：跟随不再每帧重建瓦片层；光标单独逐帧更新 */
+  if (track.follow && p) followTrack(p);
+  if (ts - (track.lastDraw || 0) >= TRACK_REDRAW_MS) {
+    track.lastDraw = ts;
+    updateTrack();
+  } else {
+    updateTrackCursor();
   }
-  updateTrack();
   var now = Date.now();
   if (now - track.lastEmit > 120 || track.t >= track.t1) {
     track.lastEmit = now;
@@ -1030,20 +1115,33 @@ function updateTrack() {
     if (run.length >= 2 && runColor) trackPolyline(svg, run, runColor, 4, 0.95);
   }
 
-  var cursor = trackPosAt(track.t);
-  if (cursor) {
-    var cp = screenPointOf(cursor.lat, cursor.lng);
-    if (cp) {
-      var dot = document.createElementNS(SVGNS, "circle");
-      dot.setAttribute("cx", cp.x);
-      dot.setAttribute("cy", cp.y);
-      dot.setAttribute("r", "6");
-      dot.setAttribute("fill", "#ffffff");
-      dot.setAttribute("stroke", "#e74c3c");
-      dot.setAttribute("stroke-width", "2");
-      svg.appendChild(dot);
-    }
-  }
+  /* MD-05：光标是一个复用的 circle（trackCursorEl），整条轨迹重绘后重新挂上它；
+   * 两次重绘之间只改 cx/cy，不再每帧新建节点。 */
+  trackCursorEl = null;
+  ensureTrackCursor(svg);
+  updateTrackCursor();
+}
+
+function ensureTrackCursor(svg) {
+  trackCursorEl = document.createElementNS(SVGNS, "circle");
+  trackCursorEl.setAttribute("r", "6");
+  trackCursorEl.setAttribute("fill", "#ffffff");
+  trackCursorEl.setAttribute("stroke", "#e74c3c");
+  trackCursorEl.setAttribute("stroke-width", "2");
+  trackCursorEl.style.display = "none";
+  svg.appendChild(trackCursorEl);
+  return trackCursorEl;
+}
+
+/** 只更新光标位置（每帧可调，O(1)）。 */
+function updateTrackCursor() {
+  if (!track.loaded || !trackCursorEl) return;
+  var c = trackPosAt(track.t);
+  var p = c ? screenPointOf(c.lat, c.lng) : null;
+  if (!p) { trackCursorEl.style.display = "none"; return; }
+  trackCursorEl.style.display = "";
+  trackCursorEl.setAttribute("cx", p.x.toFixed(1));
+  trackCursorEl.setAttribute("cy", p.y.toFixed(1));
 }
 
 function setContour(on) {
@@ -1125,7 +1223,8 @@ function setRidge(on) {
  * -------------------------------------------------------------------------- */
 function setWayback(on, release) {
   on = !!on;
-  if (release) wbRelease = String(release);
+  if (release) wbRelease = wbSafeRelease(release);   /* MD-11：白名单校验后再用 */
+  if (!wbRelease) wbRelease = WB_DEFAULT_RELEASE;
   wbOn = on;
   if (on) {
     if (base !== "wayback") baseBeforeWb = base;
@@ -1140,7 +1239,7 @@ function setWayback(on, release) {
 }
 
 function setWaybackRelease(release) {
-  wbRelease = String(release || "");
+  wbRelease = wbSafeRelease(release);                /* MD-11：非法释放号退回默认时相 */
   if (wbOn) {
     if (mode === "3d") { drape = "wayback"; refreshPatchTexture(); } else render();
   }
@@ -1171,10 +1270,11 @@ function clearOverlay() {
 function setOverlay(kind, points) {
   clearOverlay();
   ovKind = kind ? String(kind) : "";
-  var list = points || [];
+  var list = points || [], dropped = 0;
   for (var i = 0; i < list.length; i++) {
     var p = list[i];
     if (!p || typeof p.lat !== "number" || typeof p.lng !== "number") continue;
+    if (ovPoints.length >= LIMIT_OVERLAY_POINTS) { dropped = list.length - i; break; }   /* MD-09 */
     ovPoints.push({ name: String(p.name || ""), address: String(p.address || ""), lat: p.lat, lng: p.lng });
   }
   var layer = ovEnsureLayer();
@@ -1194,9 +1294,9 @@ function setOverlay(kind, points) {
       ovEls.push(el);
     })(ovPoints[j]);
   }
-  emit({ type: "overlay", kind: ovKind, count: ovPoints.length });
+  emit({ type: "overlay", kind: ovKind, count: ovPoints.length, dropped: dropped });
   updateOverlay(mode === "3d" ? lastVP : null);
-  console.log("LC3D overlay kind=" + ovKind + " count=" + ovPoints.length);
+  console.log("LC3D overlay kind=" + ovKind + " count=" + ovPoints.length + " dropped=" + dropped);
   return ovPoints.length;
 }
 

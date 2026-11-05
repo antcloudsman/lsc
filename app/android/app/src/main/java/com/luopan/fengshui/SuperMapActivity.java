@@ -29,8 +29,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,6 +55,18 @@ public class SuperMapActivity extends LcFeatureActivity {
     private static final int TILE_Z = 18;          // 天地图 img 原生最高级
     private static final int MAX_TILES = 36;       // 6×6：单边 1536px，2× 放大后 3072px
     private static final int MIN_ZOOM = 15;
+
+    /* MD-08：单张瓦片重试（含首次最多 3 次），瞬时失败不再直接作废整张图 */
+    private static final int TILE_ATTEMPTS = 3;
+    private static final long[] TILE_RETRY_DELAY_MS = {120, 300};
+
+    /* MD-08：磁盘缓存上限（张数与字节双保险，先到者触发 LRU 清理） */
+    private static final int TILE_CACHE_MAX_FILES = 6000;
+    private static final long TILE_CACHE_MAX_BYTES = 200L * 1024 * 1024;
+
+    /* MD-08：成品目录保留策略（成品是整张图，体积大，必须限额） */
+    private static final int OUT_MAX_FILES = 20;
+    private static final long OUT_MAX_BYTES = 200L * 1024 * 1024;
 
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final ExecutorService POOL = Executors.newFixedThreadPool(4);
@@ -273,8 +284,10 @@ public class SuperMapActivity extends LcFeatureActivity {
         final AtomicInteger done = new AtomicInteger();
         final AtomicInteger failed = new AtomicInteger();
         final AtomicInteger cached = new AtomicInteger();
-        final List<Throwable> errors = new ArrayList<>();
         final Object lock = new Object();
+
+        /* MD-08：开跑前先按 LRU 清理磁盘缓存，避免「只写不删」把 cacheDir 撑爆 */
+        pruneTileCache();
 
         for (int j = 0; j < rows; j++) {
             for (int i = 0; i < cols; i++) {
@@ -282,21 +295,7 @@ public class SuperMapActivity extends LcFeatureActivity {
                 final int tx = x0 + i, ty = y0 + j;
                 POOL.execute(() -> {
                     if (!running) return;
-                    Bitmap bmp = null;
-                    try {
-                        File cache = tileFile(tx, ty);
-                        if (cache.exists()) {
-                            bmp = BitmapFactory.decodeFile(cache.getAbsolutePath());
-                            if (bmp != null) cached.incrementAndGet();
-                        }
-                        if (bmp == null) {
-                            byte[] bytes = httpBytes(tileUrl(tx, ty));
-                            bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                            if (bmp != null) writeCache(cache, bytes);
-                        }
-                    } catch (Throwable t) {
-                        synchronized (errors) { errors.add(t); }
-                    }
+                    Bitmap bmp = fetchTile(tx, ty, cached);
                     if (bmp != null) {
                         synchronized (lock) {
                             canvas.drawBitmap(bmp, ti * 256f, tj * 256f, paint);
@@ -314,6 +313,45 @@ public class SuperMapActivity extends LcFeatureActivity {
                 });
             }
         }
+    }
+
+    /**
+     * 取一张瓦片：磁盘缓存 → 网络，**失败重试**（MD-08）。
+     * 单张瓦片瞬时 5xx/超时不再直接判整图失败：最多 {@link #TILE_ATTEMPTS} 次（含首次），
+     * 间隔 120 ms / 300 ms。三次都失败才返回 null（由调用方计失败数）。
+     * 缓存文件解不出来（半截文件）就删掉走网络，不把坏缓存当命中。
+     */
+    private Bitmap fetchTile(int tx, int ty, AtomicInteger cachedHits) {
+        for (int attempt = 0; attempt < TILE_ATTEMPTS; attempt++) {
+            if (!running) return null;
+            File cache = tileFile(tx, ty);
+            try {
+                if (cache.exists()) {
+                    Bitmap b = BitmapFactory.decodeFile(cache.getAbsolutePath());
+                    if (b != null) {
+                        cachedHits.incrementAndGet();
+                        return b;
+                    }
+                    if (!cache.delete()) Log.w(TAG, "bad cache not deletable " + cache.getName());
+                }
+                byte[] bytes = httpBytes(tileUrl(tx, ty));
+                Bitmap b = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                if (b != null) {
+                    writeCache(cache, bytes);
+                    return b;
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "tile " + tx + "/" + ty + " attempt " + (attempt + 1) + " fail: " + t);
+            }
+            if (attempt + 1 < TILE_ATTEMPTS) {
+                try {
+                    Thread.sleep(TILE_RETRY_DELAY_MS[Math.min(attempt, TILE_RETRY_DELAY_MS.length - 1)]);
+                } catch (InterruptedException e) {
+                    return null;
+                }
+            }
+        }
+        return null;
     }
 
     private void finishStitch(Bitmap out, boolean upscale, int failed, int cached, int total) {
@@ -358,11 +396,13 @@ public class SuperMapActivity extends LcFeatureActivity {
             if (!dir.exists() && !dir.mkdirs()) {
                 throw new IllegalStateException("无法创建目录 " + dir.getAbsolutePath());
             }
-            File f = new File(dir, "super_" + System.currentTimeMillis() + ".png");
+            /* MD-08：成品是影像拼接图（无 alpha），用 JPEG 95 落盘——
+             * 3072² 的 PNG100 单张可达数十 MB，JPEG 95 通常只有 1–3 MB 且看不出差别。 */
+            File f = new File(dir, "super_" + System.currentTimeMillis() + ".jpg");
             FileOutputStream fos = new FileOutputStream(f);
             try {
-                if (!bmp.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
-                    throw new IllegalStateException("PNG 编码失败");
+                if (!bmp.compress(Bitmap.CompressFormat.JPEG, 95, fos)) {
+                    throw new IllegalStateException("JPEG 编码失败");
                 }
                 fos.flush();
             } finally {
@@ -372,6 +412,7 @@ public class SuperMapActivity extends LcFeatureActivity {
                 throw new IllegalStateException("文件为空 " + f.getAbsolutePath());
             }
             path = f.getAbsolutePath();
+            pruneOutputDir(dir);          /* MD-08：成品目录同样限额，只留最新若干张 */
         } catch (Throwable t) {
             Log.w(TAG, "save fail : " + t);
             if (!bmp.isRecycled()) bmp.recycle();
@@ -417,10 +458,57 @@ public class SuperMapActivity extends LcFeatureActivity {
                 + "&TILEMATRIX=" + TILE_Z + "&TILEROW=" + y + "&TILECOL=" + x + "&tk=" + KEY;
     }
 
-    private File tileFile(int x, int y) {
+    private File tileDir() {
         File d = new File(getCacheDir(), "tdt_img18");
         if (!d.exists()) d.mkdirs();
-        return new File(d, x + "_" + y + ".jpg");
+        return d;
+    }
+
+    private File tileFile(int x, int y) {
+        return new File(tileDir(), x + "_" + y + ".jpg");
+    }
+
+    /**
+     * LRU 清理磁盘缓存（MD-08）：缓存原来只写不删，反复生成会一直涨。
+     * 超过 {@link #TILE_CACHE_MAX_FILES} 张或 {@link #TILE_CACHE_MAX_BYTES} 字节时，
+     * 按 lastModified 从旧到新删到限额之内。删除失败只记日志，不影响本次生成。
+     */
+    private void pruneTileCache() {
+        File[] fs = tileDir().listFiles();
+        if (fs == null || fs.length == 0) return;
+        long total = 0;
+        for (File f : fs) total += f.length();
+        if (fs.length <= TILE_CACHE_MAX_FILES && total <= TILE_CACHE_MAX_BYTES) return;
+        Arrays.sort(fs, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
+        int removed = 0;
+        int left = fs.length;
+        for (File f : fs) {
+            if (left <= TILE_CACHE_MAX_FILES && total <= TILE_CACHE_MAX_BYTES) break;
+            long len = f.length();
+            if (f.delete()) {
+                total -= len;
+                left--;
+                removed++;
+            }
+        }
+        Log.i(TAG, "tile cache pruned removed=" + removed + " left=" + left + " bytes=" + total);
+    }
+
+    /** 成品目录保留策略（MD-08）：只留最新的 {@link #OUT_MAX_FILES} 张且总量 ≤ 上限。 */
+    private void pruneOutputDir(File dir) {
+        File[] fs = dir.listFiles();
+        if (fs == null || fs.length <= 1) return;
+        long total = 0;
+        for (File f : fs) total += f.length();
+        if (fs.length <= OUT_MAX_FILES && total <= OUT_MAX_BYTES) return;
+        Arrays.sort(fs, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));  // 新→旧
+        int kept = 0;
+        for (File f : fs) {
+            kept++;
+            if (kept <= OUT_MAX_FILES && total <= OUT_MAX_BYTES) continue;
+            long len = f.length();
+            if (f.delete()) total -= len;
+        }
     }
 
     private static void writeCache(File f, byte[] bytes) {

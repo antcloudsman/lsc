@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.PixelCopy;
 import android.view.View;
@@ -52,6 +53,8 @@ import java.util.regex.Pattern;
  * AT id：lc_history_back/title/content/status/note/date/prev/next/today/snapshot/list。
  */
 public class HistoryImageActivity extends LcFeatureActivity {
+
+    private static final String TAG = "LCHISTORY";
 
     private static final String CONFIG =
             "https://s3-us-west-2.amazonaws.com/config.maptiles.arcgis.com/waybackconfig.json";
@@ -241,6 +244,7 @@ public class HistoryImageActivity extends LcFeatureActivity {
                 java.util.Iterator<String> keys = root.keys();
                 while (keys.hasNext()) {
                     String id = keys.next();
+                    if (!isSafeReleaseId(id)) continue;      /* MD-11：只收纯数字释放号 */
                     JSONObject o = root.optJSONObject(id);
                     if (o == null) continue;
                     Matcher m = DATE.matcher(o.optString("itemTitle", ""));
@@ -267,9 +271,23 @@ public class HistoryImageActivity extends LcFeatureActivity {
     private void applyWayback() {
         if (releases.isEmpty() || web == null) return;
         Release r = releases.get(Math.max(0, Math.min(idx, releases.size() - 1)));
+        if (!isSafeReleaseId(r.id)) {                 /* 双保险：拼 JS 前再判一次 */
+            Log.w(TAG, "bad release id, skip: " + r.id);
+            statusView.setText(R.string.lc_history_fail);
+            return;
+        }
         web.evaluateJavascript("setWayback(true,'" + r.id + "')", null);
         dateView.setText(r.date);
         statusView.setText(getString(R.string.lc_history_source, r.date));
+    }
+
+    /**
+     * MD-11：Wayback 释放号来自外部 `waybackconfig.json`，只接受**纯数字**（实测 198 个时相
+     * 都是 5 位，例如 43291 / 63116 / 26334）。数字长度上限 8 位足够覆盖未来编号。
+     * 不合规的 id 直接丢弃，绝不拼进 evaluateJavascript 或 img src；map.html 侧还有第二道同规则校验。
+     */
+    private static boolean isSafeReleaseId(String id) {
+        return id != null && id.matches("\\d{1,8}");
     }
 
     private void move(int delta) {

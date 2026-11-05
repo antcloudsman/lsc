@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * 极简 HTTP GET（原生图表数据用）：8 s 超时、UTF-8、响应字节上限。
@@ -40,7 +41,12 @@ final class LcHttp {
                     + "Chrome/120.0 Mobile Safari/537.36";
 
     static String get(String url) throws Exception {
-        return new String(bytes(url), StandardCharsets.UTF_8);
+        return get(url, null);
+    }
+
+    /** 带额外请求头的 GET（天气接口必须带 Referer，见 WeatherClient 类注释）。 */
+    static String get(String url, Map<String, String> headers) throws Exception {
+        return new String(bytes(url, MAX_BYTES, headers), StandardCharsets.UTF_8);
     }
 
     /** 二进制下载（图片/瓦片）：与 get() 共用 UA、超时与字节上限。 */
@@ -68,7 +74,11 @@ final class LcHttp {
     }
 
     static byte[] bytes(String url, int maxBytes) throws Exception {
-        InputStream in = openStream(url, maxBytes);
+        return bytes(url, maxBytes, null);
+    }
+
+    static byte[] bytes(String url, int maxBytes, Map<String, String> headers) throws Exception {
+        InputStream in = openStream(url, maxBytes, headers);
         try {
             return readAll(in);
         } finally {
@@ -89,10 +99,22 @@ final class LcHttp {
      * 流超过 {@code maxBytes} 时抛 {@link IOException}，错误文案写明上限与 URL。
      */
     static InputStream openStream(String url, int maxBytes) throws Exception {
+        return openStream(url, maxBytes, null);
+    }
+
+    /** @param headers 额外请求头（可 null）；UA 固定用 {@link #UA}，这里不接受覆盖 */
+    static InputStream openStream(String url, int maxBytes, Map<String, String> headers) throws Exception {
         final HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setConnectTimeout(TIMEOUT_MS);
         c.setReadTimeout(TIMEOUT_MS * 2);
         c.setRequestProperty("User-Agent", UA);
+        if (headers != null) {
+            for (Map.Entry<String, String> e : headers.entrySet()) {
+                if (e.getKey() == null || e.getValue() == null) continue;
+                if ("User-Agent".equalsIgnoreCase(e.getKey())) continue;   // UA 只认全局那份
+                c.setRequestProperty(e.getKey(), e.getValue());
+            }
+        }
         int code;
         try {
             code = c.getResponseCode();

@@ -66,7 +66,9 @@ param(
     [switch]$SkipInstall,
     [float]$InjectHeading = 0.0,
     [string]$PanelCropY = "",
-    [string]$PanelCropBasis = ""
+    [string]$PanelCropBasis = "",
+    # 顶层基线状态一句话（如「本基线为 K-02 后状态：罗盘态顶栏含 返回/搜索/图层/隐藏」）；不传则不写该行。
+    [string]$BaselineNote = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -426,6 +428,7 @@ $manifest = @"
 # Android 基线 · $Round
 
 - 冻结时间：$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')（UTC+8），LC测试
+$(if ($BaselineNote) { "- **基线状态**：$BaselineNote" } else { "" })
 - 设备：$model / Android $release / ``$fingerprint``
 - 屏幕：$wm；$density
 - App：versionName $verName ($verCode)，lastUpdateTime $lastUpdate，pid $appPid

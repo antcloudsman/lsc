@@ -141,6 +141,7 @@ public class ToolsManagerActivity extends Activity {
     private TextView cardTitle(String text) {
         TextView t = new TextView(this);
         t.setText(text);
+        // TODO(待真机校正): 卡片标题 16sp / 加粗为暂定（证据只给颜色与 Bold）。
         t.setTextSize(16f);
         t.setTextColor(getColor(R.color.lc_setting_text));
         t.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
@@ -151,6 +152,7 @@ public class ToolsManagerActivity extends Activity {
     private TextView cardDesc(String text) {
         TextView t = new TextView(this);
         t.setText(text);
+        // TODO(待真机校正): 说明文字 12sp 为暂定。
         t.setTextSize(12f);
         t.setTextColor(getColor(R.color.lc_toolmgr_desc));
         t.setLineSpacing(LcUi.dp(this, 2), 1f);
@@ -204,6 +206,7 @@ public class ToolsManagerActivity extends Activity {
 
         FrameLayout iconWrap = new FrameLayout(this);
         ImageView icon = new ImageView(this);
+        // TODO(待真机校正): 图标 40dp / 单元格文字 12sp 为暂定值。
         int iconSize = LcUi.dp(this, 40);
         icon.setLayoutParams(new FrameLayout.LayoutParams(iconSize, iconSize));
         icon.setScaleType(ImageView.ScaleType.FIT_CENTER);

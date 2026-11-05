@@ -79,6 +79,7 @@ final class LcUi {
         TextView t = new TextView(a);
         t.setId(titleId);
         t.setText(title);
+        // TODO(待真机校正): 白底标题栏字号/高度为暂定值。
         t.setTextSize(18f);
         t.setTextColor(a.getColor(R.color.lc_setting_text));
         t.setPadding(dp(a, 8), 0, dp(a, 8), 0);

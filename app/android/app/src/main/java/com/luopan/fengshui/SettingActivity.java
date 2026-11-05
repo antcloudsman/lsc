@@ -63,6 +63,7 @@ public class SettingActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
+        // TODO(待真机校正): 整页白底为暂定——证据只给 SwitchItem 白底，页面底色未取证。
         root.setBackgroundColor(getColor(R.color.lc_setting_bg));
         root.addView(LcUi.toolbarLight(this, R.id.lc_setting_back, R.id.lc_setting_title,
                 getString(R.string.lc_setting_title)));
@@ -105,6 +106,7 @@ public class SettingActivity extends Activity {
             TextView chip = new TextView(this);
             chip.setId(MODE_IDS[i]);
             chip.setText(MODE_LABELS[i]);
+            // TODO(待真机校正): 模式 chip 的字号/选中底色为暂定。
             chip.setTextSize(15f);
             chip.setTextColor(getColor(R.color.lc_setting_text));
             chip.setGravity(Gravity.CENTER);
@@ -131,6 +133,7 @@ public class SettingActivity extends Activity {
         View preview = new View(this);
         preview.setId(R.id.lc_setting_filter_preview);
         preview.setBackgroundColor(getColor(R.color.lc_setting_preview_bg));
+        // TODO(待真机校正): 预览区高度 180dp 为暂定值。
         LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LcUi.dp(this, 180));
         plp.setMargins(LcUi.dp(this, 12), 0, LcUi.dp(this, 12), LcUi.dp(this, 8));

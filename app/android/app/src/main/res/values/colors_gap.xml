@@ -7,4 +7,9 @@
     <color name="lc_setting_chip_selected">#FFE9EDF2</color>
     <color name="lc_setting_preview_bg">#FFEEF1F4</color>
     <color name="lc_setting_divider">#FFE5E7EA</color>
+
+    <!-- 工具管理页：页面底 #F0F3F7、卡片白、说明文字 #657389（ToolsManagerActivity.md §1） -->
+    <color name="lc_toolmgr_bg">#FFF0F3F7</color>
+    <color name="lc_toolmgr_card">#FFFFFFFF</color>
+    <color name="lc_toolmgr_desc">#FF657389</color>
 </resources>

@@ -48,6 +48,26 @@ final class ToolCatalog {
 
     static final int COUNT = KEYS.length;
 
+    /** 网格图标（原版 mipmap/ic_tool_*，取自 .inspect/unpack/decoded/res/mipmap-xxxhdpi），顺序与 KEYS 对齐。 */
+    static final int[] ICONS = {
+            R.mipmap.ic_tool_compass,
+            R.mipmap.ic_tool_super_map,
+            R.mipmap.ic_tool_mountain,
+            R.mipmap.ic_tool_water,
+            R.mipmap.ic_tool_altitude,
+            R.mipmap.ic_tool_weather,
+            R.mipmap.ic_tool_history,
+            R.mipmap.ic_tool_isoline,
+            R.mipmap.ic_tool_collect,
+            R.mipmap.ic_tool_measure,
+            R.mipmap.ic_tool_paint,
+            R.mipmap.ic_tool_fish,
+            R.mipmap.ic_tools_track,
+            R.mipmap.ic_tools_road,
+            R.mipmap.ic_tools_geographic_imagery,
+            R.mipmap.ic_tool_super_map_old
+    };
+
     private ToolCatalog() {
     }
 
@@ -63,5 +83,21 @@ final class ToolCatalog {
             if (k.equals(key)) return true;
         }
         return false;
+    }
+
+    static int indexOfLabel(String label) {
+        for (int i = 0; i < COUNT; i++) {
+            if (LABELS[i].equals(label)) return i;
+        }
+        return -1;
+    }
+
+    static boolean containsLabel(String label) {
+        return indexOfLabel(label) >= 0;
+    }
+
+    static int iconOfLabel(String label) {
+        int i = indexOfLabel(label);
+        return i >= 0 ? ICONS[i] : 0;
     }
 }

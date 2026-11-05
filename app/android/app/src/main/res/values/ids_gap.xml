@@ -58,6 +58,23 @@
     <item name="lc_toolmgr_back" type="id" />
     <item name="lc_toolmgr_title" type="id" />
     <item name="lc_toolmgr_list" type="id" />
+    <!-- 「首页展示功能」网格按位置（可拖拽，位置会变） -->
+    <item name="lc_toolmgr_now_0" type="id" />
+    <item name="lc_toolmgr_now_1" type="id" />
+    <item name="lc_toolmgr_now_2" type="id" />
+    <item name="lc_toolmgr_now_3" type="id" />
+    <item name="lc_toolmgr_now_4" type="id" />
+    <item name="lc_toolmgr_now_5" type="id" />
+    <item name="lc_toolmgr_now_6" type="id" />
+    <item name="lc_toolmgr_now_7" type="id" />
+    <item name="lc_toolmgr_now_8" type="id" />
+    <item name="lc_toolmgr_now_9" type="id" />
+    <item name="lc_toolmgr_now_10" type="id" />
+    <item name="lc_toolmgr_now_11" type="id" />
+    <item name="lc_toolmgr_now_12" type="id" />
+    <item name="lc_toolmgr_now_13" type="id" />
+    <item name="lc_toolmgr_now_14" type="id" />
+    <item name="lc_toolmgr_now_15" type="id" />
     <item name="lc_toolmgr_item_0" type="id" />
     <item name="lc_toolmgr_item_1" type="id" />
     <item name="lc_toolmgr_item_2" type="id" />

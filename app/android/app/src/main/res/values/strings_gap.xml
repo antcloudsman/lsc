@@ -33,8 +33,12 @@
     <string name="lc_setting_param_contrast">图层对比度</string>
     <string name="lc_setting_param_hue">图层色相旋转</string>
 
-    <!-- 工具管理页：标题待 docs/gap-modules/tools.md -->
+    <!-- 工具管理页（ToolsManagerActivity.md §1 / §2 原文） -->
     <string name="lc_toolmgr_title"></string>
+    <string name="lc_toolmgr_now_title">首页展示功能</string>
+    <string name="lc_toolmgr_desc">以下功能将在首页展示快捷入口，在下方全部功能中点击即可快速添加，长按图标还可以对首页展示功能进行拖拽排序。</string>
+    <string name="lc_toolmgr_all_title">全部功能</string>
+    <string name="lc_toolmgr_cap_toast">当前展示功能过多，请移除部分功能后尝试</string>
 
     <!-- 收藏点列表/保存：标题与字段文案待 docs/gap-modules/interest.md -->
     <string name="lc_interest_title"></string>

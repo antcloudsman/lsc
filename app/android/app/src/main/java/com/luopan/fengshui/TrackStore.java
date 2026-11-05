@@ -154,7 +154,7 @@ final class TrackStore {
         }
     }
 
-    /** GPX 1.1：按 seg 分 trkseg；写 Documents/LC/tracks（MediaStore），返回 Uri。 */
+    /** GPX 1.1：按 seg 分 trkseg；写 Download/LC/tracks（MediaStore），返回 Uri。 */
     Uri exportGpx(String id, List<TrackPoint> points) {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -179,20 +179,26 @@ final class TrackStore {
         String name = id + ".gpx";
         ContentResolver cr = ctx.getContentResolver();
         if (Build.VERSION.SDK_INT >= 29) {
-            ContentValues v = new ContentValues();
-            v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
-            v.put(MediaStore.MediaColumns.MIME_TYPE, "application/gpx+xml");
-            v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/LC/tracks");
-            Uri uri = cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
-            if (uri == null) return null;
-            try (OutputStream out = cr.openOutputStream(uri)) {
-                if (out == null) return null;
-                out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
-                out.flush();
+            // MediaStore.Downloads 只允许 Download/ 作根目录（传 Documents 会抛
+            // IllegalArgumentException：Primary directory Documents not allowed），
+            // 所以落到 Download/LC/tracks/；insert 本身也要包住，失败只提示不崩。
+            try {
+                ContentValues v = new ContentValues();
+                v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+                v.put(MediaStore.MediaColumns.MIME_TYPE, "application/gpx+xml");
+                v.put(MediaStore.MediaColumns.RELATIVE_PATH,
+                        Environment.DIRECTORY_DOWNLOADS + "/LC/tracks");
+                Uri uri = cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+                if (uri == null) return null;
+                try (OutputStream out = cr.openOutputStream(uri)) {
+                    if (out == null) return null;
+                    out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                }
+                return uri;
             } catch (Throwable t) {
                 return null;
             }
-            return uri;
         }
         File f = new File(ctx.getExternalFilesDir(null), "LC/tracks/" + name);
         File parent = f.getParentFile();

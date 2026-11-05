@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  D-011：调试面只允许存在 debug 变体。
+  这四个缺失模块页在主 manifest 里是 exported=false；这里只对 debug 覆盖为 true，
+  让 AT 能用 `adb shell am start -n com.luopan.fengshui/.XxxActivity` 直达。
+  release 包由主 manifest 决定，仍是 false，且不存在本文件的覆盖。
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+
+        <activity
+            android:name=".SettingActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
+        <activity
+            android:name=".ToolsManagerActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
+        <activity
+            android:name=".InterestListActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
+        <activity
+            android:name=".SaveInterestActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
+    </application>
+</manifest>

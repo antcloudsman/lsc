@@ -18,28 +18,29 @@
 
         <!--
           缺失模块页（设置 / 工具管理 / 收藏点）。
-          exported=true 是为了 AT 能用 `adb shell am start -n com.luopan.fengshui/.XxxActivity`
-          直达页面（未导出时 shell uid 2000 会被 SecurityException 拒）；页面本身无敏感数据。
+          主 manifest 一律 exported=false（D-011：release 不许暴露调试面）；
+          AT 的 `am start -n com.luopan.fengshui/.XxxActivity` 直达只在 debug 变体生效，
+          由 src/debug/AndroidManifest.xml 用 tools:replace 覆盖。
           入口何时挂到主界面，等原版导航表（LC逆向 Frida 抓 Activity.start）落地。
         -->
         <activity
             android:name=".SettingActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.Luopan" />
 
         <activity
             android:name=".ToolsManagerActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.Luopan" />
 
         <activity
             android:name=".InterestListActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.Luopan" />
 
         <activity
             android:name=".SaveInterestActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.Luopan" />
 
         <activity

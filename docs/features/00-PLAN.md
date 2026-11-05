@@ -1,0 +1,98 @@
+# LC 缺失功能深度逆向与复现 · 开发文档（v1 草案）
+
+> 目标：把当前代码里所有「原版为工具子页，本步未实现」的功能，逐项深度逆向、取证、复现。
+> 本文件是**总纲**；每个功能另有一份 `docs/features/<功能>.md` 详表（模板见 §5）。
+> 负责人：技术总监；主笔：LC逆向；实施：LC客户端 / LC地图；验收：LC测试 + 审查线复核。
+
+## 1. 范围：代码事实清单
+
+来源为 `MainActivity.java` 的 stub 分支（L668/L669/L670/L713）与 `CompassListActivity` 占位、`map.html` 未实现项。共 **18 项**。
+
+| # | 功能 | 入口 | 原版页面/承载 | 阻断类型 |
+|---|---|---|---|---|
+| F-01 | 全地图工具 | 左列 1 | `ToolsManagerActivity` 派发 → 各子页 | **VIP 付费墙**（→`OpenVipActivity`） |
+| F-02 | 超清优化 / 超清地图 | 左列 3、更多 | 会员云端任务页 | VIP 付费墙 |
+| F-03 | 海拔查询 | 左列 4、更多 | 海拔/地形查询子页 | 待探针 |
+| F-04 | 路网 | 左列 6 | 底图图层切换 | 待探针（可能只是 `setBase`/图层开关） |
+| F-05 | 叠加 | 右列 2 | 叠加层选择页 | **VIP 付费墙** |
+| F-06 | 山脉（看山脉） | 右列 3、更多 | `discovery.MountainActivity` | **VIP 付费墙**（已验证可探针直达） |
+| F-07 | 水系（看水系） | 右列 4、更多 | `discovery.WaterActivity` | **VIP 付费墙** |
+| F-08 | 探索 | 右列 5 | `discovery.DiscoveryActivity`（专题卡片，会员专享） | 页面可达、内容会员 |
+| F-09 | 天气 | 更多 | `WeatherActivity` | 待探针 |
+| F-10 | 历史影像 | 更多 | `HistoryImageActivity`（Google Earth 历年影像） | **VIP 付费墙** |
+| F-11 | 收藏点 | 更多 | `interest.InterestListActivity` / `SaveInterestActivity` | 待探针（我们已有本地闭环） |
+| F-12 | 测量 | 更多 | `setting.MeasureProveActivity` + 地图测量 | 待探针 |
+| F-13 | 画笔 | 更多 | 地图标注/绘制 | 待探针 |
+| F-14 | 钓点 | 更多 | 钓点图层（会员） | VIP 付费墙 |
+| F-15 | 轨迹记录 | 更多 | `track.TrackListActivity` / `TrackSettingActivity` / `TrackReplayVideoActivity` | 待探针 |
+| F-16 | 地理影像 | 更多 | `GeographicImageryActivity` | 待探针 |
+| F-17 | 罗盘「透明度」「天支线」 | 罗盘工具条 | 浮层透明度/天支线圈层 | 未实现（待取证） |
+| F-18 | 盘面「自定义罗盘」「简易/综合组」 | 盘面列表 | `CompassListActivity` 目录 + 服务端目录 | 数据依赖 |
+
+## 2. 探针方法（已跑通，2026-11-05 验证）
+
+「跳过 UI 收费门、直达真实页面」采用**不改业务代码**的运行时通道：
+
+1. **构建**：使用同版本 `swss_gadget_final.apk`（debuggable + frida-gadget，`E:\APPDetector\output\.inspect\unpack\`）。
+2. **注入**：`adb forward tcp:27042 tcp:27042` → `frida -H 127.0.0.1:27042 -n Gadget -l probe.js`。
+3. **跳过门**：hook `space.xinzhi.globe.model.AccountModelKt.isVip` → `true`（已验 1 个 overload 生效）。
+4. **直达页面**：`Java.scheduleOnMainThread` 中用 `ActivityThread.currentApplication().startActivity(Intent.setClassName(...))`，以 App 自身 UID 启动非导出 Activity（`am start` 会被 `not exported` 拒绝，已验证）。
+5. **取证三件套**：`adb screencap` + `uiautomator dump` + logcat；配合静态 DEX（`mem_dump/classes*.dex`）的类/方法/偏移。
+6. 已验证样例：`MountainActivity` 直达成功（截图 `E:\APPDetector\evidence\probe-mountain.png`，页面为山体晕渲 + 地名标注）。
+
+**边界**：该通道只用于**结构、交互与逻辑**取证；付费数据集（如全球山脉/人口/景区数据）不复刻、不转存、不再分发，缺口一律记为「无数据授权」。不修改原版业务代码、不破解支付。
+
+## 3. 每项的取证要求（缺一不可）
+
+1. 入口与页面：原版入口控件（坐标/文案）、目标 Activity/包名、启动参数；
+2. 界面结构：Compose 方法链或 layout id 清单、控件尺寸/坐标（物理像素）、文案原文；
+3. 业务逻辑：关键方法字节码（类名+方法+偏移）、分支条件、状态机、默认值；
+4. 数据来源：网络接口 URL/参数/返回结构（脱敏记录）、本地库表、缓存键；**授权状态必须写清**；
+5. 依赖能力：地图能力（天地图服务名）、传感器、权限；
+6. 真机证据：截图路径 + sha256、uiautomator dump 路径；
+7. 复现方案：在 LC 里落到哪个页面/接口、与现有 `map.html`/`MainActivity` 的接口点、是否可开关；
+8. 工作量：人日 + 风险。
+
+## 4. 实现纪律
+
+- **默认关闭、可开关**（D-001 自用口径）：新增子页一律走「更多」bottom sheet 或抽屉，不新增底部导航（K-01 已定）。
+- 数据源不可授权时，页面可做骨架 + 明确占位文案，禁止伪造数据。
+- 所有新增页必须有稳定 `lc_*` id 供 AT 使用；导出仅 debug 变体（D-011）。
+- 每项独立提交、独立验收；不得与 K-01/缺口线交叉提交。
+
+## 5. 单功能文档模板（`docs/features/<F-xx>-<名称>.md`）
+
+```
+# F-xx <名称>
+## 1 入口与页面（控件坐标/文案/Activity）
+## 2 界面结构（控件表：文案/尺寸/坐标/id 或 Compose 调用）
+## 3 业务逻辑（方法+偏移+分支+默认值）
+## 4 数据来源与授权
+## 5 真机证据（截图/dump/hash）
+## 6 LC 复现方案（落点/接口/开关）
+## 7 验收判据（可测）
+## 8 工作量与风险
+```
+
+## 6. 分工与里程碑
+
+| 阶段 | 内容 | 负责 | 产出 |
+|---|---|---|---|
+| M1 | F-01/03/04/05/09/16 探针 + 文档 | LC逆向 | 6 份单功能文档 |
+| M1 | F-02/06/07/10/14 付费页面探针（已通） | LC逆向 + LC地图 | 页面截图 + 数据源判定 |
+| M1 | F-11/12/13/15/17/18 | LC逆向 | 文档 + 与现有实现的差异 |
+| M2 | 文档评审 + 排期（P0/P1/P2） | 技术总监 + LC产品 | 评审结论、排期表 |
+| M3 | 实现（分批，每批 ≤3 项） | LC客户端 / LC地图 | 独立提交 + AT |
+| M4 | 验收（AT + 真机 + 台账） | LC测试 / 审查线 | 验收记录 |
+
+## 7. 风险
+
+1. F-10 历史影像依赖 Google Earth 历年影像，天地图无对应服务——大概率只能「近似/省略」，文档要早给结论，别拖到实现阶段。
+2. F-02 超清地图是会员云端任务，无法复刻其算力链路，最多做 z18 降级。
+3. F-14 钓点、F-06/F-07 山脉水系的数据来自会员数据包，页面可复现、数据不可复现。
+4. 探针依赖 gadget 构建：每次注入后 App 会重启（Splash→Guide→Main），采集要等主界面稳定。
+5. Frida 与 uiautomator 同时占用会互相干扰（今日已踩），采集脚本要串行。
+
+## 8. 状态
+
+- 2026-11-05：总纲建立；探针通道验证通过（MountainActivity 直达）；18 项清单冻结。

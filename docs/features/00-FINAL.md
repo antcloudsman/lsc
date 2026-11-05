@@ -114,6 +114,7 @@
 | 数值门禁 | `python tests/numeric/run_all.py` | 全绿（tests 数以本轮输出为准） |
 | 文案/红线门禁 | `tests/copy/copy_gate.py`（接入 smoke） | 无门槛文案零命中 + 禁抄审图号/私有瓦片域静态检查；**已绿（`6d0b9f5` 起，实跑 `COPY: PASS`）**；收官前必须保持全绿 |
 | 真机回归（旧包） | `E:\APPDetector\wt\lc-dev-regress\checks\regress-20261105\` | `SUMMARY.txt` + `sha256.txt`；`f06664f` 旧包，只能作「待复验」线索 |
+| 数据短轮 | `checks\accept-1fdc766\` | 六条全过：主地图瓦片 / 泰山 117 山名点 / 洞庭湖 116 河湖点 / F-14 80 处公开水域 / logcat 无 `301001`·`301013` / 回放 `uimode=canvas`；APK sha256 `94BC2BBF…C3C54FA` |
 | 桌面门禁 | `scripts/build-desktop.ps1` | 构建 0 error + 1100×780 截图 |
 | Android 门禁 | `scripts/build-android.ps1` | assembleDebug + 真机冒烟无 FATAL |
 | 缺陷台账 | `docs/qa/bugs.md` | BUG / OBS 编号 |
@@ -122,7 +123,7 @@
 ## 6 验收状态（全部待填）
 
 > 只认 LC测试 SUMMARY：**提交号 + 设备号 + AT 用例号/证据路径**；缺一项不写通过。状态明细见 `00-STATUS.md`，本节只写本轮摘要。
-> 全量轮目录约定：`checks/accept-<commit>/`，SUMMARY 首行写**提交号 + 设备号 + 分支**；旧包 `f06664f` 的独立回归（`regress-20261105`）只记「待复验」，不写入本节结论。
+> 全量轮目录约定：`checks/accept-<commit>/`，SUMMARY 首行写**提交号 + 设备号 + 分支**；旧包 `f06664f` 的独立回归（`regress-20261105`）与数据短轮（`accept-1fdc766`）只作「待复验」依据，不写入本节结论。当前全量轮基线 `121b2a8`（应用代码同 `fec2d74`），目录 `checks\accept-121b2a8\`，结果未到。
 
 | 项 | 值 |
 |---|---|
@@ -166,3 +167,4 @@
 | v0.2 | 2026-11-05 | 基线回填为「`1fdcb97` 之后、客户端 key 修复合入的提交」；§4.1 增冻结核查报告含旧 key 字面量一句（`75108000C87DFD84` 冻结证据不改、`301001` 已失效） |
 | v0.3 | 2026-11-05 | 基线定稿 `develop` = `1fdc766`（`COPY: PASS` / `SECRET: PASS`），去掉「待回填」字样 |
 | v0.4 | 2026-11-05 | 基线 `develop` = **`4be6313`（应用代码同 `fec2d74`）**；说明其后两笔仅文档、二进制等价 |
+| v0.5 | 2026-11-05 | §5 增「数据短轮」证据行（`checks\accept-1fdc766\`，六条全过、APK sha `94BC2BBF…C3C54FA`）；§6 注明短轮只作「待复验」依据、全量轮基线 `121b2a8` 进行中 |

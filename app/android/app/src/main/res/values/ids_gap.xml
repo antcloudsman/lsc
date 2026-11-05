@@ -214,4 +214,33 @@
     <item name="lc_compass_tianzhi_toggle" type="id" />
     <item name="lc_compass_close" type="id" />
 
+    <!-- F-18 盘面目录 -->
+    <item name="lc_compasslist_import" type="id" />
+    <item name="lc_compasslist_empty" type="id" />
+    <item name="lc_compasslist_item_0" type="id" />
+    <item name="lc_compasslist_item_1" type="id" />
+    <item name="lc_compasslist_item_2" type="id" />
+    <item name="lc_compasslist_item_3" type="id" />
+    <item name="lc_compasslist_item_4" type="id" />
+    <item name="lc_compasslist_custom_0" type="id" />
+    <item name="lc_compasslist_custom_1" type="id" />
+    <item name="lc_compasslist_custom_2" type="id" />
+    <item name="lc_compasslist_custom_3" type="id" />
+    <item name="lc_compasslist_custom_4" type="id" />
+    <item name="lc_compasslist_custom_5" type="id" />
+    <item name="lc_compasslist_custom_6" type="id" />
+    <item name="lc_compasslist_custom_7" type="id" />
+    <item name="lc_compasslist_custom_8" type="id" />
+    <item name="lc_compasslist_custom_9" type="id" />
+    <item name="lc_compasslist_del_0" type="id" />
+    <item name="lc_compasslist_del_1" type="id" />
+    <item name="lc_compasslist_del_2" type="id" />
+    <item name="lc_compasslist_del_3" type="id" />
+    <item name="lc_compasslist_del_4" type="id" />
+    <item name="lc_compasslist_del_5" type="id" />
+    <item name="lc_compasslist_del_6" type="id" />
+    <item name="lc_compasslist_del_7" type="id" />
+    <item name="lc_compasslist_del_8" type="id" />
+    <item name="lc_compasslist_del_9" type="id" />
+
 </resources>

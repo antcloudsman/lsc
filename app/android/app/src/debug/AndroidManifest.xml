@@ -59,5 +59,11 @@
             android:exported="true"
             tools:replace="android:exported" />
 
+        <!-- F-16 地理影像：只在 debug 变体导出 -->
+        <activity
+            android:name=".GeographicImageryActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
     </application>
 </manifest>

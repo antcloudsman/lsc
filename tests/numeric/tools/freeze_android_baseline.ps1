@@ -222,47 +222,56 @@ if (-not $mapUi.ok) { throw "地图态 dump 失败" }
 Shot "k01-map.png" | Out-Null
 $nodes = Get-NodeInfos $mapUi.xml
 $leftSlots = @(
-    @{ n = "全地图工具"; x = 111; y = 233 },
-    @{ n = "截屏"; x = 112; y = 754 },
-    @{ n = "超清优化"; x = 112; y = 1412 },
-    @{ n = "海拔查询"; x = 112; y = 1598 },
-    @{ n = "罗盘"; x = 112; y = 1784 },
-    @{ n = "路网"; x = 112; y = 1970 },
-    @{ n = "等高线"; x = 112; y = 2156 },
-    @{ n = "更多"; x = 112; y = 2342 }
+    @{ n = "全地图工具"; m = '^全地图工具$' },
+    @{ n = "截屏";       m = '^截屏$' },
+    @{ n = "超清优化";   m = '^超清优化$' },
+    @{ n = "海拔查询";   m = '^海拔查询$' },
+    @{ n = "罗盘";       m = '^罗盘$' },
+    @{ n = "路网";       m = '^路网$' },
+    @{ n = "等高线";     m = '^等高线$' },
+    @{ n = "更多";       m = '^更多$' }
 )
 $rightSlots = @(
-    @{ n = "图层"; x = 1116; y = 652 },
-    @{ n = "叠加"; x = 1116; y = 838 },
-    @{ n = "山脉"; x = 1116; y = 1024 },
-    @{ n = "水系"; x = 1116; y = 1210 },
-    @{ n = "探索"; x = 1116; y = 1396 },
-    @{ n = "指北针"; x = 1132; y = 1708 },
-    @{ n = "放大+"; x = 1132; y = 1860 },
-    @{ n = "缩小−"; x = 1132; y = 2014 },
-    @{ n = "定位"; x = 1132; y = 2168 },
-    @{ n = "3D"; x = 1134; y = 2320 }
+    @{ n = "图层";   m = '^图层$' },
+    @{ n = "叠加";   m = '^叠加$' },
+    @{ n = "山脉";   m = '^山脉$' },
+    @{ n = "水系";   m = '^水系$' },
+    @{ n = "探索";   m = '^探索$' },
+    @{ n = "指北针"; m = '^指北针$' },
+    @{ n = "放大+";  m = '^\+$' },
+    @{ n = "缩小−";  m = '^−$' },
+    @{ n = "定位";   m = '^定位$' },
+    @{ n = "3D";     m = '^3D$' }
 )
-function Match-Slots($mode, $group, $slots) {
+function Check-Slots($mode, $group, $slots) {
+    # 身份按文案（text/content-desc）判定，位置只做结构校验（在哪一侧、列内顺序是否还单调）。
+    # 旧实现按 orig-main.xml 坐标做 45px 邻域匹配：K-01 单页布局的列间距与原版不同，
+    # 结果把 8 个都在的控件报成「缺失」，还会把旁边的另一个控件记成「命中」（round-k01 首跑，见 F-17）。
+    $prevY = -1
     foreach ($s in $slots) {
-        $sx = $s.x * $W / 1228
-        $sy = $s.y * $H / 2700
-        $best = $nodes | Where-Object { [math]::Abs($_.cx - $sx) -le 45 -and [math]::Abs($_.cy - $sy) -le 45 } |
-            Sort-Object { [math]::Abs($_.cx - $sx) + [math]::Abs($_.cy - $sy) } | Select-Object -First 1
+        $node = $nodes | Where-Object { ($_.text -match $s.m) -or ($_.desc -match $s.m) } | Select-Object -First 1
+        $sideOk = $false; $orderOk = $false
+        if ($node) {
+            $sideOk = if ($group -eq "left") { $node.cx -lt ($W / 2) } else { $node.cx -gt ($W / 2) }
+            $orderOk = ($node.cy -gt $prevY)
+            if ($orderOk) { $prevY = $node.cy }
+        }
         $script:records += [pscustomobject]@{
             mode = $mode; group = $group; label = $s.n
-            found = [bool]$best
-            cx = $(if ($best) { $best.cx } else { "" })
-            cy = $(if ($best) { $best.cy } else { "" })
-            dx = $(if ($best) { [int]($best.cx - $sx) } else { "" })
-            dy = $(if ($best) { [int]($best.cy - $sy) } else { "" })
-            bounds = $(if ($best) { $best.bounds } else { "" })
+            found = [bool]$node
+            cx = $(if ($node) { $node.cx } else { "" })
+            cy = $(if ($node) { $node.cy } else { "" })
+            side = $(if ($node) { if ($sideOk) { "ok" } else { "wrong" } } else { "" })
+            order = $(if ($node) { if ($orderOk) { "ok" } else { "out-of-order" } } else { "" })
+            bounds = $(if ($node) { $node.bounds } else { "" })
         }
     }
 }
-Match-Slots "map" "left" $leftSlots
-Match-Slots "map" "right" $rightSlots
+Check-Slots "map" "left" $leftSlots
+Check-Slots "map" "right" $rightSlots
 $mapMissing = @($records | Where-Object { -not $_.found } | ForEach-Object { "$($_.group):$($_.label)" })
+$mapBadSide = @($records | Where-Object { $_.side -eq "wrong" } | ForEach-Object { "$($_.group):$($_.label)" })
+$mapBadOrder = @($records | Where-Object { $_.order -eq "out-of-order" } | ForEach-Object { "$($_.group):$($_.label)" })
 
 # ---- 2) 「更多」16 宫格 bottom sheet ----
 $moreOk = Tap-Text $mapUi.xml '^更多$'
@@ -360,6 +369,8 @@ $manifest = @"
 | 「更多」16 宫格 | 16 | $moreFound | $($moreMissing -join ' ; ') |
 | 罗盘态文字（dump 可读部分，非硬项） | 19 | $compassFound | 见 ``ui-compass-mode.xml``（自绘层不在 dump 属正常） |
 
+- 结构校验：侧别错误 $($mapBadSide.Count) 个 $(if ($mapBadSide.Count) { "（$($mapBadSide -join ' ; ')）" })；列内顺序异常 $($mapBadOrder.Count) 个 $(if ($mapBadOrder.Count) { "（$($mapBadOrder -join ' ; ')）" })
+
 ## 冻结物（SHA256 见 ``SHA256SUMS.txt``）
 
 $((Get-ChildItem $OutDir -File | Where-Object { $_.Name -notin @('manifest.md','SHA256SUMS.txt') } | Sort-Object Name | ForEach-Object { "- ``$($_.Name)``：$($_.Length) B" }) -join "`n")
@@ -367,7 +378,7 @@ $((Get-ChildItem $OutDir -File | Where-Object { $_.Name -notin @('manifest.md','
 ## 限制
 
 1. 罗盘浮层与圆盘为自绘/WebView 层，``uiautomator`` 只能拿到少量原生节点；圆心/直径/透明度以截图测量为准（``k01-compass.png``）。
-2. 左列/右列按 ``docs/evidence/original-apk/orig-main.xml`` 的比例位匹配（容差 45px），不是按文案匹配；图标类控件也能计。
+2. 左列/右列按**文案**判定存在性（``text``/``content-desc`` 精确匹配，含 ``+``/``−`` 符号按钮）；位置只做结构校验——控件必须在正确的半屏、且列内 y 单调递增。**不再用 ``orig-main.xml`` 坐标做 45px 邻域匹配**：K-01 单页布局列间距与原版不同，那种匹配会把存在的控件报成缺失、把邻居控件报成命中（F-17）。
 3. 历史基线目录（如 ``round-d5/`` 及更早）仅作历史对照，不得作为本轮基线或裁切参考；本轮基线以 ``$Round`` 为准。
 
 ## 数值门禁原始输出（F-01/F-02）
@@ -379,6 +390,6 @@ $gateBlock
 $manifest | Set-Content -Encoding UTF8 (Join-Path $OutDir "manifest.md")
 
 Write-Host "FROZEN: $OutDir"
-Write-Host "left=$leftFound/8 right=$rightFound/10 more=$moreFound/16 compassText=$compassFound fatal=$fatal anr=$anr"
-if ($mapMissing.Count -gt 0 -or $moreFound -lt 16 -or $fatal -gt 0 -or $anr -gt 0) { exit 1 }
+Write-Host "left=$leftFound/8 right=$rightFound/10 more=$moreFound/16 compassText=$compassFound fatal=$fatal anr=$anr badSide=$($mapBadSide.Count) badOrder=$($mapBadOrder.Count)"
+if ($mapMissing.Count -gt 0 -or $mapBadSide.Count -gt 0 -or $mapBadOrder.Count -gt 0 -or $moreFound -lt 16 -or $fatal -gt 0 -or $anr -gt 0) { exit 1 }
 exit 0

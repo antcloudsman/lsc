@@ -294,4 +294,36 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 ### 10.6 验证入口
 
 - 无头：`tools/map/run_at_p04.ps1` 仍跑 TD-001…TD-015；`setUiMode/getAttribution` 已加入 TD-015 的 window API 列表（现 16 项，AT 文档的「14 个方法」需测试侧同步）。
+
+## 11. F-12 测量接口（2026-11-05，含原版打点对齐）
+
+> 背景：原版 F-12 **不是点哪打哪**，是「拖图把中心对到目标 → 点『添加点』」，原版 JS `addCenterPoint(){ map.getCenter() → eventClick }`（逆向 `2ba81d0` 查实，合入 `a1ec582`）。客户端按这个重排 UI（两模式 + 添加点/撤销/完成/返回 + 坐/向方位角），地图侧只提供下面四个方法。
+
+| 方法 | 参数 | 行为 |
+|---|---|---|
+| `lc_measure_start(mode)` | `'distance'`\|`'area'` | 进入测量态并清空已有点，发一次 `measure`（0 点） |
+| `lc_measure_addCenter()` | — | **新增**：取当前地图中心（`center`）作为新测量点，走与点选打点同一个 `measureAdd()`；返回 `true`/`false` |
+| `lc_measure_undo()` | — | 去掉最后一个点 |
+| `lc_measure_clear()` | — | 退出测量态、清点，发 `measure-clear` |
+
+**`lc_measure_addCenter()` 的落点口径**（与点选打点一致，测量算法未改一行）：
+
+- 2D：`center` 即瓦片反算出的经纬度中心，直接落点；
+- 3D：`render3D` 里相机 `lookAt` 的 `target` 就是 `center` + 该点 DEM 高程，所以屏幕正中那一点与 `demIntersectScreen()` 拾取到的是同一地表位置；海拔用 `elevAt(center)` 同源取（DEM 未就绪时可为 `null`，属正常）；
+- **不产生立向点**：该接口不经 `placeMarker()`，测量态下 `placeMarker` 也早已直接 return，所以不会同时插立向标记；
+- 未进入测量态时按「距离测量」起步（等价 `lc_measure_start('distance')`），避免客户端按钮点了没反应；按钮在测量态里调用则沿用当前 `distance`/`area` 模式。
+
+事件、hash、`getState().measure` 与 F-12 原约定是同一套，没有新增事件：`measure {mode, points, distanceM, areaM2, text}`、`measure-clear`；hash `&measure=dist|area`；`getState().measure {on, mode, points, distanceM, areaM2}`。
+
+无头验收（脚本入库）：`tools/map/measure-center-test.html`，仓库根目录 `python -m http.server 8792` 后打开，实测 7/7 PASS：
+
+```
+MC1 addCenter 1 点 points=1 mode=distance on=true
+MC2 两个中心点（39.90,116.40 → 39.90,116.41）points=2 distanceM=853（haversine 期望 853）
+MC3 lc_measure_undo() → points=1 distanceM=0
+MC4 markers=0（不产生立向点）events=measure,measure,measure,measure 载荷 points=2/853/"853 m"
+MC5 area 模式三点 areaM2=474275（局部 ENU + 鞋带，未改）
+MC6 3D 中心打点 points=1 center=40.0000,116.0000 elev=316.9 demZoom=11
+MC7 2D 取高程 elev=53.8（DEM 未就绪时为 null）
+```
 - 截图：`map.html#in3d&uimode=compass&lat=40.02&lng=115.45&z=12`（或 `&uimode=map`）。

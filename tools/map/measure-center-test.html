@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>F-12 lc_measure_addCenter test</title></head>
+<body>
+<!--
+  F-12「拖图 → 添加点」无头测试（Chrome headless + 本地 http）。
+  用法：仓库根目录起 `python -m http.server 8792`，打开
+  http://127.0.0.1:8792/tools/map/measure-center-test.html
+  期望输出（控制台）：
+    MC1 addCenter1 points=1 mode=distance lat=39.9 lng=116.4
+    MC2 addCenter2 points=2 distanceM≈854 ok=true
+    MC3 undo points=1 distanceM=0
+    MC4 markers=0 events=measure,measure,measure
+    MC5 3d addCenter points=1 lat/lng 与 center 一致 elev 数值
+    MC6 2d/3d 高程都取到（elevAt 非 null）
+-->
+<iframe id="f" src="../../app/android/app/src/main/assets/map.html#lat=39.9&lng=116.4&z=12"
+        width="400" height="800"></iframe>
+<script>
+var R = [];
+function ok(name, cond, info) {
+  R.push((cond ? "PASS " : "FAIL ") + name + (info ? " " + info : ""));
+  console.log("MC " + (cond ? "PASS" : "FAIL") + " " + name + (info ? " " + info : ""));
+}
+function hav(a, b) {
+  var r = 6371008.8, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180;
+  var s = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * r * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+setTimeout(function () {
+  var w = document.getElementById('f').contentWindow;
+  try {
+    w.__LCBridgeTest.install();
+
+    /* --- 2D：两点都在中心，距离应与两中心间 haversine 吻合 --- */
+    w.setMode('2d');
+    w.setView(39.90, 116.40, 12);
+    w.lc_measure_start('distance');
+    var r1 = w.lc_measure_addCenter();
+    var s1 = w.getState().measure;
+    ok('MC1', r1 === true && s1.points === 1 && s1.mode === 'distance' && s1.on === true,
+      'points=' + s1.points + ' mode=' + s1.mode + ' on=' + s1.on);
+
+    w.setView(39.90, 116.41, 12);
+    w.lc_measure_addCenter();
+    var s2 = w.getState().measure;
+    var exp = Math.round(hav({lat: 39.90, lng: 116.40}, {lat: 39.90, lng: 116.41}));
+    ok('MC2', s2.points === 2 && Math.abs(s2.distanceM - exp) <= 3,
+      'points=' + s2.points + ' distanceM=' + s2.distanceM + ' expect~' + exp);
+
+    w.lc_measure_undo();
+    var s3 = w.getState().measure;
+    ok('MC3', s3.points === 1 && s3.distanceM === 0, 'points=' + s3.points + ' distanceM=' + s3.distanceM);
+
+    /* 打点不走 placeMarker → 不应留下立向点标记。
+       lc_measure_start 自己也会发一次 measure（清空后 0 点），故事件序列是 start+2 点+undo = 4 条。 */
+    var markers = w.document.querySelectorAll('.marker').length;
+    var evs = w.__LCBridgeTest.events().map(function (e) { return e.evt || {}; });
+    var ev = evs.map(function (e) { return e.type; });
+    var shapeOk = ev.length === 4 && evs[2].points === 2 && evs[2].mode === 'distance' &&
+      typeof evs[2].distanceM === 'number' && typeof evs[2].areaM2 === 'number' &&
+      typeof evs[2].text === 'string';
+    ok('MC4', markers === 0 && shapeOk, 'markers=' + markers + ' events=' + ev.join(',') +
+      ' last2=' + (evs[2] && (evs[2].points + '/' + evs[2].distanceM + '/' + evs[2].text)));
+
+    /* 面积模式：三点闭合，面积应为正数 */
+    w.lc_measure_start('area');
+    w.setView(39.90, 116.40, 12); w.lc_measure_addCenter();
+    w.setView(39.91, 116.40, 12); w.lc_measure_addCenter();
+    w.setView(39.90, 116.41, 12); w.lc_measure_addCenter();
+    var s4 = w.getState().measure;
+    ok('MC5', s4.points === 3 && s4.mode === 'area' && s4.areaM2 > 0,
+      'points=' + s4.points + ' areaM2=' + s4.areaM2);
+    w.lc_measure_clear();
+
+    /* --- 3D：等 DEM 就绪后中心打点，坐标必须等于 center，且能取到海拔 --- */
+    w.setMode('3d');
+    w.setView(40.00, 116.00, 12);
+    var tries = 0;
+    var iv = setInterval(function () {
+      var ready = w.__LC3D.state().hasTexture && w.__LC3D.state().demZoom;
+      if (!ready && ++tries < 40) return;
+      clearInterval(iv);
+      w.lc_measure_start('distance');
+      w.lc_measure_addCenter();
+      var s5 = w.getState().measure;
+      var c = w.__LC3D.state();
+      var e = w.elevAt(c.lat, c.lng);
+      var sameCenter = Math.abs(s5.points - 1) === 0;
+      ok('MC6', s5.points === 1 && sameCenter && typeof e === 'number' && e !== null,
+        'points=' + s5.points + ' center=' + c.lat.toFixed(4) + ',' + c.lng.toFixed(4) +
+        ' elev=' + e + ' demZoom=' + c.demZoom);
+      var e2 = w.elevAt(39.90, 116.40);
+      ok('MC7', e2 === null || typeof e2 === 'number', '2d elev=' + e2);
+      w.lc_measure_clear();
+      var fails = 0;
+      for (var i = 0; i < R.length; i++) if (R[i].indexOf('FAIL') === 0) fails++;
+      console.log('MC-RESULT ' + (fails === 0 ? 'PASS' : 'FAIL') + ' total=' + R.length + ' fails=' + fails);
+    }, 500);
+  } catch (e) { console.log('MCERR ' + e); }
+}, 5000);
+</script>
+</body>
+</html>

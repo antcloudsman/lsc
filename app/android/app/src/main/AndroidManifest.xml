@@ -81,6 +81,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-05 数据叠加（LC地图 新建页）：四页签 + 多图层开关/透明度 -->
+        <activity
+            android:name=".OverlayActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

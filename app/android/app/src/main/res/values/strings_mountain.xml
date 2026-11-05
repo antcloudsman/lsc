@@ -13,4 +13,5 @@
     <string name="lc_mountain_elev">海拔 %1$s m</string>
     <string name="lc_mountain_elev_unknown">海拔未知</string>
     <string name="lc_mountain_hint">点山名查看详情；「山脊」为 DEM 曲率派生高亮</string>
+    <string name="lc_mountain_fallback">（省检索为空，已改用视野搜索）</string>
 </resources>

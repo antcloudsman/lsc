@@ -125,6 +125,9 @@ var ovSvgEl = null;
 var fish = { on: false, items: [], els: [] };
 var fishLayerEl = null;
 var elevQuery = { on: false };
+/* F-05 叠加：多图层，id 独立开关 + 每层透明度 */
+var ovLayers = {};              // id -> {id,on,opacity,items,els,container}
+var ovLayersEl = null;
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -202,6 +205,7 @@ function render() {
   fillLayer(annoLayer, anno, x0, x1, y0, y1, tx, ty, n);
   updateOverlay(null);
   updateFish(null);
+  updateOverlayLayers();
   renderOverlays();
 }
 
@@ -635,6 +639,116 @@ function queryElevation(lng, lat) {
 }
 
 function lc_queryElevation(lng, lat) { return elevAt(lat, lng); }
+
+/* ---- F-05 叠加：多图层（点位型，独立开关 + 透明度） ------------------------
+ * 原版是 21at/私有瓦片专题（行政区/公路/铁路/公园/火山/植被/机场/世遗/丝路/景区/
+ * 港口/十线/aeroway），不可照搬。LC 只对得上公开源的点位做层（天地图分类搜索），
+ * 对不上的图层不建空壳（页面置灰写原因）。
+ * API：setOverlayLayer(id,on,{opacity,items})、setOverlayOpacity(id,v)、getOverlays()
+ * 事件：overlay-layer；hash &overlay=id1,id2（AT 用，空数据层只验证状态）。
+ * -------------------------------------------------------------------------- */
+function ovLayersEnsure() {
+  if (ovLayersEl) return ovLayersEl;
+  ovLayersEl = document.createElement("div");
+  ovLayersEl.id = "ovLayers";
+  ovLayersEl.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:7;";
+  mapEl.appendChild(ovLayersEl);
+  return ovLayersEl;
+}
+
+function setOverlayLayer(id, on, opts) {
+  if (!id) return null;
+  opts = opts || {};
+  var layer = ovLayers[id] || { id: String(id), on: false, opacity: 1, items: [], els: [], container: null };
+  layer.on = !!on;
+  if (typeof opts.opacity === "number") layer.opacity = Math.max(0, Math.min(1, opts.opacity));
+  if (opts.items) {
+    var list = opts.items, items = [];
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      if (!p || typeof p.lat !== "number" || typeof p.lng !== "number") continue;
+      items.push({ name: String(p.name || ""), lat: p.lat, lng: p.lng });
+    }
+    layer.items = items;
+  }
+  ovLayers[id] = layer;
+  ovLayerRebuild(layer);
+  emit({ type: "overlay-layer", id: layer.id, on: layer.on, opacity: layer.opacity, count: layer.items.length });
+  updateOverlayLayers();
+  return { id: layer.id, on: layer.on, opacity: layer.opacity, count: layer.items.length };
+}
+
+function setOverlayOpacity(id, v) {
+  var layer = ovLayers[id];
+  if (!layer) return null;
+  layer.opacity = Math.max(0, Math.min(1, Number(v) || 0));
+  if (layer.container) layer.container.style.opacity = String(layer.opacity);
+  emit({ type: "overlay-layer", id: layer.id, on: layer.on, opacity: layer.opacity, count: layer.items.length });
+  return layer.opacity;
+}
+
+function ovLayerRebuild(layer) {
+  var root = ovLayersEnsure();
+  if (layer.container) { layer.container.remove(); layer.container = null; }
+  layer.els = [];
+  var box = document.createElement("div");
+  box.style.cssText = "position:absolute;inset:0;opacity:" + layer.opacity + ";";
+  root.appendChild(box);
+  layer.container = box;
+  if (!layer.on) return;
+  for (var i = 0; i < layer.items.length; i++) {
+    (function (pt) {
+      var dot = document.createElement("div");
+      dot.className = "ovdot";
+      dot.style.cssText = "position:absolute;width:6px;height:6px;border-radius:50%;background:#ffd479;" +
+        "border:1px solid #5a4320;transform:translate(-50%,-50%);";
+      var lbl = document.createElement("div");
+      lbl.className = "ovlabel";
+      lbl.style.opacity = "0.9";
+      lbl.textContent = pt.name;
+      box.appendChild(dot);
+      box.appendChild(lbl);
+      layer.els.push({ dot: dot, lbl: lbl, item: pt });
+    })(layer.items[i]);
+  }
+}
+
+function updateOverlayLayers() {
+  var ids = Object.keys(ovLayers);
+  for (var k = 0; k < ids.length; k++) {
+    var layer = ovLayers[ids[k]];
+    if (!layer || !layer.on) continue;
+    for (var i = 0; i < layer.els.length; i++) {
+      var e = layer.els[i];
+      var s = screenPointOf(e.item.lat, e.item.lng);
+      if (!s) { e.dot.style.display = "none"; e.lbl.style.display = "none"; continue; }
+      e.dot.style.display = "block";
+      e.lbl.style.display = "block";
+      e.dot.style.left = s.x + "px";
+      e.dot.style.top = s.y + "px";
+      e.lbl.style.left = s.x + "px";
+      e.lbl.style.top = (s.y + 4) + "px";
+    }
+  }
+}
+
+function getOverlays() {
+  var out = {};
+  var ids = Object.keys(ovLayers);
+  for (var i = 0; i < ids.length; i++) {
+    var l = ovLayers[ids[i]];
+    out[ids[i]] = { on: l.on, opacity: round2(l.opacity), count: l.items.length };
+  }
+  return out;
+}
+
+function round2(v) { return Math.round(v * 100) / 100; }
+
+/* F-05 内置层：等高线（DEM 着色器）显式开关，供叠加页统一调用 */
+function setContour(on) {
+  if (!!on !== contourOn) toggleContour();
+  return contourOn;
+}
 
 function setBase(b) {
   if (roadNet && b !== "vec") {
@@ -2040,6 +2154,7 @@ function render3D() {
   updatePickMarker(vp);
   updateOverlay(vp);
   updateFish(vp);
+  updateOverlayLayers();
   renderOverlays();
 }
 
@@ -2106,6 +2221,7 @@ function getState() {
     paint: { on: paint.on, strokes: paint.strokes.length, color: paint.color, width: paint.width },
     fish: { on: fish.on, count: fish.items.length },
     elevQuery: elevQuery.on,
+    overlays: getOverlays(),
     uiMode: uiMode,
     attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
@@ -2241,7 +2357,7 @@ render();
 applyUiModeHash(location.hash);
 
 /* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
- * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge&measure=dist|area&paint&fish&elev
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge&measure=dist|area&paint&fish&elev&overlay=id1,id2
  * 页面初始化与 hashchange 都会应用，所以客户端一次 `loadUrl(...#in3d&sit)` 即可生效
  * （同文档导航只改 hash、不触发 onload 的情况也覆盖）。 */
 function hashHas(h, name) {
@@ -2287,6 +2403,11 @@ function applyIn3D(hash) {
     if (hashHas(h, "paint")) lc_draw_start();
     if (hashHas(h, "fish")) setFishLayer(true, []);
     if (hashHas(h, "elev")) lc_elev_query(true);
+    var mov = h.match(/[&#]overlay=([\w\-,]+)/);
+    if (mov) {
+      var ovIds = mov[1].split(",");
+      for (var oi = 0; oi < ovIds.length; oi++) setOverlayLayer(ovIds[oi], true, {});
+    }
     if (hashHas(h, "fs") && !fullScreen) toggleFullScreen();
     var msi = h.match(/src=(\d+)/);
     if (msi) selectSource(parseInt(msi[1], 10));
@@ -2348,7 +2469,8 @@ function runAT() {
     "lc_measure_start", "lc_measure_clear", "lc_measure_undo",
     "lc_draw_start", "lc_draw_end", "lc_draw_style", "lc_draw_undo", "lc_draw_clear",
     "lc_draw_export", "setFishLayer", "lc_setFishLayer", "lc_elev_query",
-    "queryElevation", "lc_queryElevation"];
+    "queryElevation", "lc_queryElevation",
+    "setOverlayLayer", "setOverlayOpacity", "getOverlays", "setContour"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

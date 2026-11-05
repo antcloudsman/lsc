@@ -79,7 +79,8 @@ def main():
     }
     metap = os.path.join(a.out, a.id + ".meta.json")
     with open(metap, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
+        # App 的 loadMeta 只读首行（saveMeta 写单行紧凑 JSON），这里必须同样单行
+        json.dump(meta, f, ensure_ascii=False, separators=(",", ":"))
         f.write("\n")
 
     print(f"jsonl  {jsonl}")

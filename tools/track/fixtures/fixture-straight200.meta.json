@@ -1,16 +1,1 @@
-{
-  "id": "fixture-straight200",
-  "startedAt": 1759600000000,
-  "stoppedAt": 1759600199000,
-  "status": "finished",
-  "lastSeq": 200,
-  "intervalMs": 1000,
-  "minDistanceM": 3.0,
-  "segments": 1,
-  "points": 200,
-  "distanceM": 199.00005294967423,
-  "durationSec": 199.0,
-  "avgKmh": 3.6000009578835543,
-  "maxKmh": 3.6001186360439146,
-  "samplingChanges": []
-}
+{"id":"fixture-straight200","startedAt":1759600000000,"stoppedAt":1759600199000,"status":"finished","lastSeq":200,"intervalMs":1000,"minDistanceM":3.0,"segments":1,"points":200,"distanceM":199.00005294967423,"durationSec":199.0,"avgKmh":3.6000009578835543,"maxKmh":3.6001186360439146,"samplingChanges":[]}

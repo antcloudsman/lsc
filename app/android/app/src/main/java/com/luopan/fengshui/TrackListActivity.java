@@ -117,13 +117,13 @@ public class TrackListActivity extends LcFeatureActivity {
         // 记录卡
         LinearLayout recordCard = new LinearLayout(this);
         recordCard.setOrientation(LinearLayout.VERTICAL);
-        recordCard.setBackgroundColor(getColor(R.color.panel));
+        recordCard.setBackgroundColor(getColor(R.color.lc_toolmgr_card));
         recordCard.setPadding(dp(16), dp(12), dp(16), dp(12));
 
         recordingView = new TextView(this);
         recordingView.setId(R.id.lc_track_recording);
         recordingView.setTextSize(15f);
-        recordingView.setTextColor(getColor(R.color.text_primary));
+        recordingView.setTextColor(getColor(R.color.lc_setting_text));
         recordCard.addView(recordingView);
 
         LinearLayout recordButtons = new LinearLayout(this);
@@ -175,7 +175,8 @@ public class TrackListActivity extends LcFeatureActivity {
         emptyText.setTextColor(getColor(R.color.lc_label_gray));
         emptyText.setTextSize(14f);
         emptyText.setPadding(0, dp(12), 0, 0);
-        emptyBox.addView(emptyText);
+        emptyBox.addView(emptyText, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         root.addView(emptyBox);
 

@@ -238,6 +238,8 @@ L213（证据索引 EV-108）——该文件在 `fix-p0` 中不存在，引用�
 **登记**：本条由技术总监代登记（登记时 LC测试 尚未取得本树写权限）；2026-11-05 由 LC审测试 复核。
 
 **复现**（同一台设备，先原版后 LC；命令可重复执行）
+> 复现基线：`fix-p0@bc854ec`（K-01 修复前）。K-01 合入后 `build-android.ps1` 构建的是新 UI，
+> 复现前先 `git checkout bc854ec`（或开独立 worktree），否则跑不到三 Tab 现场。
 ```powershell
 $DEV = 'L2E0222531014833'
 # 1) 原版：必须用输入包（商店构建 cold start ANR，不可作基线，见 README §2）
@@ -262,7 +264,7 @@ Select-String -Path app\android\app\src\main\java\com\luopan\fengshui\MainActivi
 - 「更多」从底部升起 **bottom sheet**「地图工具」（16 宫格 + 编辑），地图仍在上方半透；
 - 读盘（读数）/ 知识条目走弹层或抽屉，不占独立页面。
 
-**实际（LC 基线，K-01 修复前）**
+**实际（LC 基线，K-01 修复前；行号按 `fix-p0@bc854ec`，K-01 落地后 `showTab` 已删、行号会漂移，复核用 `git show bc854ec:<path>`）**
 `activity_main.xml` 有 `bottom_bar` 与三个页签；`MainActivity.showTab()` 切换
 `compassTab` / `mapView` / `knowledgeTab` 的 `VISIBILITY`，罗盘页与地图页是互斥整页，
 罗盘不叠加在地图上层；无左列/右列工具列，无 bottom sheet。
@@ -270,7 +272,7 @@ Select-String -Path app\android\app\src\main\java\com\luopan\fengshui\MainActivi
 **修复归属（D-010 授权）**：实现＝LC审客户端（主刀）/ LC审地图（配合），两者在 `fix-p0` 有写权限；
 复核＝LC测试（改冻结脚本 + 重冻基线 + 真机冒烟）、LC审核验（独立核对条目）。
 **证据**：`a407d41`（取证 README + 3 份 uiautomator dump）；截图 `orig-06/08/09.png`（本机，sha256 见 README §3）；
-基线代码 `activity_main.xml` L15 `bottom_bar` + L24/L33/L42 `tab_*`、`MainActivity.java` L634 `showTab()`。
+基线代码（`bc854ec`）`activity_main.xml` L15 `bottom_bar` + L24/L33/L42 `tab_*`、`MainActivity.java` L634 `showTab()`。
 **验收产物（待产出）**：`docs\qa\baseline-android\round-k01\`（重冻后生成，当前不存在，不得当已有证据引用）与 `docs\qa\AT-*` 用例。
 **责任人/状态**：LC审客户端（主刀）/ LC审地图（配合），**新建（2026-11-05 11:35）**。
 

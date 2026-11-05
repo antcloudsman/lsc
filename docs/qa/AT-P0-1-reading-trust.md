@@ -123,7 +123,7 @@ Get-Content .\probe.csv
 
 1. `scripts/build-android.ps1` 通过，logcat 无 FATAL。
 2. `python tests/numeric/run_all.py` 全绿。
-3. 开关全关：**当前结构**三 Tab 截图 diff=0（与 P0-0 的 SW-006 同脚本）；K-01 落地后按「地图态 / 罗盘浮层态 / 面板态」重采基线再比。
+3. 开关全关：**当前结构**三 Tab 截图 diff=0（与 P0-0 的 SW-006 同脚本）；K-01 落地后由 LC测试 重冻基线、PRD 回填后再比（不预设新口径）。
 4. 知识库页 5 盘面/14 圈层文案未被改动（`git diff` 检查 `KNOWLEDGE_*` 无变更）。
 
 ---

@@ -20,7 +20,7 @@
 | M5 | 缺块（DEM 404/断网）显示「无数据」，**不得**返回 0 m；连带 `mesh/demoElev/HUD` 容错（约 30–50 行） | LC地图 | 现 `demAt()` 缺块返回 0，会造「假海平面」 |
 | M6 | **T-8 点选契约**（PRD §0.1）：JS 通过 `LCAndroid.onEvent(String json)` 发射 `{"type":"pick","lng":…,"lat":…,"elev":…,"heading":…,"src":"3d"}`，**缺高程传 `null`**；`{"type":"pick-clear"}` 清标记；客户端 `MapMarker` **单点覆盖**；**点选不联动罗盘读数**；3D 默认贴面为**影像**（`state().base === 'img'`），`ter` 留开关 | LC地图（JS 侧）+ LC客户端（桥，轮 C 后） | 桥未接前 TD-016…TD-019 判 BLOCKED；JS 侧用例可先跑 |
 
-> 基线对照物：`docs/qa/baseline-android/`（含 `probe.csv` 与当前结构的截图；K-01 落地后须按「地图态 / 罗盘浮层态 / 面板态」重采）。TD-015/回归要用它。
+> 基线对照物：`docs/qa/baseline-android/`（含 `probe.csv` 与当前结构的截图）。K-01 落地后由 LC测试 重冻基线、PRD 回填（不预设新口径）；TD-015/回归要用它。
 
 ---
 
@@ -106,7 +106,7 @@ Invoke-LCJs "window.innerWidth+'x'+window.innerHeight"
 1. `scripts/build-android.ps1` 通过，无 FATAL。
 2. 2D：底图三选一、旋转、缩放、立向标记、定位、截图（截图依赖 B-09 修复状态，另见 PRD §2.1）。
 3. `python tests/numeric/run_all.py` 全绿。
-4. 开关全关：**当前结构**三 Tab 截图 diff = 0；K-01 落地后按「地图态 / 罗盘浮层态 / 面板态」重采基线。
+4. 开关全关：**当前结构**三 Tab 截图 diff = 0；K-01 落地后由 LC测试 重冻基线、PRD 回填（不预设新口径）。
 
 ---
 

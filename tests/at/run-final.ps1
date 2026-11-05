@@ -619,33 +619,10 @@ else {
         # 角注在**分享图**里能不能看见：判图，不判 DOM。
         # 背景：`111c4fb` 起客户端把「底图·审图号」画进图内、面板上缘之上（#srcInfo 仍在面板后面，
         # 所以拿 DOM 矩形判会永远 FAIL）。这里在面板带上方的条带里找「金色文字行」。
-        $bandY0 = 1400; $bandY1 = 1850
-        $bandPath = Join-Path $OutDir 'p2-06-attribution-band.png'
-        $visStatus = 'BLOCKED'
-        $rectInfo = '未取到'
-        try {
-            Add-Type -AssemblyName System.Drawing
-            $img2 = [System.Drawing.Bitmap]::FromFile($local)
-            $rect2 = New-Object System.Drawing.Rectangle 0, $bandY0, $img2.Width, ($bandY1 - $bandY0)
-            $band = $img2.Clone($rect2, $img2.PixelFormat)
-            $band.Save($bandPath, [System.Drawing.Imaging.ImageFormat]::Png)
-            $maxRow = 0; $maxRowY = -1
-            for ($y = 0; $y -lt $band.Height; $y++) {
-                $n = 0
-                for ($x = 0; $x -lt $band.Width; $x += 2) {
-                    $c = $band.GetPixel($x, $y)
-                    if ($c.R -ge 170 -and $c.G -ge 130 -and $c.B -le 130) { $n++ }
-                }
-                if ($n -gt $maxRow) { $maxRow = $n; $maxRowY = $bandY0 + $y }
-            }
-            $band.Dispose(); $img2.Dispose()
-            $rectInfo = "面板上方条带 y$bandY0..$bandY1 最大金色像素行 = $maxRow（y=$maxRowY，每 2px 采样，行宽 $(1228 / 2)）"
-            # 无角注版本同区域实测最大 54（地图自身文字），有角注时 143 → 取 100 作门槛
-            $visStatus = if ($maxRow -ge 100 -and $maxRowY -lt 1850) { 'PASS' } else { 'FAIL' }
-        }
-        catch { $rectInfo = "条带分析失败: $($_.Exception.Message)" }
-        Log "P2-06-vis: $visStatus $rectInfo"
-        Assert3 'P2-06-vis' $visStatus '分享图上面板之上看得到「底图·审图号」金字（判图，不判 DOM）' $rectInfo $bandPath
+        # K-01 后旧带 y1400-1850（1228×2700，三 Tab+底部面板布局）与 100 像素阈值都随布局失效；
+        # 先暂停，复核新带后再判（docs/qa/k-01-pending.md P-06）。
+        Log "P2-06-vis: SUSPENDED（旧带 y1400-1850 随 K-01 失效；待复核新带后判 PASS/FAIL）"
+        Assert3 'P2-06-vis' 'DIAGNOSTIC' '金色角注带（K-01 后暂停，待复核）' '旧带 y1400-1850 不再用于判 PASS/FAIL' ''
     }
 }
 

@@ -20,7 +20,7 @@
 | P-03 | K-01 落地笔（客户端） | SW-006 第 4 条：面板区裁切窗重取 | 新参考图 + 新窗 `y0-y1` + 测量方法（谁量/哪张截图/怎么定面板上缘）+ 同航向同贴面 diff | 旧窗 `y1850-2500` 与旧参考 `round-d5/variant-p01` 作废；新窗判据由客户端测量后定，并写进 `round-k01/manifest.md` 的「裁切窗测量依据」 | 待跑 |
 | P-04 | 地图侧 `measurements.md`（待提交） | 罗盘圆心/直径/外环/face alpha | 截图测量数据 + 采样点清单（RGB、推测背景色、alpha 上下界） | 圆心与屏幕中心偏差 ≤2% 屏宽；直径/外环占比按 `orig-06-read.png` 实测；alpha 给区间不给单值 | 待跑 |
 | P-05 | 客户端 K-01 布局落地（待提交） | K-01 全量验收 + `round-k01` 基线重冻 | `freeze_android_baseline.ps1` 全量产物（`k01-map.png`/`k01-more.png`/`k01-compass.png`/`k01-map-after-hide.png`/`ui-*.xml`/`nodes-k01.csv`/`manifest.md`）+ F-01/F-02 门禁输出 | 见 `round-k01/manifest.md`：左 8/右 10/更多 16 硬项；浮层态截图；门禁 `tests=82 skipped=0 + CARGO: PASS` | 待跑 |
-| P-06 | 审查遗留（本清单新增） | P2-06-vis 金色角注带 `y1400-1850` 复核 | K-01 后重截分享图；复核角注是否仍在面板上方、带窗是否需改 | `run-final.ps1` 现用固定带 `y1400-1850` 判 PASS/FAIL；该带同样按旧布局量出，K-01 后必须先复核再判，复核前不得据此判 FAIL | 待跑（复核后决定是否改代码） |
+| P-06 | 审查遗留（本清单新增） | P2-06-vis 金色角注带 `y1400-1850` 复核 | K-01 后重截分享图；复核角注是否仍在面板上方、带窗是否需改 | `run-final.ps1` 旧固定带 `y1400-1850` 已停用（只记 `DIAGNOSTIC`，不判 PASS/FAIL）；复核新带后再决定恢复判据 | 已暂停（旧带停用，待复核新带） |
 | P-07 | 客户端定案 + `map-bridge.md` L262（`64f8abc`） | 指针开关两模式判定 | 地图模式：点右列「指针开关」，取 `__LC3D.getState().needle` 与 `#needle` 的 display；罗盘模式：`k01-compass-needle-on/off.png` 截图比对 | 地图模式两处状态同步翻转；罗盘模式 `#needle` 恒 none、北针由 `CompassView.setShowPointer` 控制且只能靠截图判；不得用 `getState().needle` 代判罗盘北针 | 待跑 |
 
 ## 2 跑批顺序（设备放行后）
@@ -30,7 +30,7 @@
 3. 跑 F-01/F-02 门禁（`python tests/numeric/run_all.py`，要求 `tests=82 skipped=0` + `CARGO: PASS`）；
 4. 用 `tests/numeric/tools/freeze_android_baseline.ps1` 重冻 `docs/qa/baseline-android/round-k01/`（P-05），同时回填 P-03 新裁切窗与依据、P-04 几何数据；
 5. P-07 指针开关两模式：地图模式取 `getState().needle` 与 `#needle` 的 display，罗盘模式用 `k01-compass-needle-on/off.png` 截图比对；
-6. P-06 复核后再决定 `run-final.ps1` 的 P2-06-vis 带窗是否修改。
+6. P-06 新带复核后，再决定 `run-final.ps1` 的 P2-06-vis 是否恢复 PASS/FAIL 判据。
 
 ## 3 登记纪律
 

@@ -15,8 +15,10 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
@@ -25,13 +27,14 @@ import java.util.function.IntConsumer;
  *
  * 依据：
  * - 结构/语义/默认值：docs/gap-modules/MapSettingActivity.md（§1 内容顺序、§2 预设、§3 枚举、§4 MMKV）；
+ * - 参数面板量程/粒度：逆向 f93ddbb（H0 三参 ×100 于 h0.b、setter ÷100；亮度 0..1、饱和/对比 -1..1、
+ *   色相 -180..180；显示 %.1f / %.0f），仅「自定义」态组合（C0 的 L0("自定义",3,…) → AnimatedVisibility）；
  * - 视觉尺寸/颜色：lc-gap-evidence/nav/mapsetting/INDEX.md 真机实测
  *   （页面白 #FFFFFF、区块间隔 #F0F3F7 39px、标题栏 52dp、开关 156×78px、行距 157px、
  *    chip 245×97px、预览 1148×636px、选中蓝 #1C45A5、开关蓝 #2E53AC、关闭灰 #C0C4CC）。
  *
  * 未做（等证据，不编）：
- * - 「自定义」下的参数面板（5 滑杆 + 恢复默认 + 说明）：截图 05 已确认嵌套在模式行与预览之间，
- *   但滑杆量程仍未取证，暂不渲染；
+ * - 参数区说明文字：只取证到第一行全文，其余四行 DEX 里是省略状态，等全文再补；
  * - 地图效果预览内容：需要 LC地图 的栅格参数通道，先留同尺寸占位；
  * - 入口：原版抽屉第 1 项「地图设置」（真机行中心 y=866），等 K-01 抽屉落地再挂。
  *
@@ -63,7 +66,21 @@ public class SettingActivity extends Activity {
             R.string.lc_setting_filter_highlight, R.string.lc_setting_filter_custom
     };
 
+    private static final int[] PARAM_IDS = {
+            R.id.lc_setting_param_0, R.id.lc_setting_param_1, R.id.lc_setting_param_2,
+            R.id.lc_setting_param_3, R.id.lc_setting_param_4
+    };
+
+    private static final int[] PARAM_VALUE_IDS = {
+            R.id.lc_setting_param_value_0, R.id.lc_setting_param_value_1,
+            R.id.lc_setting_param_value_2, R.id.lc_setting_param_value_3,
+            R.id.lc_setting_param_value_4
+    };
+
     private final TextView[] modeChips = new TextView[4];
+    private LinearLayout paramsPanel;
+    private final TextView[] paramValues = new TextView[5];
+    private final SeekBar[] paramSliders = new SeekBar[5];
     private MapSettingsStore store;
 
     @Override
@@ -126,6 +143,10 @@ public class SettingActivity extends Activity {
         list.addView(chips);
         refreshModeChips(store.colorMode());
 
+        buildParams(list);
+        paramsPanel.setVisibility(store.colorMode() == MapSettingsStore.MODE_CUSTOM
+                ? View.VISIBLE : View.GONE);
+
         TextView previewLabel = grayLabel(getString(R.string.lc_setting_filter_preview));
         list.addView(previewLabel, padLp(12, 14, 12, 6));
 
@@ -149,6 +170,11 @@ public class SettingActivity extends Activity {
     private void selectMode(int mode) {
         store.selectColorMode(mode);
         refreshModeChips(mode);
+        if (paramsPanel != null) {
+            paramsPanel.setVisibility(mode == MapSettingsStore.MODE_CUSTOM
+                    ? View.VISIBLE : View.GONE);
+            if (mode == MapSettingsStore.MODE_CUSTOM) refreshParams();
+        }
     }
 
     private void refreshModeChips(int mode) {
@@ -169,6 +195,142 @@ public class SettingActivity extends Activity {
             chip.setTextColor(on ? Color.WHITE : getColor(R.color.lc_setting_text));
             chip.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         }
+    }
+
+    // ---------------- 参数面板（仅「自定义」展开；量程/粒度按逆向字节码 f93ddbb） ----------------
+    // 量程：亮度 min/max 0..1；饱和/对比 -1..1；色相 -180..180。
+    // 粒度：写回处 round（亮度/饱和/对比 ×100→/100，色相 1°）；滑杆本身不设 step（原版 H0 无 steps 参数）。
+
+    private void buildParams(LinearLayout list) {
+        paramsPanel = new LinearLayout(this);
+        paramsPanel.setId(R.id.lc_setting_params_panel);
+        paramsPanel.setOrientation(LinearLayout.VERTICAL);
+        paramsPanel.setBackgroundColor(getColor(R.color.lc_setting_bg));
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(LcUi.dp(this, 12), LcUi.dp(this, 14),
+                LcUi.dp(this, 12), LcUi.dp(this, 2));
+
+        TextView title = grayLabel(getString(R.string.lc_setting_params));
+        header.addView(title, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView reset = new TextView(this);
+        reset.setId(R.id.lc_setting_param_reset);
+        reset.setText("↺ " + getString(R.string.lc_setting_params_reset));
+        reset.setTextSize(14f);
+        reset.setTextColor(getColor(R.color.lc_blue));
+        reset.setPadding(LcUi.dp(this, 8), LcUi.dp(this, 4),
+                LcUi.dp(this, 8), LcUi.dp(this, 4));
+        reset.setOnClickListener(v -> {
+            store.resetRasterToHighlight();
+            refreshParams();
+        });
+        header.addView(reset);
+        paramsPanel.addView(header);
+
+        addParamRow(0, R.string.lc_setting_param_brightness_min, 0f, 1f, false);
+        addParamRow(1, R.string.lc_setting_param_brightness_max, 0f, 1f, false);
+        addParamRow(2, R.string.lc_setting_param_saturation, -1f, 1f, false);
+        addParamRow(3, R.string.lc_setting_param_contrast, -1f, 1f, false);
+        addParamRow(4, R.string.lc_setting_param_hue, -180f, 180f, true);
+
+        list.addView(paramsPanel);
+        refreshParams();
+    }
+
+    private void addParamRow(int index, int labelRes, float min, float max, boolean integer) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setPadding(LcUi.dp(this, 12), LcUi.dp(this, 6),
+                LcUi.dp(this, 12), LcUi.dp(this, 2));
+
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        TextView label = rowLabel(getString(labelRes));
+        top.addView(label, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView value = new TextView(this);
+        value.setId(PARAM_VALUE_IDS[index]);
+        value.setTextSize(15f);
+        value.setTextColor(getColor(R.color.lc_setting_text));
+        top.addView(value);
+        row.addView(top);
+
+        SeekBar sb = new SeekBar(this);
+        sb.setId(PARAM_IDS[index]);
+        sb.setMax(1000);
+        sb.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar s, int progress, boolean fromUser) {
+                float v = min + (max - min) * progress / 1000f;
+                float rounded = integer ? Math.round(v) : MapSettingsStore.round2(v);
+                value.setText(formatParam(rounded, integer));
+                writeParam(index, rounded);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+            }
+        });
+        row.addView(sb);
+
+        paramValues[index] = value;
+        paramSliders[index] = sb;
+        paramsPanel.addView(row);
+    }
+
+    private void refreshParams() {
+        float[] values = {
+                store.rasterBrightnessMin(), store.rasterBrightnessMax(),
+                store.rasterSaturation(), store.rasterContrast(), store.rasterHueRotate()
+        };
+        float[] mins = {0f, 0f, -1f, -1f, -180f};
+        float[] maxs = {1f, 1f, 1f, 1f, 180f};
+        boolean[] ints = {false, false, false, false, true};
+        for (int i = 0; i < 5; i++) {
+            if (paramSliders[i] == null) continue;
+            float v = Math.max(mins[i], Math.min(maxs[i], values[i]));
+            int progress = Math.round((v - mins[i]) / (maxs[i] - mins[i]) * 1000f);
+            paramSliders[i].setProgress(progress);
+            paramValues[i].setText(formatParam(v, ints[i]));
+        }
+    }
+
+    private void writeParam(int index, float v) {
+        switch (index) {
+            case 0:
+                store.setRasterBrightnessMin(v);
+                break;
+            case 1:
+                store.setRasterBrightnessMax(v);
+                break;
+            case 2:
+                store.setRasterSaturation(v);
+                break;
+            case 3:
+                store.setRasterContrast(v);
+                break;
+            case 4:
+                store.setRasterHueRotate(v);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private static String formatParam(float v, boolean integer) {
+        return String.format(Locale.US, integer ? "%.0f" : "%.1f", v);
     }
 
     // ---------------- 6 个开关（顺序/默认值见 MapSettingActivity.md §1/§4） ----------------

@@ -193,4 +193,43 @@ final class MapSettingsStore {
     float rasterHueRotate() {
         return p.getFloat(K_RASTER_HUE_ROTATE, PRESETS[MODE_HIGHLIGHT][4]);
     }
+
+    // ---- 参数面板写回（粒度在写回处 round，不给滑杆设步进）----
+    // 依据：原版 H0 三参各 ×100，setter 再 ÷100；亮度/饱和/对比显示 %.1f，色相 %.0f。
+
+    static float round2(float v) {
+        return Math.round(v * 100f) / 100f;
+    }
+
+    void setRasterBrightnessMin(float v) {
+        p.edit().putFloat(K_RASTER_BRIGHTNESS_MIN, round2(v)).apply();
+    }
+
+    void setRasterBrightnessMax(float v) {
+        p.edit().putFloat(K_RASTER_BRIGHTNESS_MAX, round2(v)).apply();
+    }
+
+    void setRasterSaturation(float v) {
+        p.edit().putFloat(K_RASTER_SATURATION, round2(v)).apply();
+    }
+
+    void setRasterContrast(float v) {
+        p.edit().putFloat(K_RASTER_CONTRAST, round2(v)).apply();
+    }
+
+    void setRasterHueRotate(float v) {
+        p.edit().putFloat(K_RASTER_HUE_ROTATE, Math.round(v)).apply();
+    }
+
+    /** 「恢复默认」：按高亮预设回填（自定义态无自身预设；截图 05 的初值即高亮值）。 */
+    void resetRasterToHighlight() {
+        float[] v = PRESETS[MODE_HIGHLIGHT];
+        p.edit()
+                .putFloat(K_RASTER_BRIGHTNESS_MIN, v[0])
+                .putFloat(K_RASTER_BRIGHTNESS_MAX, v[1])
+                .putFloat(K_RASTER_SATURATION, v[2])
+                .putFloat(K_RASTER_CONTRAST, v[3])
+                .putFloat(K_RASTER_HUE_ROTATE, v[4])
+                .apply();
+    }
 }

@@ -22,12 +22,18 @@
     <item name="lc_setting_crs_value" type="id" />
     <item name="lc_setting_format" type="id" />
     <item name="lc_setting_format_value" type="id" />
-    <!-- 参数面板（待真机截图确认嵌套后启用） -->
+    <!-- 参数面板（仅「自定义」展开；滑杆量程见 MapSettingActivity.md 补充） -->
+    <item name="lc_setting_params_panel" type="id" />
     <item name="lc_setting_param_0" type="id" />
     <item name="lc_setting_param_1" type="id" />
     <item name="lc_setting_param_2" type="id" />
     <item name="lc_setting_param_3" type="id" />
     <item name="lc_setting_param_4" type="id" />
+    <item name="lc_setting_param_value_0" type="id" />
+    <item name="lc_setting_param_value_1" type="id" />
+    <item name="lc_setting_param_value_2" type="id" />
+    <item name="lc_setting_param_value_3" type="id" />
+    <item name="lc_setting_param_value_4" type="id" />
     <item name="lc_setting_param_reset" type="id" />
     <item name="lc_setting_row_0" type="id" />
     <item name="lc_setting_row_1" type="id" />

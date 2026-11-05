@@ -100,6 +100,20 @@ final class MapPoints {
         return out;
     }
 
+    /** 逆地理取地址（F-03 底部卡用）；失败返回空串。 */
+    static String reverseAddress(double lat, double lng) {
+        try {
+            String post = "{\"lon\":" + lng + ",\"lat\":" + lat + ",\"ver\":1}";
+            String url = "https://api.tianditu.gov.cn/geocoder?postStr="
+                    + URLEncoder.encode(post, "UTF-8") + "&type=geocode&tk=" + MapKeys.TDT;
+            JSONObject root = new JSONObject(LcHttp.get(url));
+            JSONObject result = root.optJSONObject("result");
+            return result == null ? "" : result.optString("formatted_address", "");
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
     /** 球面距离（km），用于 F-07 的「距当前位置」。 */
     static double distanceKm(double lat1, double lng1, double lat2, double lng2) {
         double r = 6371.0;

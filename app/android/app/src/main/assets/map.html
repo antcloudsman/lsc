@@ -31,6 +31,14 @@
   .ovlabel { position:absolute; max-width:120px; padding:2px 6px; background:#201a14cc; color:#f0e0bc;
     border:1px solid #8a6a3a; border-radius:5px; font-size:11px; white-space:nowrap;
     pointer-events:auto; cursor:pointer; }
+  /* F-14 钓点：圆形水滴 + 单字（库=橙 / 河=蓝 / 塘=紫 / 黑=黑坑深灰），下方跟地名 */
+  .fish { position:absolute; width:22px; height:22px; border-radius:50% 50% 50% 0;
+    transform:translate(-50%,-100%) rotate(-45deg); border:2px solid #fff;
+    box-shadow:0 1px 4px #0009; pointer-events:auto; cursor:pointer; z-index:9; }
+  .fish span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    transform:rotate(45deg); font-size:11px; color:#fff; font-weight:bold; }
+  .fish-label { position:absolute; transform:translate(-50%,0); font-size:10px; color:#fff;
+    text-shadow:0 1px 2px #000,0 0 3px #000; white-space:nowrap; pointer-events:none; z-index:9; }
   #fsExit { position:fixed; right:10px; bottom:70px; z-index:30; display:none; padding:9px 14px;
     background:#201a14e6; color:#dcbe82; border:1px solid #5a4a30; border-radius:8px; font-size:14px; }
   #srcInfo { position:absolute; right:10px; bottom:8px; z-index:9; color:#968268; font-size:11px;
@@ -113,6 +121,10 @@ var tileCacheOn = false, tileCache = {}, tileCacheKeys = [], TILE_CACHE_MAX = 16
 var measure = { on: false, area: false, pts: [] };
 var paint = { on: false, color: "#ff5500", width: 4, strokes: [], cur: null };
 var ovSvgEl = null;
+/* F-14 钓点图层 / F-03 海拔查询 */
+var fish = { on: false, items: [], els: [] };
+var fishLayerEl = null;
+var elevQuery = { on: false };
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -189,6 +201,7 @@ function render() {
   fillLayer(baseLayer, base, x0, x1, y0, y1, tx, ty, n);
   fillLayer(annoLayer, anno, x0, x1, y0, y1, tx, ty, n);
   updateOverlay(null);
+  updateFish(null);
   renderOverlays();
 }
 
@@ -527,6 +540,101 @@ function lc_draw_export() {
     return "";
   }
 }
+
+/* ---- F-14 钓点图层 / F-03 海拔查询 -----------------------------------------
+ * F-14：原版是私有 fish_tiles pbf + 付费钓点库（不可搬运）。LC 用「天地图公开水域
+ *   点位 + 用户本机自建钓点」自绘图层：圆形水滴 + 单字（库/河/塘/黑），按类型分色，
+ *   标签跟在点位下方。事件 fish / fish-pick；hash &fish。
+ * F-03：点图取经纬度 → elevAt()（DEM 采样，取不到返回 null）→ 事件 elev。
+ * ------------------------------------------------------------------------- */
+function fishColor(t) {
+  if (t === "库") return "#ff9f43";
+  if (t === "河") return "#4aa3ff";
+  if (t === "塘") return "#b06bff";
+  if (t === "黑") return "#555555";
+  return "#b06bff";
+}
+
+function ensureFishLayer() {
+  if (fishLayerEl) return fishLayerEl;
+  fishLayerEl = document.createElement("div");
+  fishLayerEl.id = "fishLayer";
+  fishLayerEl.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:9;";
+  mapEl.appendChild(fishLayerEl);
+  return fishLayerEl;
+}
+
+function setFishLayer(on, items) {
+  fish.on = !!on;
+  fish.items = [];
+  fish.els = [];
+  var layer = ensureFishLayer();
+  layer.innerHTML = "";
+  if (fish.on) {
+    var list = items || [];
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      if (!p || typeof p.lat !== "number" || typeof p.lng !== "number") continue;
+      var type = fishChar(p.type);
+      var el = document.createElement("div");
+      el.className = "fish";
+      el.style.background = fishColor(type);
+      var ch = document.createElement("span");
+      ch.textContent = type;
+      el.appendChild(ch);
+      var lbl = document.createElement("div");
+      lbl.className = "fish-label";
+      lbl.textContent = String(p.name || "");
+      layer.appendChild(el);
+      layer.appendChild(lbl);
+      fish.items.push({ name: String(p.name || ""), type: type, lat: p.lat, lng: p.lng });
+      fish.els.push({ el: el, lbl: lbl });
+      (function (pt) {
+        el.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          emit({ type: "fish-pick", name: pt.name, kind: pt.type, lat: pt.lat, lng: pt.lng });
+        });
+      })(fish.items[fish.items.length - 1]);
+    }
+  }
+  emit({ type: "fish", on: fish.on, count: fish.items.length });
+  updateFish(mode === "3d" ? lastVP : null);
+  console.log("LC3D fish on=" + fish.on + " count=" + fish.items.length);
+  return fish.items.length;
+}
+
+function fishChar(t) {
+  return (t === "库" || t === "河" || t === "塘" || t === "黑") ? t : "塘";
+}
+
+function updateFish(vp) {
+  if (!fish.els.length) return;
+  for (var i = 0; i < fish.items.length; i++) {
+    var pt = fish.items[i], e = fish.els[i];
+    var s = screenPointOf(pt.lat, pt.lng);
+    if (!s) { e.el.style.display = "none"; e.lbl.style.display = "none"; continue; }
+    e.el.style.display = "block";
+    e.lbl.style.display = "block";
+    e.el.style.left = s.x + "px";
+    e.el.style.top = s.y + "px";
+    e.lbl.style.left = s.x + "px";
+    e.lbl.style.top = (s.y + 4) + "px";
+  }
+}
+
+function lc_setFishLayer(on, items) { return setFishLayer(on, items); }
+
+function lc_elev_query(on) {
+  elevQuery.on = !!on;
+  emit({ type: "elev-query", on: elevQuery.on });
+  return elevQuery.on;
+}
+
+function queryElevation(lng, lat) {
+  return elevAt(lat, lng);
+}
+
+function lc_queryElevation(lng, lat) { return elevAt(lat, lng); }
 
 function setBase(b) {
   if (roadNet && b !== "vec") {
@@ -1043,10 +1151,18 @@ mapEl.addEventListener("wheel", function (e) {
 
 function placeMarker(x, y) {
   if (paint.on) return;                       /* F-13：绘制中不吃点击 */
+  var rect = mapEl.getBoundingClientRect();
   if (measure.on) {                           /* F-12：测量打点 */
-    var rect = mapEl.getBoundingClientRect();
     var ll = latLngOfScreen(x - rect.left, y - rect.top);
     if (ll) measureAdd(ll.lat, ll.lng);
+    return;
+  }
+  if (elevQuery.on) {                         /* F-03：海拔查询打点 */
+    var ll2 = latLngOfScreen(x - rect.left, y - rect.top);
+    if (ll2) {
+      var e = elevAt(ll2.lat, ll2.lng);
+      emit({ type: "elev", lat: ll2.lat, lng: ll2.lng, elev: e });
+    }
     return;
   }
   if (mode === "3d") { pick3D(x, y); return; }
@@ -1923,6 +2039,7 @@ function render3D() {
   }
   updatePickMarker(vp);
   updateOverlay(vp);
+  updateFish(vp);
   renderOverlays();
 }
 
@@ -1987,6 +2104,8 @@ function getState() {
       };
     })(),
     paint: { on: paint.on, strokes: paint.strokes.length, color: paint.color, width: paint.width },
+    fish: { on: fish.on, count: fish.items.length },
+    elevQuery: elevQuery.on,
     uiMode: uiMode,
     attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
@@ -2122,7 +2241,7 @@ render();
 applyUiModeHash(location.hash);
 
 /* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
- * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge&measure=dist|area&paint
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge&measure=dist|area&paint&fish&elev
  * 页面初始化与 hashchange 都会应用，所以客户端一次 `loadUrl(...#in3d&sit)` 即可生效
  * （同文档导航只改 hash、不触发 onload 的情况也覆盖）。 */
 function hashHas(h, name) {
@@ -2166,6 +2285,8 @@ function applyIn3D(hash) {
     var mm = h.match(/[&#]measure=(dist|area)/);
     if (mm) lc_measure_start(mm[1] === "area" ? "area" : "distance");
     if (hashHas(h, "paint")) lc_draw_start();
+    if (hashHas(h, "fish")) setFishLayer(true, []);
+    if (hashHas(h, "elev")) lc_elev_query(true);
     if (hashHas(h, "fs") && !fullScreen) toggleFullScreen();
     var msi = h.match(/src=(\d+)/);
     if (msi) selectSource(parseInt(msi[1], 10));
@@ -2226,7 +2347,8 @@ function runAT() {
     "setWayback", "setWaybackRelease", "enableTileCache",
     "lc_measure_start", "lc_measure_clear", "lc_measure_undo",
     "lc_draw_start", "lc_draw_end", "lc_draw_style", "lc_draw_undo", "lc_draw_clear",
-    "lc_draw_export"];
+    "lc_draw_export", "setFishLayer", "lc_setFishLayer", "lc_elev_query",
+    "queryElevation", "lc_queryElevation"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

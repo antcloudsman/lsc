@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-14 钓点（LC地图，2026-11-05）：AT 稳定 id，前缀 lc_fish_* -->
+    <item name="lc_fish_back" type="id" />
+    <item name="lc_fish_title" type="id" />
+    <item name="lc_fish_content" type="id" />
+    <item name="lc_fish_status" type="id" />
+    <item name="lc_fish_note" type="id" />
+    <item name="lc_fish_add" type="id" />
+    <item name="lc_fish_refresh" type="id" />
+    <item name="lc_fish_empty" type="id" />
+    <item name="lc_fish_close" type="id" />
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-02 超清地图（LC地图，2026-11-05）：AT 稳定 id，前缀 lc_supermap_* -->
+    <item name="lc_supermap_back" type="id" />
+    <item name="lc_supermap_title" type="id" />
+    <item name="lc_supermap_content" type="id" />
+    <item name="lc_supermap_empty" type="id" />
+    <item name="lc_supermap_progress_panel" type="id" />
+    <item name="lc_supermap_progress" type="id" />
+    <item name="lc_supermap_progress_text" type="id" />
+    <item name="lc_supermap_fail" type="id" />
+    <item name="lc_supermap_generate" type="id" />
+    <item name="lc_supermap_close" type="id" />
+    <item name="lc_supermap_upscale" type="id" />
+    <item name="lc_supermap_result" type="id" />
+</resources>

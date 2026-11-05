@@ -734,9 +734,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
-     * 顶部栏「搜索」（K-02）。原版搜索是景观/地名检索（世纪空间底图服务）；本项目用天地图、没有
-     * 那套 POI 源，所以按等价替代做成**页内检索**：在盘面 / 圈层 / 知识条目里按关键字过滤，点结果
-     * 直接看正文。差异性质＝「等价替代（数据源不同）」，不改底图能力，也不假装有 POI。
+     * 顶部栏「搜索」（K-02）。
+     *
+     * 原版搜索语义 = **地名 / 景观 POI 检索**（世纪空间底图服务侧的 POI 查询）。
+     * 本实现 = **盘面 / 圈层 / 知识条目检索**（数据来自 CompassData，按关键字过滤标题与正文）。
+     * 二者不是同一个数据域：我们没有世纪空间的 POI 源，因此属**等价替代（数据源不同）**，
+     * 不是「有意差异」；也不假装有 POI——写一个假 POI 搜索才是造假。底图能力不受此改动影响。
      */
     private void showSearchDialog() {
         final java.util.List<String[]> all = knowledgeEntries();

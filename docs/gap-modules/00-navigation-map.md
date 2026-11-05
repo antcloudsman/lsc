@@ -61,22 +61,26 @@
 
 ## 4. 抽屉条目（`MainDrawerContent`，12 项）
 
-抽屉行高实测 189 px，首行中心 y=677（用像素行检测得到，见 §6 脚本）。
+抽屉行高实测 **189 px**，首行（地图设置）中心 **y=866**（像素行检测 + 两次点击复验，见 §6 脚本）。
+
+> 更正记录：本文初版把首行写成 y=677，导致整表 y 偏小一行。2026-11-05 真机复验：点 (460,866) → `MapSettingActivity`、点 (460,1055) → `LoginActivity`（未登录态下的账户设置），确认下表为准；初版 677/866/1055… 一律 +189。
 
 | # | 条目 | 图标 | 坐标 | 目标 | 证据 | 说明 |
 |---|---|---|---|---|---|---|
-| 1 | 地图设置 | `R.drawable.svg_setting` | (460,677) | `setting.MapSettingActivity` | S | `MainActivity$d` → lambda `M1` → `MainActivity.n1` → `D7` → `MapSettingActivity$a.a(Context)`；**点击验证被安装器打断，未完成** |
-| 2 | 账户设置 | `svg_account_setting` | (460,866) | 已登录→`AccountSettingActivity`；未登录→`LoginActivity`（带 source `"账户设置"`） | S | `T1 → Z → E7`：判 `AccountManager.getCurrentAccount()==null` 走 Login |
-| 3 | 投诉反馈 | `svg_tousu` | (460,1055) | `setting.feedback.ComplaintFeedbackActivity` | S+T(近似) | `U1 → D2 → H7` → `ComplaintFeedbackActivity$a.b(Context)`。早期点击 y=1360 命中「关于我们」行，坐标偏差已修正为像素实测 |
-| 4 | 关于我们 | `svg_about` | (460,1244) | `ui.pages.AboutActivity` | T+S | 截图 `33-drawer-complaint.png`（实际打开的是关于我们）；`V1 → S0 → I7 → AboutActivity$a.a`。页内含「测绘资质」链接与版本 v1.6.1、备案号 渝ICP备20003923号-12A |
-| 5 | 联系我们 | `svg_contact_us` | (460,1433) | 应用内（`MainViewModel.R2(true)`） | S | `W1 → Y2 → J7`，无 Activity 跳转 |
-| 6 | 推荐给好友 | `svg_menu_share` | (460,1622) | 应用内分享（`MainViewModel.s3(Activity)`，埋点 `recommend_app`） | S | `X1 → X0 → K7` |
-| 7 | 开具发票 | `svg_bill_apply` | (460,1810) | `bill.BillOrderListActivity` | S | `Y1 → A0 → L7`；**商业模块，有意省略** |
-| 8 | 帮助中心 | `svg_helper` | (460,2000) | `WebActivity` → `https://xinzhispace.yuque.com/org-wiki-xinzhispace-zrccm1/mh7qvx?#` | T+S | 截图 `23-more.png`（WebView「帮助中心」）；URL 见 `MainActivity.M7` @0x0005 |
-| 9 | 用户协议 | `svg_user_agreement` | (460,2189) | `WebActivity` → `https://agreement.yuan9.cn/agreement/swssqjdt/yhxyb.html` | S | `l0 → N7` @0x0005 |
-| 10 | 隐私政策 | `svg_secrecy_policy` | (460,2378) | `WebActivity` → `https://agreement.yuan9.cn/agreement/swssqjdt/privacy.html` | S | `A2 → O7` @0x0005 |
+| 1 | 地图设置 | `R.drawable.svg_setting` | (460,866) | `setting.MapSettingActivity` | **T+S** | `MainActivity$d` → lambda `M1` → `MainActivity.n1` → `D7` → `MapSettingActivity$a.a(Context)`；真机点击已命中，截图 `nav\mapsetting\01-整页.png` |
+| 2 | 账户设置 | `svg_account_setting` | (460,1055) | 已登录→`AccountSettingActivity`；未登录→`LoginActivity`（带 source `"账户设置"`） | **T+S** | `T1 → Z → E7`：判 `AccountManager.getCurrentAccount()==null` 走 Login；未登录态点击实测落 `LoginActivity`，截图 `nav\mapsetting\28-account-or-login.png`（旧目录） |
+| 3 | 投诉反馈 | `svg_tousu` | (460,1244) | `setting.feedback.ComplaintFeedbackActivity` | S | `U1 → D2 → H7` → `ComplaintFeedbackActivity$a.b(Context)`。未单独点击（早期用错 y 命中过「关于我们」） |
+| 4 | 关于我们 | `svg_about` | (460,1433) | `ui.pages.AboutActivity` | T+S | 点击 y=1360 落在本行带（1339–1527）内，打开 `AboutActivity`（截图 `33-drawer-complaint.png`）；`V1 → S0 → I7 → AboutActivity$a.a`。页含「测绘资质」、版本 v1.6.1、备案号 渝ICP备20003923号-12A |
+| 5 | 联系我们 | `svg_contact_us` | (460,1622) | 应用内（`MainViewModel.R2(true)`） | S | `W1 → Y2 → J7`，无 Activity 跳转 |
+| 6 | 推荐给好友 | `svg_menu_share` | (460,1810) | 应用内分享（`MainViewModel.s3(Activity)`，埋点 `recommend_app`） | S | `X1 → X0 → K7` |
+| 7 | 开具发票 | `svg_bill_apply` | (460,2000) | `bill.BillOrderListActivity` | S | `Y1 → A0 → L7`；**商业模块，有意省略** |
+| 8 | 帮助中心 | `svg_helper` | (460,2189) | `WebActivity` → `https://xinzhispace.yuque.com/org-wiki-xinzhispace-zrccm1/mh7qvx?#` | T+S | 点击 y=2250 落在本行带内，打开 WebView「帮助中心」（截图 `23-more.png`）；URL 见 `MainActivity.M7` @0x0005 |
+| 9 | 用户协议 | `svg_user_agreement` | (460,2378) | `WebActivity` → `https://agreement.yuan9.cn/agreement/swssqjdt/yhxyb.html` | S | `l0 → N7` @0x0005 |
+| 10 | 隐私政策 | `svg_secrecy_policy` | (460,2567)（首屏以下） | `WebActivity` → `https://agreement.yuan9.cn/agreement/swssqjdt/privacy.html` | S | `A2 → O7` @0x0005 |
 | 11 | 第三方sdk清单 | `svg_secrecy_policy` | 需滚动 | `WebActivity` → `https://cdn.xinzhi.space/doc/policyCompliance/globe/Android/第三方sdk清单.html` | S | `o1 → F7` @0x0005 |
 | 12 | 权限清单 | `svg_secrecy_policy` | 需滚动 | `WebActivity` → `https://cdn.xinzhi.space/doc/policyCompliance/globe/Android/权限清单.html` | S | `a2 → G7` @0x0005 |
+
+抽屉滚动后（真机截图 `nav\mapsetting\_tmp` 已删，留存描述）：可见行依次为 关于我们→联系我们→推荐给好友→开具发票→帮助中心→用户协议→隐私政策→第三方sdk清单→权限清单，最底部固定「三维山水全景地图V 1.6.1」+「返回」。
 
 抽屉顶部：未登录态「您当前未登录 / 立即登录」、VIP 卡片「三维山水全景地图VIP / 立即开通VIP / 去开通」、底部版本「三维山水全景地图V 1.6.1」+「返回」（关闭抽屉，`SettingActivity$b.c` 同款 `finish()` 语义）。
 

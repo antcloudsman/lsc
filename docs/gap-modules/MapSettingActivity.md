@@ -58,7 +58,9 @@ Activity 字段即页面状态（Compose 单页可变状态，**不逐次落盘�
 
 写回通道：`MainViewModel` 之外直接调 `MapWebApiKt.rasterBrightnessMin/Max/Saturation/Contrast/HueRotate(MapWebController, float)` 推给 WebView（`MapSettingActivity` 内已核实的调用集合）。
 
-> 参数面板与「地图滤镜-自定义」的嵌套关系未逐指令闭合（`o0` 由 `N0/z0` 组合，`C0` 由 `P0/E0` 组合），**需真机截图确认**。
+> 真机复验（2026-11-05，截图见 §6）确认实际渲染顺序：**标题 → 「地图滤镜」区块（模式 chips → [仅「自定义」时展开「参数」5 滑杆] → 地图效果预览）→ 6 个开关 → 坐标系 → 经纬度显示格式**。即「参数」不属于常规/自然/高亮，只有选「自定义」才出现；「地图效果预览」始终在滤镜区块内、开关之前。
+>
+> 参数面板（`o0`，code_units=1456，调用者 `N0`/`z0`）内容与截图一致：`参数` + `恢复默认` + 5 滑杆（最小值/最大值/饱和度/对比度/色相旋转）+ 5 行说明。
 
 ## 2. 地图滤镜预设（新证实数值）
 
@@ -144,11 +146,24 @@ MMKV 实例 ID：`"MapManager"`（`mmkv_delegate` @0x0000）。键与默认值�
 
 （偏移为方法内 code offset。）
 
-## 6. 截图
+## 6. 截图（真机，已交付）
 
-**未取**（本页点击被安装器抢占）。待补：进入抽屉 →「地图设置」，截 3 屏（滤镜/开关/参数）。
-现有可引用：抽屉基准图 `E:\APPDetector\lc-gap-evidence\nav\55-mapsetting.png`
-sha256 `a31302c8dd00be32dde25994cdba75b22f072e770dd0b5e7320293e84ddebc88`。
+- 目录：`E:\APPDetector\lc-gap-evidence\nav\mapsetting\`
+- 索引：`INDEX.md`（每图 → 控件/状态/坐标范围/sha256）
+- 口径：原版 **1.6.1 / 1228×2700 / density 540**，设备 `L2E0222531014833`，未登录态
+- 20 张：整页 1 + 滤镜四态 4 + 6 开关开/关 12 + 坐标系/经纬度下拉 2 + 释放前主页 1
+
+关键实测（与 DEX 取值互证）：
+
+| 项 | 实测 | 对应 DEX |
+|---|---|---|
+| 默认模式 | **高亮**被选中 | `MapManager.getCurrentColorMode()` = `2` |
+| 开关默认 | 路网 开 / 旋转 关 / 回上次 关 / 常亮 开 / 3D 关 / 十字架 开 | `MapManager` 六键缺席省值逐条一致 |
+| 坐标系 | WGS84（下拉另含 GCJ02/BD09/CGCS2000） | `CrsEnum.default = WGS84` |
+| 经纬度格式 | 度（下拉另含 度分/度分秒） | `LngLatFormatEnum.default = D` |
+| 自定义参数初值 | 0.1 / 1.0 / 0.6 / 0.2 / 0 | `MapColorParamEnum.HIGHLIGHT` 五值 |
+
+视觉量测（来自 `01-整页.png`）：页面白底 `#FFFFFF`；区块间隔条 **`#F0F3F7`**（与 DEX `HorizontalDivider` 颜色常量一致）；标题纯黑、字形带高 48px；行标签黑、字形带高 45px；开关 **156×78px**（x 1032–1188）；开关行距 **157px**；模式 chip 约 **245×97px**（中心 x 162/463/764/1065）。字体族与精确 sp **未量**。
 
 ## 7. 改动建议
 

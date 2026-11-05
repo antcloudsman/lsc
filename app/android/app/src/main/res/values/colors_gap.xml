@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 设置页按 MapSettingActivity 的白底视觉（SwitchItem：白底、12/11dp 内边距、15sp #FF23272B） -->
+    <color name="lc_setting_bg">#FFFFFFFF</color>
+    <color name="lc_setting_text">#FF23272B</color>
+    <!-- 以下为中性辅助色，证据未给色值，仅用于选中态/预览占位/分隔线，不参与业务语义 -->
+    <color name="lc_setting_chip_selected">#FFE9EDF2</color>
+    <color name="lc_setting_preview_bg">#FFEEF1F4</color>
+    <color name="lc_setting_divider">#FFE5E7EA</color>
+</resources>

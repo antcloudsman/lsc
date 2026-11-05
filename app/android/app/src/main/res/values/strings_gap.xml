@@ -1,13 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  缺失模块页面文案。证据未落地的标题/条目一律留空，禁止按想象填写；
-  待 docs/gap-modules/*.md 到位后只改这里，不改代码。
+  缺失模块页面文案。证据未落地的标题/条目一律留空，禁止按想象填写。
+  设置页文案取自 docs/gap-modules/MapSettingActivity.md（$e$a.j 的 8 行标签 + C0 滤镜面板）。
 -->
 <resources>
     <string name="lc_back">←</string>
 
-    <!-- 设置页：标题待 docs/gap-modules/setting.md -->
-    <string name="lc_setting_title"></string>
+    <!-- 设置页（MapSettingActivity 等价实现） -->
+    <string name="lc_setting_title">地图设置</string>
+    <string name="lc_setting_filter">地图滤镜</string>
+    <string name="lc_setting_filter_mode">模式</string>
+    <string name="lc_setting_filter_common">常规</string>
+    <string name="lc_setting_filter_nature">自然</string>
+    <string name="lc_setting_filter_highlight">高亮</string>
+    <string name="lc_setting_filter_custom">自定义</string>
+    <string name="lc_setting_filter_preview">地图效果预览</string>
+    <string name="lc_setting_show_road">显示路网</string>
+    <string name="lc_setting_allow_rotate">允许地图旋转</string>
+    <string name="lc_setting_back_last">回到上次浏览位置</string>
+    <string name="lc_setting_keep_screen_on">地图屏幕常亮</string>
+    <string name="lc_setting_show_3d_control">3D模式操作按钮</string>
+    <string name="lc_setting_show_center_cross">显示中心十字架</string>
+    <string name="lc_setting_crs">坐标系</string>
+    <string name="lc_setting_lnglat_format">经纬度显示格式</string>
+
+    <!-- 参数面板：文案已取证，但滑杆量程与嵌套未闭合，暂不渲染（见 MapSettingActivity.md §1 末） -->
+    <string name="lc_setting_params">参数</string>
+    <string name="lc_setting_params_reset">恢复默认</string>
+    <string name="lc_setting_param_brightness_min">图层亮度最小值</string>
+    <string name="lc_setting_param_brightness_max">图层亮度最大值</string>
+    <string name="lc_setting_param_saturation">图层饱和度</string>
+    <string name="lc_setting_param_contrast">图层对比度</string>
+    <string name="lc_setting_param_hue">图层色相旋转</string>
 
     <!-- 工具管理页：标题待 docs/gap-modules/tools.md -->
     <string name="lc_toolmgr_title"></string>

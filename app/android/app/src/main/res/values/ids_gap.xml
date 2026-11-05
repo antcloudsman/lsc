@@ -6,19 +6,29 @@
 -->
 <resources>
 
-    <!-- 设置页 SettingActivity -->
+    <!-- 设置页 SettingActivity（语义按 MapSettingActivity，见 docs/gap-modules/MapSettingActivity.md） -->
     <item name="lc_setting_back" type="id" />
     <item name="lc_setting_title" type="id" />
     <item name="lc_setting_list" type="id" />
     <item name="lc_setting_groups" type="id" />
-    <item name="lc_setting_group_0" type="id" />
-    <item name="lc_setting_group_1" type="id" />
-    <item name="lc_setting_group_2" type="id" />
-    <item name="lc_setting_group_3" type="id" />
-    <item name="lc_setting_group_4" type="id" />
-    <item name="lc_setting_group_5" type="id" />
-    <item name="lc_setting_group_6" type="id" />
-    <item name="lc_setting_group_7" type="id" />
+    <!-- 地图滤镜：模式 0=常规 1=自然 2=高亮 3=自定义（预设值见 MapColorParamEnum） -->
+    <item name="lc_setting_filter_mode_0" type="id" />
+    <item name="lc_setting_filter_mode_1" type="id" />
+    <item name="lc_setting_filter_mode_2" type="id" />
+    <item name="lc_setting_filter_mode_3" type="id" />
+    <item name="lc_setting_filter_preview" type="id" />
+    <!-- 坐标系 / 经纬度格式 下拉行（value 为当前显示值） -->
+    <item name="lc_setting_crs" type="id" />
+    <item name="lc_setting_crs_value" type="id" />
+    <item name="lc_setting_format" type="id" />
+    <item name="lc_setting_format_value" type="id" />
+    <!-- 参数面板（待真机截图确认嵌套后启用） -->
+    <item name="lc_setting_param_0" type="id" />
+    <item name="lc_setting_param_1" type="id" />
+    <item name="lc_setting_param_2" type="id" />
+    <item name="lc_setting_param_3" type="id" />
+    <item name="lc_setting_param_4" type="id" />
+    <item name="lc_setting_param_reset" type="id" />
     <item name="lc_setting_row_0" type="id" />
     <item name="lc_setting_row_1" type="id" />
     <item name="lc_setting_row_2" type="id" />

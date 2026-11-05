@@ -55,9 +55,48 @@ final class LcUi {
         return bar;
     }
 
+    /**
+     * 白底标题栏（地图设置页，按原版 SwitchItem 的白底视觉）。
+     * 返回 标题栏 + 1px 分隔线 的竖向容器。
+     */
+    static LinearLayout toolbarLight(Activity a, int backId, int titleId, String title) {
+        LinearLayout bar = new LinearLayout(a);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setBackgroundColor(a.getColor(R.color.lc_setting_bg));
+
+        TextView back = new TextView(a);
+        back.setId(backId);
+        back.setText(R.string.lc_back);
+        back.setTextSize(22f);
+        back.setTextColor(a.getColor(R.color.lc_setting_text));
+        back.setGravity(Gravity.CENTER);
+        back.setPadding(dp(a, 12), dp(a, 10), dp(a, 12), dp(a, 10));
+        back.setOnClickListener(v -> a.finish());
+        bar.addView(back, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        TextView t = new TextView(a);
+        t.setId(titleId);
+        t.setText(title);
+        t.setTextSize(18f);
+        t.setTextColor(a.getColor(R.color.lc_setting_text));
+        t.setPadding(dp(a, 8), 0, dp(a, 8), 0);
+        bar.addView(t, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        LinearLayout wrap = new LinearLayout(a);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        wrap.addView(bar);
+        View line = new View(a);
+        line.setBackgroundColor(a.getColor(R.color.lc_setting_divider));
+        wrap.addView(line, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, dp(a, 0.5f))));
+        return wrap;
+    }
+
     /** 整页滚动容器，背景与主界面一致。 */
-    static ScrollView pageScroll(Activity a, int scrollId) {
-        ScrollView scroll = new ScrollView(a);
+    static ScrollView pageScroll(Activity a, int scrollId) {        ScrollView scroll = new ScrollView(a);
         scroll.setId(scrollId);
         scroll.setBackgroundColor(a.getColor(R.color.bg));
         return scroll;

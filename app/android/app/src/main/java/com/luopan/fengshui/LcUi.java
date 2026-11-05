@@ -3,9 +3,11 @@ package com.luopan.fengshui;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
@@ -60,44 +62,53 @@ final class LcUi {
      * 返回 标题栏 + 1px 分隔线 的竖向容器。
      */
     static LinearLayout toolbarLight(Activity a, int backId, int titleId, String title) {
-        LinearLayout bar = new LinearLayout(a);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
+        FrameLayout bar = new FrameLayout(a);
         bar.setBackgroundColor(a.getColor(R.color.lc_setting_bg));
 
         TextView back = new TextView(a);
         back.setId(backId);
         back.setText(R.string.lc_back);
-        back.setTextSize(22f);
+        back.setTextSize(30f);
         back.setTextColor(a.getColor(R.color.lc_setting_text));
         back.setGravity(Gravity.CENTER);
-        back.setPadding(dp(a, 12), dp(a, 10), dp(a, 12), dp(a, 10));
+        back.setPadding(dp(a, 12), 0, dp(a, 12), 0);
         back.setOnClickListener(v -> a.finish());
-        bar.addView(back, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(dp(a, 52f),
+                FrameLayout.LayoutParams.MATCH_PARENT);
+        blp.gravity = Gravity.START;
+        bar.addView(back, blp);
 
         TextView t = new TextView(a);
         t.setId(titleId);
         t.setText(title);
-        // TODO(待真机校正): 白底标题栏字号/高度为暂定值。
-        t.setTextSize(18f);
+        // TODO(待定): 标题 sp 未精确量（INDEX 注明只量了 46px 字高），暂按 16sp 加粗。
+        t.setTextSize(16f);
+        t.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         t.setTextColor(a.getColor(R.color.lc_setting_text));
-        t.setPadding(dp(a, 8), 0, dp(a, 8), 0);
-        bar.addView(t, new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        FrameLayout.LayoutParams tlp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        tlp.gravity = Gravity.CENTER;
+        bar.addView(t, tlp);
 
         LinearLayout wrap = new LinearLayout(a);
         wrap.setOrientation(LinearLayout.VERTICAL);
-        wrap.addView(bar);
-        View line = new View(a);
-        line.setBackgroundColor(a.getColor(R.color.lc_setting_divider));
-        wrap.addView(line, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, dp(a, 0.5f))));
+        wrap.addView(bar, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(a, 52f)));
         return wrap;
     }
 
+    /** 页面区块间隔条（实测 #F0F3F7，高 39px ≈ 11.6dp）。 */
+    static View blockGap(Activity a) {
+        View v = new View(a);
+        v.setBackgroundColor(a.getColor(R.color.lc_block_gap));
+        v.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(a, 11.6f)));
+        return v;
+    }
+
     /** 整页滚动容器，背景与主界面一致。 */
-    static ScrollView pageScroll(Activity a, int scrollId) {        ScrollView scroll = new ScrollView(a);
+    static ScrollView pageScroll(Activity a, int scrollId) {
+        ScrollView scroll = new ScrollView(a);
         scroll.setId(scrollId);
         scroll.setBackgroundColor(a.getColor(R.color.bg));
         return scroll;

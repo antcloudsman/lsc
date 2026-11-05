@@ -3,11 +3,14 @@
     <!--
       地图设置页是白底（原版 SwitchItem 白底、#23272B 文字），用独立浅色主题，
       避免继承项目深色 Theme.Luopan 后弹窗/系统控件仍是深色。
+      截图里状态栏为白底黑图标，这里一并设置。
     -->
     <style name="Theme.Luopan.Light" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/lc_setting_bg</item>
+        <item name="android:statusBarColor">@color/lc_setting_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="colorPrimary">@color/lc_setting_text</item>
         <item name="colorPrimaryDark">@color/lc_setting_text</item>
-        <item name="colorAccent">@color/gold</item>
+        <item name="colorAccent">@color/lc_blue</item>
     </style>
 </resources>

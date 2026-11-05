@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 设置页按 MapSettingActivity 的白底视觉（SwitchItem：白底、12/11dp 内边距、15sp #FF23272B） -->
+    <!--
+      地图设置页视觉：按真机截图 INDEX（lc-gap-evidence/nav/mapsetting/INDEX.md）标定。
+      页面/卡片白 #FFFFFF、区块间隔 #F0F3F7、chip/开关主蓝取自像素取样。
+    -->
     <color name="lc_setting_bg">#FFFFFFFF</color>
     <color name="lc_setting_text">#FF23272B</color>
-    <!-- 以下为中性辅助色，证据未给色值，仅用于选中态/预览占位/分隔线，不参与业务语义 -->
-    <color name="lc_setting_chip_selected">#FFE9EDF2</color>
+    <color name="lc_block_gap">#FFF0F3F7</color>
+    <color name="lc_setting_divider">#FFF0F3F7</color>
+    <color name="lc_label_gray">#FF8A9AAD</color>
+    <color name="lc_chip_border">#FFE7E7E7</color>
+    <color name="lc_blue">#FF1C45A5</color>
+    <color name="lc_switch_off">#FFC0C4CC</color>
+    <color name="lc_chevron">#FFB0BAC7</color>
     <color name="lc_setting_preview_bg">#FFEEF1F4</color>
-    <color name="lc_setting_divider">#FFE5E7EA</color>
 
     <!-- 工具管理页：页面底 #F0F3F7、卡片白、说明文字 #657389（ToolsManagerActivity.md §1） -->
     <color name="lc_toolmgr_bg">#FFF0F3F7</color>

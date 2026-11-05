@@ -38,6 +38,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# P2-08 顶部两行判定（F-06）：独立成库，单测在 test-readsheet-head.ps1
+. (Join-Path $PSScriptRoot 'lib\ReadSheetHead.ps1')
+
 # ---- 自包含（不依赖未入库的脚手架文件）----
 $script:LcPkg = 'com.luopan.fengshui'
 $script:LcDebugAction = 'com.luopan.fengshui.DEBUG'
@@ -486,17 +489,13 @@ if ($golden) {
             $nameMissing = @()
             foreach ($row in $golden.rows) { if (-not ($texts | Where-Object { $_ -eq $row.name })) { $nameMissing += $row.name } }
             # 顶部是**一个**两行 TextView：dump 里 text="向北 …°&#10;坐X山  向Y山"
-            $headCombined = $golden.head1 + "`n" + $golden.head2
-            $headNode = $texts | Where-Object { $_ -eq $headCombined } | Select-Object -First 1
-            $hasHead1 = [bool]$headNode
-            $hasHead2 = [bool]$headNode
-            if (-not $headNode) {
-                foreach ($t in $texts) { if ($t -match '向北' -and $t -match '坐南') { $headNode = $t; break } }
-            }
+            # F-06：逐字判，回退只允许 dump 环境类差异（不可见字符/换行）；舍入差一律 FAIL。
+            $headRes = Get-ReadSheetHeadResult -Head1 $golden.head1 -Head2 $golden.head2 -Texts $texts
+            $headNode = $headRes.Node
             Log "P2-07: 14 行命中 $((14 - $missing.Count))/14；行名命中 $((14 - $nameMissing.Count))/14（滚动补拍 $rounds 次）"
-            Log "P2-08: 顶部行=[$headNode]"
+            Log "P2-08: [$($headRes.Status)/$($headRes.Mode)] 顶部行=[$headNode]"
             Assert3 'P2-07' $(if ($missing.Count -eq 0 -and $nameMissing.Count -eq 0) { 'PASS' } else { 'FAIL' }) '14 行逐字 == mechanics.json（向/坐各一格）' "命中 $((14 - $missing.Count))/14；缺：$($missing -join ' ; ')$($nameMissing -join ',')" $sheet.path
-            Assert3 'P2-08' $(if ($hasHead1) { 'PASS' } else { 'FAIL' }) "顶部两行：$($golden.head1) / $($golden.head2)" "实际=[$headNode]" $sheet.path
+            Assert3 'P2-08' $headRes.Status "顶部两行逐字：$($golden.head1) / $($golden.head2)（仅允许 dump 环境类差异）" "$($headRes.Detail)；实际=[$headNode]" $sheet.path
             Save-LcScreenshot $DeviceId (Join-Path $OutDir 'readsheet.png') | Out-Null
             Tap-Node $sheet.xml 'text="关闭"' | Out-Null
             Start-Sleep -Milliseconds 500

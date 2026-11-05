@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-05 叠加（LC地图，2026-11-05）：AT 稳定 id，前缀 lc_overlay_* -->
+    <item name="lc_overlay_back" type="id" />
+    <item name="lc_overlay_title" type="id" />
+    <item name="lc_overlay_content" type="id" />
+    <item name="lc_overlay_tabs" type="id" />
+    <item name="lc_overlay_list" type="id" />
+    <item name="lc_overlay_note" type="id" />
+    <item name="lc_overlay_all_on" type="id" />
+    <item name="lc_overlay_all_off" type="id" />
+
+    <item name="lc_overlay_switch_admin_face" type="id" />
+    <item name="lc_overlay_switch_admin_line" type="id" />
+    <item name="lc_overlay_switch_road" type="id" />
+    <item name="lc_overlay_switch_railway" type="id" />
+    <item name="lc_overlay_switch_contour" type="id" />
+    <item name="lc_overlay_switch_ridge" type="id" />
+    <item name="lc_overlay_switch_terrain" type="id" />
+    <item name="lc_overlay_switch_river" type="id" />
+    <item name="lc_overlay_switch_lake" type="id" />
+    <item name="lc_overlay_switch_water_line" type="id" />
+    <item name="lc_overlay_switch_park" type="id" />
+    <item name="lc_overlay_switch_scenic" type="id" />
+    <item name="lc_overlay_switch_port" type="id" />
+    <item name="lc_overlay_switch_airport" type="id" />
+    <item name="lc_overlay_switch_heritage" type="id" />
+    <item name="lc_overlay_switch_volcano" type="id" />
+    <item name="lc_overlay_switch_vegetation" type="id" />
+    <item name="lc_overlay_switch_silk_road" type="id" />
+    <item name="lc_overlay_switch_ten_line" type="id" />
+
+    <item name="lc_overlay_opacity_road" type="id" />
+    <item name="lc_overlay_opacity_contour" type="id" />
+    <item name="lc_overlay_opacity_ridge" type="id" />
+    <item name="lc_overlay_opacity_terrain" type="id" />
+    <item name="lc_overlay_opacity_river" type="id" />
+    <item name="lc_overlay_opacity_lake" type="id" />
+    <item name="lc_overlay_opacity_park" type="id" />
+    <item name="lc_overlay_opacity_scenic" type="id" />
+    <item name="lc_overlay_opacity_port" type="id" />
+    <item name="lc_overlay_opacity_airport" type="id" />
+</resources>

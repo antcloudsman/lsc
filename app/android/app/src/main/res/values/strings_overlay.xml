@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-05 叠加文案（LC地图）。对得上公开源的做层；对不上的置灰并写原因，不造假图层。 -->
+    <string name="lc_overlay_title">数据叠加</string>
+    <string name="lc_overlay_tab_admin">行政区域</string>
+    <string name="lc_overlay_tab_terrain">地形地貌</string>
+    <string name="lc_overlay_tab_water">水文水系</string>
+    <string name="lc_overlay_tab_nature">自然保护</string>
+
+    <string name="lc_overlay_admin_face">行政区域（面）</string>
+    <string name="lc_overlay_admin_line">行政区域（线）</string>
+    <string name="lc_overlay_road">公路（路网）</string>
+    <string name="lc_overlay_railway">铁路</string>
+    <string name="lc_overlay_contour">等高线</string>
+    <string name="lc_overlay_ridge">山脊（DEM 派生）</string>
+    <string name="lc_overlay_terrain">地形晕渲</string>
+    <string name="lc_overlay_river">河流点位</string>
+    <string name="lc_overlay_lake">湖泊点位</string>
+    <string name="lc_overlay_water_line">水系线/面</string>
+    <string name="lc_overlay_park">公园</string>
+    <string name="lc_overlay_scenic">风景名胜</string>
+    <string name="lc_overlay_port">港口码头</string>
+    <string name="lc_overlay_airport">机场</string>
+    <string name="lc_overlay_heritage">世界遗产</string>
+    <string name="lc_overlay_volcano">火山</string>
+    <string name="lc_overlay_vegetation">植被</string>
+    <string name="lc_overlay_silk_road">丝绸之路</string>
+    <string name="lc_overlay_ten_line">十线专题</string>
+
+    <string name="lc_overlay_no_admin">无公开等价数据源：天地图未提供边界矢量服务，原版为 21at 私有瓦片</string>
+    <string name="lc_overlay_no_rail">无公开等价数据源：原版为私有铁路线瓦片</string>
+    <string name="lc_overlay_no_water_line">无公开等价数据源：天地图水系只有栅格图面与点位，无线/面矢量</string>
+    <string name="lc_overlay_no_heritage">无公开等价数据源：世界遗产专题未找到权威免费图层</string>
+    <string name="lc_overlay_no_volcano">无公开等价数据源：火山专题为会员数据</string>
+    <string name="lc_overlay_no_vegetation">无公开等价数据源：植被专题为会员数据</string>
+    <string name="lc_overlay_no_silk">无公开等价数据源：丝绸之路为 21at 专属专题</string>
+    <string name="lc_overlay_no_ten">无公开等价数据源：十线专题为 21at 专属专题</string>
+
+    <string name="lc_overlay_loading">正在加载叠加数据…</string>
+    <string name="lc_overlay_count">%1$d 个点</string>
+    <string name="lc_overlay_note">叠加数据：天地图公开服务（分类点位 / 路网图面 / DEM）· 原版 21at 私有专题不照搬 · 审图号：未确认</string>
+    <string name="lc_overlay_all_on">全部开启</string>
+    <string name="lc_overlay_all_off">全部关闭</string>
+</resources>

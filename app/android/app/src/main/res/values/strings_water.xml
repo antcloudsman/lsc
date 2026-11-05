@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-07 看水系文案（LC地图）。点位来自天地图分类搜索；线/面要素无免费源，页面照实标注。 -->
+    <string name="lc_water_title">看水系</string>
+    <string name="lc_water_loading">正在检索视野内的河湖名称…</string>
+    <string name="lc_water_fail">河湖检索失败（网络或天地图配额），点「刷新视野」重试</string>
+    <string name="lc_water_count">视野内河湖名称 %1$d 个</string>
+    <string name="lc_water_empty">该区域没有检索到河湖点（天地图分类数据未覆盖）</string>
+    <string name="lc_water_refresh">刷新视野</string>
+    <string name="lc_water_center">居中</string>
+    <string name="lc_water_close">关闭</string>
+    <string name="lc_water_elev">海拔 %1$s m</string>
+    <string name="lc_water_elev_unknown">海拔未知</string>
+    <string name="lc_water_distance">距你 %1$s km</string>
+    <string name="lc_water_gap">点位来自天地图分类数据；河流/湖泊的线、面要素暂无免费矢量源，底图（矢量/地形）图面仍可看水系</string>
+    <string name="lc_water_hint">点河湖名查看详情</string>
+</resources>

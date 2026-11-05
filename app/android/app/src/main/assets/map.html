@@ -27,6 +27,10 @@
     color:#ff6666; font-size:13px; z-index:6; background:#201a14cc; padding:2px 8px; border-radius:6px; }
   .marker { position:absolute; width:14px; height:14px; margin:-7px; border-radius:50%;
     background:#ff4444; border:2px solid #fff; z-index:7; pointer-events:none; box-shadow:0 0 4px #000; }
+  /* F-06/F-07 点标叠加：名称标签（可直接点选） */
+  .ovlabel { position:absolute; max-width:120px; padding:2px 6px; background:#201a14cc; color:#f0e0bc;
+    border:1px solid #8a6a3a; border-radius:5px; font-size:11px; white-space:nowrap;
+    pointer-events:auto; cursor:pointer; }
   #fsExit { position:fixed; right:10px; bottom:70px; z-index:30; display:none; padding:9px 14px;
     background:#201a14e6; color:#dcbe82; border:1px solid #5a4a30; border-radius:8px; font-size:14px; }
   #srcInfo { position:absolute; right:10px; bottom:8px; z-index:9; color:#968268; font-size:11px;
@@ -61,6 +65,7 @@
   <div id="pitchWrap"><input id="pitchRange" type="range" min="0" max="60" step="1" value="45" oninput="setPitch(this.value)"></div>
   <button onclick="openSources()">底图源</button>
   <button id="btn_road" onclick="toggleRoadNet()">路网视图</button>
+  <button id="btn_ridge" onclick="toggleRidge()">山脊</button>
   <button id="btn_needle" class="active" onclick="toggleNeedle()">指针</button>
   <button id="btn_sit" onclick="toggleSitNorth()">坐南朝北</button>
   <button id="btn_contour" onclick="toggleContour()">等高线</button>
@@ -97,6 +102,8 @@ var base = "ter";              // vec=矢量 img=影像 ter=地形(默认)
 var anno = "cta";              // 注记层
 var roadNet = false;           // F-04 路网视图：vec 路网图面 + cva 路名注记（无实时路况）
 var baseBeforeRoad = null;     // 进入路网视图前的底图，关闭时恢复
+var ridgeOn = false;           // F-06 山脊：DEM 曲率派生高亮（非官方山脉边界）
+var ovKind = "", ovPoints = [], ovEls = [], ovLayer = null;   // F-06/F-07 点标叠加
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -165,6 +172,7 @@ function render() {
 
   fillLayer(baseLayer, base, x0, x1, y0, y1, tx, ty, n);
   fillLayer(annoLayer, anno, x0, x1, y0, y1, tx, ty, n);
+  updateOverlay(null);
 }
 
 function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
@@ -234,6 +242,128 @@ function setRoadNet(on) {
 function syncRoadBtn() {
   var b = document.getElementById("btn_road");
   if (b) b.className = roadNet ? "active" : "";
+}
+
+/* ---- F-06 山脊：DEM 曲率派生高亮（近似，不是官方山脉边界） ---- */
+function toggleRidge() { setRidge(!ridgeOn); }
+
+function setRidge(on) {
+  ridgeOn = !!on;
+  var b = document.getElementById("btn_ridge");
+  if (b) b.className = ridgeOn ? "active" : "";
+  emit({ type: "ridge", on: ridgeOn });
+  updateHud();
+  console.log("LC3D ridge on=" + ridgeOn);
+  return ridgeOn;
+}
+
+/* ---- F-06/F-07 点标叠加 ----------------------------------------------------
+ * setOverlay(kind, points)：
+ *   kind = "mountain" | "water"（只做分组标识，不改变渲染）；
+ *   points = [{name, lat, lng}]，来自天地图分类搜索（山 260203 / 河 260204 / 湖 260205）。
+ * 标签是可点的 DOM，点击发 overlay-pick（含 DEM 高程，取不到为 null）。
+ * 2D 用瓦片坐标定位、文字反向旋转保持正立；3D 用投影矩阵逐帧定位。
+ * -------------------------------------------------------------------------- */
+function ovEnsureLayer() {
+  if (ovLayer) return ovLayer;
+  ovLayer = document.createElement("div");
+  ovLayer.id = "ovLayer";
+  ovLayer.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:7;";
+  mapEl.appendChild(ovLayer);
+  return ovLayer;
+}
+
+function clearOverlay() {
+  ovKind = ""; ovPoints = []; ovEls = [];
+  if (ovLayer) ovLayer.innerHTML = "";
+}
+
+function setOverlay(kind, points) {
+  clearOverlay();
+  ovKind = kind ? String(kind) : "";
+  var list = points || [];
+  for (var i = 0; i < list.length; i++) {
+    var p = list[i];
+    if (!p || typeof p.lat !== "number" || typeof p.lng !== "number") continue;
+    ovPoints.push({ name: String(p.name || ""), address: String(p.address || ""), lat: p.lat, lng: p.lng });
+  }
+  var layer = ovEnsureLayer();
+  for (var j = 0; j < ovPoints.length; j++) {
+    (function (pt) {
+      var el = document.createElement("div");
+      el.className = "ovlabel";
+      el.textContent = pt.name;
+      el.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        emit({
+          type: "overlay-pick", kind: ovKind, name: pt.name, address: pt.address,
+          lat: pt.lat, lng: pt.lng, elev: elevAt(pt.lat, pt.lng)
+        });
+      });
+      layer.appendChild(el);
+      ovEls.push(el);
+    })(ovPoints[j]);
+  }
+  emit({ type: "overlay", kind: ovKind, count: ovPoints.length });
+  updateOverlay(mode === "3d" ? lastVP : null);
+  console.log("LC3D overlay kind=" + ovKind + " count=" + ovPoints.length);
+  return ovPoints.length;
+}
+
+function updateOverlay(vp) {
+  if (!ovEls.length) return;
+  var w = mapEl.clientWidth, h = mapEl.clientHeight;
+  var c = lonLatToTile(center.lng, center.lat, zoom);
+  var rot = (mode === "2d") ? -bearing : 0;
+  for (var i = 0; i < ovPoints.length; i++) {
+    var pt = ovPoints[i], el = ovEls[i];
+    var sx = 0, sy = 0, vis = false;
+    if (mode === "3d") {
+      if (!vp || !patch) { el.style.display = "none"; continue; }
+      var wp = lonLatToWorld(pt.lat, pt.lng);
+      if (!wp) { el.style.display = "none"; continue; }
+      var v = projectPoint(wp, vp);
+      if (!v || v.z < -1 || v.z > 1) { el.style.display = "none"; continue; }
+      sx = (v.x * 0.5 + 0.5) * w;
+      sy = (0.5 - v.y * 0.5) * h;
+      vis = true;
+    } else {
+      var t = lonLatToTile(pt.lng, pt.lat, zoom);
+      sx = (t.x - c.x) * 256 + w / 2;
+      sy = (t.y - c.y) * 256 + h / 2;
+      vis = sx > -80 && sx < w + 80 && sy > -24 && sy < h + 24;
+    }
+    if (!vis) { el.style.display = "none"; continue; }
+    el.style.display = "block";
+    el.style.left = sx + "px";
+    el.style.top = sy + "px";
+    el.style.transform = "translate(-50%,-100%) rotate(" + rot + "deg)";
+  }
+}
+
+/* 经纬度 → 3D 世界坐标（与 render3D 的块中心/缩放同一套换算） */
+function lonLatToWorld(lat, lng) {
+  if (!patch) return null;
+  var t = lonLatToTile(lng, lat, patch.z);
+  var cxPx = (patch.ox + 1.5) * 256, cyPx = (patch.oy + 1.5) * 256;
+  var x = (t.x * 256 - cxPx) * patch.mpp;
+  var z = (t.y * 256 - cyPx) * patch.mpp;
+  var e = elevAt(lat, lng);
+  return { x: x, y: (e === null ? 0 : e) * VEXAG, z: z };
+}
+
+/* 取真实海拔（米）；DEM 瓦片没加载时返回 null，绝不返回 0 当哨兵 */
+function elevAt(lat, lng) {
+  var z = patch ? patch.z : Math.max(4, Math.min(12, Math.round(zoom) - 1));
+  var t = lonLatToTile(lng, lat, z);
+  var gx = t.x * 256, gy = t.y * 256;
+  var x0 = Math.floor(gx), y0 = Math.floor(gy);
+  var fx = gx - x0, fy = gy - y0;
+  var a = demPix(z, x0, y0), b = demPix(z, x0 + 1, y0);
+  var c2 = demPix(z, x0, y0 + 1), d = demPix(z, x0 + 1, y0 + 1);
+  if (a === null || b === null || c2 === null || d === null) return null;
+  var v = a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) + c2 * (1 - fx) * fy + d * fx * fy;
+  return Math.round(v * 10) / 10;
 }
 
 /* ---------------- 模式 / 视角 ---------------- */
@@ -697,14 +827,16 @@ function initGL() {
     "attribute vec3 aNrm;",
     "attribute float aElev;",
     "attribute vec2 aUv;",
+    "attribute float aRidge;",
     "uniform mat4 uVP;",
     "uniform vec3 uTarget;",
     "varying vec3 vNrm;",
     "varying float vElev;",
     "varying vec2 vUv;",
     "varying float vDist;",
+    "varying float vRidge;",
     "void main(){",
-    "  vNrm = aNrm; vElev = aElev; vUv = aUv;",
+    "  vNrm = aNrm; vElev = aElev; vUv = aUv; vRidge = aRidge;",
     "  vDist = length(aPos.xz - uTarget.xz);",
     "  gl_Position = uVP * vec4(aPos, 1.0);",
     "}"
@@ -725,6 +857,8 @@ function initGL() {
     "uniform float uFogNear;",
     "uniform float uFogFar;",
     "uniform float uContour;",
+    "uniform float uRidge;",
+    "varying float vRidge;",
     "vec3 hypo(float e){",
     "  if (e < 1.0) return vec3(0.10, 0.22, 0.34);",
     "  if (e < 200.0) return mix(vec3(0.16, 0.32, 0.19), vec3(0.32, 0.48, 0.24), e / 200.0);",
@@ -759,6 +893,9 @@ function initGL() {
     "    float line100 = 1.0 - smoothstep(0.0, max(w100, 0.004), d100);",
     "    float line500 = 1.0 - smoothstep(0.0, max(w500, 0.004), d500);",
     "    col = mix(col, vec3(0.12, 0.09, 0.05), line100 * 0.68 + line500 * 0.55);",
+    "  }",
+    "  if (uRidge > 0.5) {",
+    "    col = mix(col, vec3(1.00, 0.80, 0.42), clamp(vRidge, 0.0, 1.0) * 0.65);",
     "  }",
     "  float f = clamp((vDist - uFogNear) / max(1.0, uFogFar - uFogNear), 0.0, 1.0);",
     "  col = mix(col, uFog, f * 0.9);",
@@ -795,6 +932,7 @@ function initGL() {
     nrm: gl.getAttribLocation(prog, "aNrm"),
     elev: gl.getAttribLocation(prog, "aElev"),
     uv: gl.getAttribLocation(prog, "aUv"),
+    ridge: gl.getAttribLocation(prog, "aRidge"),
     vp: gl.getUniformLocation(prog, "uVP"),
     target: gl.getUniformLocation(prog, "uTarget"),
     tex: gl.getUniformLocation(prog, "uTex"),
@@ -803,12 +941,13 @@ function initGL() {
     fog: gl.getUniformLocation(prog, "uFog"),
     fogNear: gl.getUniformLocation(prog, "uFogNear"),
     fogFar: gl.getUniformLocation(prog, "uFogFar"),
-    contour: gl.getUniformLocation(prog, "uContour")
+    contour: gl.getUniformLocation(prog, "uContour"),
+    ridgeUniform: gl.getUniformLocation(prog, "uRidge")
   };
 
   buffers = {
     pos: gl.createBuffer(), nrm: gl.createBuffer(),
-    elev: gl.createBuffer(), uv: gl.createBuffer(), idx: gl.createBuffer()
+    elev: gl.createBuffer(), uv: gl.createBuffer(), ridge: gl.createBuffer(), idx: gl.createBuffer()
   };
   /* 1×1 占位纹理：避免 uUseTex=0 时驱动报 "no texture bound" */
   placeholderTex = gl.createTexture();
@@ -906,10 +1045,23 @@ function buildMesh(p) {
   var elev = new Float32Array(vc);
   var uv = new Float32Array(vc * 2);
   var H = new Float32Array(vc);
+  var ridge = new Float32Array(vc);
   var i, j;
   for (j = 0; j <= N; j++) {
     for (i = 0; i <= N; i++) {
       H[j * (N + 1) + i] = demAt(p.z, p.ox * 256 + i * step, p.oy * 256 + j * step);
+    }
+  }
+  /* F-06 山脊：高程曲率（顶点高出 8 邻域均值）→ 0..1，着色器按 uRidge 高亮。
+   * 这是 DEM 派生近似，不是官方山脉边界；数值未标定，只用于「看山势」。 */
+  for (j = 1; j < N; j++) {
+    for (i = 1; i < N; i++) {
+      var kk = j * (N + 1) + i;
+      var avg = (H[kk - 1] + H[kk + 1] + H[kk - (N + 1)] + H[kk + (N + 1)] +
+        H[kk - (N + 1) - 1] + H[kk - (N + 1) + 1] +
+        H[kk + (N + 1) - 1] + H[kk + (N + 1) + 1]) / 8;
+      var curv = H[kk] - avg;
+      ridge[kk] = Math.max(0, Math.min(1, (curv - 4) / 40));
     }
   }
   var dx = step * p.mpp;
@@ -944,7 +1096,7 @@ function buildMesh(p) {
       idx[q++] = b; idx[q++] = c; idx[q++] = d;
     }
   }
-  return { pos: pos, nrm: nrm, elev: elev, uv: uv, idx: idx, count: idx.length };
+  return { pos: pos, nrm: nrm, elev: elev, uv: uv, ridge: ridge, idx: idx, count: idx.length };
 }
 
 function uploadMesh(p) {
@@ -953,6 +1105,7 @@ function uploadMesh(p) {
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers.nrm); gl.bufferData(gl.ARRAY_BUFFER, m.nrm, gl.STATIC_DRAW);
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers.elev); gl.bufferData(gl.ARRAY_BUFFER, m.elev, gl.STATIC_DRAW);
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers.uv); gl.bufferData(gl.ARRAY_BUFFER, m.uv, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers.ridge); gl.bufferData(gl.ARRAY_BUFFER, m.ridge, gl.STATIC_DRAW);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.idx); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.idx, gl.STATIC_DRAW);
   p.indexCount = m.count;
 }
@@ -1345,6 +1498,11 @@ function render3D() {
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers.uv);
   gl.enableVertexAttribArray(loc.uv);
   gl.vertexAttribPointer(loc.uv, 2, gl.FLOAT, false, 0, 0);
+  if (loc.ridge >= 0) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.ridge);
+    gl.enableVertexAttribArray(loc.ridge);
+    gl.vertexAttribPointer(loc.ridge, 1, gl.FLOAT, false, 0, 0);
+  }
 
   if (patch.texCanvas) uploadTexture(patch);
 
@@ -1355,6 +1513,7 @@ function render3D() {
   gl.uniform1f(loc.fogNear, R * 0.75);
   gl.uniform1f(loc.fogFar, R * 1.05);
   gl.uniform1f(loc.contour, contourOn ? 1 : 0);
+  if (loc.ridgeUniform) gl.uniform1f(loc.ridgeUniform, ridgeOn ? 1 : 0);
   if (contourOn && !window.__lcDbgContour) {
     window.__lcDbgContour = 1;
     console.log("LC3D contour on=" + contourOn + " uniform=" +
@@ -1377,6 +1536,7 @@ function render3D() {
       " D=" + Math.round(D) + " err=" + gl.getError());
   }
   updatePickMarker(vp);
+  updateOverlay(vp);
 }
 
 /* ---- HUD ---- */
@@ -1428,6 +1588,7 @@ function getState() {
     sitMode: sitMode, sitNorth: sitMode !== 0,
     contour: contourOn, ground: groundMode, needle: needleOn,
     base: base, drape: drape, roadNet: roadNet,
+    ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind,
     uiMode: uiMode,
     attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
@@ -1448,6 +1609,10 @@ window.__LC3D = {
   setUiMode: setUiMode,
   attribution: getAttribution,
   setRoadNet: setRoadNet,
+  setRidge: setRidge,
+  overlay: setOverlay,
+  clearOverlay: clearOverlay,
+  elevAt: elevAt,
   state: getState,
   fps: getFps,
   screenshot: function () {
@@ -1556,7 +1721,7 @@ render();
 applyUiModeHash(location.hash);
 
 /* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
- * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge
  * 页面初始化与 hashchange 都会应用，所以客户端一次 `loadUrl(...#in3d&sit)` 即可生效
  * （同文档导航只改 hash、不触发 onload 的情况也覆盖）。 */
 function hashHas(h, name) {
@@ -1594,6 +1759,7 @@ function applyIn3D(hash) {
     }
     if (hashHas(h, "srcpanel")) openSources();
     if (hashHas(h, "roadnet") && !roadNet) setRoadNet(true);
+    if (hashHas(h, "ridge") && !ridgeOn) setRidge(true);
     if (hashHas(h, "fs") && !fullScreen) toggleFullScreen();
     var msi = h.match(/src=(\d+)/);
     if (msi) selectSource(parseInt(msi[1], 10));
@@ -1649,7 +1815,8 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "getAttribution", "setRoadNet"];
+    "getState", "getFps", "setUiMode", "getAttribution", "setRoadNet",
+    "setRidge", "setOverlay", "clearOverlay", "elevAt"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

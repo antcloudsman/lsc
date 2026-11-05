@@ -25,7 +25,7 @@
   - 「更多」bottom sheet 16：`罗盘 / 超清地图 / 看山脉 / 看水系 / 海拔查询 / 天气 / 历史影像 / 等高线 / 收藏点 / 测量 / 画笔 / 钓点 / 轨迹记录 / 路网 / 地理影像 / 超清优化`
   - `CompassListActivity` 四组：自定义 / 常用 / 简易 / 综合（常用 5 项可用；自定义、简易、综合为占位）。
 - 本分支 `AndroidManifest.xml` 只有 `MainActivity`、`CompassListActivity`。
-- gap 线的 `SettingActivity / ToolsManagerActivity / InterestListActivity / SaveInterestActivity / LcUi` **尚未合入本分支**；涉及复用时先等 develop 合流，不在本分支复制第二份（见 §6）。
+- `SettingActivity` / `ToolsManagerActivity` / `InterestListActivity` / `SaveInterestActivity` / `LcUi` 均已并入 develop；**`SettingActivity` 此前全仓零入口，已批在「更多」面板标题栏加「设置」按钮（见 §8.5）**。
 
 ## 2. 总则
 
@@ -135,7 +135,7 @@
 ### 6.1 复用与依赖
 
 - 骨架复用 gap 线的 `LcUi`（`toolbarLight` 52dp 白底居中标题、`blockGap` 11.6dp `#F0F3F7`、`dp()`）与浅色主题 `Theme.Luopan.Light`。
-- 本分支尚未合入 gap 线：**实现前先等 `feature/gap-client` 合入 develop 并 rebase 本分支**；不在本分支复制第二份 `LcUi`，避免双份漂移。
+- gap 线（`LcUi` / 设置 / 工具管理 / 收藏点）**已并入 develop**；后续页面直接复用，不在本分支复制第二份 `LcUi`，避免双份漂移。
 - 本分支实现期间如需先行，只允许新增 `LcFeatureActivity` 基类并**引用** `LcUi`，不复制其实现。
 
 ### 6.2 页面骨架（独立 Activity）
@@ -186,7 +186,7 @@
 2. F-02 的 z18 降级是能力上限说明，非原版云端超清；文案不得写成「已实现云端超清」。
 3. F-03/F-12 的承载形式（覆盖层 vs 独立页）等单功能文档；当前表内为暂定。
 4. ~~F-15 三个页面是否都需要独立入口~~ **已定（`F-15-轨迹-免费实现方案.md`）**：列表 → 详情 → 回放 三页；`TrackSettingActivity` 不建页，记录设置降为列表页底部面板；回放不做视频，`TrackReplayVideoActivity` 更名 `TrackReplayActivity`（详见方案 §1/§5/§7）。
-5. 抽屉尚未实现；设置页/功能开关是否迁入抽屉，等 K-01 后续与总监裁决。
+5. **设置入口定案（2026-11-05，技术总监）**：K-01 抽屉未实现，`SettingActivity` 入口落**「更多」面板标题栏「设置」按钮**；**原版入口在抽屉 → 入口位置有差异、页面本身 1:1**。文档与提交说明统一按此写，不再等抽屉裁决。
 6. 本分支无 gap 线代码时，F-11 无法实现，只能先留路由。
 7. 数据替代矩阵（总纲 §4.1）里「公开天气 API」「天地图分类搜索」需 LC地图/服务端核对可用性与配额。
 

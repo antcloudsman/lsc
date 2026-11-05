@@ -42,7 +42,7 @@
 
 | # | 原版入口 | 原版承载 | LC 落点（免费开放） | 形式 | 新 Activity | 开关 key | 依据/状态 |
 |---|---|---|---|---|---|---|---|
-| F-01 | 左列 1「全地图工具」 | `ToolsManagerActivity` 派发 → `OpenVipActivity`（原版付费墙） | 本地等价：打开工具管理页「全部功能」；不出现任何开通/付费页 | 页 | 复用 `ToolsManagerActivity`（gap 线） | `f01` | 导航表 §3.1；等价替代，待产品确认目标页 |
+| F-01 | 左列 1「全地图工具」 | `ToolsManagerActivity` 派发 → `OpenVipActivity`（原版付费分发页） | **已定：工具管理页**（16 宫格「全部功能」+ 编辑/勾选/排序），无门槛；不实现付费分发页 | 页 | 复用 `ToolsManagerActivity`（gap 线） | `f01` | 导航表 §3.1；总监定案 2026-11-05 |
 | F-02 | 左列 3、更多「超清优化/超清地图」 | 会员云端超清任务页 | `MainActivity` 底部面板：说明本地降级最大 z18（天地图 img + 本地放大），可直接执行；不写「会员/升级」 | 覆盖层 | — | `f02` | 总纲 §4.1（降级） |
 | F-03 | 左列 4、更多「海拔查询」 | 海拔/地形查询子页（待探针） | 先按「地图点选 → 结果底部面板」设计；若单功能文档证实是独立页再改 Activity | 覆盖层（待定） | 待定 | `f03` | 待 `F-03` 文档 |
 | F-04 | 左列 6「路网」 | 底图图层切换 | `MainActivity`：调 `toggleRoad()` + MapManager `showRoad` 持久化；**当前 map.html 无 road 接口，需 LC地图 新增** | 仅开关 | — | `f04` | 导航表 §3.1（应用内） |
@@ -92,7 +92,7 @@
 | F-16 | `geo` | `lc_geo_*` |
 | F-17 | `compass` | `lc_compass_alpha_panel` / `lc_compass_alpha_slider` / `lc_compass_alpha_close` / `lc_compass_tianzhi_toggle` |
 | F-18 | `dial` | 已实现：`lc_dial_*`（补齐自定义/简易/综合组时沿用） |
-| 开关页 | `featureflag` | `lc_featureflag_back` / `_title` / `_list` / `_item_0..17` / `_switch_0..17` |
+| 开关页 | `featureflag` | `lc_featureflag_back` / `_title` / `_list` / `lc_feature_row_f01..f18` / `lc_feature_switch_f01..f18` |
 
 ### 4.2 页面骨架固定 id
 
@@ -120,9 +120,9 @@
 
 ### 5.2 开关页
 
-- `FeatureFlagsActivity`：标题「功能开关（调试）」；列表按 F-01…F-18 顺序，18 行「名称 + 开关」；id `lc_featureflag_item_0..17` / `lc_featureflag_switch_0..17`；改动即时生效。
-- 入口：「更多」面板标题栏右侧「功能开关」（与「编辑」并列；「编辑」= 工具管理，gap 线）。这是调试入口，不是功能门。
-- 不改 `MapSettingActivity` 的 8 行/6 开关/2 下拉（1:1）；若要把入口收进设置页，等抽屉/设置页合流后单开一行 LC 增量，另行提交。
+- `FeatureFlagsActivity`：标题「功能开关（调试）」；列表按 F-01…F-18 顺序，18 行，每行显示 `F-xx 名称` + 当前状态 + 开关；id：行 `lc_feature_row_f01..f18`、开关 `lc_feature_switch_f01..f18`、列表 `lc_featureflag_list`；改动即时生效。
+- 入口：**「更多」面板标题栏右侧「功能开关（调试）」**（与「编辑」并列；「编辑」= 工具管理，gap 线）。
+- **不动 `MapSettingActivity`**：那页是对齐 `MapSettingActivity` 的 1:1 页面（8 行/6 开关/2 下拉），不塞 LC 自用增量行；功能开关只挂在「更多」面板标题栏。
 
 ### 5.3 关闭态行为（仅调试）
 
@@ -182,7 +182,7 @@
 
 ## 8. 待决/风险（不自行拍板）
 
-1. F-01 用工具管理页替代原版付费分发页是「等价替代」；是否可行需产品/总监确认。
+1. F-01 已定：工具管理页（16 宫格 + 编辑/勾选/排序），原版付费分发页不实现。
 2. F-02 的 z18 降级是能力上限说明，非原版云端超清；文案不得写成「已实现云端超清」。
 3. F-03/F-12 的承载形式（覆盖层 vs 独立页）等单功能文档；当前表内为暂定。
 4. F-15 三个页面是否都需要独立入口，等 `F-15` 文档确认链路（列表→设置→回放）。

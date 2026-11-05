@@ -48,8 +48,10 @@
 
 | 项 | 值 |
 |---|---|
-| `fix-p0` HEAD | `18415ae`（B-05；其下 K-01 step-4 = `f3006f2`、step-3 = `70f6b1d`、step-2 = `74348d1`、step-1 = `42f5cb7`） |
+| 代码 HEAD（APK 构建点） | `18415ae`（B-05；其下 K-01 step-4 = `f3006f2`、step-3 = `70f6b1d`、step-2 = `74348d1`、step-1 = `42f5cb7`） |
+| 当前树 HEAD | `094f790`（仅 AT 文档同步：`AT-P0-0`/`AT-P0-1`/`AT-P0-4`/`device-method`；未改 `run-final.ps1` 与本清单） |
 | debug APK | `app\android\app\build\outputs\apk\debug\app-debug.apk`，6,580,242 B |
 | APK sha256 | `D15BE32917276DC6EA9B181C358FCE6E5CE1FD98DFBA32B969A9C4E6DE852586`（已实算，与客户端交接一致） |
 | 静态断言 | `bottom_bar|tab_` 0 命中；`createMapWebView` 1 定义+1 调用；`CompassView` 触摸守卫 L135、`argb(210` 仅 L175 注释、`showPointer` L32/`setShowPointer` L35/`isShowPointer` L40、`drawText` 描边 L346-360、`headingOffset` L34/`setHeadingOffset` L42/`setFollowSensor` L53/`setSensorHeading` L143、`followSensor=false` 仅 L196（MOVE 分支）；`MainActivity` 直径 L270、`statusView.setClickable(false)` L301、`case "指针开关"` L485/`setShowPointer` L489、`case "罗盘锁定"` L498/`setFollowSensor(!lock)` L502、状态条「 · 锁定/· 偏移」L858-859 |
 | 待补 | SW-006 新裁切窗（P-03）；`setHeadingManually` 仅剩注释 L157，无调用（已实核） |
+| AT 文档同步 | `094f790`：SW-006 第 4 条在 `AT-P0-0` L82 已标**暂不生效**，恢复条件绑定 `round-k01/manifest.md` 新窗+测量依据，执行器 `SW-006-4: SUSPENDED` 不计 PASS/FAIL；与新窗恢复口径一致 |

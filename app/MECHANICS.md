@@ -503,3 +503,68 @@ COMPASS_3 compass3/三元罗盘(金)/`compass3_min`/true；COMPASS_4 compass4/�
 `SensorManager.getOrientation` 出参改写（v1 不报错但改写无效，需查 UI 侧 heading 状态）
 或直接改 `CompassToolsKt` 的 heading 状态变量。**三方位截图仍未完成（第 2 次尝试）**，
 但「第二证据」的目的已由 h=0 的弹层实测达成。
+
+## 补证 R5（2026-11-05，地图设置 / MapSettingActivity）
+
+来源：`classes06.dex`（Frida 内存 dump）+ 真机逐屏截图（`E:\APPDetector\lc-gap-evidence\nav\mapsetting\INDEX.md`）。
+
+### R5.1 地图滤镜三预设（`space.xinzhi.globe.manager.MapColorParamEnum.<clinit>`，code_units=71）
+
+字段序：`brightnessMin, brightnessMax, saturation, contrast, hueRotate`（构造器 `<init>(String,int,FFFFF)` 的 iput 顺序逐个读出）。
+
+| 枚举 | UI | 亮度最小 | 亮度最大 | 饱和度 | 对比度 | 色相旋转 |
+|---|---|---|---|---|---|---|
+| COMMON | 常规（index 0） | 0.0 | 1.0 | 0.0 | 0.0 | 0.0 |
+| NATURE | 自然（index 1） | 0.0 | 1.0 | 0.4 | 0.1 | 0.0 |
+| HIGHLIGHT | 高亮（index 2） | 0.1 | 1.0 | 0.6 | 0.2 | 0.0 |
+
+浮点原文：`0x3dcccccd`=0.1、`0x3e4ccccd`=0.2、`0x3ecccccd`=0.4、`0x3f19999a`=0.6、`0x3f800000`=1.0。
+
+**默认 = 高亮（index 2）**：`MapManager.getCurrentColorMode()` = `decodeInt("currentColorMode", 2)`；
+5 个栅格参数的 `decodeFloat` 缺省值全部取自 `MapColorParamEnum.HIGHLIGHT`。
+真机 `01-整页.png` 打开即「高亮」选中，自定义参数初值 0.1/1.0/0.6/0.2/0 —— 双证一致。
+
+机读值：`app/mechanics.json` → `mapColorParams`。
+
+### R5.2 地图设置持久化键与默认值（`space.xinzhi.globe.manager.MapManager`）
+
+MMKV 实例 ID `"MapManager"`；getter 的 `decode*` 第二参数即缺省值：
+
+| 键 | 类型 | 默认 | 含义 |
+|---|---|---|---|
+| `showRoad` | bool | **true** | 显示路网 |
+| `isRotate` | bool | **false** | 允许地图旋转 |
+| `backToLastMapCenter` | bool | **false** | 回到上次浏览位置 |
+| `mapKeepScreenOn` | bool | **true** | 地图屏幕常亮 |
+| `show3dControl` | bool | **false** | 3D 模式操作按钮 |
+| `showMapCenterCross` | bool | **true** | 显示中心十字架 |
+| `currentColorMode` | int | **2** | 滤镜模式（=高亮） |
+| `rasterBrightnessMin` | float | 0.1 | 参数滑杆 |
+| `rasterBrightnessMax` | float | 1.0 | 参数滑杆 |
+| `rasterSaturation` | float | 0.6 | 参数滑杆 |
+| `rasterContrast` | float | 0.2 | 参数滑杆 |
+| `rasterHueRotate` | float | 0.0 | 参数滑杆 |
+| `currentCrs` | string | 空 → `CrsEnum.default` | 坐标系 |
+| `currentLngLatFormat` | string | 空 → `LngLatFormatEnum.default` | 经纬度格式 |
+
+每次 setter 同步发 EventBus：`event_show_road_changed`、`event_is_rotate_changed`、`event_back_last_map_center_changed`、
+`event_show_3d_control_changed`、`event_show_center_cross_changed`、`event_current_crs_changed`、`event_lng_lat_format_changed`、
+`event_raster_brightness_min` / `_max` / `event_raster_saturation` / `event_raster_contrast` / `event_raster_hue_rotate`。
+
+真机 6 个开关默认态与上表逐条一致（截图 06/08/10/12/14/16）。
+机读值：`app/mechanics.json` → `mapManagerDefaults`。
+
+### R5.3 坐标系与经纬度格式（`CrsEnum` / `LngLatFormatEnum`）
+
+| 枚举 | 持久化 code | 显示 |
+|---|---|---|
+| WGS84 | `wgs84` | WGS84 |
+| GCJ02 | **`gjc02`** | GCJ02 |
+| BD09 | `bd09` | BD09 |
+| CGCS2000 | `cgcs2000` | CGCS2000 |
+
+**`gjc02` 是原版拼写（少一个 c），迁移/兼容时原样保留，勿"顺手纠正"**；显示层仍写 `GCJ02`。
+
+经纬度格式：`D`(code `d`, 度) / `DM`(`dm`, 度分) / `DMS`(`dms`, 度分秒)；默认 `D`。
+真机下拉选项与顺序一致（截图 18/19）。
+机读值：`app/mechanics.json` → `crs`。

@@ -1601,5 +1601,119 @@
     ],
     "pointer": "assets/webapp/assets/imgs/compass/pointer.png (46x188)",
     "note": "14 幅整盘图与 14 个 CompassReadTypeEnum 数量一致，但两者是否为一一对应未确认；mipmap 只有 compass.png + compass1..4_min 共 5 个缩略图。"
+  },
+  "mapColorParams": {
+    "source": "classes06.dex: space.xinzhi.globe.manager.MapColorParamEnum.<clinit> (code_units=71)",
+    "field_order": [
+      "brightnessMin",
+      "brightnessMax",
+      "saturation",
+      "contrast",
+      "hueRotate"
+    ],
+    "defaultModeIndex": 2,
+    "note": "默认模式=高亮(index 2)，与 MapManager.getCurrentColorMode() 的 decodeInt 缺省值 2 一致；5 个栅格参数缺省值全部取 HIGHLIGHT 预设。",
+    "modes": [
+      {
+        "index": 0,
+        "enum": "COMMON",
+        "ui": "常规",
+        "brightnessMin": 0.0,
+        "brightnessMax": 1.0,
+        "saturation": 0.0,
+        "contrast": 0.0,
+        "hueRotate": 0.0
+      },
+      {
+        "index": 1,
+        "enum": "NATURE",
+        "ui": "自然",
+        "brightnessMin": 0.0,
+        "brightnessMax": 1.0,
+        "saturation": 0.4,
+        "contrast": 0.1,
+        "hueRotate": 0.0
+      },
+      {
+        "index": 2,
+        "enum": "HIGHLIGHT",
+        "ui": "高亮",
+        "brightnessMin": 0.1,
+        "brightnessMax": 1.0,
+        "saturation": 0.6,
+        "contrast": 0.2,
+        "hueRotate": 0.0
+      }
+    ]
+  },
+  "mapManagerDefaults": {
+    "source": "classes06.dex: space.xinzhi.globe.manager.MapManager getters (MMKV decode* defaults)",
+    "mmkvId": "MapManager",
+    "values": {
+      "showRoad": true,
+      "isRotate": false,
+      "backToLastMapCenter": false,
+      "mapKeepScreenOn": true,
+      "show3dControl": false,
+      "showMapCenterCross": true,
+      "currentColorMode": 2,
+      "rasterBrightnessMin": 0.1,
+      "rasterBrightnessMax": 1.0,
+      "rasterSaturation": 0.6,
+      "rasterContrast": 0.2,
+      "rasterHueRotate": 0.0
+    },
+    "note": "真机 MapSetting 页默认态与逐值一致（截图 nav/mapsetting/01-整页.png）。"
+  },
+  "crs": {
+    "source": "classes06.dex: space.xinzhi.globe.common.CrsEnum.<clinit>",
+    "default": "wgs84",
+    "values": [
+      {
+        "enum": "WGS84",
+        "code": "wgs84",
+        "display": "WGS84"
+      },
+      {
+        "enum": "GCJ02",
+        "code": "gjc02",
+        "display": "GCJ02"
+      },
+      {
+        "enum": "BD09",
+        "code": "bd09",
+        "display": "BD09"
+      },
+      {
+        "enum": "CGCS2000",
+        "code": "cgcs2000",
+        "display": "CGCS2000"
+      }
+    ],
+    "note": "GCJ02 的持久化 code 在原版就是 gjc02（少一个 c），迁移兼容时必须原样保留，勿纠正。",
+    "lngLatFormat": {
+      "source": "classes06.dex: space.xinzhi.globe.common.LngLatFormatEnum.<clinit>",
+      "default": "d",
+      "values": [
+        {
+          "enum": "D",
+          "code": "d",
+          "label": "度",
+          "display": "D"
+        },
+        {
+          "enum": "DM",
+          "code": "dm",
+          "label": "度分",
+          "display": "DM"
+        },
+        {
+          "enum": "DMS",
+          "code": "dms",
+          "label": "度分秒",
+          "display": "DMS"
+        }
+      ]
+    }
   }
 }

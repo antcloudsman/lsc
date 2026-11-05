@@ -69,6 +69,18 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-14 钓点（LC地图 新建页）：公开水域 + 本机自建钓点 -->
+        <activity
+            android:name=".FishingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
+        <!-- F-03 海拔查询（LC地图 新建页）：DEM 采样 + 逆地理 + 估算氧/压 -->
+        <activity
+            android:name=".ElevationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

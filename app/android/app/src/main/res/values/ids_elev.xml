@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-03 海拔查询（LC地图，2026-11-05）：AT 稳定 id，前缀 lc_elev_* -->
+    <item name="lc_elev_back" type="id" />
+    <item name="lc_elev_title" type="id" />
+    <item name="lc_elev_content" type="id" />
+    <item name="lc_elev_status" type="id" />
+    <item name="lc_elev_empty" type="id" />
+    <item name="lc_elev_panel" type="id" />
+    <item name="lc_elev_lat" type="id" />
+    <item name="lc_elev_lng" type="id" />
+    <item name="lc_elev_value" type="id" />
+    <item name="lc_elev_address" type="id" />
+    <item name="lc_elev_o2" type="id" />
+    <item name="lc_elev_pressure" type="id" />
+    <item name="lc_elev_close" type="id" />
+</resources>

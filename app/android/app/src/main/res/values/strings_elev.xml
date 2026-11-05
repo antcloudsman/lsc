@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- F-03 海拔查询文案（LC地图）。高程来自现有 DEM（Terrarium），取不到就明说。 -->
+    <string name="lc_elev_title">海拔查询</string>
+    <string name="lc_elev_hint">点地图任意位置查询海拔</string>
+    <string name="lc_elev_loading">正在查询…</string>
+    <string name="lc_elev_panel">该点信息</string>
+    <string name="lc_elev_lat">纬度：%1$s</string>
+    <string name="lc_elev_lng">经度：%1$s</string>
+    <string name="lc_elev_value">海拔：%1$s m</string>
+    <string name="lc_elev_none">该点无高程数据</string>
+    <string name="lc_elev_o2">含氧量：%1$s %%（估算）</string>
+    <string name="lc_elev_pressure">气压：%1$s hPa（估算）</string>
+    <string name="lc_elev_address">地址：%1$s</string>
+    <string name="lc_elev_close">关闭</string>
+    <string name="lc_elev_unknown">—</string>
+</resources>

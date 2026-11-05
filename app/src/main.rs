@@ -675,6 +675,32 @@ mod mechanics_pin {
     }
 
     #[test]
+    fn b2_all_780_cells() {
+        // F-02：14 圈层逐格真执行 ring_index/ring_text/ring_center（不是字符串存在性检查）。
+        let mut cells = 0usize;
+        for t in 1..=14usize {
+            let ring = &RINGS[t - 1];
+            let n = ring.labels.len();
+            assert!(n > 0, "TYPE_{t} 无 labels");
+            for i in 0..n {
+                let center = ring_center(t, i);
+                assert_eq!(ring_index(t, center), i, "TYPE_{t} cell {i} center={center}");
+                assert_eq!(ring_text(t, center), ring.labels[i], "TYPE_{t} cell {i} text");
+                let lower = ring.offset + ring.interval * i as f32;
+                assert_eq!(ring_index(t, lower), i, "TYPE_{t} cell {i} lower={lower}");
+                let before = lower - 0.01;
+                assert_eq!(
+                    ring_index(t, before),
+                    (i + n - 1) % n,
+                    "TYPE_{t} cell {i} before={before}"
+                );
+                cells += 1;
+            }
+        }
+        assert_eq!(cells, 780, "14 圈层总格数");
+    }
+
+    #[test]
     fn readings_pinned_at_boundaries() {
         for (h, want) in [
             (0.0, "子"),

@@ -5,7 +5,8 @@
 
 1. mechanics.json 的四个原版向量（数据侧）；
 2. 生成的 `RINGS`（Rust `main.rs` / Java `CompassData.java`）与 mechanics.json **逐条一致**（780 条）；
-3. `ring_text(type, heading)` 按 `(offset, interval)` 取 `labels` 下标（源码语义）；
+3. `ring_index/ring_text/ring_center` 的 780 格语义由 Rust 侧 `b2_all_780_cells` **真执行**
+   （`run_all.py` 调 `cargo test`），Python 侧不再做 token 存在性断言；
 4. 读数面板确实调用 `ring_text(1/2/5/6/7/14, h)`（两端），60 龙等文字不再走 `JIAZI[]`。
 
 四向量：60 龙 0°=`壬子 庚子`、170°=`丙午 甲午`、72 龙 0°=`戊子`、120 分金 0°=`甲山 戊子`。
@@ -81,51 +82,23 @@ class B2GeneratedTablesTest(unittest.TestCase):
         self.assertEqual(sum(len(r["labels"]) for r in self.mech.values()), 780)
 
 
-class B2RingTextSourceTest(unittest.TestCase):
+class B2RingTextWiringTest(unittest.TestCase):
+    """读数接线：两端读数面板必须经 ring_text 取表。
+
+    语义正确性由 Rust 侧 `b2_all_780_cells` 真执行（`cargo test`），此处只查接线。
+    """
+
     @classmethod
     def setUpClass(cls):
         cls.main_rs = SP.read_text(O.MAIN_RS)
         cls.java = SP.read_text(O.COMPASS_DATA_JAVA)
-
-    def test_ring_index_uses_offset_interval(self):
-        """索引公式在 `ring_index` 里：(normalize(h)-offset)/interval 取整。"""
-        body = SP.fn_body(self.main_rs, "ring_index")
-        for token in ("ring.offset", "ring.interval", "normalize_deg", "% n"):
-            self.assertIn(token, body, f"ring_index 体缺 {token!r}")
-        jbody = SP.java_method_body(self.java, "ringIndex")
-        for token in ("r.offset", "r.interval", "Math.floor", ".length"):
-            self.assertIn(token, jbody, f"Java ringIndex 体缺 {token!r}")
-
-    def test_ring_text_delegates_to_ring_index(self):
-        body = SP.fn_body(self.main_rs, "ring_text")
-        self.assertIn("labels[", body, "ring_text 未从 labels 取值")
-        self.assertIn("ring_index(", body, "ring_text 未委托 ring_index")
-        jbody = SP.java_method_body(self.java, "ringText")
-        self.assertIn(".labels[", jbody, "Java ringText 未从 labels 取值")
-        self.assertIn("ringIndex(", jbody, "Java ringText 未委托 ringIndex")
-        self.assertIn("ring_text_clean", self.main_rs)
-        self.assertIn("\\u{200c}", self.main_rs, "U+200C 清洗")
-
-    def test_current_cell_center_formula(self):
-        """当前格中心 = offset + (i+0.5)*interval（高亮/落位共用）。"""
-        for body in (SP.fn_body(self.main_rs, "ring_center"),
-                     SP.java_method_body(self.java, "ringCenter")):
-            self.assertIn("0.5", body, "格中心缺 +0.5*interval")
-            self.assertRegex(body, r"offset", "格中心缺 offset")
-
-    def test_client_unit_vectors_present(self):
-        for ring_type, heading, want in ((7, "0.0", "壬子 庚子"), (7, "170.0", "丙午 甲午"),
-                                         (5, "0.0", "戊子"), (6, "0.0", "甲山 戊子")):
-            pattern = (rf'assert_eq!\(ring_text\({ring_type}, {heading}\), '
-                       rf'"{want}"')
-            self.assertRegex(self.main_rs, pattern, f"main.rs 缺 TYPE_{ring_type} 向量断言")
 
     def test_readout_calls_ring_text(self):
         for t in (1, 2, 5, 6, 7, 14):
             self.assertIn(f"ring_text_clean({t}, rd.heading)", self.main_rs,
                           f"main.rs 读数未用 ring_text_clean({t}, ...)")
             self.assertIn(f"ringText({t}, h)", self.java,
-                          f"CompassData.java 读数未用 ringText({t}, ...)")
+                          f"CompassData.java 读数未用 ringText({t}, h)")
 
 
 if __name__ == "__main__":

@@ -1589,7 +1589,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 callback.invoke(origin, true, false);
             }
         });
-        webView.loadUrl("file:///android_asset/map.html");
+        // 主地图必须带网页端 key（MapAsset 拼 ?tk=<webKey>），裸 map.html 拿不到瓦片。
+        // 原先裸地址没有 hash，这里 hash 传 null 保持行为不变。
+        webView.loadUrl(MapAsset.url(null));
         return webView;
     }
 

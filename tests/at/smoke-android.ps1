@@ -221,7 +221,9 @@ for ($i = 0; $i -lt $dials.Count; $i++) {
 # ---------- 4. 地图功能 ----------
 $u = Get-Ui 'ui-back-to-map'
 if ($u.ok -and (Tap-Text $u.xml '隐藏')) { Start-Sleep -Milliseconds 900 }
-$s0 = Get-MapState
+# M3 盘面列表返回后 MainActivity 会重新 resume，WebView 可能仍在加载：给足重试次数，
+# 否则 M4 全组会被一次空返回判成 BLOCKED（2026-11-05 K-01 真机实测踩到）。
+$s0 = Get-MapState 10
 if (-not $s0) {
     Add-Result 'M4-base' 'BLOCKED' 'window.__LC3D.state()' 'JS 桥没有返回状态（map.html 未加载/注入失败）'
 } else {
@@ -236,14 +238,16 @@ if (-not $s0) {
     # 4.2 回 2D，进罗盘浮层：旋转 / 坐南朝北 / 底图（这三项都在浮层工具里）
     $u = Get-Ui 'ui-map-tools2'
     if ($u.ok -and (Tap-Text $u.xml '3D')) { Start-Sleep -Milliseconds 1200 }
-    $b0 = (Get-MapState).bearing
 
     $u = Get-Ui 'ui-reopen-compass'
     if ($u.ok) { Tap-Text $u.xml '罗盘' | Out-Null; Start-Sleep -Milliseconds 900 }
     $u = Get-Ui 'ui-compass-rotate'
+    # M4-rotate 时序修正：基线必须紧邻「旋转」点击前读取，且给足重试。
+    # 原实现把 b0 放在进罗盘前约 2s（且默认 3 次重试），3D→2D 后 WebView 仍在忙时会拿到空/旧值。
+    $b0 = if ($u.ok) { (Get-MapState 10).bearing } else { $null }
     $rot = $u.ok -and (Tap-Text $u.xml '旋转')
     Start-Sleep -Milliseconds 800
-    $b1 = (Get-MapState).bearing
+    $b1 = (Get-MapState 10).bearing
     Add-Result 'M4-rotate' $(if ($rot -and ($null -ne $b0) -and ($null -ne $b1) -and (([double]$b1 - [double]$b0 + 360) % 360) -eq 15) { 'PASS' } else { 'FAIL' }) '点「旋转」→ bearing +15°' "before=$b0 after=$b1" $u.path
 
     $u = Get-Ui 'ui-compass-right'

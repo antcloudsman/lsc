@@ -680,6 +680,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(label + "：原版为工具子页，本步未实现");
                 }
                 break;
+            case "超清优化":
+                // F-02：左列「超清优化」→ SuperMapActivity（默认开，无门槛）；关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f02")) {
+                    startActivity(new android.content.Intent(this, SuperMapActivity.class));
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "截屏": captureMap(); break;
             case "山脉":
                 // F-06：右列入「山脉」→ MountainActivity（默认开，无门槛）；关掉回退旧 stub。
@@ -792,6 +800,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // F-10：更多 → 历史影像 → HistoryImageActivity（默认开；关掉回退旧 stub）
                     startActivity(new android.content.Intent(this, HistoryImageActivity.class));
                 } else if ("历史影像".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
+                } else if (("超清地图".equals(t) || "超清优化".equals(t))
+                        && flags.isEnabled("f02")) {
+                    // F-02：更多 → 超清地图 / 超清优化 → SuperMapActivity（默认开；关掉回退旧 stub）
+                    startActivity(new android.content.Intent(this, SuperMapActivity.class));
+                } else if ("超清地图".equals(t) || "超清优化".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("地理影像".equals(t) && flags.isEnabled("f16")) {
                     // F-16：更多 → 地理影像 → GeographicImageryActivity（默认开；关掉回退旧 stub）

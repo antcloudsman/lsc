@@ -106,7 +106,15 @@ function DumpUi([string]$file) {
         if (($o -join "`n") -match "dumped to") {
             & $adb -s $Device pull $remote (Join-Path $OutDir $file) 2>&1 | Out-Null
             if (Test-Path (Join-Path $OutDir $file)) {
-                return [pscustomobject]@{ ok = $true; xml = (Get-Content -Raw (Join-Path $OutDir $file)) }
+                $raw = Get-Content -Raw (Join-Path $OutDir $file)
+                # 采完校验：dump 必须是本应用界面。权限弹窗（com.android.permissioncontroller）、
+                # 安装器等都算别的界面，直接丢弃重试，不许当基线（round-k01 首跑就是权限弹窗被当地图态，0/8）。
+                $ownPkg = $raw -match ('package="' + [regex]::Escape($Pkg) + '"')
+                $foreign = ($raw -match 'package="com\.android\.permissioncontroller"') -or ($raw -match '是否允许.{0,20}访问')
+                if ($ownPkg -and -not $foreign) {
+                    return [pscustomobject]@{ ok = $true; xml = $raw }
+                }
+                Remove-Item (Join-Path $OutDir $file) -ErrorAction SilentlyContinue
             }
         }
         Start-Sleep -Milliseconds 600
@@ -173,6 +181,16 @@ if (-not $SkipInstall) {
 }
 & $adb -s $Device shell am force-stop $Pkg
 & $adb -s $Device shell pm clear $Pkg | Out-Null
+# `pm clear` 在本机（EMUI/HarmonyOS）会连运行时权限一起清掉，冷启动随即弹「是否允许…访问位置信息」；
+# 弹窗占前台时 dump 全是 com.android.permissioncontroller，地图态会采成 0/8（round-k01 首跑就是这台）。
+# 清完立刻重授权，让采集从一个确定状态开始。
+foreach ($perm in @('android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION')) {
+    & $adb -s $Device shell pm grant $Pkg $perm 2>&1 | Out-Null
+}
+$grantLine = ((& $adb -s $Device shell dumpsys package $Pkg) -join "`n")
+if ($grantLine -notmatch 'ACCESS_FINE_LOCATION: granted=true') {
+    throw "定位权限未授予（pm grant 未生效）；冷启动会弹权限框，拒绝采基线"
+}
 & $adb -s $Device logcat -c
 $start = & $adb -s $Device shell am start -W -n "$Pkg/.MainActivity" 2>&1
 $total = ([regex]::Match(($start -join "`n"), "TotalTime:\s*(\d+)")).Groups[1].Value
@@ -180,10 +198,12 @@ Start-Sleep -Seconds 4
 $appPid = (& $adb -s $Device shell pidof $Pkg).Trim()
 if (-not $appPid) { throw "App 未存活" }
 
-# 前台校验：安装器/别的界面占前台时拒绝采基线（否则 dump 采到别的界面，证据整批作废）。
+# 前台校验：只看 mCurrentFocus 这一行（旧实现拿整份 dumpsys window 做子串匹配，
+# 应用窗口在后台也照样命中，权限框/安装器占前台时拦不住——round-k01 首跑就这么混过去的）。
 $focusDump = (& $adb -s $Device shell dumpsys window) -join "`n"
-if ($focusDump -notmatch [regex]::Escape($Pkg)) {
-    throw "前台不是 $Pkg（mCurrentFocus 未见应用，可能被安装器占用）；拒绝采基线"
+$focusLine = (($focusDump -split "`r?`n") | Where-Object { $_ -match 'mCurrentFocus' } | Select-Object -First 1)
+if (-not $focusLine -or $focusLine -notmatch [regex]::Escape("$Pkg/")) {
+    throw "前台不是 $Pkg（mCurrentFocus: $focusLine）；拒绝采基线"
 }
 
 $wm = (& $adb -s $Device shell wm size) -join " "
@@ -221,46 +241,59 @@ $mapUi = DumpUi "ui-map.xml"
 if (-not $mapUi.ok) { throw "地图态 dump 失败" }
 Shot "k01-map.png" | Out-Null
 $nodes = Get-NodeInfos $mapUi.xml
+# 参考坐标来自 orig-main.xml 的**内容帧** [0,0][1228,2578]（下面 122px 是导航栏，不在应用窗口里）。
+# 归一必须除以 2578，不能用物理屏 2700：按 2700 算，本机「更多」会落到 2236，系统性偏 −106px，直接把对的报成超差。
+$rootM = [regex]::Match($mapUi.xml, '<node[^>]*bounds="\[0,0\]\[(\d+),(\d+)\]"')
+if (-not $rootM.Success) { throw "无法从 dump 根节点取内容帧尺寸" }
+$contentW = [int]$rootM.Groups[1].Value
+$contentH = [int]$rootM.Groups[2].Value
 $leftSlots = @(
-    @{ n = "全地图工具"; m = '^全地图工具$' },
-    @{ n = "截屏";       m = '^截屏$' },
-    @{ n = "超清优化";   m = '^超清优化$' },
-    @{ n = "海拔查询";   m = '^海拔查询$' },
-    @{ n = "罗盘";       m = '^罗盘$' },
-    @{ n = "路网";       m = '^路网$' },
-    @{ n = "等高线";     m = '^等高线$' },
-    @{ n = "更多";       m = '^更多$' }
+    @{ n = "全地图工具"; m = '^全地图工具$'; x = 111;  y = 474 },
+    @{ n = "截屏";       m = '^截屏$';       x = 112;  y = 754 },
+    @{ n = "超清优化";   m = '^超清优化$';   x = 112;  y = 1412 },
+    @{ n = "海拔查询";   m = '^海拔查询$';   x = 112;  y = 1598 },
+    @{ n = "罗盘";       m = '^罗盘$';       x = 112;  y = 1784 },
+    @{ n = "路网";       m = '^路网$';       x = 112;  y = 1970 },
+    @{ n = "等高线";     m = '^等高线$';     x = 112;  y = 2156 },
+    @{ n = "更多";       m = '^更多$';       x = 112;  y = 2342 }
 )
 $rightSlots = @(
-    @{ n = "图层";   m = '^图层$' },
-    @{ n = "叠加";   m = '^叠加$' },
-    @{ n = "山脉";   m = '^山脉$' },
-    @{ n = "水系";   m = '^水系$' },
-    @{ n = "探索";   m = '^探索$' },
-    @{ n = "指北针"; m = '^指北针$' },
-    @{ n = "放大+";  m = '^\+$' },
-    @{ n = "缩小−";  m = '^−$' },
-    @{ n = "定位";   m = '^定位$' },
-    @{ n = "3D";     m = '^3D$' }
+    @{ n = "图层";   m = '^图层$';   x = 1116; y = 652 },
+    @{ n = "叠加";   m = '^叠加$';   x = 1116; y = 838 },
+    @{ n = "山脉";   m = '^山脉$';   x = 1116; y = 1024 },
+    @{ n = "水系";   m = '^水系$';   x = 1116; y = 1210 },
+    @{ n = "探索";   m = '^探索$';   x = 1116; y = 1396 },
+    @{ n = "指北针"; m = '^指北针$'; x = 1132; y = 1708 },
+    @{ n = "放大+";  m = '^\+$';     x = 1132; y = 1860 },
+    @{ n = "缩小−";  m = '^−$';      x = 1132; y = 2014 },
+    @{ n = "定位";   m = '^定位$';   x = 1132; y = 2168 },
+    @{ n = "3D";     m = '^3D$';     x = 1132; y = 2320 }
 )
 function Check-Slots($mode, $group, $slots) {
-    # 身份按文案（text/content-desc）判定，位置只做结构校验（在哪一侧、列内顺序是否还单调）。
-    # 旧实现按 orig-main.xml 坐标做 45px 邻域匹配：K-01 单页布局的列间距与原版不同，
-    # 结果把 8 个都在的控件报成「缺失」，还会把旁边的另一个控件记成「命中」（round-k01 首跑，见 F-17）。
+    # 双判据（总监 K-01 判 A）：① 身份按文案（text/content-desc）判定存在性；② 中心按参考坐标算偏差，容差 45px。
+    # 只留 ① 会放过「按钮跑到别处」；只留 ② 会被邻居控件冒名（旧实现把 8 个都在的控件报成缺失，见 F-17）。
     $prevY = -1
     foreach ($s in $slots) {
         $node = $nodes | Where-Object { ($_.text -match $s.m) -or ($_.desc -match $s.m) } | Select-Object -First 1
-        $sideOk = $false; $orderOk = $false
+        $ex = $s.x * $contentW / 1228
+        $ey = $s.y * $contentH / 2578
+        $sideOk = $false; $orderOk = $false; $dx = $null; $dy = $null
         if ($node) {
             $sideOk = if ($group -eq "left") { $node.cx -lt ($W / 2) } else { $node.cx -gt ($W / 2) }
             $orderOk = ($node.cy -gt $prevY)
             if ($orderOk) { $prevY = $node.cy }
+            $dx = [int]($node.cx - $ex); $dy = [int]($node.cy - $ey)
         }
+        $offTol = ($node -and ([math]::Abs($dx) -gt 45 -or [math]::Abs($dy) -gt 45))
         $script:records += [pscustomobject]@{
             mode = $mode; group = $group; label = $s.n
             found = [bool]$node
             cx = $(if ($node) { $node.cx } else { "" })
             cy = $(if ($node) { $node.cy } else { "" })
+            expX = [int]$ex; expY = [int]$ey
+            dx = $(if ($node) { $dx } else { "" })
+            dy = $(if ($node) { $dy } else { "" })
+            offTol = $offTol
             side = $(if ($node) { if ($sideOk) { "ok" } else { "wrong" } } else { "" })
             order = $(if ($node) { if ($orderOk) { "ok" } else { "out-of-order" } } else { "" })
             bounds = $(if ($node) { $node.bounds } else { "" })
@@ -272,6 +305,8 @@ Check-Slots "map" "right" $rightSlots
 $mapMissing = @($records | Where-Object { -not $_.found } | ForEach-Object { "$($_.group):$($_.label)" })
 $mapBadSide = @($records | Where-Object { $_.side -eq "wrong" } | ForEach-Object { "$($_.group):$($_.label)" })
 $mapBadOrder = @($records | Where-Object { $_.order -eq "out-of-order" } | ForEach-Object { "$($_.group):$($_.label)" })
+$mapOffTol = @($records | Where-Object { $_.offTol } | ForEach-Object { "$($_.group):$($_.label)(dx=$($_.dx),dy=$($_.dy))" })
+$mapMaxDrift = ($records | Where-Object { $_.found } | ForEach-Object { [math]::Max([math]::Abs([int]$_.dx), [math]::Abs([int]$_.dy)) } | Measure-Object -Maximum).Maximum
 
 # ---- 2) 「更多」16 宫格 bottom sheet ----
 $moreOk = Tap-Text $mapUi.xml '^更多$'
@@ -321,7 +356,17 @@ if ($compassOk) {
 # ---- 4) 日志与产物 ----
 & $adb -s $Device logcat -d | Set-Content -Encoding UTF8 (Join-Path $OutDir "logcat.txt")
 $log = Get-Content -Raw (Join-Path $OutDir "logcat.txt")
-$fatal = ([regex]::Matches($log, "FATAL EXCEPTION")).Count
+# F-01c：FATAL 只认本应用进程。uiautomator 自己会崩（UiAutomationService ... already registered），
+# 那是测量工具挂了，不是 App 崩；混算会把基线门禁误判成红。
+$fatal = 0
+$fatalOther = 0
+$logLines = $log -split "`r?`n"
+for ($i = 0; $i -lt $logLines.Count; $i++) {
+    if ($logLines[$i] -notmatch 'FATAL EXCEPTION') { continue }
+    $end = [Math]::Min($i + 8, $logLines.Count - 1)
+    $block = ($logLines[$i..$end] -join "`n")
+    if ($block -match ('Process:\s*' + [regex]::Escape($Pkg))) { $fatal++ } else { $fatalOther++ }
+}
 $anr = ([regex]::Matches($log, "ANR in $Pkg")).Count
 
 $records | Export-Csv -Path (Join-Path $OutDir "nodes-k01.csv") -NoTypeInformation -Encoding UTF8
@@ -355,7 +400,7 @@ $manifest = @"
 - 结构：$structureNote
 - 冷启动：am start -W TotalTime = ${total} ms；注入 heading = $InjectHeading（debug 广播）
 - 数值门禁：``$gateSummary`` + ``CARGO: PASS``（``numeric-gate.txt``；原始输出见文末）
-- logcat：FATAL EXCEPTION **$fatal** / ANR **$anr**（``logcat.txt``）
+- logcat：FATAL EXCEPTION（应用进程）**$fatal** / 已排除非应用 FATAL **$fatalOther** / ANR **$anr**（``logcat.txt``）
 - SW-006 面板裁切窗：$cropNote
 - 裁切窗测量依据：$cropBasisNote
 - 待跑清单：``docs/qa/k-01-pending.md``（设备放行后一次跑完；待跑不得写成已过）
@@ -370,6 +415,7 @@ $manifest = @"
 | 罗盘态文字（dump 可读部分，非硬项） | 19 | $compassFound | 见 ``ui-compass-mode.xml``（自绘层不在 dump 属正常） |
 
 - 结构校验：侧别错误 $($mapBadSide.Count) 个 $(if ($mapBadSide.Count) { "（$($mapBadSide -join ' ; ')）" })；列内顺序异常 $($mapBadOrder.Count) 个 $(if ($mapBadOrder.Count) { "（$($mapBadOrder -join ' ; ')）" })
+- 中心偏差（参考坐标取自 `orig-main.xml`，分母**内容帧 2578**；容差 ±45px）：最大 **$mapMaxDrift px**；超差 $($mapOffTol.Count) 个 $(if ($mapOffTol.Count) { "（$($mapOffTol -join ' ; ')）" })
 
 ## 冻结物（SHA256 见 ``SHA256SUMS.txt``）
 
@@ -378,7 +424,7 @@ $((Get-ChildItem $OutDir -File | Where-Object { $_.Name -notin @('manifest.md','
 ## 限制
 
 1. 罗盘浮层与圆盘为自绘/WebView 层，``uiautomator`` 只能拿到少量原生节点；圆心/直径/透明度以截图测量为准（``k01-compass.png``）。
-2. 左列/右列按**文案**判定存在性（``text``/``content-desc`` 精确匹配，含 ``+``/``−`` 符号按钮）；位置只做结构校验——控件必须在正确的半屏、且列内 y 单调递增。**不再用 ``orig-main.xml`` 坐标做 45px 邻域匹配**：K-01 单页布局列间距与原版不同，那种匹配会把存在的控件报成缺失、把邻居控件报成命中（F-17）。
+2. 左列/右列双判据：① 身份按**文案**判定（``text``/``content-desc`` 精确匹配，含 ``+``/``−`` 符号按钮），② 按钮**中心**与 ``orig-main.xml`` 参考坐标偏差 ≤45px。参考坐标是内容帧坐标，归一除以 **2578**（内容帧高），不是物理屏 2700——按 2700 算本机「更多」偏 −106px。另做结构校验：控件在正确的半屏、列内 y 单调递增。**不再用「45px 邻域找最近节点」代替身份判定**：那会把邻居控件记成命中、把存在的控件报缺失（F-17）。
 3. 历史基线目录（如 ``round-d5/`` 及更早）仅作历史对照，不得作为本轮基线或裁切参考；本轮基线以 ``$Round`` 为准。
 
 ## 数值门禁原始输出（F-01/F-02）
@@ -390,6 +436,6 @@ $gateBlock
 $manifest | Set-Content -Encoding UTF8 (Join-Path $OutDir "manifest.md")
 
 Write-Host "FROZEN: $OutDir"
-Write-Host "left=$leftFound/8 right=$rightFound/10 more=$moreFound/16 compassText=$compassFound fatal=$fatal anr=$anr badSide=$($mapBadSide.Count) badOrder=$($mapBadOrder.Count)"
-if ($mapMissing.Count -gt 0 -or $mapBadSide.Count -gt 0 -or $mapBadOrder.Count -gt 0 -or $moreFound -lt 16 -or $fatal -gt 0 -or $anr -gt 0) { exit 1 }
+Write-Host "left=$leftFound/8 right=$rightFound/10 more=$moreFound/16 compassText=$compassFound fatal=$fatal fatalOther=$fatalOther anr=$anr badSide=$($mapBadSide.Count) badOrder=$($mapBadOrder.Count) offTol=$($mapOffTol.Count) maxDrift=$mapMaxDrift"
+if ($mapMissing.Count -gt 0 -or $mapBadSide.Count -gt 0 -or $mapBadOrder.Count -gt 0 -or $mapOffTol.Count -gt 0 -or $moreFound -lt 16 -or $fatal -gt 0 -or $anr -gt 0) { exit 1 }
 exit 0

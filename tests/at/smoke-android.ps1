@@ -60,7 +60,11 @@ function Get-Ui([string]$tag, [int]$tries = 5) {
             if (Test-Path $p) {
                 $raw = Get-Content $p -Raw -Encoding UTF8
                 # 采完校验：dump 必须是本应用的界面（安装器/别的界面不算数）。
-                if ($raw -match ('package="' + [regex]::Escape($Pkg) + '"')) {
+                # 权限弹窗（com.android.permissioncontroller）尤其要挡：`pm clear` 会清掉运行时权限，
+                # 冷启动弹「是否允许…访问位置信息」，此时 dump 全是弹窗节点，外观和「应用界面没控件」一样。
+                $own = $raw -match ('package="' + [regex]::Escape($Pkg) + '"')
+                $dialog = ($raw -match 'package="com\.android\.permissioncontroller"') -or ($raw -match '是否允许.{0,20}访问')
+                if ($own -and -not $dialog) {
                     return [pscustomobject]@{ ok = $true; xml = $raw; path = $p }
                 }
                 Remove-Item $p -ErrorAction SilentlyContinue
@@ -192,6 +196,13 @@ if ($Install -and -not $SkipInstall) {
 }
 Invoke-Adb @('shell', 'pm', 'grant', $Pkg, 'android.permission.ACCESS_FINE_LOCATION') | Out-Null
 Invoke-Adb @('shell', 'pm', 'grant', $Pkg, 'android.permission.ACCESS_COARSE_LOCATION') | Out-Null
+# 授权必须核实：`pm clear` 会清运行时权限（本机 EMUI 实测），静默失败会让冷启动被权限弹窗挡住，
+# 后面 8 条全成 BLOCKED、看不出根因（smoke6 就是这样）。
+$grantDump = Invoke-Adb @('shell', 'dumpsys', 'package', $Pkg)
+if ($grantDump -notmatch 'ACCESS_FINE_LOCATION: granted=true') {
+    Add-Result 'ENV' 'BLOCKED' '定位权限已授予' 'pm grant 未生效（ACCESS_FINE_LOCATION 仍为 denied）；冷启动会弹权限框，整批结果不可采信'
+    exit 2
+}
 Invoke-Adb @('shell', 'am', 'force-stop', $Pkg) | Out-Null
 Invoke-Adb @('logcat', '-c') | Out-Null
 $start = Invoke-Adb @('shell', 'am', 'start', '-W', '-n', "$Pkg/.MainActivity")

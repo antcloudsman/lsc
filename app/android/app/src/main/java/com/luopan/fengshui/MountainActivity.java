@@ -50,6 +50,8 @@ public class MountainActivity extends LcFeatureActivity {
 
     private boolean disabled;
     private boolean ridgeOn;
+    /** 省码分类为空、退回视野搜索时置 true，状态栏要说明降级原因（不冒充「没数据」）。 */
+    private boolean fallbackUsed;
 
     private WebView web;
     private TextView statusView;
@@ -211,12 +213,24 @@ public class MountainActivity extends LcFeatureActivity {
         statusView.setText(R.string.lc_mountain_loading);
         POOL.execute(() -> {
             String province = MapPoints.provinceCode(lat, lng);
-            List<MapPoints.Point> pts = province == null
-                    ? MapPoints.keywordNear("山", lat, lng, 10, 120)
-                    : MapPoints.category(MapKeys.TYPE_MOUNTAIN, province, 120);
-            if (pts.isEmpty()) pts = MapPoints.keywordNear("山", lat, lng, 10, 120);
+            boolean fb = false;
+            List<MapPoints.Point> pts;
+            if (province == null) {
+                pts = MapPoints.keywordNear("山", lat, lng, 10, 120);
+                fb = true;
+            } else {
+                pts = MapPoints.category(MapKeys.TYPE_MOUNTAIN, province, 120);
+                if (pts.isEmpty()) {
+                    pts = MapPoints.keywordNear("山", lat, lng, 10, 120);
+                    fb = true;
+                }
+            }
             final List<MapPoints.Point> out = pts;
-            MAIN.post(() -> applyPoints(out));
+            final boolean usedFb = fb;
+            MAIN.post(() -> {
+                fallbackUsed = usedFb;
+                applyPoints(out);
+            });
         });
     }
 
@@ -238,7 +252,8 @@ public class MountainActivity extends LcFeatureActivity {
                 arr.put(o);
             }
             web.evaluateJavascript("setOverlay('mountain', " + arr + ")", null);
-            statusView.setText(getString(R.string.lc_mountain_count, pts.size()));
+            statusView.setText(getString(R.string.lc_mountain_count, pts.size())
+                    + (fallbackUsed ? getString(R.string.lc_mountain_fallback) : ""));
         } catch (Throwable t) {
             statusView.setText(R.string.lc_mountain_fail);
         }

@@ -62,6 +62,8 @@ public class WaterActivity extends LcFeatureActivity {
 
     private double selLat, selLng;
     private Location lastLoc;
+    /** 省码分类为空、退回视野搜索时置 true，状态栏说明降级原因。 */
+    private boolean fallbackUsed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -217,15 +219,23 @@ public class WaterActivity extends LcFeatureActivity {
         POOL.execute(() -> {
             String province = MapPoints.provinceCode(lat, lng);
             List<MapPoints.Point> pts = new ArrayList<>();
+            boolean fb = false;
             if (province != null) {
                 /* 实测：dataTypes 用逗号传多值会返回空（"260204,260205" → count=1 无 pois），
                  * 所以河流、湖泊各查一次再合并。 */
                 pts.addAll(MapPoints.category(MapKeys.TYPE_RIVER, province, 80));
                 pts.addAll(MapPoints.category(MapKeys.TYPE_LAKE, province, 40));
             }
-            if (pts.isEmpty()) pts = keywordBoth(lat, lng);
+            if (pts.isEmpty()) {
+                pts = keywordBoth(lat, lng);
+                fb = true;
+            }
             final List<MapPoints.Point> out = pts;
-            MAIN.post(() -> applyPoints(out));
+            final boolean usedFb = fb;
+            MAIN.post(() -> {
+                fallbackUsed = usedFb;
+                applyPoints(out);
+            });
         });
     }
 
@@ -254,7 +264,8 @@ public class WaterActivity extends LcFeatureActivity {
                 arr.put(o);
             }
             web.evaluateJavascript("setOverlay('water', " + arr + ")", null);
-            statusView.setText(getString(R.string.lc_water_count, pts.size()));
+            statusView.setText(getString(R.string.lc_water_count, pts.size())
+                    + (fallbackUsed ? getString(R.string.lc_water_fallback) : ""));
         } catch (Throwable t) {
             statusView.setText(R.string.lc_water_fail);
         }

@@ -14,4 +14,5 @@
     <string name="lc_water_distance">距你 %1$s km</string>
     <string name="lc_water_gap">点位来自天地图分类数据；河流/湖泊的线、面要素暂无免费矢量源，底图（矢量/地形）图面仍可看水系</string>
     <string name="lc_water_hint">点河湖名查看详情</string>
+    <string name="lc_water_fallback">（省检索为空，已改用视野搜索）</string>
 </resources>

@@ -1394,8 +1394,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             row.addView(b, new LinearLayout.LayoutParams(0, dp(48), 1f));
         }
 
-        // 标题栏：左「地图工具」+ 右「功能开关（调试）」。
-        // 这是 LC 自用的调试/回退入口（D-001），不改 MapSettingActivity 的 1:1 页面。
+        // 标题栏：左「地图工具」+ 右「设置」「功能开关（调试）」。
+        // 「设置」：原版入口在抽屉「地图设置」（MapSettingActivity），K-01 单页布局没做抽屉，
+        //           故暂时置于「更多」标题栏——这是入口位置差异，页面本身仍是 1:1 的 SettingActivity。
+        // 「功能开关（调试）」：LC 自用的调试/回退入口（D-001），不改 MapSettingActivity 的 1:1 页面。
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(android.view.Gravity.CENTER_VERTICAL);
@@ -1407,6 +1409,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sheetTitle.setTextColor(Color.rgb(235, 228, 215));
         header.addView(sheetTitle, new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView settingsEntry = new TextView(this);
+        settingsEntry.setId(R.id.lc_settings_entry);
+        settingsEntry.setText("设置");
+        settingsEntry.setTextSize(12f);
+        settingsEntry.setTextColor(Color.rgb(220, 190, 130));
+        settingsEntry.setPadding(dp(8), dp(6), dp(8), dp(6));
+        header.addView(settingsEntry);
 
         TextView flagsEntry = new TextView(this);
         flagsEntry.setId(R.id.lc_featureflag_entry);
@@ -1429,6 +1439,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         flagsEntry.setOnClickListener(v -> {
             dialog.dismiss();
             startActivity(new android.content.Intent(this, FeatureFlagsActivity.class));
+        });
+        settingsEntry.setOnClickListener(v -> {
+            dialog.dismiss();
+            startActivity(new android.content.Intent(this, SettingActivity.class));
         });
         dialog.show();
     }

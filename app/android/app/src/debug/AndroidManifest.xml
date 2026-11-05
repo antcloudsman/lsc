@@ -95,5 +95,11 @@
             android:exported="true"
             tools:replace="android:exported" />
 
+        <!-- F-18 盘面目录：扩展已有 CompassListActivity，仅 debug 导出供 AT 直达 -->
+        <activity
+            android:name=".CompassListActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+
     </application>
 </manifest>

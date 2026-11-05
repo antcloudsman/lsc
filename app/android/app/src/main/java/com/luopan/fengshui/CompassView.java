@@ -109,6 +109,28 @@ public class CompassView extends View {
         invalidate();
     }
 
+    /** F-18：加载本机导入的盘面图（按长边 ≤1200 采样，防 OOM）；失败退回线稿。 */
+    public void setArtworkPath(String path) {
+        try {
+            android.graphics.BitmapFactory.Options opts = new android.graphics.BitmapFactory.Options();
+            opts.inJustDecodeBounds = true;
+            android.graphics.BitmapFactory.decodeFile(path, opts);
+            if (opts.outWidth <= 0 || opts.outHeight <= 0) {
+                artwork = null;
+                invalidate();
+                return;
+            }
+            int sample = 1;
+            while (Math.max(opts.outWidth, opts.outHeight) / sample > 1200) sample *= 2;
+            opts.inJustDecodeBounds = false;
+            opts.inSampleSize = sample;
+            artwork = android.graphics.BitmapFactory.decodeFile(path, opts);
+        } catch (Throwable t) {
+            artwork = null;
+        }
+        invalidate();
+    }
+
     private void drawArtwork(Canvas canvas, float cx, float cy, float r) {
         if (artwork == null) return;
         canvas.save();

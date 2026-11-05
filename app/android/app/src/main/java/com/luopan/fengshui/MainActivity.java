@@ -1662,8 +1662,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // 会让地图在盘内透不出来，不能做默认。「切换」仍在 0–4 之间循环
             // （CompassListActivity 写回 idx=0..4，无钳位）。
             int dial = prefs.getInt("dial_index", 0);
+            // F-18：本机导入盘面优先（文件不存在时回退内置 dial_index）。
+            String customDial = prefs.getString("dial_custom_path", "");
             compassView.setDialType(dial);
-            compassView.setArtwork(dial);
+            if (customDial != null && !customDial.isEmpty()
+                    && new java.io.File(customDial).exists()) {
+                compassView.setArtworkPath(customDial);
+            } else {
+                compassView.setArtwork(dial);
+            }
         }
         if (sensorManager != null && rotationVector != null) {
             sensorManager.registerListener(this, rotationVector, SensorManager.SENSOR_DELAY_UI);

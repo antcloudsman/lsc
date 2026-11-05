@@ -127,6 +127,15 @@ public class CompassView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         float cx = getWidth() / 2f;
         float cy = getHeight() / 2f;
+        float r = Math.min(cx, cy) - 8f;
+        // K-01：只消费圆内触摸，圆外交给下层地图（地图拖动/缩放不被浮层吃掉）。
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            float dx = event.getX() - cx;
+            float dy = event.getY() - cy;
+            if (dx * dx + dy * dy > r * r) {
+                return false;
+            }
+        }
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 dragging = true;
@@ -160,13 +169,10 @@ public class CompassView extends View {
         float cy = getHeight() / 2f;
         float r = Math.min(cx, cy) - 8f;
 
-        int bg = Color.argb(210, 24, 20, 16);
         int gold = Color.rgb(220, 190, 130);
 
-        // Face.
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(bg);
-        canvas.drawCircle(cx, cy, r, paint);
+        // K-01 face：实测无整盘填充（measurements.md：填充 α 上界 0.15、下界 0.00），
+        // 原版是线稿叠在地图上，这里不再铺 argb(210) 的实心圆，只保留外圈描边。
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2f);
         paint.setColor(gold);

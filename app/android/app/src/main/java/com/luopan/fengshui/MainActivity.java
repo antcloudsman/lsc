@@ -265,7 +265,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 罗盘浮层：圆心＝屏幕中心；直径与 face alpha 待 measurements.md（见本笔「待跑」块）。
         compassView = new CompassView(this);
         compassView.setOnHeadingChangeListener(h -> updateReading());
-        int csize = (int) (getResources().getDisplayMetrics().widthPixels * 0.78f);
+        // 直径按 measurements.md 实测：D/W = 73.3–73.8%（orig-06-read.png，外径 900–906 px / 1228）。
+        // +16 抵消 CompassView 内 r = min(cx,cy) - 8f 的收缩，使绘制外径 = 0.733 屏宽。
+        int csize = (int) (getResources().getDisplayMetrics().widthPixels * 0.733f) + 16;
         FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(csize, csize);
         cp.gravity = android.view.Gravity.CENTER;
         compassView.setVisibility(View.GONE);

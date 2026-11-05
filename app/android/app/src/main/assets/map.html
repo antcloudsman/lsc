@@ -27,6 +27,19 @@
     color:#ff6666; font-size:13px; z-index:6; background:#201a14cc; padding:2px 8px; border-radius:6px; }
   .marker { position:absolute; width:14px; height:14px; margin:-7px; border-radius:50%;
     background:#ff4444; border:2px solid #fff; z-index:7; pointer-events:none; box-shadow:0 0 4px #000; }
+  #fsExit { position:fixed; right:10px; bottom:70px; z-index:30; display:none; padding:9px 14px;
+    background:#201a14e6; color:#dcbe82; border:1px solid #5a4a30; border-radius:8px; font-size:14px; }
+  #srcInfo { position:absolute; right:10px; bottom:8px; z-index:9; color:#968268; font-size:11px;
+    background:#201a14cc; padding:2px 6px; border-radius:5px; }
+  #srcPanel { position:absolute; inset:0; background:#00000099; z-index:20; display:none; }
+  #srcPanel .box { position:absolute; left:10px; right:10px; top:70px; max-height:72%; overflow:auto;
+    background:#201a14f5; border:1px solid #5a4a30; border-radius:10px; padding:10px; }
+  #srcPanel h3 { margin:2px 0 8px 2px; color:#dcbe82; font-size:14px; }
+  #srcPanel .srchint { color:#968268; font-size:11px; margin:0 0 8px 2px; }
+  .srcItem { display:block; width:100%; text-align:left; padding:9px 10px; margin-bottom:5px;
+    background:#2a231b; color:#dcbe82; border:1px solid #4a3c28; border-radius:6px; font-size:13px; }
+  .srcItem.off { color:#6b5f4d; border-color:#3a3126; }
+  .srcItem.on { background:#5a4a30; color:#fff; }
 </style>
 </head>
 <body>
@@ -45,11 +58,23 @@
   <button onclick="pitchStep(-10)">俯仰 −</button>
   <button onclick="pitchStep(10)">俯仰 +</button>
   <div id="pitchWrap"><input id="pitchRange" type="range" min="0" max="60" step="1" value="45" oninput="setPitch(this.value)"></div>
+  <button onclick="openSources()">底图源</button>
+  <button id="btn_needle" class="active" onclick="toggleNeedle()">指针</button>
+  <button id="btn_sit" onclick="toggleSitNorth()">坐南朝北</button>
+  <button id="btn_contour" onclick="toggleContour()">等高线</button>
+  <button id="btn_ground" onclick="toggleGround()">贴地</button>
   <button onclick="toggleFullScreen()">全屏</button>
   <button onclick="clearMarkers()">清除标记</button>
   <button onclick="locate()">定位</button>
 </div>
 <div id="hud"></div>
+<button id="fsExit" onclick="toggleFullScreen()">退出全屏</button>
+<div id="srcInfo">底图：天地图地形 · 审图号：未确认</div>
+<div id="srcPanel"><div class="box"><h3>底图源</h3>
+  <div class="srchint">原版 12 源；无 key 的置灰（D-006），审图号须按源官方核对</div>
+  <div id="srcBox"></div>
+  <button class="srcItem" onclick="closeSources()">关闭</button>
+</div></div>
 <div id="hint">天地图 · 拖动平移，按钮缩放 · 罗盘指针显示坐向</div>
 <div id="needle"></div>
 <div id="heading-label">向 0°</div>
@@ -74,6 +99,15 @@ var pitch = 45;                // 3D 俯仰 0(俯视)–60°
 var center = { lat: 39.9042, lng: 116.4074 };   // 北京
 var zoom = 5;
 var lastHeading = 0;
+var needleOn = true;           // 指针开关（原版右侧「指针开关」）
+/* 坐向对齐（原版 F5：单按钮双标签，g.x() 布尔驱动文案）
+ * 0=关 1=坐南朝北(向朝上, bearing=heading) 2=坐北朝南(坐朝上, bearing=heading+180)
+ * 第二态几何为等价替代，原版未取证 */
+var sitMode = 0;
+var bearingBeforeSit = 0;
+var contourOn = false;         // 等高线（3D 高程着色叠加）
+var groundMode = false;        // 贴地：低机位 + 高俯仰
+var pitchBeforeGround = 45;
 var drape = "img";             // 3D 贴面层（D-005：默认影像；ter 仍可用按钮切）
 var pick = null;               // 3D 立向点 {lng,lat,elev,world,heading}
 var pickEl = null;
@@ -154,6 +188,7 @@ function setBase(b) {
   } else {
     render();
   }
+  updateSrcInfo();
 }
 
 /* ---------------- 模式 / 视角 ---------------- */
@@ -229,23 +264,142 @@ function setPitch(v) {
 function zoomIn() { zoom = Math.min(18, zoom + 1); if (mode === "3d") ensurePatch(); else render(); updateHud(); }
 function zoomOut() { zoom = Math.max(2, zoom - 1); if (mode === "3d") ensurePatch(); else render(); updateHud(); }
 
+var fullScreen = false;
 function toggleFullScreen() {
-  var fullScreen = document.getElementById("controls").style.display !== "none";
+  fullScreen = !fullScreen;
   document.getElementById("controls").style.display = fullScreen ? "none" : "";
   document.getElementById("hint").style.display = fullScreen ? "none" : "";
+  document.getElementById("srcInfo").style.display = fullScreen ? "none" : "";
+  document.getElementById("fsExit").style.display = fullScreen ? "block" : "none";
+  try {
+    var fr = document.getElementById("fsExit").getBoundingClientRect();
+    console.log("LC3D fsExit " + Math.round(fr.left) + "," + Math.round(fr.top) + " " +
+      Math.round(fr.width) + "x" + Math.round(fr.height) + " vp=" +
+      document.documentElement.clientWidth + "x" + document.documentElement.clientHeight);
+  } catch (e) { }
   if (mode === "3d") {
     setTimeout(function () { resizeGL(); }, 60);
   }
 }
 
+/* ---- 底图源（原版 12 源；D-006：无 key 置灰；审图号按源绑定，核对前一律「未确认」） ---- */
+var MAP_SOURCES = [
+  { name: "中科星图", layer: null, note: "需授权" },
+  { name: "吉林一号·全球", layer: null, note: "需授权" },
+  { name: "吉林一号·全国", layer: null, note: "需授权" },
+  { name: "世纪空间卫星", layer: null, note: "原版默认源，需授权（有意差异）" },
+  { name: "天地图卫星", layer: "img", review: "未确认" },
+  { name: "天地图地图", layer: "vec", review: "未确认" },
+  { name: "天地图地形", layer: "ter", review: "未确认" },
+  { name: "高德卫星", layer: null, note: "需 key" },
+  { name: "高德地图", layer: null, note: "需 key" },
+  { name: "腾讯卫星", layer: null, note: "需 key" },
+  { name: "腾讯地图", layer: null, note: "需 key" },
+  { name: "腾讯地形", layer: null, note: "需 key" }
+];
+var srcIndex = 6;
+
+function sourceOfBase(layer) {
+  for (var i = 0; i < MAP_SOURCES.length; i++) if (MAP_SOURCES[i].layer === layer) return i;
+  return -1;
+}
+
+function openSources() {
+  var box = document.getElementById("srcBox");
+  var html = "";
+  for (var i = 0; i < MAP_SOURCES.length; i++) {
+    var s = MAP_SOURCES[i];
+    var cls = (s.layer === null) ? "srcItem off" : ((i === srcIndex) ? "srcItem on" : "srcItem");
+    var tail = (s.layer === null) ? (" · " + s.note) : (" · 审图号 " + s.review);
+    html += '<button class="' + cls + '"' + (s.layer === null ? " disabled" : "") +
+      ' onclick="selectSource(' + i + ')">' + (i + 1) + ". " + s.name + tail + "</button>";
+  }
+  box.innerHTML = html;
+  document.getElementById("srcPanel").style.display = "block";
+}
+
+function closeSources() { document.getElementById("srcPanel").style.display = "none"; }
+
+function selectSource(i) {
+  var s = MAP_SOURCES[i];
+  if (!s || s.layer === null) return;
+  srcIndex = i;
+  setBase(s.layer);
+  closeSources();
+}
+
+function updateSrcInfo() {
+  var i = sourceOfBase(base);
+  if (i >= 0) srcIndex = i;
+  var s = MAP_SOURCES[srcIndex] || { name: "天地图地形", review: "未确认" };
+  var el = document.getElementById("srcInfo");
+  if (el) el.textContent = "底图：" + s.name + " · 审图号：" + (s.review || "未确认");
+}
+
 /* ---------------- 罗盘坐向指针 ---------------- */
 function setHeading(deg) {
   lastHeading = Number(deg) || 0;
+  if (sitMode) {
+    /* 地图随向角旋转：向或坐恒朝屏幕上方 */
+    var offDeg = (sitMode === 2) ? 180 : 0;
+    bearing = (((Math.round(lastHeading) + offDeg) % 360) + 360) % 360;
+    if (mode !== "3d") applyTransform();
+  }
   refreshNeedle();
   var lbl = document.getElementById("heading-label");
   if (lbl && lbl.getAttribute("data-sit") == null) {
     lbl.textContent = "向 " + (Math.round(lastHeading) % 360) + "°";
   }
+}
+
+/* ---- 指针开关 / 坐南朝北 / 等高线 / 贴地 ---- */
+function toggleNeedle() {
+  needleOn = !needleOn;
+  var el = document.getElementById("needle");
+  if (el) el.style.display = needleOn ? "" : "none";
+  document.getElementById("btn_needle").className = needleOn ? "active" : "";
+}
+
+function applySit() {
+  if (sitMode === 0) {
+    bearing = bearingBeforeSit;
+  } else {
+    var offDeg = (sitMode === 2) ? 180 : 0;
+    bearing = (((Math.round(lastHeading) + offDeg) % 360) + 360) % 360;
+  }
+  var btn = document.getElementById("btn_sit");
+  if (btn) {
+    btn.textContent = (sitMode === 2) ? "坐北朝南" : "坐南朝北";
+    btn.className = sitMode ? "active" : "";
+  }
+  refreshNeedle();
+  if (mode === "3d") updateHud(); else applyTransform();
+}
+
+function toggleSitNorth() {
+  if (sitMode === 0) { bearingBeforeSit = bearing; sitMode = 1; }
+  else if (sitMode === 1) { sitMode = 2; }
+  else { sitMode = 0; }
+  applySit();
+}
+
+function toggleContour() {
+  contourOn = !contourOn;
+  document.getElementById("btn_contour").className = contourOn ? "active" : "";
+  if (mode !== "3d" && contourOn) setMode("3d");   // 等高线依赖 DEM 网格，仅 3D 生效
+}
+
+function toggleGround() {
+  groundMode = !groundMode;
+  document.getElementById("btn_ground").className = groundMode ? "active" : "";
+  if (groundMode) {
+    pitchBeforeGround = pitch;
+    if (mode !== "3d") setMode("3d");
+    setPitch(60);
+  } else {
+    setPitch(pitchBeforeGround);
+  }
+  updateHud();
 }
 
 function refreshNeedle() {
@@ -468,6 +622,7 @@ function initGL() {
   ].join("\n");
 
   var fs = [
+    "#extension GL_OES_standard_derivatives : enable",
     "precision mediump float;",
     "precision mediump sampler2D;",
     "varying vec3 vNrm;",
@@ -480,6 +635,7 @@ function initGL() {
     "uniform vec3 uFog;",
     "uniform float uFogNear;",
     "uniform float uFogFar;",
+    "uniform float uContour;",
     "vec3 hypo(float e){",
     "  if (e < 1.0) return vec3(0.10, 0.22, 0.34);",
     "  if (e < 200.0) return mix(vec3(0.16, 0.32, 0.19), vec3(0.32, 0.48, 0.24), e / 200.0);",
@@ -497,6 +653,24 @@ function initGL() {
     "    col = mix(col, t, 0.88);",
     "  }",
     "  col *= sh;",
+    "  if (uContour > 0.5) {",
+    "    float v = vElev / 100.0;",
+    "    float f100 = fract(v);",
+    "    float d100 = min(f100, 1.0 - f100);",
+    "    float v5 = vElev / 500.0;",
+    "    float f500 = fract(v5);",
+    "    float d500 = min(f500, 1.0 - f500);",
+    "#ifdef GL_OES_standard_derivatives",
+    "    float w100 = fwidth(v) * 3.0;",
+    "    float w500 = fwidth(v5) * 3.0;",
+    "#else",
+    "    float w100 = 0.03;",
+    "    float w500 = 0.02;",
+    "#endif",
+    "    float line100 = 1.0 - smoothstep(0.0, max(w100, 0.004), d100);",
+    "    float line500 = 1.0 - smoothstep(0.0, max(w500, 0.004), d500);",
+    "    col = mix(col, vec3(0.12, 0.09, 0.05), line100 * 0.68 + line500 * 0.55);",
+    "  }",
     "  float f = clamp((vDist - uFogNear) / max(1.0, uFogFar - uFogNear), 0.0, 1.0);",
     "  col = mix(col, uFog, f * 0.9);",
     "  gl_FragColor = vec4(col, 1.0);",
@@ -539,7 +713,8 @@ function initGL() {
     light: gl.getUniformLocation(prog, "uLight"),
     fog: gl.getUniformLocation(prog, "uFog"),
     fogNear: gl.getUniformLocation(prog, "uFogNear"),
-    fogFar: gl.getUniformLocation(prog, "uFogFar")
+    fogFar: gl.getUniformLocation(prog, "uFogFar"),
+    contour: gl.getUniformLocation(prog, "uContour")
   };
 
   buffers = {
@@ -552,6 +727,8 @@ function initGL() {
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([58, 74, 52, 255]));
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  console.log("LC3D contourLoc=" + (loc.contour !== null) + " deriv=" +
+    !!(gl.getExtension("OES_standard_derivatives")));
   gl.enable(gl.DEPTH_TEST);
   gl.disable(gl.CULL_FACE);
   gl.clearColor(0.47, 0.55, 0.62, 1.0);
@@ -694,7 +871,8 @@ function uploadMesh(p) {
 /* 天地图底图贴面（3×3 瓦片拼成 768×768 纹理） */
 function buildPatchTexture(p) {
   var seq = patchSeq;
-  var TEX_TILES = 6, TEX_PX = TEX_TILES * 256;   // 1536px
+  var TEX_TILES = 6, TEX_PX = 2048;              // POT 画布，才能开 mipmap
+  var cell = TEX_PX / TEX_TILES;                 // 341.33px/瓦片，1.33× 上采样换 mipmap
   var zt = Math.min(p.z + 1, 18);                // 比 DEM 高一级
   var tx0 = p.ox * 2, ty0 = p.oy * 2;            // 该级别下地形块的左上瓦片
   var cv = document.createElement("canvas");
@@ -711,7 +889,7 @@ function buildPatchTexture(p) {
         tasks.push(new Promise(function (res) {
           var img = new Image();
           img.crossOrigin = "anonymous";
-          img.onload = function () { ctx.drawImage(img, i * 256, j * 256, 256, 256); ok++; res(); };
+          img.onload = function () { ctx.drawImage(img, i * cell, j * cell, cell, cell); ok++; res(); };
           img.onerror = function () { res(); };
           img.src = tileUrl(drape, zt, x, y);
         }));
@@ -738,7 +916,8 @@ function uploadTexture(p) {
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, p.texCanvas);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.generateMipmap(gl.TEXTURE_2D);              /* POT 纹理：三线性 + 远距抗锯齿 */
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -1029,6 +1208,7 @@ function render3D() {
   var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
   var hCss = Math.max(1, glCanvas.clientHeight);
   var D = (hCss * zMpp) / (2 * Math.tan(FOV / 2));
+  if (groundMode) D *= 0.35;          /* 贴地：机位压低到 35%，配合俯仰 60° */
 
   var t = lonLatToTile(center.lng, center.lat, patch.z);
   var gx = t.x * 256, gy = t.y * 256;
@@ -1085,6 +1265,12 @@ function render3D() {
   gl.uniform3f(loc.fog, 0.47, 0.55, 0.62);
   gl.uniform1f(loc.fogNear, R * 0.75);
   gl.uniform1f(loc.fogFar, R * 1.05);
+  gl.uniform1f(loc.contour, contourOn ? 1 : 0);
+  if (contourOn && !window.__lcDbgContour) {
+    window.__lcDbgContour = 1;
+    console.log("LC3D contour on=" + contourOn + " uniform=" +
+      (loc.contour ? gl.getUniform(prog, loc.contour) : "null") + " elev=" + Math.round(demoElev));
+  }
   gl.uniform1f(loc.useTex, patch.tex ? 1 : 0);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, patch.tex || placeholderTex);
@@ -1143,17 +1329,33 @@ function debugSetView(lat, lng, z, p, b) {
   if (mode === "3d") { ensurePatch(true); updateHud(); } else { applyTransform(); render(); }
 }
 
+/* 文档 §4 承诺的 window 级 API（getState/getFps/setView/sitNorth 以前只在内部作用域，
+ * 客户端 js 断言拿不到——这次显式挂到 window，并由 AT TD-016 守住） */
+function getState() {
+  return {
+    mode: mode, lat: center.lat, lng: center.lng, zoom: zoom, pitch: pitch,
+    bearing: bearing, fps: fps, elev: Math.round(demoElev),
+    demZoom: patch ? patch.z : null, hasTexture: !!(patch && patch.tex),
+    sitMode: sitMode, sitNorth: sitMode !== 0,
+    contour: contourOn, ground: groundMode, needle: needleOn,
+    base: base, drape: drape,
+    source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
+  };
+}
+function getFps() { return fps; }
+function setView(lat, lng, z) { debugSetView(lat, lng, z, null, null); }
+try {
+  Object.defineProperty(window, "sitNorth", {
+    get: function () { return sitMode !== 0; },
+    configurable: true
+  });
+} catch (e) { }
+
 window.__LC3D = {
   setView: debugSetView,
   setMode: setMode,
-  state: function () {
-    return {
-      mode: mode, lat: center.lat, lng: center.lng, zoom: zoom, pitch: pitch,
-      bearing: bearing, fps: fps, elev: Math.round(demoElev),
-      demZoom: patch ? patch.z : null, hasTexture: !!(patch && patch.tex)
-    };
-  },
-  fps: function () { return fps; },
+  state: getState,
+  fps: getFps,
   screenshot: function () {
     try { return glCanvas.toDataURL("image/png"); } catch (e) { return ""; }
   }
@@ -1255,12 +1457,143 @@ window.__LCBridgeTest = (function () {
 
 /* ---- 启动 ---- */
 updateHud();
+updateSrcInfo();
 render();
 
-/* 本地/无真机自测：map.html#selftest → 进 3D，等 DEM 就绪后在屏幕中心偏下做一次点选 */
-if (location.hash.indexOf("selftest") >= 0) {
-  setTimeout(function () { setMode("3d"); }, 100);
+/* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit
+ * 页面初始化与 hashchange 都会应用，所以客户端一次 `loadUrl(...#in3d&sit)` 即可生效
+ * （同文档导航只改 hash、不触发 onload 的情况也覆盖）。 */
+function hashHas(h, name) {
+  return new RegExp("(^#|&)" + name + "(&|=|$)").test(h || "");
+}
+
+function applyIn3D(hash) {
+  var h = hash || location.hash || "";
   setTimeout(function () {
+    if (!hashHas(h, "in3d")) return;
+    var mlat = h.match(/lat=(-?[\d.]+)/), mlng = h.match(/lng=(-?[\d.]+)/);
+    var mz = h.match(/[&#]z=(\d+)/), mp = h.match(/pitch=(\d+)/), mb = h.match(/bearing=(-?\d+)/);
+    if (mode !== "3d") setMode("3d");
+    if (mp) setPitch(parseInt(mp[1], 10));
+    if (mb) { bearing = ((parseInt(mb[1], 10) % 360) + 360) % 360; refreshNeedle(); }
+    if (mlat || mlng || mz) {
+      debugSetView(mlat ? parseFloat(mlat[1]) : null, mlng ? parseFloat(mlng[1]) : null,
+        mz ? parseInt(mz[1], 10) : null, null, null);
+    }
+    if (hashHas(h, "contour") && !contourOn) toggleContour();
+    if (hashHas(h, "ground") && !groundMode) toggleGround();
+    if (hashHas(h, "sit")) {
+      var msit = h.match(/[&#]sit=(\d)/);
+      var want = msit ? parseInt(msit[1], 10) : 1;   // sit=1 坐南朝北（默认），sit=0 坐北朝南
+      setHeading(90);
+      if (sitMode === 0) bearingBeforeSit = bearing;
+      sitMode = (want === 1) ? 1 : 2;
+      applySit();
+    }
+    if (hashHas(h, "srcpanel")) openSources();
+    if (hashHas(h, "fs") && !fullScreen) toggleFullScreen();
+    var msi = h.match(/src=(\d+)/);
+    if (msi) selectSource(parseInt(msi[1], 10));
+    console.log("LC3D in3d hash=" + h);
+  }, 50);
+}
+if (hashHas(location.hash, "in3d")) applyIn3D();
+window.addEventListener("hashchange", function () {
+  if (hashHas(location.hash, "in3d")) applyIn3D(location.hash);
+});
+
+/* P0-4 AT 无头自检：map.html#at → 进 3D，等 DEM 就绪后跑 TD-001..TD-014，打 "LCAT ..." / "LCAT-RESULT" */
+function runAT() {
+  var R = [];
+  function ok(id, cond, detail) {
+    R.push((cond ? "PASS" : "FAIL") + " " + id + (detail ? " (" + detail + ")" : ""));
+  }
+  function markCount() { return mapEl.querySelectorAll(".pick3d").length; }
+  __LCBridgeTest.install();
+  __LCBridgeTest.reset();
+  ok("TD-001", !!gl, "webgl");
+  ok("TD-002", !!(patch && patch.mesh && patch.indexCount > 0), "patch");
+  ok("TD-003", !!(patch && patch.tex), "texture");
+  var w = glCanvas.clientWidth, h = glCanvas.clientHeight;
+  pick3D(w * 0.50, h * 0.62);
+  var e1 = __LCBridgeTest.last("pick");
+  ok("TD-004", !!(e1 && e1.type === "pick" && e1.src === "3d"), "type/src");
+  ok("TD-005", !!(e1 && isFinite(e1.lng) && e1.lng >= -180 && e1.lng <= 180 &&
+    isFinite(e1.lat) && e1.lat >= -90 && e1.lat <= 90), "lng/lat range");
+  ok("TD-006", !!(e1 && (e1.elev === null || typeof e1.elev === "number")), "elev " + (e1 && e1.elev));
+  ok("TD-007", !!(e1 && isFinite(e1.heading) && e1.heading >= 0 && e1.heading < 360), "heading");
+  setHeading(90);
+  pick3D(w * 0.45, h * 0.55);
+  var e2 = __LCBridgeTest.last("pick");
+  ok("TD-008", !!(e2 && Math.abs(e2.heading - 90) < 0.11), "heading=90 got " + (e2 && e2.heading));
+  ok("TD-009", markCount() === 1, "single marker " + markCount());
+  var cc = __LCBridgeTest.assertContract();
+  ok("TD-010", cc.pass, cc.pass ? "contract" : JSON.stringify(cc.failures));
+  __LCBridgeTest.reset();
+  clearMarkers();
+  ok("TD-011", !!__LCBridgeTest.last("pick-clear"), "clear emits");
+  __LCBridgeTest.reset();
+  pick3D(w * 0.50, 3);
+  ok("TD-012", __LCBridgeTest.last("pick") === null, "sky miss");
+  __LCBridgeTest.reset();
+  setMode("2d");
+  clearMarkers();
+  ok("TD-013", !!__LCBridgeTest.last("pick-clear"), "2d clear");
+  __LCBridgeTest.uninstall();
+  var thrown = false;
+  try { pick3D(10, 10); } catch (e) { thrown = true; }
+  ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
+  var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch",
+    "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
+    "getState", "getFps"];
+  var missing = [];
+  for (var ai = 0; ai < api.length; ai++) {
+    if (typeof window[api[ai]] !== "function") missing.push(api[ai]);
+  }
+  if (typeof window.sitNorth !== "boolean") missing.push("sitNorth");
+  ok("TD-015", missing.length === 0, missing.length ? ("missing:" + missing.join(",")) : "window api");
+  var fails = 0;
+  for (var i = 0; i < R.length; i++) if (R[i].indexOf("FAIL") === 0) fails++;
+  console.log("LCAT " + R.join(" | "));
+  console.log("LCAT-RESULT " + (fails === 0 ? "PASS" : "FAIL") + " total=" + R.length + " fails=" + fails);
+}
+
+if (hashHas(location.hash, "at") && !hashHas(location.hash, "selftest")) {
+  setTimeout(function () {
+    var h = location.hash;
+    var mlat = h.match(/lat=(-?[\d.]+)/), mlng = h.match(/lng=(-?[\d.]+)/), mz = h.match(/[&#]z=(\d+)/);
+    setMode("3d");
+    if (mlat || mlng || mz) {
+      debugSetView(mlat ? parseFloat(mlat[1]) : null, mlng ? parseFloat(mlng[1]) : null,
+        mz ? parseInt(mz[1], 10) : null, null, null);
+    }
+    var tries = 0;
+    var iv = setInterval(function () {
+      if (patch && patch.mesh && patch.tex) { clearInterval(iv); setTimeout(runAT, 600); }
+      else if (++tries > 80) { clearInterval(iv); console.log("LCAT TIMEOUT"); runAT(); }
+    }, 500);
+  }, 50);
+}
+
+/* 本地/无真机自测：map.html#selftest → 进 3D，等 DEM 就绪后在屏幕中心偏下做一次点选 */
+if (hashHas(location.hash, "selftest")) {
+  setTimeout(function () {
+    setMode("3d");
+    if (location.hash.indexOf("contour") >= 0) toggleContour();
+    if (location.hash.indexOf("ground") >= 0) toggleGround();
+    if (location.hash.indexOf("sit") >= 0) { setHeading(90); toggleSitNorth(); }
+    if (location.hash.indexOf("noneedle") >= 0) toggleNeedle();
+    /* 可复现视点：map.html#selftest&lat=40.0&lng=115.5&z=12 */
+    var hh = location.hash;
+    var mlat = hh.match(/lat=(-?[\d.]+)/), mlng = hh.match(/lng=(-?[\d.]+)/), mz = hh.match(/[&#]z=(\d+)/);
+    if (mlat || mlng || mz) {
+      debugSetView(mlat ? parseFloat(mlat[1]) : null, mlng ? parseFloat(mlng[1]) : null,
+        mz ? parseInt(mz[1], 10) : null, null, null);
+    }
+  }, 100);
+  setTimeout(function () {
+    if (location.hash.indexOf("pitch0") >= 0) setPitch(0);
     if (mode !== "3d" || !patch) { console.log("LC3D selftest not-ready"); return; }
     if (location.hash.indexOf("bridge") >= 0) { window.__LCBridgeTest.selfTest(); return; }
     var w = glCanvas.clientWidth, h = glCanvas.clientHeight;

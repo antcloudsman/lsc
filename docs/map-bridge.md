@@ -30,9 +30,9 @@
 
 - 天地图 WMTS：`https://{t0..t7}.tianditu.gov.cn/{layer}_w/wmts?...&tk=<KEY>`
   - `layer`：`vec` 矢量 / `img` 影像 / `ter` 地形晕渲；注记 `cva`/`cia`/`cta`。
-- 3D 贴面取 **DEM 级别 +1** 的瓦片（6×6 = 1536×1536 px，正好覆盖一块地形），UV 与屏幕 1:1。
+- 3D 贴面取 **DEM 级别 +1** 的 6×6 瓦片，拼进 **2048×2048 POT 画布**（341.33px/瓦片，1.33× 上采样），UV 覆盖整块地形；POT 才能 `generateMipmap`。
 - **D-005：3D 默认贴面 = 影像（`img`）**；在 3D 里点「地形」仍可切回 `ter`（晕渲贴面会与自研光照叠加出条纹，不推荐）。2D 的默认底图仍是 `ter`，未改 1:1 基线。
-- 贴面过滤器：`LINEAR` + `EXT_texture_filter_anisotropic`（上限 4×，不支持则忽略）。
+- 贴面过滤器：`MIN=LINEAR_MIPMAP_LINEAR`（三线性）、`MAG=LINEAR`，外加 `EXT_texture_filter_anisotropic`（上限 4×，不支持则忽略）。
 - 天地图瓦片同样返回 `Access-Control-Allow-Origin: *`，可作 WebGL 纹理上传。
 - 3D 贴面失败（断网/配额）时自动退回「高程配色 + 自研光照」，地形结构仍在。
 
@@ -73,7 +73,35 @@
 | `getState()` | — | 返回 JSON（mode/lat/lng/zoom/pitch/bearing/fps/elev） |
 | `getFps()` | — | 最近 1 s 的 rAF 实测帧率 |
 
-**只有前两个是 MainActivity 当前已在调用的**（`MainActivity.updateReading()` 里 `evaluateJavascript("setHeading(...)")` / `setSitFace(...)`），其余为本次新增、客户端可直接用。
+**只有前两个是 MainActivity 当前已在调用的**（`MainActivity.updateReading()` 里 `evaluateJavascript("setHeading(...)")` / `setSitFace(...)`），其余为本次新增、客户端可直接用。**表中方法全部真实挂在 `window` 上，由 AT TD-015 逐项断言**（此前 `getState/sitNorth` 只在内部作用域，客户端 `js` 拿到 `undefined`，已修）。
+
+### 3.1 window 级状态读取（客户端 `js` 断言用）
+
+| 接口 | 返回 |
+|---|---|
+| `getState()` | 对象 `{mode, lat, lng, zoom, pitch, bearing, fps, elev, demZoom, hasTexture, sitMode, sitNorth, contour, ground, needle, base, drape, source}` |
+| `getFps()` | 数字（最近 1 s rAF 实测帧率） |
+| `window.sitNorth` | 只读布尔（`sitMode!==0`，即坐向对齐是否开启） |
+| `window.__LC3D.*` | 兼容别名：`setView/state/fps/screenshot` |
+
+### 4.1 启动参数（URL hash）
+
+客户端改 `loadUrl` 即可直接进 3D，免去模拟点按钮：
+
+| hash | 行为 |
+|---|---|
+| `#in3d` | 页面加载后直接进 3D（50 ms 后执行） |
+| `&lat=..&lng=..&z=..` | 指定初始视点（同 `debugSetView`） |
+| `&pitch=0..60` / `&bearing=0..359` | 初始俯仰/旋转 |
+| `&contour` / `&ground` | 启动即开对应控件 |
+| `&sit=1` / `&sit=0` | 启动即对齐：`1`=坐南朝北（向朝上）、`0`=坐北朝南（坐朝上）；裸 `&sit` 等同 `sit=1` |
+| `&fs` | 启动即全屏（保留「退出全屏」） |
+| `&srcpanel` / `&src=N` | 打开底图源面板 / 直接选第 N 个源（0 基） |
+
+例：`file:///android_asset/map.html#in3d`（3D 桥对拍用）。自测入口 `#selftest` 仍保留（会等 DEM 就绪后自动点选一次）。
+
+**hash 在页面初始化与 `hashchange` 时都会应用**，所以同文档导航只改 hash（不触发 onload）也能生效：客户端一次 `loadUrl("...#in3d&sit")` 即可。hash 片段按 token 匹配（`#in3d`/`&sit`/`&lat=`），不会被 `lat=` 之类误命中。
+> 实机注意：部分 WebView 对「仅 fragment 不同」的 `loadUrl` 不导航、也不发 `hashchange`；若客户端发现页面无反应，改用 `evaluateJavascript("location.hash='#in3d&sit'")` 即可走同一路径。
 
 ## 5. 页面 → 客户端（回调契约，D-005 / D-006）
 
@@ -136,6 +164,30 @@ python -m http.server 8765 --bind 127.0.0.1
 
 实测输出：`LCBRIDGE selfTest PASS {"pass":true,"events":3,"failures":[],"picks":2,"markersAfterTwoPicks":1}`（事件 = 2×pick + 1×pick-clear）。
 
+## 5.3 地图页控件（原版 UI 清单对应）
+
+| 按钮 | 行为 | 状态 |
+|---|---|---|
+| `指针` | 显隐 `#needle` 坐向指针（默认开） | 等价替代 |
+| `坐南朝北 / 坐北朝南` | 单按钮双标签 toggle（原版 F5：`g.x()` 布尔驱动文案）。坐南朝北 `bearing=heading`（向朝上）、坐北朝南 `bearing=heading+180`（坐朝上）、再点关闭恢复原 bearing | **等价替代**（第二态几何原版未取证；LC 多一个「关闭」态） |
+| `等高线` | 3D 着色器叠 100 m / 500 m 两级等高线（fwidth 抗锯齿）；2D 无 DEM 网格不显示 | 等价替代（原版为 WebView 图层，未取证） |
+| `贴地` | 相机距离 ×0.35 + 俯仰 60°，低机位掠过地形；关闭恢复原俯仰 | **等价替代**（原版确切行为未取证） |
+
+实景（街景）**未实现**：原版 `openStreetView` 是天地图街景还是第三方 SDK 未取证，取证前不做。
+
+**全屏**：全屏会隐藏控件栏/提示/底图信息条，但保留右下角悬浮「退出全屏」，不会出现只能重启 App 的死路。
+
+### 5.4 底图源（12 源）与审图号
+
+按原版 `AppConfig.appMapSourceList` 的 12 源顺序建模（出处见 `app/MECHANICS.md` R3b）：
+
+中科星图 / 吉林一号·全球 / 吉林一号·全国 / 世纪空间卫星 / **天地图卫星(img)** / **天地图地图(vec)** / **天地图地形(ter)** / 高德卫星 / 高德地图 / 腾讯卫星 / 腾讯地图 / 腾讯地形
+
+- 只有天地图 3 源有 key 可用；其余 9 源**置灰**并标注「需授权 / 需 key」，不放假条目（D-006）。
+- 默认源 = **天地图地形**（与现基线一致）。原版默认 `siJi_satellite`（世纪空间卫星）需授权，判「有意差异」。
+- **审图号按源绑定**：`MAP_SOURCES[i].review`，真相未核对前一律填 `"未确认"`，界面右下角常显「底图：X · 审图号：Y」。**不得照抄世纪空间/高德的号**——那是合规问题，等 LC产品 核对天地图官方号后回填。
+- 面板入口 = 控件栏「底图源」。
+
 ## 6. 截图
 
 - 3D canvas 创建时已设 `preserveDrawingBuffer:true`，页面内 `window.__LC3D.screenshot()` 可返回 `toDataURL('image/png')`。
@@ -148,11 +200,13 @@ python -m http.server 8765 --bind 127.0.0.1
 
 1. 3D 点选已可用（§5.1），但 **Java 桥未接**：真机上只有 `console.log("LC3D pick …")`，事件不会到达客户端，等轮 C 后补 `addJavascriptInterface`。
 2. 3D 不支持双指缩放（原 2D 也没有；只有按钮/滚轮）。
-2.1 俯视 0° 近景仍偏软：canvas 渲染上限 `dpr≤2.5`，该机 dpr=3.375 时被上采样 ~1.35×；且贴面为 NPOT（1536²）无法开 mipmap。M2 待办：改 POT 2048 + mipmap，或俯视时把贴面提一档（z+2）。
+2.1 俯视 0° 近景：贴面已改 **POT 2048 + mipmap + 三线性**（D-009 画质项），canvas 渲染上限 `dpr≤2.5`（该机 dpr=3.375，仍有 ~1.35× 上采样）；**真机复验待补**（无头 Chrome 已验不破图，dpr 效果需真机）。
 3. 3D 地形块固定 3×3 瓦片，转到地块外时重建立块，跨块瞬间可能有 <1 s 空窗（旧块继续渲染直到新块就绪，无白屏）。
 4. 雾把地形块边缘遮住，**地平线不是无限远**：俯仰 45° 时远处 1/3 会进雾。
 5. `ter`（地形晕渲）贴面会与自研光照叠加，建议 3D 用 `img`；是否改默认属产品决策，未改。
 6. 定速 60 fps 上限受 WebView vsync；实测见 §8。
+7. 等高线只在 3D 生效；2D 平铺瓦片没有高程网格，按钮会先切 3D。
+8. 坐南朝北/贴地是等价实现，原版行为未取证（见 §5.3）。
 
 ## 8. 验收与证据
 
@@ -173,7 +227,7 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 ## 9. 待办（下一轮）
 
 - Java 侧 `LCAndroid` 桥 + `MapMarker` 模型（客户端，轮 C 后）。
-- 俯视 0° 贴面清晰度：POT 2048 + mipmap，或俯视时贴面提一档（见 §7 2.1）。
+- 俯视 0° 贴面清晰度：POT 2048 + mipmap 已落（`d8bc53c` 之后），真机复验待补（见 §7 2.1）。
 - 双指缩放。
 - 截图链路修复（PixelCopy / toDataURL 回传），归口待技术总监定。
 - DEM 境外源是否换国内源（产品已列为待拍板项），换源只需改 `TERRARIUM` 常量与解码函数。

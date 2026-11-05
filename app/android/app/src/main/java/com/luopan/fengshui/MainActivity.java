@@ -974,6 +974,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         grid.setOrientation(LinearLayout.VERTICAL);
         grid.setPadding(dp(6), dp(6), dp(6), dp(6));
         LinearLayout row = null;
+        final android.app.AlertDialog[] dialogRef = new android.app.AlertDialog[1];
         for (int i = 0; i < tools.length; i++) {
             if (i % 4 == 0) {
                 row = new LinearLayout(this);
@@ -988,6 +989,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             b.setMinHeight(0);
             b.setMinimumHeight(0);
             b.setOnClickListener(v -> {
+                // 选中即关面板：测量/画笔等页内动作若让 dialog 留在上面会挡住地图与浮条。
+                if (dialogRef[0] != null) dialogRef[0].dismiss();
                 if ("罗盘".equals(t)) {
                     setCompassMode(true);
                 } else if ("看山脉".equals(t) && flags.isEnabled("f06")) {
@@ -1069,6 +1072,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 .setView(panel)
                 .setNegativeButton("关闭", null)
                 .create();
+        dialogRef[0] = dialog;
         flagsEntry.setOnClickListener(v -> {
             dialog.dismiss();
             startActivity(new android.content.Intent(this, FeatureFlagsActivity.class));

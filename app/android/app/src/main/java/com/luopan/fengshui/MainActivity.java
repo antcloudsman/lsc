@@ -673,6 +673,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             case "截屏": captureMap(); break;
+            case "山脉":
+                // F-06：右列入「山脉」→ MountainActivity（默认开，无门槛）；关掉回退旧 stub。
+                if (new FeatureFlags(this).isEnabled("f06")) {
+                    startActivity(new android.content.Intent(this, MountainActivity.class));
+                } else {
+                    toast(label + "：原版为工具子页，本步未实现");
+                }
+                break;
             case "读盘":
                 if (compassView != null) CompassReadSheet.show(this, compassView.getHeading());
                 break;
@@ -762,6 +770,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             b.setOnClickListener(v -> {
                 if ("罗盘".equals(t)) {
                     setCompassMode(true);
+                } else if ("看山脉".equals(t) && flags.isEnabled("f06")) {
+                    // F-06：更多 → 看山脉 → MountainActivity（默认开；关掉回退旧 stub）
+                    startActivity(new android.content.Intent(this, MountainActivity.class));
+                } else if ("看山脉".equals(t)) {
+                    toast(t + "：原版为工具子页，本步未实现");
                 } else if ("收藏点".equals(t) && flags.isEnabled("f11")) {
                     // F-11：默认开；关掉则回退旧 stub（调试/回退用）
                     startActivity(new android.content.Intent(this, InterestListActivity.class));

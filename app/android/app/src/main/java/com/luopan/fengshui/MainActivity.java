@@ -334,12 +334,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         svp.topMargin = dp(4);
         frame.addView(statusView, svp);
 
-        // 左列 8（README §4 顺序）
-        leftColumn = buildColumn(new String[]{
-                "全地图工具", "截屏", "超清优化", "海拔查询", "罗盘", "路网", "等高线", "更多"});
+        // 左列 8（README §4 顺序）。K-01 布局对齐：原版是**两段锚定**——上组 2 个（全地图工具/截屏，
+        // 间距 280）与下组 6 个（超清优化…更多，间距 186），不是单列竖直居中。中心 y 取自
+        // orig-main.xml 实测（内容帧 [0,0][1228,2578]），比例换算见 REF_CONTENT_H。
+        leftColumn = buildAnchoredColumn(new String[]{
+                "全地图工具", "截屏", "超清优化", "海拔查询", "罗盘", "路网", "等高线", "更多"},
+                new int[]{474, 754, 1412, 1598, 1784, 1970, 2156, 2342});
         FrameLayout.LayoutParams lcp = new FrameLayout.LayoutParams(
-                dp(58), FrameLayout.LayoutParams.WRAP_CONTENT);
-        lcp.gravity = android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL;
+                dp(58), FrameLayout.LayoutParams.MATCH_PARENT);
+        lcp.gravity = android.view.Gravity.START | android.view.Gravity.TOP;
         lcp.leftMargin = dp(2);
         frame.addView(leftColumn, lcp);
 
@@ -353,12 +356,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         lccp.leftMargin = dp(2);
         frame.addView(leftCompassColumn, lccp);
 
-        // 右列 10（README §4）
-        rightColumn = buildColumn(new String[]{
-                "图层", "叠加", "山脉", "水系", "探索", "指北针", "+", "−", "定位", "3D"});
+        // 右列 10（README §4）。同样是两段：上组 5 个文字钮（图层…探索，间距 186）、
+        // 下组 5 个原版大图标位（157×153，间距 153）。中心 y 同上取自 orig-main.xml。
+        rightColumn = buildAnchoredColumn(new String[]{
+                "图层", "叠加", "山脉", "水系", "探索", "指北针", "+", "−", "定位", "3D"},
+                new int[]{652, 838, 1024, 1210, 1396, 1708, 1860, 2014, 2168, 2320});
         FrameLayout.LayoutParams rcp = new FrameLayout.LayoutParams(
-                dp(58), FrameLayout.LayoutParams.WRAP_CONTENT);
-        rcp.gravity = android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL;
+                dp(58), FrameLayout.LayoutParams.MATCH_PARENT);
+        rcp.gravity = android.view.Gravity.END | android.view.Gravity.TOP;
         rcp.rightMargin = dp(2);
         frame.addView(rightColumn, rcp);
 
@@ -410,27 +415,93 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return frame;
     }
 
-    /** 一列工具按钮（左/右、地图/罗盘四套共用）。 */
+    /**
+     * 参考内容帧高度。原版 dump（`evidence/original-apk/orig-main.xml`）与本文具的 dump 根节点都是
+     * `[0,0][1228,2578]`：1228×2700 物理屏的下方 122px 是导航栏，不在应用窗口内，所以原版那组
+     * 「y=474 / 754 / 1412 … 2342」本身就是内容帧坐标。比例分母因此取 2578 而非 2700：
+     * 若按 2700 归一，本机「更多」会被放到 2342/2700×2578=2236，系统偏 −106px，直接超出 P-02
+     * 的 ±45px 容差。换分辨率时按内容帧高度等比缩放（同构）。
+     */
+    private static final float REF_CONTENT_H = 2578f;
+
+    private Button newToolButton(String label) {
+        Button b = new Button(this);
+        b.setText(label);
+        b.setTextSize(9f);
+        b.setMinHeight(0);
+        b.setMinimumHeight(0);
+        b.setPadding(0, 0, 0, 0);
+        b.setBackgroundColor(Color.argb(120, 24, 20, 16));
+        b.setTextColor(Color.rgb(235, 228, 215));
+        b.setOnClickListener(v -> onToolClick(label));
+        return b;
+    }
+
+    /** 一列工具按钮（罗盘态两列仍用它：原版罗盘态坐标未取证，保持原状不臆造）。 */
     private LinearLayout buildColumn(String[] labels) {
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         for (String label : labels) {
-            Button b = new Button(this);
-            b.setText(label);
-            b.setTextSize(9f);
-            b.setMinHeight(0);
-            b.setMinimumHeight(0);
-            b.setPadding(0, 0, 0, 0);
-            b.setBackgroundColor(Color.argb(120, 24, 20, 16));
-            b.setTextColor(Color.rgb(235, 228, 215));
+            Button b = newToolButton(label);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, dp(38));
             lp.setMargins(0, dp(2), 0, dp(2));
             b.setLayoutParams(lp);
-            b.setOnClickListener(v -> onToolClick(label));
             col.addView(b);
         }
         return col;
+    }
+
+    /** 按原版中心坐标锚定的一列（地图态左/右列）；refCenterY 单位为 REF_CONTENT_H 帧的像素。 */
+    private View buildAnchoredColumn(String[] labels, int[] refCenterY) {
+        float[] anchors = new float[labels.length];
+        for (int i = 0; i < labels.length; i++) {
+            anchors[i] = refCenterY[i] / REF_CONTENT_H;
+        }
+        RatioColumn col = new RatioColumn(this, anchors, dp(38));
+        for (String label : labels) {
+            col.addView(newToolButton(label));
+        }
+        return col;
+    }
+
+    /** 竖直方向按「按钮中心比例」摆放子 View 的容器；宽高由父布局给定（MATCH_PARENT）。 */
+    private static final class RatioColumn extends android.view.ViewGroup {
+        private final float[] anchors;
+        private final int itemH;
+
+        RatioColumn(android.content.Context c, float[] anchors, int itemH) {
+            super(c);
+            this.anchors = anchors;
+            this.itemH = itemH;
+        }
+
+        @Override
+        protected void onMeasure(int wSpec, int hSpec) {
+            int w = MeasureSpec.getSize(wSpec);
+            int h = MeasureSpec.getSize(hSpec);
+            setMeasuredDimension(w, h);
+            int cw = Math.max(0, w - getPaddingLeft() - getPaddingRight());
+            for (int i = 0; i < getChildCount(); i++) {
+                getChildAt(i).measure(
+                        MeasureSpec.makeMeasureSpec(cw, MeasureSpec.EXACTLY),
+                        MeasureSpec.makeMeasureSpec(itemH, MeasureSpec.EXACTLY));
+            }
+        }
+
+        @Override
+        protected void onLayout(boolean changed, int l, int t, int r, int b) {
+            int h = b - t;
+            int w = Math.max(0, r - l - getPaddingLeft() - getPaddingRight());
+            for (int i = 0; i < getChildCount(); i++) {
+                View ch = getChildAt(i);
+                int chH = ch.getMeasuredHeight();
+                float ratio = i < anchors.length ? anchors[i] : 0.5f;
+                int top = Math.round(ratio * h) - chH / 2;
+                top = Math.max(0, Math.min(top, h - chH));
+                ch.layout(getPaddingLeft(), top, getPaddingLeft() + w, top + chH);
+            }
+        }
     }
 
     /** 底部罗盘工具条（README §5 的 5 项，非页面导航）。 */

@@ -51,6 +51,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- F-10 历史影像（LC地图 新建页）：Esri Wayback 时相 + 本机快照 -->
+        <activity
+            android:name=".HistoryImageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".ToolsManagerActivity"
             android:exported="false"

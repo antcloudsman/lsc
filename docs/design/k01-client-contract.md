@@ -19,7 +19,7 @@
 
 ## 2 map.html 侧必须保留的行为
 
-- `setUiMode(m)`：接受 `'map'|'compass'|'full'`；隐藏/显示 `#controls`、`#hint`、`#heading-label`、`#srcInfo`、`#fsExit`；`applyNeedleVisibility()`（compass 下 `#needle` 恒 `none`）；返回 `uiMode`。
+- `setUiMode(m)`：接受 `'map'|'compass'|'full'`；隐藏/显示 `#controls`、`#hint`、`#heading-label`、`#srcInfo`、`#fsExit`；`applyNeedleVisibility()`（compass 下 `#needle` 恒 `none`）；返回 `uiMode`。**`map`/`compass` 下 `#controls` 保持 `none`，只有 `full` 才恢复**（2026-11-05 总监裁定；实现见 `map.html:373-374`，判据见 A8）。
 - `getAttribution()`：返回 `{source, review, original, equivalent, text}`；`text` 形如「数据来自天地图地形（等价替代原版世纪空间）· 审图号：未确认」。
 - `updateSrcInfo()`：底图切换时刷新 `#srcInfo`；**没有 `#srcInfo` 时，客户端截图会静默丢角注**。
 - 其它被按钮调用的函数：`rotateBearing`、`zoomIn`、`openSources`、`toggleContour`、`toggleGround`、`locate`、`toggle3D`、`setHeading`、`setSitFace`（`js()` 的 try/catch 会吞掉缺失，表现为「点了没反应」）。

@@ -1,6 +1,6 @@
 # 山水罗盘 LC · 收官报告（骨架）
 
-> 状态：**骨架，验收结论留空**（2026-11-05）。基线：`develop` = `8e1eaf8`。作者：LC产品。
+> 状态：**骨架，验收结论留空**（2026-11-05）。基线：`develop` = `6d0b9f5`。作者：LC产品。
 > 填写规则：本文件所有【待填】只由 **LC测试 的 SUMMARY**（提交号 + 设备号 + AT 用例/证据路径）转写；技术总监或实现方口头结论不写入。
 > 18 项的状态/证据/差异**唯一来源是 `00-STATUS.md`**，本文件不复制第二套状态。
 
@@ -104,7 +104,7 @@
 | 台账（唯一状态源） | `docs/features/00-STATUS.md` | 18 项实现/接线/验收/证据/差异 |
 | 真机验收 | 【待填：LC测试 SUMMARY 指向的目录/AT 用例号】 | 每轮落盘后回填 |
 | 数值门禁 | `python tests/numeric/run_all.py` | 全绿（tests 数以本轮输出为准） |
-| 文案/红线门禁 | `tests/copy/copy_gate.py`（接入 smoke） | 无门槛文案零命中 + 禁抄审图号/私有瓦片域静态检查；**当前红着（等地图改文案）**，收官前必须绿 |
+| 文案/红线门禁 | `tests/copy/copy_gate.py`（接入 smoke） | 无门槛文案零命中 + 禁抄审图号/私有瓦片域静态检查；**已绿（`6d0b9f5` 起，实跑 `COPY: PASS`）**；收官前必须保持全绿 |
 | 真机回归（旧包） | `E:\APPDetector\wt\lc-dev-regress\checks\regress-20261105\` | `SUMMARY.txt` + `sha256.txt`；`f06664f` 旧包，只能作「待复验」线索 |
 | 桌面门禁 | `scripts/build-desktop.ps1` | 构建 0 error + 1100×780 截图 |
 | Android 门禁 | `scripts/build-android.ps1` | assembleDebug + 真机冒烟无 FATAL |

@@ -109,6 +109,10 @@ var wbRelease = "";            // Wayback 释放号（来自 waybackconfig.json�
 var baseBeforeWb = null;       // 进入历史影像前的底图
 /* F-02 瓦片内存缓存：命中时用 dataURL，不再走网络（Java 侧拼接还有磁盘缓存） */
 var tileCacheOn = false, tileCache = {}, tileCacheKeys = [], TILE_CACHE_MAX = 160;
+/* F-12 测量 / F-13 画笔 */
+var measure = { on: false, area: false, pts: [] };
+var paint = { on: false, color: "#ff5500", width: 4, strokes: [], cur: null };
+var ovSvgEl = null;
 var mode = "2d";               // 2d | 3d
 var bearing = 0;               // 地图旋转角
 var pitch = 45;                // 3D 俯仰 0(俯视)–60°
@@ -185,6 +189,7 @@ function render() {
   fillLayer(baseLayer, base, x0, x1, y0, y1, tx, ty, n);
   fillLayer(annoLayer, anno, x0, x1, y0, y1, tx, ty, n);
   updateOverlay(null);
+  renderOverlays();
 }
 
 function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
@@ -236,6 +241,291 @@ function enableTileCache(on) {
   emit({ type: "cache", on: tileCacheOn, count: tileCacheKeys.length });
   console.log("LC3D cache on=" + tileCacheOn);
   return tileCacheOn;
+}
+
+/* ---- F-12 测量 / F-13 画笔 ------------------------------------------------
+ * 测量：多点折线累计 Haversine 里程；闭合多边形球面面积。
+ * 画笔：手指/鼠标轨迹，点存经纬度（与瓦片分离、不参与 DEM 拾取），按视角投影回屏幕。
+ * 事件：measure / measure-clear / paint / paint-clear / paint-undo。
+ * hash：&measure=dist|area、&paint。
+ * ------------------------------------------------------------------------- */
+var SVGNS = "http://www.w3.org/2000/svg";
+
+function ensureSvg() {
+  if (ovSvgEl) return ovSvgEl;
+  ovSvgEl = document.createElementNS(SVGNS, "svg");
+  ovSvgEl.setAttribute("id", "ovSvg");
+  ovSvgEl.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;";
+  mapEl.appendChild(ovSvgEl);
+  return ovSvgEl;
+}
+
+function screenPointOf(lat, lng) {
+  var w = mapEl.clientWidth, h = mapEl.clientHeight;
+  if (mode === "3d") {
+    if (!lastVP || !patch) return null;
+    var wp = lonLatToWorld(lat, lng);
+    if (!wp) return null;
+    var v = projectPoint(wp, lastVP);
+    if (!v || v.z < -1 || v.z > 1) return null;
+    return { x: (v.x * 0.5 + 0.5) * w, y: (0.5 - v.y * 0.5) * h };
+  }
+  var c = lonLatToTile(center.lng, center.lat, zoom);
+  var t = lonLatToTile(lng, lat, zoom);
+  return { x: (t.x - c.x) * 256 + w / 2, y: (t.y - c.y) * 256 + h / 2 };
+}
+
+/* 3D 屏幕点 → 地形经纬度（与 pick3D 同一套射线/DEM 求交；失败返回 null） */
+function demIntersectScreen(sx, sy) {
+  if (!patch || !patch.mesh || !lastVP) return null;
+  var ray = screenRay(sx, sy);
+  if (!ray) return null;
+  var maxT = lastD * 4;
+  var step = Math.max(15, patch.mpp * 1.5);
+  var above = -1, below = -1, t;
+  for (t = 0; t <= maxT; t += step) {
+    var px = ray.o.x + ray.d.x * t, py = ray.o.y + ray.d.y * t, pz = ray.o.z + ray.d.z * t;
+    var g = worldToDem(px, pz);
+    if (!g) continue;
+    var hh = demAt(patch.z, g.gx, g.gy) * VEXAG;
+    if (py > hh) above = t;
+    else { below = t; if (above < 0) above = 0; break; }
+  }
+  if (below < 0) return null;
+  for (var i = 0; i < 24; i++) {
+    var tm = (above + below) / 2;
+    var mx = ray.o.x + ray.d.x * tm, my = ray.o.y + ray.d.y * tm, mz = ray.o.z + ray.d.z * tm;
+    var gm = worldToDem(mx, mz);
+    if (!gm) break;
+    var hm = demAt(patch.z, gm.gx, gm.gy) * VEXAG;
+    if (my > hm) above = tm; else below = tm;
+  }
+  var th = (above + below) / 2;
+  var gh = worldToDem(ray.o.x + ray.d.x * th, ray.o.z + ray.d.z * th);
+  if (!gh) return null;
+  var n = Math.pow(2, patch.z);
+  return { lng: gh.gx / 256 / n * 360 - 180, lat: tileYToLat(gh.gy / 256, patch.z) };
+}
+
+function latLngOfScreen(sx, sy) {
+  if (mode !== "3d") {
+    var w = mapEl.clientWidth, h = mapEl.clientHeight;
+    var c = lonLatToTile(center.lng, center.lat, zoom);
+    var tx = c.x + (sx - w / 2) / 256, ty = c.y + (sy - h / 2) / 256;
+    var n = Math.pow(2, zoom);
+    return { lat: tileYToLat(ty, zoom), lng: tx / n * 360 - 180 };
+  }
+  return demIntersectScreen(sx, sy);
+}
+
+function haversineM(a, b) {
+  var R = 6371008.8;
+  var dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180;
+  var s = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+function measureStats() {
+  var pts = measure.pts, d = 0, a = 0;
+  for (var i = 1; i < pts.length; i++) d += haversineM(pts[i - 1], pts[i]);
+  if (measure.area && pts.length >= 3) {
+    /* 局部 ENU 平面 + 鞋带公式：测量都是小区域（<几十 km），比球面多边形公式稳且好验。 */
+    var R = 6371008.8;
+    var lat0 = pts[0].lat * Math.PI / 180;
+    var xy = [];
+    for (var k = 0; k < pts.length; k++) {
+      var dlng = (pts[k].lng - pts[0].lng) * Math.PI / 180;
+      var dlat = (pts[k].lat - pts[0].lat) * Math.PI / 180;
+      xy.push([R * dlng * Math.cos(lat0), R * dlat]);
+    }
+    var s2 = 0;
+    for (var j = 0; j < xy.length; j++) {
+      var p = xy[j], q = xy[(j + 1) % xy.length];
+      s2 += p[0] * q[1] - q[0] * p[1];
+    }
+    a = Math.abs(s2) / 2;
+  }
+  return { distanceM: d, areaM2: a };
+}
+
+function fmtDist(m) { return m < 1000 ? Math.round(m) + " m" : (m / 1000).toFixed(2) + " km"; }
+function fmtArea(a) {
+  var base = a < 1e6 ? Math.round(a) + " m²" : (a / 1e6).toFixed(2) + " km²";
+  return base + "（" + (a / 666.6667).toFixed(1) + " 亩）";
+}
+
+function measureEmit() {
+  var s = measureStats();
+  emit({
+    type: "measure", mode: measure.area ? "area" : "distance",
+    points: measure.pts.length,
+    distanceM: Math.round(s.distanceM), areaM2: Math.round(s.areaM2),
+    text: measure.area ? fmtArea(s.areaM2) : fmtDist(s.distanceM)
+  });
+}
+
+function measureAdd(lat, lng) {
+  measure.pts.push({ lat: lat, lng: lng });
+  measureEmit();
+  renderOverlays();
+}
+
+function renderOverlays() {
+  var svg = ensureSvg();
+  var w = mapEl.clientWidth, h = mapEl.clientHeight;
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  if (measure.pts.length) {
+    var P = [];
+    for (var i = 0; i < measure.pts.length; i++) {
+      var p = screenPointOf(measure.pts[i].lat, measure.pts[i].lng);
+      if (p) P.push(p);
+    }
+    if (P.length >= 2) {
+      var poly = document.createElementNS(SVGNS,
+        (measure.area && P.length >= 3) ? "polygon" : "polyline");
+      poly.setAttribute("points", P.map(function (q) { return q.x.toFixed(1) + "," + q.y.toFixed(1); }).join(" "));
+      poly.setAttribute("fill", (measure.area && P.length >= 3) ? "rgba(255,200,80,0.18)" : "none");
+      poly.setAttribute("stroke", "#ffcc55");
+      poly.setAttribute("stroke-width", "2");
+      svg.appendChild(poly);
+    }
+    for (var k = 0; k < P.length; k++) {
+      var c = document.createElementNS(SVGNS, "circle");
+      c.setAttribute("cx", P[k].x);
+      c.setAttribute("cy", P[k].y);
+      c.setAttribute("r", "3");
+      c.setAttribute("fill", "#fff");
+      c.setAttribute("stroke", "#ffcc55");
+      svg.appendChild(c);
+    }
+  }
+
+  for (var s = 0; s < paint.strokes.length; s++) {
+    var st = paint.strokes[s];
+    if (!st.pts || st.pts.length < 2) continue;
+    var d = "";
+    for (var q = 0; q < st.pts.length; q++) {
+      var pp = screenPointOf(st.pts[q].lat, st.pts[q].lng);
+      if (!pp) continue;
+      d += (d ? "L" : "M") + pp.x.toFixed(1) + " " + pp.y.toFixed(1) + " ";
+    }
+    if (!d) continue;
+    var path = document.createElementNS(SVGNS, "path");
+    path.setAttribute("d", d);
+    path.setAttribute("stroke", st.color);
+    path.setAttribute("stroke-width", st.width);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    svg.appendChild(path);
+  }
+}
+
+/* ---- F-12 API ---- */
+function lc_measure_start(mode) {
+  measure.on = true;
+  measure.area = (mode === "area" || mode === true);
+  measure.pts = [];
+  measureEmit();
+  renderOverlays();
+  console.log("LC3D measure start mode=" + (measure.area ? "area" : "distance"));
+  return true;
+}
+function lc_measure_clear() {
+  var was = measure.on;
+  measure.on = false;
+  measure.area = false;
+  measure.pts = [];
+  renderOverlays();
+  emit({ type: "measure-clear" });
+  console.log("LC3D measure clear was=" + was);
+}
+function lc_measure_undo() {
+  if (measure.pts.length) { measure.pts.pop(); measureEmit(); renderOverlays(); }
+}
+
+/* ---- F-13 API ---- */
+function paintStart(cx, cy) {
+  if (!paint.on) return;
+  var rect = mapEl.getBoundingClientRect();
+  var ll = latLngOfScreen(cx - rect.left, cy - rect.top);
+  if (!ll) return;
+  paint.cur = { color: paint.color, width: paint.width, pts: [ll] };
+  paint.strokes.push(paint.cur);
+  renderOverlays();
+}
+function paintMove(cx, cy) {
+  if (!paint.on || !paint.cur) return;
+  var rect = mapEl.getBoundingClientRect();
+  var ll = latLngOfScreen(cx - rect.left, cy - rect.top);
+  if (!ll) return;
+  var last = paint.cur.pts[paint.cur.pts.length - 1];
+  if (last && haversineM(last, ll) < 0.5) return;
+  paint.cur.pts.push(ll);
+  renderOverlays();
+}
+function paintEnd() {
+  if (!paint.cur) return;
+  if (paint.cur.pts.length < 2) paint.strokes.pop();
+  paint.cur = null;
+  emit({ type: "paint", on: paint.on, strokes: paint.strokes.length, color: paint.color, width: paint.width });
+  renderOverlays();
+}
+function lc_draw_start() {
+  paint.on = true;
+  emit({ type: "paint", on: true, strokes: paint.strokes.length, color: paint.color, width: paint.width });
+  console.log("LC3D paint start");
+  return true;
+}
+function lc_draw_end() {
+  paint.on = false;
+  paint.cur = null;
+  renderOverlays();
+  emit({ type: "paint", on: false, strokes: paint.strokes.length, color: paint.color, width: paint.width });
+}
+function lc_draw_style(color, width) {
+  if (color) paint.color = String(color);
+  if (width) paint.width = Math.max(1, Math.min(24, Number(width) || 4));
+  emit({ type: "paint", on: paint.on, strokes: paint.strokes.length, color: paint.color, width: paint.width });
+  return { color: paint.color, width: paint.width };
+}
+function lc_draw_undo() {
+  if (paint.strokes.length) paint.strokes.pop();
+  renderOverlays();
+  emit({ type: "paint-undo", strokes: paint.strokes.length });
+}
+function lc_draw_clear() {
+  paint.strokes = [];
+  paint.cur = null;
+  renderOverlays();
+  emit({ type: "paint-clear" });
+}
+function lc_draw_export() {
+  var w = mapEl.clientWidth, h = mapEl.clientHeight;
+  var body = "";
+  for (var s = 0; s < paint.strokes.length; s++) {
+    var st = paint.strokes[s];
+    if (!st.pts || st.pts.length < 2) continue;
+    var d = "";
+    for (var q = 0; q < st.pts.length; q++) {
+      var pp = screenPointOf(st.pts[q].lat, st.pts[q].lng);
+      if (!pp) continue;
+      d += (d ? "L" : "M") + pp.x.toFixed(1) + " " + pp.y.toFixed(1) + " ";
+    }
+    if (d) body += '<path d="' + d + '" stroke="' + st.color + '" stroke-width="' + st.width +
+      '" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+  var svg = '<svg xmlns="' + SVGNS + '" width="' + w + '" height="' + h + '">' + body + "</svg>";
+  try {
+    return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
+  } catch (e) {
+    return "";
+  }
 }
 
 function setBase(b) {
@@ -730,15 +1020,18 @@ function pan(dxPx, dyPx) {
 }
 
 mapEl.addEventListener("mousedown", function (e) {
+  if (paint.on) { paintStart(e.clientX, e.clientY); return; }
   dragging = true; lastX = e.clientX; lastY = e.clientY; totalMove = 0;
 });
 window.addEventListener("mousemove", function (e) {
+  if (paint.on) { paintMove(e.clientX, e.clientY); return; }
   if (!dragging) return;
   totalMove += Math.abs(e.clientX - lastX) + Math.abs(e.clientY - lastY);
   pan(lastX - e.clientX, lastY - e.clientY);
   lastX = e.clientX; lastY = e.clientY;
 });
 window.addEventListener("mouseup", function () {
+  if (paint.on) { paintEnd(); return; }
   if (Date.now() - lastTouchTs < 800) { dragging = false; return; }
   if (dragging && totalMove < 6) placeMarker(lastX, lastY);
   dragging = false;
@@ -749,6 +1042,13 @@ mapEl.addEventListener("wheel", function (e) {
 });
 
 function placeMarker(x, y) {
+  if (paint.on) return;                       /* F-13：绘制中不吃点击 */
+  if (measure.on) {                           /* F-12：测量打点 */
+    var rect = mapEl.getBoundingClientRect();
+    var ll = latLngOfScreen(x - rect.left, y - rect.top);
+    if (ll) measureAdd(ll.lat, ll.lng);
+    return;
+  }
   if (mode === "3d") { pick3D(x, y); return; }
   var rect = mapEl.getBoundingClientRect();
   var mk = document.createElement("div");
@@ -783,11 +1083,19 @@ function locate() {
 /* Touch */
 var touchStart = null;
 mapEl.addEventListener("touchstart", function (e) {
+  if (paint.on && e.touches.length === 1) {
+    paintStart(e.touches[0].clientX, e.touches[0].clientY);
+    return;
+  }
   if (e.touches.length === 1) {
     touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, moved: 0 };
   }
 }, { passive: true });
 mapEl.addEventListener("touchmove", function (e) {
+  if (paint.on && e.touches.length === 1) {
+    paintMove(e.touches[0].clientX, e.touches[0].clientY);
+    return;
+  }
   if (e.touches.length === 1 && touchStart) {
     var dx = e.touches[0].clientX - touchStart.x;
     var dy = e.touches[0].clientY - touchStart.y;
@@ -799,6 +1107,7 @@ mapEl.addEventListener("touchmove", function (e) {
 }, { passive: true });
 mapEl.addEventListener("touchend", function () {
   lastTouchTs = Date.now();
+  if (paint.on) { paintEnd(); touchStart = null; return; }
   if (touchStart && touchStart.moved < 8) placeMarker(touchStart.x, touchStart.y);
   touchStart = null;
 });
@@ -1614,6 +1923,7 @@ function render3D() {
   }
   updatePickMarker(vp);
   updateOverlay(vp);
+  renderOverlays();
 }
 
 /* ---- HUD ---- */
@@ -1668,6 +1978,15 @@ function getState() {
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind,
     wayback: wbOn, waybackRelease: wbRelease,
     cache: tileCacheOn, cacheCount: tileCacheKeys.length,
+    measure: (function () {
+      var s = measureStats();
+      return {
+        on: measure.on, mode: measure.area ? "area" : "distance",
+        points: measure.pts.length,
+        distanceM: Math.round(s.distanceM), areaM2: Math.round(s.areaM2)
+      };
+    })(),
+    paint: { on: paint.on, strokes: paint.strokes.length, color: paint.color, width: paint.width },
     uiMode: uiMode,
     attribution: getAttribution(),
     source: (MAP_SOURCES[srcIndex] ? MAP_SOURCES[srcIndex].name : "")
@@ -1803,7 +2122,7 @@ render();
 applyUiModeHash(location.hash);
 
 /* 客户端入口：map.html#in3d → 直接进 3D（3D 桥对拍用，免去点按钮）
- * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge
+ * 可选：&lat=..&lng=..&z=..&pitch=..&bearing=..&contour&ground&sit&uimode=map|compass&roadnet&ridge&measure=dist|area&paint
  * 页面初始化与 hashchange 都会应用，所以客户端一次 `loadUrl(...#in3d&sit)` 即可生效
  * （同文档导航只改 hash、不触发 onload 的情况也覆盖）。 */
 function hashHas(h, name) {
@@ -1844,6 +2163,9 @@ function applyIn3D(hash) {
     if (hashHas(h, "ridge") && !ridgeOn) setRidge(true);
     var mwb = h.match(/[&#]wayback=([\w-]+)/);
     if (mwb) setWayback(true, mwb[1]);
+    var mm = h.match(/[&#]measure=(dist|area)/);
+    if (mm) lc_measure_start(mm[1] === "area" ? "area" : "distance");
+    if (hashHas(h, "paint")) lc_draw_start();
     if (hashHas(h, "fs") && !fullScreen) toggleFullScreen();
     var msi = h.match(/src=(\d+)/);
     if (msi) selectSource(parseInt(msi[1], 10));
@@ -1901,7 +2223,10 @@ function runAT() {
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
     "getState", "getFps", "setUiMode", "getAttribution", "setRoadNet",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
-    "setWayback", "setWaybackRelease", "enableTileCache"];
+    "setWayback", "setWaybackRelease", "enableTileCache",
+    "lc_measure_start", "lc_measure_clear", "lc_measure_undo",
+    "lc_draw_start", "lc_draw_end", "lc_draw_style", "lc_draw_undo", "lc_draw_clear",
+    "lc_draw_export"];
   var missing = [];
   for (var ai = 0; ai < api.length; ai++) {
     if (typeof window[api[ai]] !== "function") missing.push(api[ai]);

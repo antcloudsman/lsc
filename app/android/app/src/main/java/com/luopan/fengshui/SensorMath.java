@@ -22,6 +22,12 @@ public final class SensorMath {
         return normalize(raw + (trueNorth ? decl : 0f));
     }
 
+    /** B-05 预留：罗盘持久偏移量合成（`heading = normalize(azimuth + offset)`）。
+     *  UI 未接入，仅供 `SensorMathProbe` 的两条 JVM 断言；纯函数、无 android 依赖。 */
+    public static float applyOffset(float azimuth, float offset) {
+        return normalize(azimuth + offset);
+    }
+
     /** Device tilt from horizontal (deg). 0/0 -> 0, 10/0 -> 10, 10/10 -> 14.1. */
     public static float tiltDegrees(float pitchDeg, float rollDeg) {
         double c = Math.cos(Math.toRadians(pitchDeg)) * Math.cos(Math.toRadians(rollDeg));

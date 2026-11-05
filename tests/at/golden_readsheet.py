@@ -10,18 +10,32 @@
 import json
 import math
 import os
+import struct
 import sys
 from decimal import Decimal, ROUND_HALF_UP
 
 
+def f32(x):
+    """收窄成 Java float（float32）。App 里 heading/h/back 都是 float。"""
+    return struct.unpack("<f", struct.pack("<f", float(x)))[0]
+
+
 def norm(x):
-    x = x % 360.0
+    """对齐 SensorMath.normalize(float)：先 float32 再取模，结果仍是 float32。"""
+    x = f32(f32(x) % 360.0)
+    if x < 0.0:
+        x = f32(x + 360.0)
     return x
 
 
 def jfmt1(x):
-    """Java String.format("%.1f") 是 HALF_UP，python round 是 half-even，这里对齐 Java。"""
-    return str(Decimal(repr(float(x))).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+    """对齐 Java String.format(Locale.US, "%.1f", float←double 提升)。
+
+    Java 先把 float 精确提升为 double，再按该精确二进制值的十进制展开做 HALF_UP；
+    所以这里必须用 Decimal(float32 值) 的**精确**十进制，而不是 Decimal(repr(double))
+    （F-16：1.15f 实际是 1.14999997615814208984375，Java 得 1.1，字面值得 1.2）。
+    """
+    return str(Decimal(f32(x)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
 
 
 def ring_index(ring, h):
@@ -38,9 +52,12 @@ def clean(s):
 def golden(heading, mech):
     rings = mech["rings"]
     mountains = mech["tables"]["mountains"]
-    h = norm(heading)
-    back = norm(heading + 180.0)
-    m = int(math.floor(norm(h + 7.5) / 15.0)) % 24
+    # CompassReadSheet.show(float heading)：h/back 都是 float32；back 用**原始** heading+180f
+    raw = f32(heading)
+    h = norm(raw)
+    back = norm(f32(raw + 180.0))
+    # CompassData.Reading：m = floor(norm(h + 7.5f) / 15f) % 24（float 运算）
+    m = int(math.floor(f32(norm(f32(h + 7.5)) / 15.0))) % 24
     sitting = (m + 12) % 24
     rows = []
     for i in range(14):

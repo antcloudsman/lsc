@@ -53,8 +53,9 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 # 校验：文件 >10KB、尺寸 1228×2700
 ```
 
-- 基线参考：`docs/qa/baseline-android/round-d5/`（D5 后重冻，见其 `manifest.md` 与
-  `SHA256SUMS.txt`；旧 `docs/qa/baseline-android/` 为 02:56 版，不要再用）。
+- 基线参考：`docs/qa/baseline-android/round-k01/`（K-01 单页基线，见其 `manifest.md` 与
+  `SHA256SUMS.txt`）；`round-d5/` 为 K-01 前三 Tab 基线，**已作废**，仅历史对照；
+  更早的根目录 `docs/qa/baseline-android/`（02:56 版）不要再用。
 - 截图航向是**设备实际值**（基线为 273.85°），不是注入值；做像素 diff 必须同一航向、
   同一 P0-1 开关态，否则会全红。
 - 本轮冻结物里 `logcat.txt` 不入库（日志），证据放 `checks/qa-baseline-d5/logcat.txt`。
@@ -62,7 +63,8 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 ## 5. 本轮已知未完成
 
 - 知识页 dump 在 D5 后失败一次，未收录；需要时按 §1 先清远程文件、在知识页等 2s 再试。
-- AT-P0-0 的「P0-1 总开关全关」变体基线已补：`round-d5/variant-p01/`
+- AT-P0-0 的「P0-1 总开关全关」变体基线：`round-d5/variant-p01/` 随三 Tab 布局**作废**；
+  K-01 后需在 `round-k01/` 按「单页 + 罗盘浮层」重采（见 `docs/qa/k-01-pending.md` P-04/P-05）。
   （同 87654af 构建、同航向 273.85°、on/off 同会话；见其 `manifest.md`）。
 
 ## 6. adb 调试广播的 shell 吃参数坑（2026-11-05 客户端实测）
@@ -92,6 +94,11 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
   同一包上 `--es cmd js --es value '1+1'` 返回 `LCJS mapView -> 2`，通道一直是活的。
 - **教训**：`result=0`、`Broadcast Records`、`Registered Receivers` 三段证据要一起看，
   且先发一条 `js 1+1` 当「通道探针」；别用一条缺 `cmd` 的广播去推断 receiver 死了。
+- **本机 `am` 只认 `--ef`，不认 `--ed`**（2026-11-05 总监实测，报 `Unknown option: --ed`）：
+  所有坐标/浮点注入一律写 `--ef`，例如 `--es cmd heading --ef value 90.0`；
+  经纬度参数写 `lc_lat=<纬度> lc_lng=<经度>`，别把经度填进纬度的位（会越界黑屏）。
+  全树已 grep 确认**零处 `--ed`**（`docs/qa`、`tests/at` 与全部 `.md/.ps1/.py` 均 0 命中），
+  今后新增示例不得引入。
 
 
 

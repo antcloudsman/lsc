@@ -6,7 +6,7 @@ import java.util.Locale;
  * P0-1 JVM 探针：只测 `SensorMath`（纯静态、无 android.* 依赖）。
  * 由 `tests/numeric/test_sensor_math.py` 调用；不进入 APK。
  *
- * 输出（ASCII）：tilt / clamp / decl 三行，全部用 Locale.ROOT。
+ * 输出（ASCII）：tilt / clamp / decl / offset 四行，全部用 Locale.ROOT。
  */
 public final class SensorMathProbe {
 
@@ -23,5 +23,9 @@ public final class SensorMathProbe {
                 SensorMath.applyDeclination(359.99f, -7.5f, true),
                 SensorMath.applyDeclination(0f, 5f, false),
                 SensorMath.applyDeclination(94f, 5f, true));
+        // B-05：持久偏移量合成（归一化回绕），纯函数，JVM 可直接断言。
+        System.out.printf(Locale.ROOT, "offset %.1f %.1f%n",
+                SensorMath.applyOffset(350f, 180f),
+                SensorMath.applyOffset(0f, 180f));
     }
 }

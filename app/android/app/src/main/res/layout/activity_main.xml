@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- K-01: 原版没有底部导航（证据 docs/evidence/original-apk/README.md §4/§5）。
+     这里只留全屏内容容器；主界面为单页地图 + 罗盘浮层，工具列在 MainActivity.buildSinglePage() 内。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,43 +10,5 @@
     <FrameLayout
         android:id="@+id/content"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <LinearLayout
-        android:id="@+id/bottom_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="@color/panel"
-        android:paddingTop="6dp"
-        android:paddingBottom="6dp">
-
-        <Button
-            android:id="@+id/tab_compass"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/tab_compass"
-            android:textColor="@color/text_primary"
-            android:background="@android:color/transparent" />
-
-        <Button
-            android:id="@+id/tab_map"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/tab_map"
-            android:textColor="@color/text_primary"
-            android:background="@android:color/transparent" />
-
-        <Button
-            android:id="@+id/tab_knowledge"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/tab_knowledge"
-            android:textColor="@color/text_primary"
-            android:background="@android:color/transparent" />
-    </LinearLayout>
+        android:layout_height="match_parent" />
 </LinearLayout>

@@ -15,7 +15,7 @@ import android.view.View;
 public class CompassView extends View {
 
     private float heading = 0f;
-    private int dialType = 1; // 0..4 (常用罗盘 default)
+    private int dialType = 0; // 0..4（默认 0 = 线稿盘，与 MainActivity 的 dial_index 默认一致）
 
     public void setTrustEnabled(boolean enabled) {
         this.trustEnabled = enabled;
@@ -28,6 +28,49 @@ public class CompassView extends View {
     }
     private boolean followSensor = true;
     private boolean trustEnabled = false;
+    /** K-01：罗盘浮层自己的北针开关（地图层 #needle 不归这里管）。 */
+    private boolean showPointer = true;
+    /** B-05：座向翻转/手动修正的持久偏移量（不改 followSensor，传感器继续更新）。 */
+    private float headingOffset = 0f;
+    /** B-05：未超过 touch slop 的按下不算「拖动」，不得切手动。 */
+    private float downX = 0f, downY = 0f;
+    private boolean moving = false;
+    private final int touchSlop =
+            android.view.ViewConfiguration.get(getContext()).getScaledTouchSlop();
+
+    /** B-05：持久偏移量——合成走 `SensorMath.applyOffset(azimuth, offset)`，仍跟随传感器。
+     *  **预留 API：UI 未接入**（「反盘」按钮随 K-01 删除，原版无该控件），当前只供 JVM 断言；
+     *  不要把它当成活的验收路径。 */
+    public void setHeadingOffset(float deg) {
+        headingOffset = normalize(deg);
+        if (followSensor) invalidate();
+        notifyHeadingChanged();
+    }
+
+    public float getHeadingOffset() {
+        return headingOffset;
+    }
+
+    /** 「罗盘锁定」＝独立的冻结开关（原版左列单独一项，不兼职翻坐向）。 */
+    public void setFollowSensor(boolean follow) {
+        this.followSensor = follow;
+        invalidate();
+        notifyHeadingChanged();
+    }
+
+    public boolean isFollowingSensor() {
+        return followSensor;
+    }
+
+    /** 罗盘模式「指针开关」：只影响浮层自绘北针，不触发 followSensor 变化。 */
+    public void setShowPointer(boolean on) {
+        this.showPointer = on;
+        invalidate();
+    }
+
+    public boolean isShowPointer() {
+        return showPointer;
+    }
     /** P0-2: full artwork dial (null = vector mode). */
     private android.graphics.Bitmap artwork;
 
@@ -56,7 +99,12 @@ public class CompassView extends View {
         canvas.rotate(-heading, cx, cy);
         float d = r * 2f;
         android.graphics.RectF dst = new android.graphics.RectF(cx - d / 2f, cy - d / 2f, cx + d / 2f, cy + d / 2f);
-        canvas.drawBitmap(artwork, null, dst, paint);
+        // K-01 face：盘面＝原版位图本身，按位图 alpha 合成，不做任何整盘填充/底色。
+        // dial_full_1 实测 alpha=0 占 21.4%（透明处透出地图）、alpha=255 占 78.5%；dial_full_0 透明 81.8%。
+        android.graphics.Paint bmp = new android.graphics.Paint(
+                android.graphics.Paint.ANTI_ALIAS_FLAG | android.graphics.Paint.FILTER_BITMAP_FLAG);
+        bmp.setAlpha(255);
+        canvas.drawBitmap(artwork, null, dst, bmp);
         canvas.restore();
     }
 
@@ -98,24 +146,24 @@ public class CompassView extends View {
 
     public void setSensorHeading(float azimuth) {
         if (followSensor) {
-            heading = azimuth;
+            // B-05：偏移量参与合成，翻转座向不再需要冻结传感器。
+            heading = SensorMath.applyOffset(azimuth, headingOffset);
             invalidate();
         }
     }
 
     public void reset() {
         followSensor = true;
+        headingOffset = 0f;
+        moving = false;
         heading = 0f;
         invalidate();
         notifyHeadingChanged();
     }
 
-    public void setHeadingManually(float h) {
-        followSensor = false;
-        heading = normalize(h);
-        invalidate();
-        notifyHeadingChanged();
-    }
+    // B-05：原 setHeadingManually() 已删除——它把「设置朝向」和「冻结传感器」捆在一起，
+    // 是「点一下/翻一次就永久退出跟随」的入口。手动修正走 setHeadingOffset()（保持跟随），
+    // 冻结只允许走 setFollowSensor(false)（罗盘锁定，独立控件）。
 
     private static float normalize(float d) {
         float x = d % 360f;
@@ -127,14 +175,37 @@ public class CompassView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         float cx = getWidth() / 2f;
         float cy = getHeight() / 2f;
+        float r = Math.min(cx, cy) - 8f;
+        // K-01：只消费圆内触摸，圆外交给下层地图（地图拖动/缩放不被浮层吃掉）。
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            float dx = event.getX() - cx;
+            float dy = event.getY() - cy;
+            if (dx * dx + dy * dy > r * r) {
+                return false;
+            }
+        }
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                // B-05：按下只记起点，**不**切手动；单击/误触不再永久冻结罗盘。
                 dragging = true;
-                followSensor = false;
+                moving = false;
+                downX = event.getX();
+                downY = event.getY();
                 lastAngle = (float) Math.toDegrees(Math.atan2(event.getY() - cy, event.getX() - cx));
                 return true;
             case MotionEvent.ACTION_MOVE:
                 if (dragging) {
+                    if (!moving) {
+                        float dx = event.getX() - downX;
+                        float dy = event.getY() - downY;
+                        if (dx * dx + dy * dy > touchSlop * touchSlop) {
+                            moving = true;
+                            followSensor = false;   // 只有真正的拖动才退出跟随
+                        }
+                    }
+                    if (!moving) {
+                        return true;                 // slop 内的抖动不转盘、不改状态
+                    }
                     float a = (float) Math.toDegrees(Math.atan2(event.getY() - cy, event.getX() - cx));
                     float delta = a - lastAngle;
                     if (delta > 180f) delta -= 360f;
@@ -148,6 +219,7 @@ public class CompassView extends View {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 dragging = false;
+                moving = false;
                 return true;
         }
         return super.onTouchEvent(event);
@@ -160,13 +232,10 @@ public class CompassView extends View {
         float cy = getHeight() / 2f;
         float r = Math.min(cx, cy) - 8f;
 
-        int bg = Color.argb(210, 24, 20, 16);
         int gold = Color.rgb(220, 190, 130);
 
-        // Face.
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(bg);
-        canvas.drawCircle(cx, cy, r, paint);
+        // K-01 face：实测无整盘填充（measurements.md：填充 α 上界 0.15、下界 0.00），
+        // 原版是线稿叠在地图上，这里不再铺 argb(210) 的实心圆，只保留外圈描边。
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2f);
         paint.setColor(gold);
@@ -282,7 +351,11 @@ public class CompassView extends View {
         paint.setColor(Color.rgb(200, 40, 40));
         paint.setStyle(Paint.Style.FILL);
         float top = cy - r;
-        canvas.drawPath(triangle(cx, top, 10f), paint);
+        // K-01 / map-bridge §10.3：罗盘模式的「指针开关」由这里承担（两针分离）；
+        // 地图层的 #needle 仍由 toggleNeedle() 管，这里只关/开本浮层的北针（红三角）。
+        if (showPointer) {
+            canvas.drawPath(triangle(cx, top, 10f), paint);
+        }
 
         // Center readout.
         CompassData.Reading rd = CompassData.read(heading);
@@ -322,7 +395,19 @@ public class CompassView extends View {
     }
 
     private void drawText(Canvas canvas, String s, float x, float y, Paint p) {
-        canvas.drawText(s, x, y - (p.ascent() + p.descent()) / 2f, p);
+        float by = y - (p.ascent() + p.descent()) / 2f;
+        // K-01 可读性：measurements.md 记录原版线稿是「白字/灰线/黑描边」。
+        // 删掉整盘填充后白字直接压在地形上会糊，这里先描 2px 深色再填字，属还原不是新增。
+        Paint.Style style = p.getStyle();
+        int color = p.getColor();
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(2f);
+        p.setColor(Color.argb(200, 0, 0, 0));
+        canvas.drawText(s, x, by, p);
+        p.setStyle(style);
+        p.setColor(color);
+        p.setStrokeWidth(1f);
+        canvas.drawText(s, x, by, p);
     }
 
     private static android.graphics.Path triangle(float cx, float top, float half) {

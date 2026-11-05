@@ -38,6 +38,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# P2-08 顶部两行判定（F-06）：独立成库，单测在 test-readsheet-head.ps1
+. (Join-Path $PSScriptRoot 'lib\ReadSheetHead.ps1')
+
 # ---- 自包含（不依赖未入库的脚手架文件）----
 $script:LcPkg = 'com.luopan.fengshui'
 $script:LcDebugAction = 'com.luopan.fengshui.DEBUG'
@@ -437,14 +440,12 @@ if ($ui.ok) {
 }
 else { Assert3 'SW-006-off-1' 'BLOCKED' '罗盘页' 'dump 失败' }
 
-# ---------- 4. 面板区裁剪 diff（诊断，不门禁）----------
-$refOff = Join-Path $repo 'docs\qa\baseline-android\round-d5\variant-p01\compass-p01-off.png'
-if ((Test-Path $refOff) -and (Test-Path (Join-Path $OutDir 'cw-off.png'))) {
-    $helper = Join-Path $repo 'tests\numeric\tools\img_diff.py'
-    $line = & python $helper $refOff (Join-Path $OutDir 'cw-off.png') 0 1850 1228 2500
-    Log "pixel(diagnostic) 面板区 y1850-2500: $line"
-    Assert3 'SW-006-off-3pix' 'DIAGNOSTIC' '面板区裁剪 diff（活地图污染，不作门禁）' "$line" ''
-}
+# ---------- 4. SW-006 第 4 条：面板区裁剪 diff（K-01 后暂停）----------
+# 旧窗 y1850-2500 与旧参考 round-d5/variant-p01 都按三 Tab + 底部面板量出；
+# K-01 单页 + 罗盘浮层后两者都失效。新窗/新参考在 round-k01 重冻后回填
+# （登记在 docs/qa/k-01-pending.md；旧窗不得再用于判 PASS）。
+Log "SW-006-4: SUSPENDED（旧窗 y1850-2500 与旧参考随 K-01 失效；待 round-k01 新窗+新参考）"
+Assert3 'SW-006-off-3pix' 'DIAGNOSTIC' '面板区裁剪 diff（K-01 后暂停，待重取）' '旧窗/旧参考已失效，不判 PASS' ''
 
 # ---------- 5. P0-2 P2-07/P2-08：读盘 14 行 + 顶部两行 ----------
 $golden = $null
@@ -488,17 +489,13 @@ if ($golden) {
             $nameMissing = @()
             foreach ($row in $golden.rows) { if (-not ($texts | Where-Object { $_ -eq $row.name })) { $nameMissing += $row.name } }
             # 顶部是**一个**两行 TextView：dump 里 text="向北 …°&#10;坐X山  向Y山"
-            $headCombined = $golden.head1 + "`n" + $golden.head2
-            $headNode = $texts | Where-Object { $_ -eq $headCombined } | Select-Object -First 1
-            $hasHead1 = [bool]$headNode
-            $hasHead2 = [bool]$headNode
-            if (-not $headNode) {
-                foreach ($t in $texts) { if ($t -match '向北' -and $t -match '坐南') { $headNode = $t; break } }
-            }
+            # F-06：逐字判，回退只允许 dump 环境类差异（不可见字符/换行）；舍入差一律 FAIL。
+            $headRes = Get-ReadSheetHeadResult -Head1 $golden.head1 -Head2 $golden.head2 -Texts $texts
+            $headNode = $headRes.Node
             Log "P2-07: 14 行命中 $((14 - $missing.Count))/14；行名命中 $((14 - $nameMissing.Count))/14（滚动补拍 $rounds 次）"
-            Log "P2-08: 顶部行=[$headNode]"
+            Log "P2-08: [$($headRes.Status)/$($headRes.Mode)] 顶部行=[$headNode]"
             Assert3 'P2-07' $(if ($missing.Count -eq 0 -and $nameMissing.Count -eq 0) { 'PASS' } else { 'FAIL' }) '14 行逐字 == mechanics.json（向/坐各一格）' "命中 $((14 - $missing.Count))/14；缺：$($missing -join ' ; ')$($nameMissing -join ',')" $sheet.path
-            Assert3 'P2-08' $(if ($hasHead1) { 'PASS' } else { 'FAIL' }) "顶部两行：$($golden.head1) / $($golden.head2)" "实际=[$headNode]" $sheet.path
+            Assert3 'P2-08' $headRes.Status "顶部两行逐字：$($golden.head1) / $($golden.head2)（仅允许 dump 环境类差异）" "$($headRes.Detail)；实际=[$headNode]" $sheet.path
             Save-LcScreenshot $DeviceId (Join-Path $OutDir 'readsheet.png') | Out-Null
             Tap-Node $sheet.xml 'text="关闭"' | Out-Null
             Start-Sleep -Milliseconds 500
@@ -621,33 +618,10 @@ else {
         # 角注在**分享图**里能不能看见：判图，不判 DOM。
         # 背景：`111c4fb` 起客户端把「底图·审图号」画进图内、面板上缘之上（#srcInfo 仍在面板后面，
         # 所以拿 DOM 矩形判会永远 FAIL）。这里在面板带上方的条带里找「金色文字行」。
-        $bandY0 = 1400; $bandY1 = 1850
-        $bandPath = Join-Path $OutDir 'p2-06-attribution-band.png'
-        $visStatus = 'BLOCKED'
-        $rectInfo = '未取到'
-        try {
-            Add-Type -AssemblyName System.Drawing
-            $img2 = [System.Drawing.Bitmap]::FromFile($local)
-            $rect2 = New-Object System.Drawing.Rectangle 0, $bandY0, $img2.Width, ($bandY1 - $bandY0)
-            $band = $img2.Clone($rect2, $img2.PixelFormat)
-            $band.Save($bandPath, [System.Drawing.Imaging.ImageFormat]::Png)
-            $maxRow = 0; $maxRowY = -1
-            for ($y = 0; $y -lt $band.Height; $y++) {
-                $n = 0
-                for ($x = 0; $x -lt $band.Width; $x += 2) {
-                    $c = $band.GetPixel($x, $y)
-                    if ($c.R -ge 170 -and $c.G -ge 130 -and $c.B -le 130) { $n++ }
-                }
-                if ($n -gt $maxRow) { $maxRow = $n; $maxRowY = $bandY0 + $y }
-            }
-            $band.Dispose(); $img2.Dispose()
-            $rectInfo = "面板上方条带 y$bandY0..$bandY1 最大金色像素行 = $maxRow（y=$maxRowY，每 2px 采样，行宽 $(1228 / 2)）"
-            # 无角注版本同区域实测最大 54（地图自身文字），有角注时 143 → 取 100 作门槛
-            $visStatus = if ($maxRow -ge 100 -and $maxRowY -lt 1850) { 'PASS' } else { 'FAIL' }
-        }
-        catch { $rectInfo = "条带分析失败: $($_.Exception.Message)" }
-        Log "P2-06-vis: $visStatus $rectInfo"
-        Assert3 'P2-06-vis' $visStatus '分享图上面板之上看得到「底图·审图号」金字（判图，不判 DOM）' $rectInfo $bandPath
+        # K-01 后旧带 y1400-1850（1228×2700，三 Tab+底部面板布局）与 100 像素阈值都随布局失效；
+        # 先暂停，复核新带后再判（docs/qa/k-01-pending.md P-06）。
+        Log "P2-06-vis: SUSPENDED（旧带 y1400-1850 随 K-01 失效；待复核新带后判 PASS/FAIL）"
+        Assert3 'P2-06-vis' 'DIAGNOSTIC' '金色角注带（K-01 后暂停，待复核）' '旧带 y1400-1850 不再用于判 PASS/FAIL' ''
     }
 }
 

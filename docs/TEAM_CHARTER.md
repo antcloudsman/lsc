@@ -110,3 +110,5 @@ adb -s L2E0222531014833 shell am start -n com.luopan.fengshui/.MainActivity
 | D-007 | 2026-11-05 | 提交隔离：成员提交一律在独立 worktree（`E:\APPDetector\wt\<成员>`）完成，禁止在共享工作树切 HEAD 提交 | 共享工作树 HEAD 对 7 人不可见是事故根因；提交前必跑 `scripts\check-staged-paths.ps1 -Branch <自己分支> -OwnedPaths <自己路径>`，FAIL 拒绝提交；禁止 `git commit --amend`（共享仓库任何提交都不许改写历史）；改动必须以 `git show develop:<path>` 为基线，不从共享工作树取旧版文件做补丁；提交前断言 `git rev-parse --show-toplevel` 等于自己的 worktree |
 | D-008 | 2026-11-05 | 文案诚信：源码/UI 不得出现未取证的「已核对」声明 | 分金/72 龙/60 龙/64 卦/八卦现为教材式命名，界面标注「待换原版表」，轮 B2 换表后撤除 |
 | D-009 | 2026-11-05 | 交互口径：无网磁偏角退回手动值（不做离线近似表）；3D 垂直夸张默认 2.5× | HUD 必须常显倍率与贴面类型；2.5× 是显示策略，不做隐藏自动变换 |
+| D-010 | 2026-11-05 | 修复阶段分工：**实现**＝在 `fix-p0` 有写权限的成员（当前 LC审客户端 主刀 / LC审地图 配合）；**复核**独立于实现（LC测试 管门禁与基线重冻、LC审核验 管条目核对）。台账「责任人」按实现承接人填写，不得写成只读角色 | 审查报告已冻结、审查角色转修复后，原「审查者不碰代码」不再成立；用「实现/复核分离」替代，并在台账写明双轨 |
+| D-011 | 2026-11-05 | **调试面只许在 debug 变体暴露**：导出 Activity（供 `adb am start`）、调试广播桥、debug 命令一律 `src/debug/AndroidManifest.xml` 覆盖或 `FLAG_DEBUGGABLE` 门槛，release 包里必须不存在 | 与 B-02 同口径；release 上用 `aapt2 dump xmltree` 验证 `android:exported=false`，违者不予合并 |

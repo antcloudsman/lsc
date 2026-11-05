@@ -14,6 +14,7 @@
 | BUG-003 | P1 | 两端文字 | 圈层文字仍是教材推导，6/14 类与 DEX `rings[].labels` 不等价 | LC客户端（轮 B2） | **已修复/关闭（B2 `662c006`+`0bd22f8`，AT-B2 于 2026-11-05 通过）** |
 | BUG-004 | P1 | Android P0-1 | 总开关关闭后只隐藏 UI，偏角仍在算（注入 94 显示 99.00°） | LC客户端 | **已修复/关闭（`20883cd`，RT-010 真机复验 PASS）** |
 | BUG-005 | P2 | Android P0-2 | 一键留档的分享图里看不到审图号角注：`#srcInfo` 落在底部读数面板带内（设备像素 y2293–2349），被面板整体盖住 | LC客户端 | **已修复/关闭（`111c4fb` 截图合成，2026-11-05 05:46 复验 18/0/0）** |
+| K-01 | P1（高） | Android 主界面结构 | 底部三 Tab（罗盘/地图/知识）；原版是单页全屏地图 + 罗盘同页浮层，无底部导航 | LC审客户端（主刀）/ LC审地图（配合） | **新建（2026-11-05 11:35）** |
 | OBS-001 | — | Android UI | 5 个盘面按钮只渲染出 3 种不同盘面 | LC客户端 / LC逆向（差距矩阵） | 待归口 |
 | OBS-002 | — | 桌面截图工具 | `--screenshot` 中心读数硬编码「正向」 | LC客户端 | 备忘（当前不触发） |
 | OBS-003 | — | Android P0-2 | 留档文件名是「坐向酉向卯_…」，PRD 写「坐向X**山**向Y**山**_…」少了「山」字 | LC产品（定名） | 待口径（不影响文件身份） |
@@ -226,6 +227,55 @@ Select-String -Path app\src\main.rs -Pattern 'JIAZI\[rd.dragon60\]|wangxiang\(bo
 RT-004（真北↔磁北连切 10 次 94.00↔99.00 无漂移）保持 PASS。
 **责任人/状态**：LC客户端，**已修复并关闭**（2026-11-05）。
 **备注**：这是「开关语义」缺陷，不在数值层；数值层（三盘/圈层/偏角公式）另有 `tests/numeric` 覆盖。
+
+## K-01（高）底部三 Tab 与原版首页结构不符（罗盘应为地图同页浮层）
+
+**来源**：真机取证（技术总监 2026-11-05），证据提交 `a407d41`
+→ `docs\evidence\original-apk\README.md`；原始截图在本机
+`E:\APPDetector\evidence\original-apk\`（`orig-06-read.png` / `orig-08-drawer.png` / `orig-09-more.png`，
+sha256 见 README §3）。审查报告同条：审查组冻结树 `E:\APPDetector\review-base\docs\review\99-FINAL-REVIEW.md`
+L213（证据索引 EV-108）——该文件在 `fix-p0` 中不存在，引用必须带工作区名。
+**登记**：本条由技术总监代登记（登记时 LC测试 尚未取得本树写权限）；2026-11-05 由 LC审测试 复核。
+
+**复现**（同一台设备，先原版后 LC；命令可重复执行）
+> 复现基线：`fix-p0@bc854ec`（K-01 修复前）。**K-01 合入后，用 `d752efa`/develop 跑本命令看不到三 Tab**
+> （`showTab` 在 `d752efa` 为 L630、`bc854ec` 为 L634，当前树 0 命中）；复现旧三 Tab 行为请
+> `git checkout bc854ec`（或独立 worktree）。取证引用一律用 `git show bc854ec:<path>`，不依赖工作树。
+```powershell
+$DEV = 'L2E0222531014833'
+# 1) 原版：必须用输入包（商店构建 cold start ANR，不可作基线，见 README §2）
+#    商店构建与输入包是不同包体/签名（110,781,555 B vs 100,655,304 B），
+#    直接 -r 会 INSTALL_FAILED_UPDATE_INCOMPATIBLE；本机实测须先卸载
+adb -s $DEV uninstall space.xinzhi.globe
+adb -s $DEV install E:\APPDetector\input\swss.apk    # sha256 2FD1FC159C92…
+adb -s $DEV shell monkey -p space.xinzhi.globe -c android.intent.category.LAUNCHER 1
+# 主界面 → orig-08-drawer.png；点左列「罗盘」(112,1784) → orig-06-read.png（不换页，浮在地图中心）
+# 2) LC 现状
+pwsh -File scripts\build-android.ps1 -DeviceId $DEV -OutDir checks\k-01
+# 底部出现 罗盘/地图/知识 三条 Tab；点「罗盘」整页切换，罗盘不回地图上层
+```
+```powershell
+Select-String -Path app\android\app\src\main\res\layout\activity_main.xml -Pattern 'bottom_bar|tab_compass|tab_map|tab_knowledge'
+Select-String -Path app\android\app\src\main\java\com\luopan\fengshui\MainActivity.java -Pattern 'showTab\('
+```
+
+**期望**（原版真机事实，取证 `a407d41`）
+- 单页全屏地图，**无底部导航**；左列 8 个工具（全地图工具 / 截屏 / 超清优化 / 海拔查询 / **罗盘** / 路网 / 等高线 / 更多），右列 10 个控件（图层 / 叠加 / 山脉 / 水系 / 探索 / 指北针 / 放大 + / 缩小 − / 定位 / 3D）；
+- 点「罗盘」**不换页**：罗盘圆盘浮在地图中心，地图半透可见；顶部栏变 返回 / 搜索 / 图层 / 隐藏，右侧开关 地图 / 实景 / 坐南朝北 / 指针开关，左列变 截屏 / 等高线 / 罗盘复位 / 罗盘锁定 / 读盘 / 贴地，底部工具条 切换 / 旋转 / 缩放 / 透明度 / 天支线（罗盘工具，不是页面导航）；
+- 「更多」从底部升起 **bottom sheet**「地图工具」（16 宫格 + 编辑），地图仍在上方半透；
+- 读盘（读数）/ 知识条目走弹层或抽屉，不占独立页面。
+
+**实际（LC 基线，K-01 修复前；行号按 `fix-p0@bc854ec`，K-01 落地后 `showTab` 已删、行号会漂移，复核用 `git show bc854ec:<path>`）**
+`activity_main.xml` 有 `bottom_bar` 与三个页签；`MainActivity.showTab()` 切换
+`compassTab` / `mapView` / `knowledgeTab` 的 `VISIBILITY`，罗盘页与地图页是互斥整页，
+罗盘不叠加在地图上层；无左列/右列工具列，无 bottom sheet。
+
+**修复归属（D-010 授权）**：实现＝LC审客户端（主刀）/ LC审地图（配合），两者在 `fix-p0` 有写权限；
+复核＝LC测试（改冻结脚本 + 重冻基线 + 真机冒烟）、LC审核验（独立核对条目）。
+**证据**：`a407d41`（取证 README + 3 份 uiautomator dump）；截图 `orig-06/08/09.png`（本机，sha256 见 README §3）；
+基线代码（`bc854ec`）`activity_main.xml` L15 `bottom_bar` + L24/L33/L42 `tab_*`、`MainActivity.java` L634 `showTab()`。
+**验收产物（待产出）**：`docs\qa\baseline-android\round-k01\`（重冻后生成，当前不存在，不得当已有证据引用）与 `docs\qa\AT-*` 用例。
+**责任人/状态**：LC审客户端（主刀）/ LC审地图（配合），**新建（2026-11-05 11:35）**。
 
 ## 观测（待归口，未计入缺陷）
 

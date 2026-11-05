@@ -12,13 +12,14 @@
 
 | # | 要求 | 提供方 | 说明 |
 |---|---|---|---|
-| K1 | 隐藏入口：**连点「知识库」页签 7 次**（相邻两次间隔 <500ms）打开开关页；≤6 次不出现 | LC客户端 | 只改点击监听，不加可见图标 |
+| K1 | 隐藏入口：**连点「知识库」页签 7 次**（相邻两次间隔 <500ms）打开开关页；≤6 次不出现。**K-01 落地后页签消失，入口改为「更多 → 地图工具面板」标题 7 连点**，阈值不变（T-17） | LC客户端 | 只改点击监听，不加可见图标 |
 | K2 | 开关页标题「实验功能」；容器 id `feature_panel`；每行文本含 PRD 编号（如「P0-1 读数可信包」）；开关控件 id `switch_<feature_key>` | LC客户端 | 供 `uiautomator dump` 定位 |
 | K3 | 开关状态落盘 `shared_prefs/lc_features.xml`，key 形如 `feature.record.enabled`（boolean） | LC客户端 | debug 包可 `run-as` 读 |
 | K4 | 全关时页面无任何增量 UI（按钮/状态条/弹窗/新权限） | LC客户端 | 这是基线不回归的前提 |
 | K5 | debug 航向注入（与 P0-1 的 `DebugBridge` 共用：`--es cmd heading --ef value <float>`，**保持到 `reset` 或下一次真实传感器采样**） | LC客户端 | SW-006 需要固定指针位置：罗盘针随传感器/动画走，不注入则逐像素 diff 必非 0 |
 
-> 基线对照物：`docs/qa/baseline-android/round-d5/`（三 Tab 截图 + ui dump + probe.csv + SHA）+ `round-d5/variant-p01/`（P0-1 开/关两张罗盘页）。**整图像素 diff 已作废**：罗盘叠在活的 WebView 地图上、底部面板半透明，地图瓦片变化会把整张图污染（实测 on/off 整图 diff **886,847 px**、bbox 几乎全屏）。判「全关」按 SW-006 的三条新口径。
+> 基线对照物：`docs/qa/baseline-android/round-k01/`（K-01 单页基线：无底部导航、罗盘为同页浮层；**待 LC测试 重冻后生效**）。`round-d5/`（三 Tab 截图 + ui dump + probe.csv + SHA）与 `round-d5/variant-p01/` 已随 K-01 **作废**，仅作历史对照。**整图像素 diff 已作废**：罗盘叠在活的 WebView 地图上、底部面板半透明，地图瓦片变化会把整张图污染（实测 on/off 整图 diff **886,847 px**、bbox 几乎全屏）。判「全关」按 SW-006 的三条新口径。
+> **K-01 口径（2026-11-05 真机取证 `a407d41`）**：原版无底部导航/三 Tab，是单页地图 + 左右工具列 + 罗盘浮层。现基线里的「三 Tab」是 LC 当前形态；K-01 落地后由 LC测试 **重冻基线**、PRD 回填，本文件 K1/SW-001/SW-006 的入口与截图对象届时同步（**不预设新口径**），阈值与判据不变。
 
 ---
 
@@ -78,7 +79,7 @@ function Tap-Text([string]$Text) {
 | SW-003 | 落盘 | 打开某开关 → `run-as cat` → `force-stop` → 重开 → 打开面板 | xml 中对应 key 为 `true`；重启后面板显示仍为开 | xml 片段 + 两张截图 |
 | SW-004 | 关闭无残留 | 逐项打开再关闭（P0-1 状态条 / P0-2 存记录入口 / P0-4 3D 点选） | 打开时入口出现；关闭后入口/状态条/日志全部消失；无需重启 | 每个功能 2 张截图 |
 | SW-005 | 不多要权限 | 基线 APK 与含开关页 APK 各执行 `dumpsys package $PKG`，对比 `requested permissions` | 权限集合完全相同 | 两份 dumpsys 片段 |
-| SW-006 | 全关即基线（**三条新口径**，整图 diff 作废） | 1) 全关并注入固定航向（如 0.0，K5）；2) **行级**：`ui.xml` 比对——只允许「偏角/磁北」相关行消失，读数/山名/14 行文字不变；3) **落盘**：`run-as cat shared_prefs/lc_prefs.xml` 得 `p0_1_enabled=false`；4) **面板区裁剪 diff**：同航向、同贴面下裁 `y≈1850–2500`（1228×2700 屏实测）比像素，必须 0；地图区允许差异但需在备注写明「瓦片未冻结」 | 三条全过才 PASS。**整图 diff 不作数**（variant-p01 实测 886,847 px 全屏污染）；未注入航向的对比不作数 | `compass-p01-on/off.png`（round-d5/variant-p01）+ 面板区 diff 值 + `prefs-off.xml` + 行级比对结果 |
+| SW-006 | 全关即基线（**三条新口径**，整图 diff 作废） | 1) 全关并注入固定航向（如 0.0，K5）；2) **行级**：`ui.xml` 比对——只允许「偏角/磁北」相关行消失，读数/山名/14 行文字不变；3) **落盘**：`run-as cat shared_prefs/lc_prefs.xml` 得 `p0_1_enabled=false`；4) **面板区裁剪 diff**：**暂不生效**——`y≈1850–2500` 是 K-01 前三 Tab + 底部面板的实测窗，K-01 单页浮层后失效；等 `round-k01/manifest.md` 给出新窗与测量依据（谁量/哪张截图/怎么定上缘）后再恢复判据，执行器当前记 `SW-006-4: SUSPENDED`、不计 PASS/FAIL；地图区允许差异但需在备注写明「瓦片未冻结」 | 第 4 条暂停期间按前三条判 PASS。**整图 diff 不作数**（variant-p01 实测 886,847 px 全屏污染）；未注入航向的对比不作数 | 新基线（`round-k01/`）截图/ui.xml + 行级比对结果 + `prefs-off.xml`；第 4 条恢复后补「新窗 + 测量依据 + diff 值」 |
 | SW-007 | 不干扰罗盘 | 面板打开停留 3s → 关闭 → 观察罗盘 5s | 面板期间无崩溃；关闭后罗盘继续跟转、读数随手机转动变化 | logcat 无 FATAL + 读数截图 |
 | SW-008 | 重复进入 | 连续 3 次「7 连点 → 返回 → 7 连点」 | 每次都能打开/关闭，无 ANR、无重复面板叠加 | logcat + ui dump |
 | SW-009 | 非 debug 卫生 | 若有 release 构建：执行 P0-1/P0-4 的 debug 广播 | release 包无响应、无日志（debug 广播不进 release） | logcat 空 |

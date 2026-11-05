@@ -67,11 +67,13 @@ if (-not $appPid) { throw "App 未存活" }
 # 1) 罗盘页
 Shot "tab-compass.png"
 $xml = DumpUi "ui-compass.xml"
+$dialListCaptured = $false
 $node = FindNodeCenter $xml "盘面"
 if ($node) {
     & $adb -s $Device shell input tap $node.x $node.y
     Start-Sleep -Milliseconds 1200
     Shot "disc-dial-list.png"
+    $dialListCaptured = $true
     $null = DumpUi "ui-dial-list.xml"
     & $adb -s $Device shell input keyevent 4
     Start-Sleep -Milliseconds 800
@@ -115,6 +117,13 @@ $rows = foreach ($f in (Get-ChildItem $OutDir -File | Where-Object { $_.Name -ne
 $rows | Set-Content -Encoding UTF8 $hashFile
 $apkHash = (Get-FileHash $Apk -Algorithm SHA256).Hash
 
+# F-13：manifest 不许无条件声称「含 disc-dial-list.png」——按实际采集结果写。
+$dialNote = if ($dialListCaptured) {
+    "- 说明：D5 起底部「5 个盘面按钮」换成「盘面（4 组 · 常用 5）」入口，本基线含 ``disc-dial-list.png``。"
+} else {
+    "- 缺失：未找到「盘面」入口，``disc-dial-list.png`` 未采集；**本基线不完整**（F-13）。"
+}
+
 $manifest = @"
 # Android 基线（真机 $Device）· D5 重冻
 
@@ -125,7 +134,7 @@ $manifest = @"
 - 冷启动：am start -W TotalTime = ${total} ms
 - 屏幕：$wm
 - logcat：FATAL EXCEPTION **$fatal** / ANR **$anr**（``logcat.txt``）
-- 说明：D5 起底部「5 个盘面按钮」换成「盘面（4 组 · 常用 5）」入口，本基线含 ``disc-dial-list.png``。
+$dialNote
 
 ## 冻结物（SHA256 见 ``SHA256SUMS.txt``）
 
@@ -141,6 +150,6 @@ $manifest | Set-Content -Encoding UTF8 (Join-Path $OutDir "manifest.md")
 
 Write-Host "FROZEN: $OutDir"
 Write-Host "artifacts: $((Get-ChildItem $OutDir -File).Count) files, fatal=$fatal anr=$anr cold=${total}ms pid=$appPid"
-if ($fatal -gt 0 -or $anr -gt 0 -or -not $appPid) { exit 1 }
+if ($fatal -gt 0 -or $anr -gt 0 -or -not $appPid -or -not $dialListCaptured) { exit 1 }
 exit 0
 

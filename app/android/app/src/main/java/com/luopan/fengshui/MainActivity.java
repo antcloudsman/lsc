@@ -38,6 +38,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private View rightCompassColumn;
     private View compassToolBar;
     private Button hideButton;
+    /** K-02：顶部栏 返回 / 搜索 / 图层（原版罗盘态四项：返回·搜索·图层·隐藏，见 bugs.md:264）。 */
+    private Button topBackButton;
+    private Button topSearchButton;
+    private Button topLayerButton;
     private TextView attrView;
 
     private SensorManager sensorManager;
@@ -376,17 +380,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         rccp.rightMargin = dp(2);
         frame.addView(rightCompassColumn, rccp);
 
-        // 「隐藏」：罗盘模式下回到地图态（原版顶部栏同名入口）
-        hideButton = new Button(this);
-        hideButton.setText("隐藏");
+        // 顶部栏（K-02）：原版罗盘态是 返回 / 搜索 / 图层 / 隐藏 四项（`docs/qa/bugs.md:264` 的原版
+        // 真机事实，取证 a407d41；`orig-05-compass.png` 顶部同一排右侧三枚，左侧一枚返回箭头），
+        // 地图态只有 搜索（`orig-main.xml` 搜索 [1002,194][1097,273]）。此前这里只有一枚「隐藏」，
+        // 结果罗盘态既没有可见的返回入口，也没有任何途径打开底图源——即 K-02。
+        topBackButton = newToolButton("返回");
+        topBackButton.setTextSize(10f);
+        topBackButton.setVisibility(View.GONE);
+        topBackButton.setOnClickListener(v -> setCompassMode(false));
+        FrameLayout.LayoutParams tbp = new FrameLayout.LayoutParams(dp(52), dp(34));
+        tbp.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
+        tbp.topMargin = dp(57);
+        tbp.leftMargin = dp(8);
+        frame.addView(topBackButton, tbp);
+
+        LinearLayout topBar = new LinearLayout(this);
+        topBar.setOrientation(LinearLayout.HORIZONTAL);
+        topSearchButton = newToolButton("搜索");
+        topSearchButton.setTextSize(10f);
+        topSearchButton.setOnClickListener(v -> showSearchDialog());
+        topLayerButton = newToolButton("图层");
+        topLayerButton.setTextSize(10f);
+        topLayerButton.setVisibility(View.GONE);
+        topLayerButton.setOnClickListener(v -> onToolClick("图层"));
+        hideButton = newToolButton("隐藏");
         hideButton.setTextSize(10f);
         hideButton.setVisibility(View.GONE);
         hideButton.setOnClickListener(v -> setCompassMode(false));
-        FrameLayout.LayoutParams hbp = new FrameLayout.LayoutParams(dp(52), dp(34));
-        hbp.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
-        hbp.topMargin = dp(4);
-        hbp.rightMargin = dp(4);
-        frame.addView(hideButton, hbp);
+        topBar.addView(topSearchButton, new LinearLayout.LayoutParams(dp(52), dp(34)));
+        topBar.addView(topLayerButton, new LinearLayout.LayoutParams(dp(52), dp(34)));
+        topBar.addView(hideButton, new LinearLayout.LayoutParams(dp(52), dp(34)));
+        FrameLayout.LayoutParams barp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        barp.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+        barp.topMargin = dp(57);
+        barp.rightMargin = dp(4);
+        frame.addView(topBar, barp);
 
         // 底部：罗盘工具条（5 项，仅罗盘模式）+ 角注 + P0-1 口径
         LinearLayout bottom = new LinearLayout(this);
@@ -652,6 +681,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (compassToolBar != null) compassToolBar.setVisibility(on ? View.VISIBLE : View.GONE);
         if (hideButton != null) hideButton.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (topBackButton != null) topBackButton.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (topLayerButton != null) topLayerButton.setVisibility(on ? View.VISIBLE : View.GONE);
         js(on ? "setUiMode('compass')" : "setUiMode('map')");
         updateReading();
     }
@@ -691,16 +722,92 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /** 知识＝弹层（原版是点圈层文字直达，不做 Tab）。 */
+    /** 知识条目（标题 + 正文）：知识弹层与顶部栏「搜索」共用同一份数据。 */
+    private java.util.List<String[]> knowledgeEntries() {
+        java.util.List<String[]> rows = new java.util.ArrayList<>();
+        rows.add(new String[]{"盘面（5 种，全部免费）", String.join("\n", CompassData.COMPASS_TYPES)});
+        rows.add(new String[]{"圈层（14 种读数）", String.join("\n", CompassData.READ_TYPES)});
+        for (int i = 0; i < CompassData.KNOWLEDGE_TITLES.length; i++) {
+            rows.add(new String[]{CompassData.KNOWLEDGE_TITLES[i], CompassData.KNOWLEDGE_BODIES[i]});
+        }
+        return rows;
+    }
+
+    /**
+     * 顶部栏「搜索」（K-02）。原版搜索是景观/地名检索（世纪空间底图服务）；本项目用天地图、没有
+     * 那套 POI 源，所以按等价替代做成**页内检索**：在盘面 / 圈层 / 知识条目里按关键字过滤，点结果
+     * 直接看正文。差异性质＝「等价替代（数据源不同）」，不改底图能力，也不假装有 POI。
+     */
+    private void showSearchDialog() {
+        final java.util.List<String[]> all = knowledgeEntries();
+        final java.util.List<String> shown = new java.util.ArrayList<>();
+        for (String[] r : all) shown.add(r[0]);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setHint("搜索：盘面 / 圈层 / 知识条目");
+        input.setTextColor(Color.rgb(235, 228, 215));
+        input.setHintTextColor(Color.rgb(150, 130, 100));
+        box.addView(input, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        final android.widget.ListView lv = new android.widget.ListView(this);
+        lv.setBackgroundColor(Color.rgb(24, 20, 16));
+        lv.setDividerHeight(0);
+        final android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<String>(
+                this, android.R.layout.simple_list_item_1, shown) {
+            @Override
+            public android.view.View getView(int pos, android.view.View cv, android.view.ViewGroup parent) {
+                android.widget.TextView tv = (android.widget.TextView) super.getView(pos, cv, parent);
+                tv.setTextColor(Color.rgb(235, 228, 215));
+                tv.setTextSize(15f);
+                tv.setPadding(20, 16, 20, 16);
+                return tv;
+            }
+        };
+        lv.setAdapter(adapter);
+        input.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(android.text.Editable e) {
+                String q = e.toString().trim();
+                shown.clear();
+                for (String[] r : all) {
+                    if (q.isEmpty() || r[0].contains(q) || r[1].contains(q)) {
+                        shown.add(r[0]);
+                    }
+                }
+                adapter.notifyDataSetChanged();
+            }
+        });
+        lv.setOnItemClickListener((p, v, pos, id) -> {
+            String title = shown.get(pos);
+            for (String[] r : all) {
+                if (r[0].equals(title)) {
+                    new android.app.AlertDialog.Builder(this)
+                            .setTitle(r[0])
+                            .setMessage(r[1])
+                            .setPositiveButton("确定", null)
+                            .show();
+                    break;
+                }
+            }
+        });
+        box.addView(lv, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(320)));
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("搜索")
+                .setView(box)
+                .setNegativeButton("关闭", null)
+                .show();
+    }
+
     private void showKnowledgeSheet() {
+        final java.util.List<String[]> rows = knowledgeEntries();
         final java.util.List<String> titles = new java.util.ArrayList<>();
         final java.util.List<String> bodies = new java.util.ArrayList<>();
-        titles.add("盘面（5 种，全部免费）");
-        bodies.add(String.join("\n", CompassData.COMPASS_TYPES));
-        titles.add("圈层（14 种读数）");
-        bodies.add(String.join("\n", CompassData.READ_TYPES));
-        for (int i = 0; i < CompassData.KNOWLEDGE_TITLES.length; i++) {
-            titles.add(CompassData.KNOWLEDGE_TITLES[i]);
-            bodies.add(CompassData.KNOWLEDGE_BODIES[i]);
+        for (String[] r : rows) {
+            titles.add(r[0]);
+            bodies.add(r[1]);
         }
         android.widget.ListView lv = new android.widget.ListView(this);
         lv.setBackgroundColor(Color.rgb(24, 20, 16));

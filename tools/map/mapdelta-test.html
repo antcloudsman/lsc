@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>MAP-DELTA MD-05/09/11 + F-14 fish payload</title></head>
+<body>
+<!--
+  修复 D 无头验证（Chrome headless + 本地 http，仓库根目录 python -m http.server 8794）：
+    http://127.0.0.1:8794/tools/map/mapdelta-test.html
+
+  覆盖：MD-05（2D 跟随不再每帧 render，光标单独更新）、MD-09（叠加/钓点/轨迹条数上限 + dropped）、
+        MD-11（Wayback 释放号白名单）、F-14（fish-pick 带 address 与类型码）。
+-->
+<iframe id="f" src="../../app/android/app/src/main/assets/map.html#lat=39.9&lng=116.4&z=12"
+        width="420" height="820"></iframe>
+<script>
+var R = [];
+function ok(name, cond, info) {
+  R.push((cond ? "PASS " : "FAIL ") + name + (info ? " " + info : ""));
+  console.log("MD " + (cond ? "PASS" : "FAIL") + " " + name + (info ? " " + info : ""));
+}
+
+function pts(n, lat0, lng0, d) {
+  var a = [];
+  for (var i = 0; i < n; i++) a.push({ name: "p" + i, lat: lat0 + i * d, lng: lng0 + i * d });
+  return a;
+}
+
+setTimeout(function () {
+  var w = document.getElementById('f').contentWindow;
+  try {
+    w.__LCBridgeTest.install();
+
+    /* ---------- MD-09：条数上限 ---------- */
+    w.setOverlay('mountain', pts(2500, 39.9, 116.4, 0.00001));
+    var ov = w.__LCBridgeTest.last('overlay');
+    ok('MD09-a', ov && ov.count === 2000 && ov.dropped === 500,
+      'count=' + (ov && ov.count) + ' dropped=' + (ov && ov.dropped));
+
+    w.setOverlayLayer('lake', true, { items: pts(2600, 39.8, 116.3, 0.00001) });
+    var ol = w.__LCBridgeTest.last('overlay-layer');
+    var ovs = w.getOverlays();
+    ok('MD09-b', ol && ol.count === 2000 && ol.dropped === 600 && ovs.lake && ovs.lake.count === 2000,
+      'count=' + (ol && ol.count) + ' dropped=' + (ol && ol.dropped));
+
+    var fishItems = [];
+    for (var i = 0; i < 600; i++) {
+      fishItems.push({
+        name: 'water' + i, type: i % 2 ? '库' : '河', address: 'addr' + i,
+        lat: 39.7 + i * 0.00001, lng: 116.2
+      });
+    }
+    w.setFishLayer(true, fishItems);
+    var fe = w.__LCBridgeTest.last('fish');
+    ok('MD09-c', fe && fe.count === 500 && fe.dropped === 100,
+      'count=' + (fe && fe.count) + ' dropped=' + (fe && fe.dropped));
+
+    /* 轨迹：300 段 × 100 点 = 30000 点 → 段数 200（20000 点）、dropped 10000 */
+    var segs = [];
+    for (var s = 0; s < 300; s++) {
+      var seg = [];
+      for (var k = 0; k < 100; k++) seg.push({ lat: 39.9 + k * 0.0001, lng: 116.4 + s * 0.0005, t: 1700000000000 + s * 200000 + k * 1000 });
+      segs.push(seg);
+    }
+    w.lc_track_load(segs);
+    var tl = w.__LCBridgeTest.last('track-loaded');
+    var st = w.getState().track;
+    ok('MD09-d', tl && st.segments === 200 && st.points === 20000 && tl.dropped === 10000,
+      'seg=' + st.segments + ' pts=' + st.points + ' dropped=' + (tl && tl.dropped));
+
+    /* ---------- MD-11：Wayback 释放号白名单 ---------- */
+    w.setWayback(true, '43291/../../evil');
+    var w1 = w.getState().waybackRelease;
+    w.setWaybackRelease('"> <img src=x>');
+    var w2 = w.getState().waybackRelease;
+    w.setWaybackRelease('63116');
+    var w3 = w.getState().waybackRelease;
+    ok('MD11', w1 === '43291' && w2 === '43291' && w3 === '63116',
+      'illegal->' + w1 + ' / ' + w2 + ', legal->' + w3);
+    w.setWayback(false);
+
+    /* ---------- F-14：fish-pick 带 address + 类型码 ---------- */
+    w.setFishLayer(true, [
+      { name: '密云水库', address: '北京市密云区', type: '库', lat: 40.49, lng: 116.84 },
+      { name: '潮白河', address: '北京市顺义区', type: '河', lat: 40.13, lng: 116.65 }
+    ]);
+    var fishes = w.document.querySelectorAll('#fishLayer .fish');
+    var pick1 = null, pick2 = null;
+    if (fishes.length >= 2) { fishes[0].click(); pick1 = w.__LCBridgeTest.last('fish-pick'); }
+    ok('F14-a', pick1 && pick1.address === '北京市密云区' && pick1.typeCode === 303 &&
+      pick1.kind === '库', 'pick=' + JSON.stringify(pick1));
+    if (fishes.length >= 2) { fishes[1].click(); pick2 = w.__LCBridgeTest.last('fish-pick'); }
+    ok('F14-b', pick2 && pick2.address === '北京市顺义区' && pick2.typeCode === 308,
+      'pick=' + JSON.stringify(pick2));
+
+    /* ---------- MD-05：2D 跟随不每帧重建瓦片 ---------- */
+    var renderCount = 0, trackCount = 0;
+    var origRender = w.render, origTrack = w.updateTrack;
+    w.render = function () { renderCount++; return origRender.apply(null, arguments); };
+    w.updateTrack = function () { trackCount++; return origTrack.apply(null, arguments); };
+
+    /* 一条横向移动的短轨迹（约 0.3° 经度，4× 播放 2 s） */
+    var tsegs = [[]];
+    for (var j = 0; j < 400; j++) {
+      tsegs[0].push({ lat: 39.90, lng: 116.40 + j * 0.0008, t: 1700000000000 + j * 250 });
+    }
+    w.setMode('2d');
+    w.lc_track_load(tsegs);
+    var cx0 = null;
+    var circle = w.document.querySelector('#trackSvg circle');
+    if (circle) cx0 = circle.getAttribute('cx');
+    w.lc_track_play(4);
+    setTimeout(function () {
+      var circle2 = w.document.querySelector('#trackSvg circle');
+      var cx1 = circle2 ? circle2.getAttribute('cx') : null;
+      w.lc_track_pause();
+      var st2 = w.getState().track;
+      console.log('MD5 render=' + renderCount + ' updateTrack=' + trackCount +
+        ' cursor ' + cx0 + '->' + cx1 + ' t=' + st2.t);
+      ok('MD5', renderCount <= 12 && trackCount >= 3 && cx0 !== null && cx1 !== null && cx0 !== cx1,
+        'render=' + renderCount + ' updateTrack=' + trackCount + ' cursorMoved=' + (cx0 !== cx1));
+
+      var fails = 0;
+      for (var q = 0; q < R.length; q++) if (R[q].indexOf('FAIL') === 0) fails++;
+      console.log('MD-RESULT ' + (fails === 0 ? 'PASS' : 'FAIL') + ' total=' + R.length + ' fails=' + fails);
+    }, 2200);
+  } catch (e) { console.log('MDERR ' + e); }
+}, 4000);
+</script>
+</body>
+</html>

@@ -329,3 +329,63 @@ MC6 3D 中心打点 points=1 center=40.0000,116.0000 elev=316.9 demZoom=11
 MC7 2D 取高程 elev=53.8（DEM 未就绪时为 null）
 ```
 - 截图：`map.html#in3d&uimode=compass&lat=40.02&lng=115.45&z=12`（或 `&uimode=map`）。
+
+## 12. MAP-DELTA 修复（2026-11-05，MD-05/07/08/09/11 + F-14）
+
+### 12.1 海拔查询的前置条件（MD-07，行为未改，只把契约说清）
+
+`elevAt(lat,lng)` **只读已加载的 DEM 缓存**，而 DEM 瓦片只由 3D 的 `startPatch()` 拉取。所以：
+
+- **3D 模式**：视野内 DEM 已加载，取得到高程；
+- **纯 2D 且从未进过 3D**：返回 `null`（页面据此显示「该点无高程数据」，不是「0 米」）；
+- **2D 但已进过 3D**：只有落在已加载 DEM 范围内的点有值，视野外仍是 `null`。
+
+客户端要保证「海拔查询」有结果，进页时先 `setMode('3d')`（或用 hash `#in3d`）等 DEM 就绪；`ElevationActivity` 目前就是这么做的。
+`lonLatToWorld()` 对 `null` 高程仍按 0 处理（3D 点位贴海平面），这条本轮未改，属 3D 点位后续修正项。
+
+### 12.2 桥入参条数上限（MD-09）
+
+| 接口 | 上限 | 超限行为 |
+|---|---|---|
+| `setOverlay(kind, points)` | 2000 点 | 按顺序截断，事件 `overlay` 增 `dropped`（被丢条数） |
+| `setOverlayLayer(id,on,{items})` | 2000 点/层 | 同上，事件 `overlay-layer` 增 `dropped`；返回值也带 `dropped` |
+| `setFishLayer(on, items)` | 500 点 | 事件 `fish` 增 `dropped` |
+| `lc_track_load(segments)` | 200 段 / 20000 点 | 事件 `track-loaded` 增 `dropped`；`getState().track` 的 `segments/points` 是**实际收下**的数量 |
+
+超限不报错、不静默：事件里一定带回 `dropped`，客户端可据此提示「数据过多，已截断 N 条」。
+
+### 12.3 Wayback 释放号白名单（MD-11）
+
+释放号来自外部 `waybackconfig.json`，**只接受纯数字 1–8 位**（实测 198 个时相都是 5 位：`43291`/`63116`/`26334`）。
+两侧各校验一次：`HistoryImageActivity.isSafeReleaseId()` 在拼 `evaluateJavascript` 前；`map.html` 的
+`wbSafeRelease()` 在 `setWayback/setWaybackRelease/tileUrl` 里。非法值一律退回默认时相 `43291`，不会进入 JS 字符串或 `<img src>`。
+
+### 12.4 F-14 `fish-pick` 事件补 `address` 与类型码
+
+```js
+{ type:"fish-pick", name:"密云水库", kind:"库", typeCode:303,
+  address:"北京市密云区", lat:40.49, lng:116.84 }
+```
+
+类型码按**天地图分类来源**映射（不按名字猜），与 F-14 文档的原版 payType 对齐：
+
+| 来源 | 单字 | typeCode | 原版文案 |
+|---|---|---|---|
+| 天地图 260205 湖泊/水库 | 库 | 303 | 库钓 |
+| 天地图 260204 河流 | 河 | 308 | 河钓 |
+| 本机自建钓点 | 塘 | 0 | 其它（塘钓） |
+| （无公开数据源，不产出） | 黑 | 309 | 黑坑 |
+
+`address` 取自天地图分类搜索结果，没有就是空串。
+
+### 12.5 轨迹跟随与光标（MD-05）
+
+2D 下 `follow` 不再每帧 `render()`：光标是一个复用的 `<circle>`，逐帧只改 `cx/cy`；
+当前点离开画面中心 30% 安全框时才平移相机并重绘瓦片；整条轨迹（已播放段着色）按 ~8 Hz 重绘。
+3D 下 `ensurePatch()` 自带「瓦片没变就早退」，行为不变。
+
+### 12.6 超清图（MD-08，Java 侧）
+
+- 瓦片缓存 `cacheDir/tdt_img18`：**6000 张 / 200 MB** 双上限，开跑前按 `lastModified` 做 LRU 清理；
+- 单瓦片失败重试（含首次最多 3 次，间隔 120/300 ms），三次都失败才计失败、才可能作废整图；
+- 成品改 **JPEG 95**（`.jpg`，影像无 alpha），成品目录保留最新 20 张且 ≤ 200 MB。

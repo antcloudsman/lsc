@@ -6,9 +6,11 @@
 - 代码基准：`3d7fcb3`（两份 findings 的代码锚点基准，与 `develop` 当前代码同源）
 - 核验对象：`docs/fidelity/findings-client.md`（24 行）+ `docs/fidelity/findings-map.md`（13 条）= **37 条**
 - 证据基准：`docs/fidelity/lc/`、`docs/fidelity/orig/`（1228×2700，dump 根节点 `[0,0][1228,2578]`）
-- 设备状态：`adb devices` → `List of devices attached`（**0 台在线**）。本文件全部判定不依赖真机；依赖真机的行为项单列 §6
+- 设备状态：L2E0222531014833 于 2026-11-06 17:38–17:46 在线并已用毕（收尾：前台桌面、动画 1/1/1、forward 空、App force-stop）。初版（设备离线）只有锚点回源，本版 §6 已换成真机结果
 
-**结论：抽样 28/37（75.7%），逐档覆盖 P0/P1/P2/DI/NC/缺失/等价；驳回 0 条、不成立 0 条、无法复现 0 条；其中 7 条「成立但须修正描述/锚点」，均不改结论、不改定级。另有跨报告重复 2 组、定级口径待统一 1 条、新线索 3 条（§4/§5/§7，不进缺陷清单）。**
+**结论：抽样 28/37（75.7%），逐档覆盖 P0/P1/P2/DI/NC/缺失/等价；真机 12 项已全部复现（§6，2026-11-06 17:38–17:46，设备 L2E0222531014833）。判定：成立 20 条、成立·修正 7 条（描述/锚点，不改结论定级）、**部分驳回 1 条（map C-04「证据态未生效／实为 2D」不成立）**、不成立 0 条、无法复现 0 条。另有跨报告重复 2 组、定级口径待统一 1 条、新线索 4 条（§4/§5/§7）。**
+
+> 本版与初版的差别：初版写于设备离线期（只有锚点回源），§6 是「待复现清单」；本版已把 §6 换成真机结果，并据 D1 新增 R8 与 §3.9 的 C-04 部分驳回。
 
 ---
 
@@ -68,12 +70,12 @@
 | 19 | map | C-01 | P0 | 成立 | `:504-506` `topSearchButton = newToolButton("搜索") … setOnClickListener(v -> showSearchDialog())`；`:1502-1509` 数据源 `knowledgeEntries()`、`:1509` `input.setHint("搜索：盘面 / 圈层 / 知识条目")`；原版 `orig/search-result-01.xml` 输入框 `[170,252][1039,375]`、4 个 tab `境内 [108,420][200,486]`／`境外 [415,420][507,486]`／`行政区域 [676,420][859,486]`／`收藏点 [1006,420][1143,486]`、返回 `[39,161][104,226]` → 「4 tab + 搜索历史 + 坐标输入」的修法有据 |
 | 20 | map | C-02 | P1 | 成立·修正 R6 | `:415-430` 创建 `readingView` 并 `frame.addView`，`setCompassMode` 不引用；`lc/map-beijing-z12.xml` 读数块 `[13,87][722,293]`；原版同名位置是地名：`orig/map-beijing-z12.xml` `青海湖 [327,194][468,273]`、`orig/map-mountains-entry.xml` `哀牢山森林旅游区 [327,194][701,273]` |
 | 21 | map | C-03 | P1 | 成立 | `map.html:47-55` `#srcPanel {position:absolute; inset:0; background:#00000099; z-index:20}`＋`.srcItem {display:block; width:100%; …}`（竖列表）；`:88-92` DOM（`<h3>底图源</h3>`＋`srcBox`＋关闭）；`:1472-1483` 12 个源逐条（含「需授权」×4、「需 key」×5）；`:1498-1513` `openSources()`/`closeSources()` 原文一致 |
-| 22 | map | C-04 | P1（证据级） | 成立 | `lc/map-3d-mode.png` 与 `lc/tool-contour-01.png` sha256 均 `F037F73577C5B56D68D94364172EC6FC284DBBBE70464E3290A2F461BCB6FCB6`（逐字节相同）；`tools/map/collect_map_lc.ps1:12-13` `[int]$ThreeDX = 155, [int]$ThreeDY = 576`、`:75` `Tap $ThreeDX $ThreeDY`；真实 3D 按钮 `[1027,2366][1222,2494]`（中心 1124,2430）→ 脚本坐标确实点不到 3D 按钮 |
+| 22 | map | C-04 | P1（证据级） | **部分驳回**（见 §3.9） | `lc/map-3d-mode.png` 与 `lc/tool-contour-01.png` sha256 均 `F037F735…`（逐字节相同）**属实**；但「证据态未生效、实为 2D」不成立：D1 真机在同一状态复现出同一 sha，同时 `D1STATE` 为 `mode=3d, drape=vec, demZoom=11, hasTexture=true, fps=60, pitch=45`、logcat `LC3D mode=3d`／`texture ok 36/36 vec`／`fps=53–60`；3D 图与 2D 固定态 `68469C5C…` 不同。脚本坐标错（`collect_map_lc.ps1:12-13` `155,576`、`:75`）仍成立 |
 | 23 | map | C-05 | P1 | 成立 | `map.html:748` `function setOverlayLayer(id, on, opts)`、`:1203` `function setRoadNet(on)` 存在；原版 `orig/map-overlay-sheet.xml` 有 `行政区域（面）[98,2017][454,2096]`、`（线）[98,2187][454,2266]`、**`行政区域筛选 [98,2357][403,2436]`**、`全部关闭 [559,2553][747,2578]`、`全部开启 [925,2553][1113,2578]`；LC `lc/map-overlay-sheet.xml` 无「筛选」节点，面/线为 `无数据 [1067,1428][1187,1482]` + 说明段 `[41,1485][1187,1586]` → 缺筛选入口成立 |
 | 24 | map | C-06 | P1 | 成立（定级待统一，§5） | `:965-968` `case "山脉": … openFeatureAtCenter(MountainActivity.class)`；`orig/map-mountains-entry.xml` 仍是地图页（地名 `哀牢山森林旅游区 [327,194][701,273]`、无子页标题、无「看山脉」节点）；`lc/map-mountains-entry.xml` 标题 `看山脉 [533,173][695,246]`＝整页 |
 | 25 | map | C-08 | P2 | 成立 | `map.html:87` 逐字 `<div id="srcInfo">数据来自天地图地形（等价替代原版世纪空间）· 审图号：未确认</div>`；`:1526` 模板 `"数据来自" + s.name + "（等价替代原版世纪空间）· 审图号：" + (s.review || "未确认")`；`:1457` 该节点在 `fullScreen || uiMode !== "full"` 时 `display:none`；原版同一文案节点 `数据来自世纪空间 审图号：GS(2026)1219号` |
 | 26 | map | C-09 | P1 | 成立 | LC 右列 `图层 [1027,619][1222,747]`=195×128、左列 `全地图工具 [6,432][201,560]`=195×128；原版同名列 `图层 [1081,632][1152,671]`=71×39、`超清优化 [42,1392][182,1431]`=140×39（图标节点在 dump 中无 bounds，报告已声明只比文字与按钮框）→ 体量差成立 |
-| 27 | map | C-12 | NC | 成立 | `map.html:1635-1639` `toggleContour()`：`if (mode !== "3d" && contourOn) setMode("3d")`；`:1936-1953` 片元着色器 `vElev/100.0`、`vElev/500.0` 两级 + `fwidth` 抗锯齿；证据图与 3D 态逐字节同 → 缺「3D 可见态下开/关双图」，定 NC 正确 |
+| 27 | map | C-12 | NC | 成立·修正 R8 | `map.html:1635-1639` `toggleContour()`：`if (mode !== "3d" && contourOn) setMode("3d")`；`:1936-1953` 片元着色器 `vElev/100.0`、`vElev/500.0` 两级 + `fwidth` 抗锯齿；D1 真机 3D 态（`D1STATE mode=3d/drape=vec/demZoom=11`）下开/关等高线截图三张 sha 全等 `F037F735…`，`logcat` 有 `LC3D contour on=true uniform=1` → 定 NC 正确，但「同图＝不在 3D 态」的推理要换（见 R8） |
 | 28 | map | C-13 | 缺失 | 成立 | `:471` 右列 10 项 `{"图层","叠加","山脉","水系","探索","指北针","+","−","定位","3D"}` 无相机；`git grep 相机 3d7fcb3 -- java res` → 0；`lc/*.xml` 含「相机」→ 0 命中 |
 
 ---
@@ -125,6 +127,28 @@
 - 实测：`app/MECHANICS.md:312` = `+ pointer.png(46×188)`（位图）；原版 dump 中 `pointer` 节点 `[573,1188][654,1512]` = **81×324**（屏幕 px，同一元素）。
 - 应改为：`pointer.png 位图 46×188（MECHANICS.md:312）；屏幕上实测节点 81×324（orig/tool-compass-page.xml，content-desc=pointer）`。成文不要拿 46×188 当屏幕尺寸。
 
+### R8 map C-12：定 NC 的推理要换（不是「不在 3D 态」）
+
+- 报告原文（`findings-map.md:44`、`:67`）：`现存截图与 map-3d-mode 逐字节相同，说明拍摄时不在 3D 可见态`／`由于该截图与 3D 态逐字节相同（同一张 2D 图）`。
+- D1 实测：真机进 3D 后 `D1STATE` 为 `mode=3d, drape=vec, demZoom=11, hasTexture=true, fps=60, pitch=45, elev=53`；此时截图 sha 就是 `F037F735…`，与「等高线开」共三张全等；`logcat` 有 `LC3D contour on=true uniform=1`。→ 同图的原因不是「没进 3D」，而是**固定态北京地形平坦（elev=53 m），100/500 m 等高线在视野内没有可绘制的等值线**，且贴面是 `vec`（见 N4）。
+- 应改为：`3D 已确认（mode=3d/drape=vec/demZoom=11）；固定态等高线开/关截图逐字节相同，原因是平坦地形无可绘等值线；缺原版同态对照，故定 NC`。
+- 定 NC 不变。
+
+### 3.9 map C-04「证据态未生效／实为 2D」：部分驳回
+
+- 报告原文（`findings-map.md:25`）：`map-3d-mode 的「3D 被 2D 覆盖」不成立为产品缺陷——同一 APK 上 3D 渲染链路实测可用；出问题的是证据本身（两态截图/两态 dump 逐字节相同），定级为 P1 证据缺陷`；§3.1：`现存证据两文件字节相同，只可能是拍摄时并未呈现 3D 态`。
+- 我的复现（2026-11-06 17:43–17:46，同设备 L2E0222531014833、同 APK、同固定态 39.9042/116.4074 z12、heading 0°）：
+  - `logcat`：`LC3D mode=3d zoom=12 pitch=45` → `LC3D texture ok 36/36 vec z12` → `LC3D fps=53…60`
+  - `D1STATE`：`{"mode":"3d","pitch":45,"fps":60,"elev":53,"demZoom":11,"hasTexture":true,"base":"vec","drape":"vec"}`
+  - 截图 sha = `F037F735…`（与旧证据逐字节相同）；2D 固定态 sha = `68469C5C…`（不同）
+- 结论：旧证据**是真 3D 态**，不是「没进 3D」。逐字节相同的原因是 `drape=vec`（`map.html:1396` `drape = (base === "ter") ? "img" : base;`，本机 `base` 持久化为 `vec`，非默认 `ter`）+ 北京平坦地形 + `pitch=45`，3D 贴面看起来就是一帧矢量路网；等高线在平坦地形无可画线，所以与等高线态同图。
+- 因此：
+  - **驳回**「证据态未生效／实为 2D」这半句；
+  - 「3D 渲染链路可用」**成立**（独立复现：mode=3d、texture ok 36/36 vec、fps 53–60、hasTexture=true、demZoom=11）；
+  - 「脚本默认坐标 `155,576` 点不到 3D 按钮」**成立**（`collect_map_lc.ps1:12-13`、`:75`）；
+  - P1「证据缺陷」的定性应撤：证据本身有效，只是**外观误导**。若要保留一条，建议改记「证据可读性缺陷：3D 贴面为 vec + 平坦地形导致与 2D 难区分；采集须显式 `setBase('ter')`（drape=img）或在拍照前断言 `drape`」。
+- 影响面：成文 R2-036 与 `map-3d-mode` 的「待补采」表述要跟着改；`LC地图` 撤图重采本身没错（重采更清楚），但撤销理由要换。
+
 ---
 
 ## 4. 跨报告重复（成文去重提示，不属误判）
@@ -150,26 +174,28 @@
 
 ---
 
-## 6. 待真机复现清单（设备离线，`adb devices` 空）
+## 6. 真机复现结果（D1，已执行）
 
-以下 12 项的共同点：结论已由代码路径 + 已入库 dump 证实，但「点下去之后界面会怎样」还需真机确认。坐标均为 1228×2700、density 540、动画三项 0、`rm -f /sdcard/a.xml` 后再 dump。
+- 设备：L2E0222531014833，1228×2700，density 540；动画三项 0；`heading` 冻结 0°；`setView(39.9042,116.4074,12)`；每步 `rm -f /sdcard/a.xml` 后再 dump。
+- 时间：2026-11-06 17:38–17:46。收尾：前台华为桌面、动画 1/1/1、`adb forward --list` 空、App `force-stop`。
+- 结果：**12/12 复现，11 项判「成立」，1 项（C-04）判「部分驳回」**（见 §3.9）。
 
-| 编号 | 步骤（坐标取自我方/原版 dump） | 期望（判「成立」的观测） |
-|---|---|---|
-| client 05 | 地图态点地图任意点（如 `614 1350`）；再点 3D（`1124 2430`）后点图 | 无任何面板出现；logcat 无面板相关日志 → 成立 |
-| client 09 | 罗盘态点「隐藏」（`1127 249`） | 回地图态：左列 8＋右列 10 出现、无「显示」→ 成立 |
-| client 10 | 点「海拔查询」（`103 1674`）；进页后点图（`614 1350`） | 进 `ElevationActivity` 整页；点图回显该点 → 成立，且确认「打点」按钮不存在 |
-| client 17 | 更多（`103 2453`）→ 收藏点（`232 1453`） | 进 `InterestListActivity` 列表页，地图消失 → 成立 |
-| map C-01 | 地图态「搜索」（`1127 249`） | 弹知识检索（hint `搜索：盘面 / 圈层 / 知识条目`），非 POI 搜索 → 成立 |
-| map C-03 | 右列「图层」（`1124 683`） | 整屏遮罩 + 竖列表 12 源，非 3×4 网格 → 成立 |
-| map C-05 | 右列「叠加」（`1124 878`） | 面板无「行政区域筛选」行 → 成立 |
-| map C-06 | 右列「山脉」（`1124 1072`） | 进整页「看山脉」→ 成立 |
-| map C-07 | 右列「探索」（`1124 1462`） | 进 `DiscoveryActivity`；**顺带重采 `map-explore-page`**（现证据是看山脉页） |
-| map C-04 | 点 3D（`1124 2430`） | logcat `LC3D mode=3d`，画面转卫星 3D；用来重采 `map-3d-mode` |
-| map C-12 | 3D 可见态下开/关等高线（左列 `103 2258`） | 双图可见等高线差异，用来把 NC 转已证实 |
-| map C-13 | 首次进图层/相机入口 | 原版有相机权限弹窗；确认 LC 无相机入口 |
+| 编号 | 步骤（实测坐标） | 观测（dump / logcat / 前台 Activity） | 判定 |
+|---|---|---|---|
+| client 09 | 罗盘 `103 1868` → 隐藏 `1127 249` | 隐藏前：读盘/隐藏/罗盘复位均在；隐藏后：`全地图工具`=True、`罗盘复位`=False、无「显示」节点 → 回地图态 | 成立 |
+| client 17 | 更多 `103 2453` → 收藏点 `232 1453` | 面板含「地图工具/收藏点」；点击后 `mResumedActivity=…/.InterestListActivity`、dump 有「暂无收藏点」、无「添加点」 | 成立 |
+| client 10 | 海拔查询 `103 1674` → 页内点图 `614 1350` | `mResumedActivity=…/.ElevationActivity`；无「打点」节点；点图后 dump 出现「纬度/海拔」行 → 点图查询路径存在 | 成立（R3 的限定被真机证实） |
+| client 05 | 地图态点图 `614 1350` | dump 无「导航/复制经纬度/距我」→ 无 POI 面板 | 成立 |
+| map C-01 | 搜索 `1127 249` | dump 命中 `搜索：盘面 / 圈层 / 知识条目` | 成立 |
+| map C-03 | 图层 `1124 683` | dump 命中 `底图源`/`中科星图`/`需授权`（竖列表 12 源） | 成立 |
+| map C-05 | 叠加 `1124 878` | `数据叠加`=True、`行政区域（面）`=True、`行政区域筛选`=False；`mResumedActivity=…/.OverlayActivity` | 成立 |
+| map C-06 | 山脉 `1124 1072` | `mResumedActivity=…/.MountainActivity`、dump 有「看山脉」 | 成立 |
+| map C-07 | 探索 `1124 1462` | `mResumedActivity=…/.DiscoveryActivity`、dump 有「专题地图/探索」 | 成立（顺带可重采 `map-explore-page`） |
+| map C-04 | 3D `1124 2430` | `LC3D mode=3d zoom=12 pitch=45`、`texture ok 36/36 vec z12`、`fps=53…60`；`D1STATE mode=3d/drape=vec/demZoom=11/hasTexture=true`；3D 图 sha `F037F735…` ≠ 2D `68469C5C…` | **部分驳回**（3D 可用成立；「实为 2D」不成立，§3.9） |
+| map C-12 | 3D 态下等高线开 `103 2258` / 再关 | 三张截图 sha 全等 `F037F735…`；`logcat LC3D contour on=true uniform=1` | NC 成立·修正 R8 |
+| map C-13 | 更多面板全项 | dump 无「相机」 | 成立 |
 
-真机项判「无法复现」的唯一条件：设备到手后按上表步骤执行，观测与「期望」相反——那时才改判，本文件不预先写「无法复现」。
+**过程记录（不属缺陷，但会污染后续采集）**：首轮跑到 C-05 时被联想应用市场弹层劫持（dump 依次变成应用商店首页 →「探索」tab → `王者荣耀` 详情页），导致 C-05/C-06/C-07/C-04 首轮全部读错（其中 C-07 因应用商店也有「探索」字样而**假 PASS**）。处置：`am force-stop com.lenovo.leos.appstore` + 每步先断言 `mResumedActivity` 属于 `com.luopan.fengshui`、否则重拉 App 后重试，四步复跑全部通过。建议把「每步前台断言 + 应用市场 force-stop」写进采集脚本与复现清单，否则真机核验会出假 PASS。
 
 ---
 
@@ -194,10 +220,19 @@
 
 ---
 
+### N4 `drape` 默认被 `base` 带跑，导致「3D 看起来像 2D」——C-04/R8 误判的根因
+
+- 代码：`map.html:178` `var drape = "img";`（注释 D-005 默认影像），但 `:1396` `drape = (base === "ter") ? "img" : base;`——**只要 `base` 不是默认的 `ter`，drape 就跟着变成 `vec`/`img`**。
+- D1 实测：本机 `base="vec"`（此前切过「天地图地图」并持久化），于是 3D 贴面是 `vec`；`D1STATE` 里 `base:vec, drape:vec`，画面是矢量路网贴在地形上，与 2D 视觉几乎一样。若 `base=ter`（默认），`drape=img`，才是卫星 3D。
+- 影响：这是 C-04「实为 2D」误判、C-12「同图＝不在 3D」误判的共同根因；采集脚本与复现清单应显式 `setBase('ter')`（或直接断言 `drape==="img"`），否则同一状态会交替产出「像 2D 的 3D 图」。
+- 归属：`map.html` 归地图侧；本条只报事实，是否记为缺陷/改默认由总监与地图侧定。
+
+---
+
 ## 8. 未覆盖范围（明确没做）
 
 1. **未抽中的 9 条**：client 12（DI）、33（NC+DI）、36、38（待补采）、增量-A（DI/NC）、增量-B（P1）、map C-07（未确认）、C-10（DI）、C-11（P2/NC）。其中 36/38 无我方证据、C-07 证据错态，按定义不可复现。
-2. **未做真机复现**：设备离线（`adb devices` 0 台），§6 的 12 项全部待复；未采任何新截图/dump。
+2. **真机**：§6 的 12 项已全部执行（17:38–17:46），但只做了「行为是否与 findings 一致」的判定；未采任何新截图/dump 入库，也未重采原版对照（原版 App 在 Splash 阶段 ANR，见 `LC地图` 的提单，本文件不复述）。
 3. **未做**：ΔE2000 全量色差、动效、3D 投影/pick 边界数学、`map.html` 逐行审（只按锚点读指定行）、桌面 M1。
 4. **未核**：两份 findings 的 `§10 复现命令` 能否原样跑通（属 LC测试 的 `repro-round2.md`）；成文 `round2-report.md` 的统计（属成文职责，本文件只在 §4/§5 给证据）。
 
@@ -233,6 +268,20 @@ $b=[System.Drawing.Bitmap]::FromFile((Resolve-Path docs\fidelity\orig\w3-sheet.p
 Get-FileHash docs\fidelity\lc\map-3d-mode.png, docs\fidelity\lc\tool-contour-01.png -Algorithm SHA256   # 同 F037F735…
 Get-FileHash docs\fidelity\lc\more-sheet-02-scrolled.xml, docs\fidelity\lc\more-sheet-03-fresh.xml -Algorithm SHA256  # 同 EC23C862…
 Test-Path docs\fidelity\orig\win-02-compass.xml   # False（R5）
+# 6) 真机 D1（本次执行；脚本在仓库外 scratch，不入库）
+#    adb shell am start -n com.luopan.fengshui/.MainActivity
+#    adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value 0
+#    adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value "setView(39.9042,116.4074,12)"
+#    adb shell rm -f /sdcard/a.xml; adb shell uiautomator dump /sdcard/a.xml; adb pull /sdcard/a.xml
+#    adb shell input tap <x> <y>；每步前后 adb shell dumpsys activity activities | grep mResumedActivity
+#    3D 状态取证：广播 console.log('D1STATE '+JSON.stringify(getState()))，再 grep logcat 'D1STATE|LC3D'
+
+2D 固定态 sha  = 68469C5CA9C7DDEA…   （= lc-captures 的固定态，同源确认）
+3D(贴面 vec) sha = F037F73577C5B56D…  （= 旧 map-3d-mode/tool-contour-01，真 3D，非「实为 2D」）
+3D + 等高线开/关   三张同 sha F037F735…（固定态平坦，等高线不可见）
+D1STATE: mode=3d pitch=45 fps=60 elev=53 demZoom=11 hasTexture=true base=vec drape=vec
+logcat : LC3D mode=3d zoom=12 pitch=45 / LC3D texture ok 36/36 vec z12 / LC3D fps=53…60 / LC3D contour on=true uniform=1
 ```
 
 抽样明细（本次实际抽到的 28 条编号）：client 01/02/03/05/08/09/10/11/13/14/15/16/17/31/32/34/35/37；map C-01/C-02/C-03/C-04/C-05/C-06/C-08/C-09/C-12/C-13。
+其中 map C-04 判「部分驳回」（§3.9），C-12 判「成立·修正 R8」，其余 26 条为「成立」或「成立·修正 R1–R7」。

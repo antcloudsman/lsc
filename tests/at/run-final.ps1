@@ -84,6 +84,10 @@ function Write-LcNotes {
 
 
 $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+# 证据脱敏：logcat 里 hwbr_engine_ContentUriUtils 会打出 map.html?tk=<web key>；落盘前统一
+# 精确替换 + `tk=***` + 自检（自检不过 = 采集失败，不写文件）。见 tests/lib/LogRedact.ps1。
+. (Join-Path $repo 'tests\lib\LogRedact.ps1')
+$redactKeys = Get-TdtKeyValues
 $DeviceId = $Device
 $env:LC_DEVICE_ID = $DeviceId
 if (-not $OutDir) { $OutDir = Join-Path $repo ("checks\at-final\{0}" -f (Get-Date -Format 'yyyyMMdd-HHmm')) }
@@ -650,7 +654,8 @@ if (-not $SkipTd016) {
         Start-Sleep -Milliseconds 6000
         Save-LcScreenshot $DeviceId (Join-Path $OutDir 'td016-3d.png') | Out-Null
         $full = (Invoke-Adb @('logcat', '-d'))
-        $full | Set-Content -Path (Join-Path $OutDir 'td016-logcat.txt') -Encoding UTF8
+        # 落盘前脱敏（tk=<web key>）；返回脱敏后的文本，后续 picks/fps/fatal 统计用同一份。
+        $full = Save-RedactedText -Path (Join-Path $OutDir 'td016-logcat.txt') -Text $full -Label 'td016-logcat' -Keys $redactKeys
         $lines = $full -split "`n"
         $picks = ($lines | Where-Object { $_ -match 'LC3D pick ' }).Count
         $fpsList = @()

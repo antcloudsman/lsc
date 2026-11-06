@@ -27,6 +27,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 $adb = "adb"
+$repo = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+# 证据脱敏（logcat/dump 会带 map.html?tk=<web key>）：见 tests/lib/LogRedact.ps1
+. (Join-Path $repo "tests\lib\LogRedact.ps1")
+$redactKeys = Get-TdtKeyValues
 New-Item -ItemType Directory -Force $OutDir | Out-Null
 $result = Join-Path $OutDir "result.txt"
 "AT-P0-0 run $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" | Set-Content -Encoding UTF8 $result
@@ -61,9 +65,10 @@ Add-Content -Encoding UTF8 $result ("receiver: " + $(if ($recv) { $recv } else {
 $bc = (& $adb -s $Device shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value $Heading 2>&1) -join "`n"
 Add-Content -Encoding UTF8 $result ("broadcast: " + (($bc -replace '\s+', ' ').Trim()))
 Start-Sleep -Milliseconds 800
-& $adb -s $Device logcat -d | Set-Content -Encoding UTF8 (Join-Path $OutDir "logcat-heading.txt")
-$dbg = ((Get-Content (Join-Path $OutDir "logcat-heading.txt") -ErrorAction SilentlyContinue) |
-    Select-String 'LCDEBUG' | Select-Object -Last 5) -join " | "
+$headLog = (& $adb -s $Device logcat -d) -join "`n"
+# 落盘前脱敏；Save-RedactedText 自检不过即抛 LOGCAT_REDACT_FAIL（不留未脱敏文件）。
+$headLog = Save-RedactedText -Path (Join-Path $OutDir "logcat-heading.txt") -Text $headLog -Label "logcat-heading" -Keys $redactKeys
+$dbg = (($headLog -split "`n") | Select-String 'LCDEBUG' | Select-Object -Last 5) -join " | "
 Add-Content -Encoding UTF8 $result ("LCDEBUG: " + $(if ($dbg) { $dbg } else { "none（广播未被接收或分支无日志）" }))
 if (-not $dbg -and -not $blockReason) {
     $blockReason = "heading 广播后无 LCDEBUG（receiver 未收到/分支未处理）"
@@ -139,6 +144,12 @@ if ($ReferenceDir) {
     } else { $pixelInfo = "reference not found: $ref" }
 }
 Add-Content -Encoding UTF8 $result "pixel(diagnostic): $pixelInfo"
+
+# 6) 汇总前：其余文本产物（ui*.xml / prefs.xml）也过一遍脱敏，文件名自检。
+foreach ($f in (Get-ChildItem $OutDir -File | Where-Object { $_.Extension -in @('.txt', '.xml', '.csv', '.md', '.log') })) {
+    Invoke-RedactFile -Path $f.FullName -Keys $redactKeys | Out-Null
+}
+Assert-NoKeyInNames -Path $OutDir -Keys $redactKeys
 
 # 6) 汇总
 if ($failures.Count -gt 0) {

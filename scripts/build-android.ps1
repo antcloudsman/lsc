@@ -41,6 +41,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
+# 证据脱敏：真机 logcat 会带 map.html?tk=<web key>（华为 WebView 内部日志），落盘前统一脱敏 + 自检。
+# 见 tests/lib/LogRedact.ps1；自检不过即抛 LOGCAT_REDACT_FAIL，不留未脱敏文件。
+. (Join-Path $repoRoot 'tests\lib\LogRedact.ps1')
+$redactKeys = Get-TdtKeyValues
 $androidDir = Join-Path $repoRoot 'app\android'
 if (-not $OutDir) { $OutDir = Join-Path $repoRoot ('checks\android-' + (Get-Date -Format 'yyyyMMdd-HHmmss')) }
 $OutDir = [System.IO.Path]::GetFullPath($OutDir)
@@ -262,7 +266,8 @@ if ($SkipDevice) {
         }
 
         $logcatText = Invoke-NativeText { & $adb -s $device logcat -d -v threadtime }
-        Set-Content -LiteralPath (Join-Path $OutDir 'logcat.txt') -Value $logcatText -Encoding UTF8
+        # 落盘前脱敏（tk=<web key>）；返回脱敏后的文本，后续 FATAL 统计用同一份。
+        $logcatText = Save-RedactedText -Path (Join-Path $OutDir 'logcat.txt') -Text $logcatText -Label 'build-logcat' -Keys $redactKeys
         $logLines = @($logcatText -split "`n")
         $ourCrashes = New-Object System.Collections.Generic.List[string]
         for ($i = 0; $i -lt $logLines.Count; $i++) {

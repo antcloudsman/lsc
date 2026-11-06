@@ -7,6 +7,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+# 证据脱敏：logcat 会带 map.html?tk=<web key>，落盘前统一脱敏 + 自检（tests/lib/LogRedact.ps1）。
+. (Join-Path $root 'tests\lib\LogRedact.ps1')
+$redactKeys = Get-TdtKeyValues
 $out = Join-Path $root 'checks\lc-map'
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 $log = Join-Path $out 'td015.log'
@@ -34,8 +37,10 @@ foreach ($p in $pts) {
 }
 Start-Sleep -Seconds 8
 cmd /c "adb -s $d exec-out screencap -p > `"$shot`"" | Out-Null
-adb -s $d logcat -d | Out-File -Encoding utf8 $log
-$txt = Get-Content $log
+$logText = (adb -s $d logcat -d) -join "`n"
+# 落盘前脱敏；自检不过即抛 LOGCAT_REDACT_FAIL，不留未脱敏文件。
+$logText = Save-RedactedText -Path $log -Text $logText -Label 'td015-log' -Keys $redactKeys
+$txt = $logText -split "`n"
 $picks = ($txt | Select-String -Pattern 'LC3D pick ').Count
 $fps = @()
 foreach ($line in ($txt | Select-String -Pattern 'LC3D fps=')) {

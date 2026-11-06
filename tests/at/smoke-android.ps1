@@ -29,6 +29,11 @@ $Pkg = 'com.luopan.fengshui'
 $Action = "$Pkg.DEBUG"
 $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 
+# 证据脱敏：logcat 里 hwbr_engine_ContentUriUtils 会打出 map.html?tk=<web key>；落盘前统一
+# 精确替换 + `tk=***` + 自检（自检不过 = 采集失败，不写文件）。见 tests/lib/LogRedact.ps1。
+. (Join-Path $repo 'tests\lib\LogRedact.ps1')
+$redactKeys = Get-TdtKeyValues
+
 if (-not $OutDir) { $OutDir = Join-Path $repo ('checks\smoke-android-' + (Get-Date -Format 'yyyyMMdd-HHmm')) }
 $OutDir = [IO.Path]::GetFullPath($OutDir)
 New-Item -ItemType Directory -Force $OutDir | Out-Null
@@ -440,7 +445,8 @@ if (-not $s0) {
 
 # ---------- 5. logcat ----------
 $log = Invoke-Adb @('logcat', '-d')
-$log | Set-Content -Path (Join-Path $OutDir 'logcat.txt') -Encoding UTF8
+# 落盘先脱敏（tk=<web key>），返回脱敏后的文本，后续 FATAL/ANR 统计用同一份。
+$log = Save-RedactedText -Path (Join-Path $OutDir 'logcat.txt') -Text $log -Label 'smoke-logcat' -Keys $redactKeys
 $logLines = $log -split "`n"
 # FATAL 只认本应用进程：uiautomator 自身的 FATAL 不算应用崩溃。
 $fatal = 0
@@ -454,6 +460,12 @@ for ($i = 0; $i -lt $logLines.Count; $i++) {
 }
 $anr = ([regex]::Matches($log, 'ANR in ' + [regex]::Escape($Pkg))).Count
 Add-Result 'M5-logcat' $(if ($fatal -eq 0 -and $anr -eq 0) { 'PASS' } else { 'FAIL' }) 'FATAL(app)=0 ANR(app)=0' "FATAL(app)=$fatal FATAL(other)=$fatalOther ANR=$anr" (Join-Path $OutDir 'logcat.txt')
+
+# 其余文本产物（ui*.xml / summary.md 等）也过一遍脱敏；文件名不许带 key 片段。
+foreach ($f in (Get-ChildItem $OutDir -File | Where-Object { $_.Extension -in @('.txt', '.xml', '.csv', '.md', '.log') })) {
+    Invoke-RedactFile -Path $f.FullName -Keys $redactKeys | Out-Null
+}
+Assert-NoKeyInNames -Path $OutDir -Keys $redactKeys
 
 # ---------- 汇总 ----------
 $pass = @($script:Results | Where-Object status -eq 'PASS').Count

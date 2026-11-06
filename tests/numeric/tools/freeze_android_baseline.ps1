@@ -97,6 +97,17 @@ $adb = "adb"
 $Pkg = "com.luopan.fengshui"
 $repo = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
 
+# ---- 证据脱敏（LC-测试）：logcat/dump 里会带 map.html?tk=<web key>（华为 WebView 内部日志，
+#      见 docs/qa/baseline-android/round-acceptance/logcat.txt 那次泄漏）。所有文本产物落盘前统一走
+#      精确替换 + `tk=***` 通用规则 + 落盘自检；自检不过直接 LOGCAT_REDACT_FAIL 且不写文件。
+. (Join-Path $repo "tests\lib\LogRedact.ps1")
+$redactKeys = Get-TdtKeyValues
+if (-not $redactKeys -or $redactKeys.Count -eq 0) {
+    Write-Host "WARN: 未取到天地图 key 值（$env:TDT_KEYS_FILE 或默认 secrets 文件），只做通用 tk= 脱敏与自检。"
+} else {
+    Write-Host "redact: 已加载 $($redactKeys.Count) 个 key 值（不打印值）"
+}
+
 function Shot([string]$name) {
     $path = Join-Path $OutDir $name
     & $adb -s $Device exec-out screencap -p > $path
@@ -390,8 +401,10 @@ if ($compassOk) {
 }
 
 # ---- 4) 日志与产物 ----
-& $adb -s $Device logcat -d | Set-Content -Encoding UTF8 (Join-Path $OutDir "logcat.txt")
-$log = Get-Content -Raw (Join-Path $OutDir "logcat.txt")
+# 落盘前脱敏：hwbr_engine_ContentUriUtils 会把 file:///android_asset/map.html?tk=<web key> 整条打出来。
+# Save-RedactedText 内部自检，残留任一 key / tk= 参数即抛 LOGCAT_REDACT_FAIL，不会留下未脱敏文件。
+$logRaw = (& $adb -s $Device logcat -d) -join "`n"
+$log = Save-RedactedText -Path (Join-Path $OutDir "logcat.txt") -Text $logRaw -Label "logcat" -Keys $redactKeys
 # F-01c：FATAL 只认本应用进程。uiautomator 自己会崩（UiAutomationService ... already registered），
 # 那是测量工具挂了，不是 App 崩；混算会把基线门禁误判成红。
 $fatal = 0
@@ -418,6 +431,17 @@ if (-not $PanelCropY) {
     $cropNote = "``$PanelCropY``（客户端实测后回填；旧窗作废）"
 }
 $cropBasisNote = if ($PanelCropBasis) { $PanelCropBasis } else { "未提供——重取时必须写明测量方法/取样点（谁量、哪张截图、怎么定面板上缘）" }
+
+# 其它文本产物（ui*.xml / am-start-w.txt / numeric-gate.txt / nodes-k01.csv）同样可能夹带 map.html?tk=…
+# 逐个人工写的清单容易漏，这里按扩展名统一就地脱敏（内容没变不重写）。
+$textArtifacts = Get-ChildItem $OutDir -File | Where-Object { $_.Extension -in @('.txt', '.xml', '.csv', '.md', '.log') }
+$redactedCount = 0
+foreach ($f in $textArtifacts) {
+    if (Invoke-RedactFile -Path $f.FullName -Keys $redactKeys) { $redactedCount++ }
+}
+# 命名纪律：证据文件名不许带 key 片段（连前 8 位 hex 都不许）。
+Assert-NoKeyInNames -Path $OutDir -Keys $redactKeys
+Write-Host "redact: logcat + $($textArtifacts.Count) 个文本产物已过脱敏（改动 $redactedCount 个），文件名自检通过"
 
 $rows = foreach ($f in (Get-ChildItem $OutDir -File | Where-Object { $_.Name -notin @("manifest.md", "SHA256SUMS.txt") } | Sort-Object Name)) {
     "{0}  {1}  {2}" -f (Get-FileHash $f.FullName -Algorithm SHA256).Hash, $f.Length, $f.Name
@@ -473,7 +497,9 @@ $((Get-ChildItem $OutDir -File | Where-Object { $_.Name -notin @('manifest.md','
 $gateBlock
 ~~~
 "@
+$manifest = Invoke-RedactText -Text $manifest -Keys $redactKeys
 $manifest | Set-Content -Encoding UTF8 (Join-Path $OutDir "manifest.md")
+Assert-NoKeyInNames -Path $OutDir -Keys $redactKeys
 
 Write-Host "FROZEN: $OutDir"
 Write-Host "left=$leftFound/8 right=$rightFound/10 more=$moreFound/16 compassText=$compassFound fatal=$fatal fatalOther=$fatalOther anr=$anr badSide=$($mapBadSide.Count) badOrder=$($mapBadOrder.Count) offTol=$($mapOffTol.Count) maxDrift=$mapMaxDrift"

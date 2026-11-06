@@ -1453,7 +1453,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         js("try{elevQuery.on=false}catch(e){}");
     }
 
-    /** 含氧量/气压沿用 ElevationActivity 的估算公式（20.9-0.0004h；1013.25·(1-2.25577e-5h)^5.25588 /10）。 */
+    /**
+     * 含氧量：原版本地公式 20.95 − 0.0016×海拔（AltitudeToolsController.r，d.smali 263-314，
+     * 常量 20.95/0.0016 见 294/288 行），1:1 照抄，不加「估算」字样。
+     * 气压：原版取服务端实时值（api/weather/getPressure），本地无公式，本行仍是本地估算并标「估算」，
+     * 是否接源或挂 DEP-3 由总监裁定。
+     */
     private void refreshElevationText() {
         MapMarker m = elevPoint;
         if (m == null || elevPanel == null) return;
@@ -1468,7 +1473,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         if (oxy != null) {
             oxy.setText(Double.isNaN(elev) ? "含氧量 —"
-                    : String.format(java.util.Locale.US, "含氧量 %.2f %%（估算）", 20.9 - 0.0004 * elev));
+                    : String.format(java.util.Locale.US, "含氧量 %.2f %%", 20.95 - 0.0016 * elev));
         }
         if (baro != null) {
             double hPa = 1013.25 * Math.pow(1 - 2.25577e-5 * (Double.isNaN(elev) ? 0 : elev), 5.25588);

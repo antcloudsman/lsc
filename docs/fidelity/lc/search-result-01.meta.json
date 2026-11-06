@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.3.0",
+  "state": "search-result-01",
+  "side": "lc",
+  "captured_at": "2026-11-06T15:46:25+0800",
+  "serial": "L2E0222531014833",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-A-search-empty",
+  "build": {
+    "branch": "develop",
+    "commit": "464ebb8c50b427fb42b0ea0cbafabb1f4f03d58a"
+  },
+  "apk": {
+    "path": "E:\\APPDetector\\wt\\lc-map-stage2\\app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "ccd5686f4c9b908d9c5c8a61fe7166d3f2bf01fcb165405e0a58e520ce7cbb7b",
+    "bytes": 7059457
+  },
+  "image": {
+    "file": "search-result-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "806074d28fcb065eb84a3c8369bf9a1a707b6b45febf238104b939bb38f646f3"
+  },
+  "dump": {
+    "file": "search-result-01.xml",
+    "sha256": "c8a6a98e7c30d10e11c6f1849b3bbfdfe4c673fd1789e78e7009c703d9a7cc5d"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

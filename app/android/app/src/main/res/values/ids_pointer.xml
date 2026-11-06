@@ -14,4 +14,21 @@
     <item name="lc_fav_sublist" type="id" />
     <item name="lc_fav_sublist_back" type="id" />
     <item name="lc_fav_sublist_list" type="id" />
+    <!-- M3：抽屉 8 项 + 遮罩（宽 923 / 遮罩 305 / 首项 829 / 行距 189） -->
+    <item name="lc_drawer_scrim" type="id" />
+    <item name="lc_drawer_item_0" type="id" />
+    <item name="lc_drawer_item_1" type="id" />
+    <item name="lc_drawer_item_2" type="id" />
+    <item name="lc_drawer_item_3" type="id" />
+    <item name="lc_drawer_item_4" type="id" />
+    <item name="lc_drawer_item_5" type="id" />
+    <item name="lc_drawer_item_6" type="id" />
+    <item name="lc_drawer_item_7" type="id" />
+    <!-- M3：七子页骨架 -->
+    <item name="lc_m3_root" type="id" />
+    <item name="lc_m3_back" type="id" />
+    <item name="lc_m3_title" type="id" />
+    <item name="lc_m3_dep_note" type="id" />
+    <item name="lc_m3_scroll" type="id" />
+    <item name="lc_m3_body" type="id" />
 </resources>

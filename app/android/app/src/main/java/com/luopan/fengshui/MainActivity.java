@@ -808,10 +808,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
-     * 工具列图标：**原版矢量**，取自 A-02 入库件 `docs/fidelity/assets/icons/drawer/svg_*.xml`
-     * （资源 id 见 assets/INDEX.md 第 34–57 行；形状不改，只做白色着色）。
-     * 仍未覆盖的 11 项（全地图工具/指北针/3D/罗盘复位/罗盘锁定/读盘/贴地/地图/实景/坐南朝北/指针开关）
-     * 留 72×72 空占位——A-02 那 24 个矢量里没有对应资源，不拿近似图标顶替。
+     * 工具列图标：**原版矢量/位图**，取自 A-02/A-04 入库件
+     * （`docs/fidelity/assets/icons/drawer/svg_*.xml`、`assets/tools/ic_*.png`，资源 id 见 assets/INDEX.md）。
+     * 形状不改，只做白色着色。P1-33-A 补的 7 确认 + 3 候选（实景/坐南朝北/指针开关 名字直配、
+     * smali 里右列按钮无 R$drawable 引用，按候选先用，以截图确认为准）。
+     * 仍未覆盖的只有「地图」一项：原版该按钮是 Compose 内联绘制、无独立 drawable
+     * （检索清单 `docs/fidelity/assets-P133A.md`，逆向 edcfc5d）——留 72×72 空占位，
+     * 不自绘、不拿近似图标顶替。
      */
     private int toolIcon(String label) {
         switch (label) {
@@ -830,7 +833,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "定位": return R.drawable.lc_ic_locate;
             case "+": return R.drawable.lc_ic_zoom_in;
             case "−": return R.drawable.lc_ic_zoom_out;
-            default: return 0;
+            // P1-33-A 补入（逆向 edcfc5d）
+            case "全地图工具": return R.drawable.lc_ic_tool_folder;
+            case "罗盘复位": return R.drawable.lc_ic_compass_reset;
+            case "罗盘锁定": return R.drawable.lc_ic_compass_lock;
+            case "读盘": return R.drawable.lc_ic_read_compass;
+            case "贴地": return R.drawable.lc_ic_tiedi;
+            case "3D": return R.mipmap.lc_ic_3d;
+            case "指北针": return R.mipmap.lc_ic_north;
+            // 以下三项为候选（名字直配，smali 无 R$drawable 引用），待截图确认
+            case "实景": return R.drawable.lc_ic_street;
+            case "坐南朝北": return R.drawable.lc_ic_surround;
+            case "指针开关": return R.drawable.lc_ic_compass_switch;
+            default: return 0;   // 「地图」：原版内联绘制，无 drawable（不可得）
         }
     }
 

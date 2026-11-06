@@ -112,17 +112,9 @@
     },
     {
       "id": "A-09",
-      "name": "动效录屏：sheet 弹出/关闭、按钮按下、页面过渡",
-      "requires": {
-        "globs": [
-          "docs/fidelity/motion/**/*.mp4",
-          "docs/fidelity/recordings/**/*.mp4",
-          "docs/fidelity/assets/motion/**/*.mp4",
-          "docs/fidelity/assets/recordings/**/*.mp4"
-        ],
-        "count": 3
-      },
-      "note": "三类各一；关键帧与时长（±100ms）口径由 LC审核验 核"
+      "name": "动效录屏（sheet/按钮/过渡）",
+      "note": "三类各一；关键帧与时长（±100ms）口径由 LC审核验 核",
+      "manual": "不可得（录制通道缺失：设备无 /system/bin/screenrecord；screencap 实测 1.45s/帧，主机侧 8 帧 11148ms、设备侧 11643ms；主机无 scrcpy；设备无 root）。M2 动效口径维持「未验证」，不进素材门禁。"
     },
     {
       "id": "A-10",

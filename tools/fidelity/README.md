@@ -137,6 +137,32 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
 
 结果同时写进 `summary.json` 的 `integrity` 段与 `index.html` 的「证据完整性」小节。
 
+### 5.1 合法同态允许列表
+
+「不可滚动」「两态本来就共享同一画面」这类合法同图，写进 `docs/fidelity/duplicates-allow.json`（或用 `--allow-file` 指定）：
+
+```json
+{
+  "allow": [
+    {
+      "pair": ["more-sheet-02-scrolled", "more-sheet-03-fresh"],
+      "reason": "更多面板高度固定不可滚动，两态为同一画面；可滚动性本身按差异登记",
+      "by": "LC客户端"
+    }
+  ]
+}
+```
+
+规则：
+
+- `pair` 必须是两个不同 state id；`reason`、`by` 必填，缺任一 `report` 直接报错退出（不允许静默放行）；
+- 只有**整个重复组被允许列表成对连通覆盖**才放行：3 个 state 同图时写 `a-b`、`b-c` 两条即可（`a-c` 由同图传递成立），未覆盖到的 state 仍报错；
+- 允许列表只豁免「重复图」；**0 字节 PNG 永远失败**，不能被允许；
+- 允许列表引用不存在的 state 只打 warning（便于发现过期条目）；
+- 未列入的重复仍 exit 1；允许项在 `summary.json` 里带 `"allowed": true` 和 reason/by，HTML 用绿色标「duplicate (allowed)」。
+
+默认读 `<root>/duplicates-allow.json`；仓库内模板是空 `allow`，各负责人按归属自行追加并保留理由。
+
 ## 6. 写发现时的硬要求
 
 每条“差异”至少带：`state id` + 复现命令（或入口路径 + 坐标）+ 量化值（px / hex / sp / 文案逐字）。工具输出只是证据，结论里不要出现“差不多/基本一致/类似”；无法复现的不写进报告。

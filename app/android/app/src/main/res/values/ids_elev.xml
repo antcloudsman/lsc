@@ -14,4 +14,6 @@
     <item name="lc_elev_o2" type="id" />
     <item name="lc_elev_pressure" type="id" />
     <item name="lc_elev_close" type="id" />
+    <item name="lc_elev_mark" type="id" />
 </resources>
+

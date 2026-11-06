@@ -70,6 +70,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** R2-014：收藏点地图态的比例尺（原版 [79,2510][150,2550] 4km）。 */
     private TextView scaleView;
     /** R2-018: 左上抽屉（9 项 + 版本号）。 */
+    /** R2-007: 海拔查询在地图内浮层（不跳 Activity）。 */
+    private LinearLayout elevPanel;
+    private boolean elevationMode;
+    private MapMarker elevPoint;
     private LinearLayout drawerPanel;
     private Button menuButton;
     /** last raw (un-calibrated) azimuth, for the master-switch recompute. */
@@ -1024,7 +1028,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "海拔查询":
                 // F-03：左列「海拔查询」→ ElevationActivity（默认开，无门槛）；关掉回退旧 stub。
                 if (new FeatureFlags(this).isEnabled("f03")) {
-                    startActivity(new android.content.Intent(this, ElevationActivity.class));
+                    enterElevationMode();
                 } else {
                     toast(label + "：原版为工具子页，本步未实现");
                 }
@@ -1417,6 +1421,129 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         } catch (Exception ignored) {
         }
         return 122;
+    }
+
+    // ---------------- R2-007：海拔查询地图内浮层 ----------------
+
+    private void enterElevationMode() {
+        setFavoriteMode(false);
+        hidePoiPanel();
+        elevationMode = true;
+        js("setBase('img');lc_elev_query(true);");
+        toast("点地图任意位置查询海拔");
+        android.util.Log.d("LCELEV", "mode on");
+    }
+
+    private void showElevationPanel(MapMarker m) {
+        if (m == null) return;
+        elevPoint = m;
+        if (elevPanel == null) elevPanel = buildElevationPanel();
+        if (elevPanel.getParent() == null && content != null) {
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+            lp.gravity = android.view.Gravity.BOTTOM;
+            lp.bottomMargin = navBarInsetPx();
+            content.addView(elevPanel, lp);
+        }
+        elevPanel.setVisibility(View.VISIBLE);
+        refreshElevationText();
+        if (m.elevM == null && compassMapView != null) {
+            // 2D 点选事件不带高程：回查 map.html 的 elevAt(lat,lng)（与 ElevationActivity 同一 DEM 源）。
+            compassMapView.evaluateJavascript(String.format(java.util.Locale.US,
+                    "(function(){try{var e=elevAt(%.6f,%.6f);return e===null?null:e;}catch(err){return null;}})()",
+                    m.lat, m.lng), c -> {
+                String v = decodeJsString(c);
+                if (v == null || v.isEmpty() || "null".equals(v)) return;
+                try {
+                    double e = Double.parseDouble(v.trim());
+                    elevPoint = new MapMarker(m.lng, m.lat, e, m.headingAtPick, "dem");
+                    refreshElevationText();
+                } catch (NumberFormatException ignored) {
+                }
+            });
+        }
+        android.util.Log.d("LCELEV", "show " + m);
+    }
+
+    private void hideElevationPanel() {
+        if (elevPanel != null) elevPanel.setVisibility(View.GONE);
+        elevationMode = false;
+        js("lc_elev_query(false)");
+    }
+
+    /**
+     * 含氧量：原版本地公式 20.95 − 0.0016×海拔（AltitudeToolsController.r，d.smali 263-314，
+     * 常量 20.95/0.0016 见 294/288 行），1:1 照抄，不加「估算」字样。
+     * 气压：原版取服务端实时值（api/weather/getPressure），本地无公式，本行仍是本地估算并标「估算」，
+     * 是否接源或挂 DEP-3 由总监裁定。
+     */
+    private void refreshElevationText() {
+        MapMarker m = elevPoint;
+        if (m == null || elevPanel == null) return;
+        double elev = m.elevM == null ? Double.NaN : m.elevM;
+        TextView head = elevPanel.findViewById(R.id.lc_elev_value);
+        TextView oxy = elevPanel.findViewById(R.id.lc_elev_o2);
+        TextView baro = elevPanel.findViewById(R.id.lc_elev_pressure);
+        if (head != null) {
+            head.setText(Double.isNaN(elev)
+                    ? String.format(java.util.Locale.US, "海拔 —    纬度:%.6f 经度:%.6f", m.lat, m.lng)
+                    : String.format(java.util.Locale.US, "海拔 %.1f m（本地 DEM）    纬度:%.6f 经度:%.6f", elev, m.lat, m.lng));
+        }
+        if (oxy != null) {
+            oxy.setText(Double.isNaN(elev) ? "含氧量 —"
+                    : String.format(java.util.Locale.US, "含氧量 %.2f %%", 20.95 - 0.0016 * elev));
+        }
+        if (baro != null) {
+            double hPa = 1013.25 * Math.pow(1 - 2.25577e-5 * (Double.isNaN(elev) ? 0 : elev), 5.25588);
+            baro.setText(Double.isNaN(elev) ? "气压 —"
+                    : String.format(java.util.Locale.US, "气压 %.2f 千帕（本地估算·数据源差异 DI）", hPa / 10.0));
+        }
+    }
+
+    private LinearLayout buildElevationPanel() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setId(R.id.lc_elev_panel);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setBackgroundColor(Color.argb(242, 26, 22, 18));
+        panel.setPadding(dp(14), dp(8), dp(14), dp(8));
+        TextView head = new TextView(this);
+        head.setId(R.id.lc_elev_value);
+        head.setTextSize(14f);
+        head.setTextColor(Color.rgb(235, 228, 215));
+        panel.addView(head);
+        TextView oxy = new TextView(this);
+        oxy.setId(R.id.lc_elev_o2);
+        oxy.setTextSize(12f);
+        oxy.setTextColor(Color.rgb(200, 190, 170));
+        panel.addView(oxy);
+        TextView baro = new TextView(this);
+        baro.setId(R.id.lc_elev_pressure);
+        baro.setTextSize(12f);
+        baro.setTextColor(Color.rgb(200, 190, 170));
+        panel.addView(baro);
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        Button mark = new Button(this);
+        mark.setId(R.id.lc_elev_mark);
+        mark.setText("打点");
+        mark.setAllCaps(false);
+        mark.setTextSize(12f);
+        mark.setOnClickListener(v -> {
+            if (elevPoint == null) return;
+            js(String.format(java.util.Locale.US, "try{dropMarkerAt(%.6f,%.6f)}catch(e){}", elevPoint.lat, elevPoint.lng));
+            toast("已打点");
+            android.util.Log.d("LCELEV", "mark " + elevPoint.lat + "," + elevPoint.lng);
+        });
+        Button close = new Button(this);
+        close.setId(R.id.lc_elev_close);
+        close.setText("关闭");
+        close.setAllCaps(false);
+        close.setTextSize(12f);
+        close.setOnClickListener(v -> hideElevationPanel());
+        actions.addView(mark, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        actions.addView(close, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        panel.addView(actions);
+        return panel;
     }
 
     private void showPoiPanel(MapMarker m) {
@@ -2080,7 +2207,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("海拔查询".equals(t) && flags.isEnabled("f03")) {
                     // F-03：更多 → 海拔查询 → ElevationActivity（默认开；关掉回退旧 stub）
-                    startActivity(new android.content.Intent(this, ElevationActivity.class));
+                    enterElevationMode();
                 } else if ("海拔查询".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("测量".equals(t) && flags.isEnabled("f12")) {
@@ -2306,10 +2433,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         settings.setAllowFileAccess(true);
         settings.setGeolocationEnabled(true);
         webView.addJavascriptInterface(new LCAndroid((type, marker) -> {
+            if ("elev".equals(type)) {
+                runOnUiThread(() -> showElevationPanel(marker));
+                return;
+            }
             if ("pick".equals(type) || "marker".equals(type)) {
                 // R2-004：3D pick 与 2D 点图都保留立向点，并把 POI 面板挂上去。
                 mapMarker = marker;
-                runOnUiThread(() -> showPoiPanel(marker));
+                // 海拔模式下的点图/3D 点选一律走海拔浮层（不弹 POI 面板）。
+                runOnUiThread(() -> {
+                    if (elevationMode) showElevationPanel(marker); else showPoiPanel(marker);
+                });
             } else {
                 mapMarker = null;
                 runOnUiThread(this::hidePoiPanel);

@@ -1779,8 +1779,24 @@ function placeMarker(x, y) {
   var ll3 = latLngOfScreen(x - rect.left, y - rect.top);
   if (ll3) {
     var hd = (typeof lastHeading === "number") ? lastHeading : 0;
-    emit({ type: "marker", lat: ll3.lat, lng: ll3.lng, heading: hd });
+    var e3 = null;
+    try { e3 = elevAt(ll3.lat, ll3.lng); } catch (e) { e3 = null; }
+    emit({ type: "marker", lat: ll3.lat, lng: ll3.lng, heading: hd, elev: e3 });
   }
+}
+
+/* R2-007：按经纬度落点（打点用），屏幕 x 由经度差换算，y 保持点击时的屏幕位置。 */
+function dropMarkerAt(lat, lng) {
+  var rect = mapEl.getBoundingClientRect();
+  var sx = (lng - center.lng) * 256 * Math.pow(2, zoom) / 360;
+  var x = rect.width / 2 + sx;
+  var mk = document.createElement("div");
+  mk.className = "marker";
+  mk.style.left = x + "px";
+  mk.style.top = (rect.height / 2) + "px";
+  mk.title = "立向点 " + lat.toFixed(4) + "," + lng.toFixed(4);
+  mapEl.appendChild(mk);
+  return true;
 }
 
 function clearMarkers() {

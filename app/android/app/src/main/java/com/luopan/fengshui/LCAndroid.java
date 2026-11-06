@@ -37,7 +37,7 @@ public class LCAndroid {
                 listener.onMapEvent("pick-clear", null);
                 return;
             }
-            if (!"pick".equals(type) && !"marker".equals(type)) {
+            if (!"pick".equals(type) && !"marker".equals(type) && !"elev".equals(type)) {
                 Log.w("LCPICK", "ignore type=" + type);
                 return;
             }

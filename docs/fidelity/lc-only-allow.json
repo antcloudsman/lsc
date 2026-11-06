@@ -1,4 +1,25 @@
 {
   "note": "LC 增量/探针态豁免：原版没有对应状态，不参与 missing-orig/missing-lc 统计。每条 {\"state\":\"...\",\"reason\":\"...\",\"by\":\"...\"}；缺 reason/by 会报错。state 必须在 lc/ 有 png 或 xml，否则报错；不得用来掩盖漏采。",
-  "allow": []
+  "allow": [
+    {
+      "state": "dial-list-01",
+      "reason": "LC 增量页：盘面目录（5 种内置盘面 + 确定），原版无同名态（原版在线盘面目录属 DI 登记，不是缺态）",
+      "by": "LC测试"
+    },
+    {
+      "state": "launch-probe-01",
+      "reason": "冷启动探针：对应原版 orig/_launch-probe.png（下划线前缀不参与配对）；LC 无独立 Splash，取冷启第 2 秒画面且无 dump，不是 LC 独有页面",
+      "by": "LC测试"
+    },
+    {
+      "state": "lc-knowledge-sheet",
+      "reason": "LC 增量页：知识库/搜索弹层（盘面/圈层/知识条目），原版无对应态",
+      "by": "LC测试"
+    },
+    {
+      "state": "map-roadnet-on",
+      "reason": "原版无独立路网开态 stem（索引行 22 的对照物是 orig/map-home-01.xml），LC 侧单独成态，不是原版缺该态",
+      "by": "LC测试"
+    }
+  ]
 }

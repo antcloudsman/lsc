@@ -34,7 +34,18 @@ if (-not $SkipInstall) {
     Write-Host "install: Success"
 }
 
+function Assert-LcForeground {
+    # 证据纪律：应用市场会截胡点击（伪装成空白页），采集前必须先杀掉并确认前台是我方包
+    & adb -s $Serial shell am force-stop com.huawei.appmarket | Out-Null
+    $f = (& adb -s $Serial shell dumpsys activity activities) -join "`n"
+    if ($f -notmatch 'mResumedActivity.*com\.luopan\.fengshui') {
+        Write-Host "FATAL: foreground is not com.luopan.fengshui (app-market hijack?)"
+        exit 1
+    }
+}
+
 function Capture([string]$State, [string]$Id, [switch]$SkipDump) {
+    Assert-LcForeground
     $arguments = @($Tool, 'collect', '--root', $Root, '--side', 'lc', '--state', $State,
         '--pkg', 'com.luopan.fengshui', '--checksheet-id', $Id,
         '--build-commit', $BuildCommit, '--apk', $Apk, '--force')

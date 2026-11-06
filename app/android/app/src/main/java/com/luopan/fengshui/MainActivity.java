@@ -2371,6 +2371,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     tabViews[k].setBackgroundColor(k == idx ? Color.rgb(60, 50, 38) : Color.TRANSPARENT);
                 }
                 // R2-025：切 tab 立即按该 tab 重跑（收藏点 tab 不依赖输入）
+                android.util.Log.d("LCSEARCH", "tab-click idx=" + idx + " active=" + active[0]);
                 if (searchRef[0] != null) searchRef[0].run();
             });
             tabViews[i] = t;

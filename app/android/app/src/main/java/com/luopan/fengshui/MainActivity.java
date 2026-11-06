@@ -2499,8 +2499,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         java.util.List<String> out = new java.util.ArrayList<>();
                         try {
                         {
-                            MapPoints.SearchResult r = MapPoints.searchNear(kw, flat, flng, 12, 20);
-                            android.util.Log.d("LCSEARCH", "code=" + r.code + " total=" + r.total + " points=" + r.points.size());
+                            // R2-025：按 tab 真正分派（0 境内 / 1 境外 / 2 行政区域 / 3 收藏点本地）
+                            MapPoints.SearchResult r;
+                            if (tab == 1) {
+                                r = MapPoints.searchGlobal(kw, 20);
+                            } else if (tab == 2) {
+                                String p9 = MapPoints.resolveProvince9(kw, flat, flng);
+                                if (p9 == null || p9.isEmpty()) {
+                                    android.util.Log.d("LCSEARCH", "tab=" + tab + " code=unavailable province=null");
+                                    out.add("检索服务不可用（行政区域无法解析省码）");
+                                    final java.util.List<String> resNo = out;
+                                    runOnUiThread(() -> { rows.clear(); rows.addAll(resNo); adapter.notifyDataSetChanged(); });
+                                    return;
+                                }
+                                r = MapPoints.searchInProvince(kw, p9, 20);
+                            } else {
+                                r = MapPoints.searchNear(kw, flat, flng, 12, 20);
+                            }
+                            android.util.Log.d("LCSEARCH", "tab=" + tab + " code=" + r.code + " total=" + r.total
+                                    + " first=" + (r.points.isEmpty() ? "" : r.points.get(0).name));
                             if (MapPoints.SearchResult.OK.equals(r.code) || MapPoints.SearchResult.EMPTY.equals(r.code)) {
                                 if (r.points.isEmpty()) {
                                     out.add("未找到相关地点（可试试城市名或坐标）");

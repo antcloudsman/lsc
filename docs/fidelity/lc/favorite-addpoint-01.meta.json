@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.7.0",
+  "state": "favorite-addpoint-01",
+  "side": "lc",
+  "captured_at": "2026-11-06T19:37:26+0800",
+  "serial": "",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-E-favorite-save",
+  "build": {
+    "branch": "develop",
+    "commit": "bd0323b0e64a71f660ff322f33b31de42c36f432"
+  },
+  "apk": {
+    "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "381d163ea095cbffa4d1c719af6c080daa8fe46376476e195bb10cfae6815788",
+    "bytes": 7059481
+  },
+  "image": {
+    "file": "favorite-addpoint-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "46ef55f29a34fd8693a30249490f0d24f0a34cdb6491149244372d75ed8261e7"
+  },
+  "dump": {
+    "file": "favorite-addpoint-01.xml",
+    "sha256": "16d6df2dd7f41309e846b6433623997321b5c1961f1a8e1f0981ad073aa71b3c"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

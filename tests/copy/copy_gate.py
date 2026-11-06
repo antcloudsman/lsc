@@ -72,6 +72,35 @@ HASH_COMMENT_EXTS = {
 
 PASS, FAIL, WARN = "PASS", "FAIL", "WARN"
 
+# 白名单计数钉子（总监 2026-11-07 定）：文件级豁免只放固定条数，
+# 防止后来者往已豁免的原文里顺手追加 URL/端点。
+#   文件 → (规则, 计数字符串, 期望出现次数)
+ALLOWLIST_PINS: dict[str, tuple[str, str, int]] = {
+    "app/android/app/src/main/assets/m3/contact.txt": ("tiles", "xinzhi" + "." + "space", 1),
+    "app/android/app/src/main/assets/m3/agreement.txt": ("tiles", "xinzhi" + "." + "space", 2),
+}
+
+
+def check_allowlist_pins() -> tuple[list[str], list[str]]:
+    """返回 (问题, 说明)。文件未落库只提示；已落库则条数必须精确等于钉子值。"""
+    problems: list[str] = []
+    notes: list[str] = []
+    for rel, (rule, token, expected) in ALLOWLIST_PINS.items():
+        path = REPO_ROOT / rel
+        if not path.exists():
+            notes.append(f"{rel} 尚未落库，计数钉子待生效（rule={rule} 期望 {expected} 处）")
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        actual = text.count(token)
+        if actual != expected:
+            problems.append(
+                f"{rel}: `{token}` 出现 {actual} 次，白名单钉住 {expected} 次"
+                "（新增原文请走总监审批，不许往豁免文件里追加）"
+            )
+        else:
+            notes.append(f"{rel}: {actual} 处，与钉子一致")
+    return problems, notes
+
 
 def rel_of(path: Path) -> str:
     return path.relative_to(REPO_ROOT).as_posix()
@@ -305,6 +334,15 @@ def main() -> int:
     scope = f"扫 {len(scan_files)} 个已跟踪文件，注释与 docs/ · tests/ · *.md 已豁免"
     report.section("audi", "发行面无原版审图号", audi_hits, scope)
     report.section("tiles", "发行面无原版私有瓦片域 21atcloud / xinzhi.space", tile_hits, scope)
+
+    # --- 白名单计数钉子 -----------------------------------------------------
+    pin_problems, pin_notes = check_allowlist_pins()
+    for note in pin_notes:
+        print(f"[{PASS}] 计数钉子：{note}")
+    if pin_problems:
+        report.failed = True
+        for problem in pin_problems:
+            print(f"[{FAIL}] 计数钉子：{problem}")
 
     for idx, (rule, glob, reason) in enumerate(allow):
         if idx not in used:

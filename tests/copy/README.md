@@ -63,6 +63,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1 -SkipDevic
    - 豁免项没命中任何文件会打 `[WARN] allowlist 未命中：...`（不判红）——留着的死豁免要定期清。
    - 能改文案就别加豁免：`copy` 的 5 处应该**改文案**，不是加白名单。
 
+3. **计数钉子**（文件级豁免必须钉住条数，`copy_gate.py` 的 `ALLOWLIST_PINS`）：
+
+   ```python
+   ALLOWLIST_PINS = {
+       "app/android/app/src/main/assets/m3/contact.txt":  ("tiles", "xinzhi" + "." + "space", 1),
+       "app/android/app/src/main/assets/m3/agreement.txt": ("tiles", "xinzhi" + "." + "space", 2),
+   }
+   ```
+
+   - 钉子写在**代码里**而不是 allowlist 第四列：文件级豁免最容易被「后来顺手加的 URL」钻空子，钉住出现次数才防得住；改条数必须改代码、过评审。
+   - 文件尚未落库 → `[PASS] 计数钉子：… 尚未落库`（提示，不判红）；已落库但次数不符 → `[FAIL] 计数钉子` 直接判红。
+   - 当前钉子（总监 2026-11-07 裁定 (a)）：`contact.txt` **1** 处、`agreement.txt` **2** 处 `xinzhi.space`；新增白名单条目一律要总监批。
+
 ## 自查（改门禁后跑）
 
 ```powershell

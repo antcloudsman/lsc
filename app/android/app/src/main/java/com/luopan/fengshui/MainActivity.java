@@ -55,6 +55,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** R2-004: POI 详情面板（挂在立向点上，固定高 443px）。 */
     private LinearLayout poiPanel;
     private MapMarker poiMarker;
+    /** R2-030: 山脉改为地图内图层（半屏面板），不跳 Activity；数据同 MountainActivity：天地图地名搜索 分类 260203（山）。 */
+    private LinearLayout mountainLayer;
+    private boolean mountainLayerOn = false;
+    private int mountainFetchSeq = 0;
     /** R2-006: 罗盘「隐藏」只隐盘面/指针/工具列，保留读数条与坐标，不退出罗盘态。 */
     private boolean compassHidden;
     /** R2-014: 收藏点地图态（右列 2 项 + 底部「添加点」），列表降为子页。 */
@@ -1043,9 +1047,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 break;
             case "截屏": captureMap(); break;
             case "山脉":
-                // F-06：右列入「山脉」→ MountainActivity（默认开，无门槛）；关掉回退旧 stub。
+                // R2-030：原版点「山脉」不跳页，山名落在地图上。LC 改为地图内半屏图层（前台仍是 MainActivity）。
+                // 数据沿用 MountainActivity 的免费源：天地图地名搜索「分类 260203（山）」；关掉 f06 才回退旧 stub。
                 if (new FeatureFlags(this).isEnabled("f06")) {
-                    openFeatureAtCenter(MountainActivity.class);
+                    toggleMountainLayer();
                 } else {
                     toast(label + "：原版为工具子页，本步未实现");
                 }
@@ -1434,6 +1439,177 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void hidePoiPanel() {
         if (poiPanel != null) poiPanel.setVisibility(View.GONE);
+    }
+
+    // ---------------- R2-030 山脉：地图内半屏图层（不跳 Activity） ----------------
+
+    /** 点一次开、再点一次关；关闭按钮走 hideMountainLayer()，前台始终是 MainActivity。 */
+    private void toggleMountainLayer() {
+        if (mountainLayerOn) {
+            hideMountainLayer();
+        } else {
+            showMountainLayer();
+        }
+    }
+
+    private void showMountainLayer() {
+        if (mountainLayer == null) mountainLayer = buildMountainLayer();
+        if (mountainLayer.getParent() == null && content != null) {
+            // 半屏：内容帧高 2578，面板取 1290（约一半），底部留导航栏 inset
+            int h = Math.round(getResources().getDisplayMetrics().heightPixels * 0.48f);
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, h);
+            lp.gravity = android.view.Gravity.BOTTOM;
+            lp.bottomMargin = navBarInsetPx();
+            content.addView(mountainLayer, lp);
+        }
+        mountainLayer.setVisibility(View.VISIBLE);
+        mountainLayerOn = true;
+        TextView status = mountainLayer.findViewById(R.id.lc_mtn_status);
+        if (status != null) status.setText("视野内山名：查询中…（天地图地名搜索 · 分类 260203 山）");
+        LinearLayout list = mountainLayer.findViewById(R.id.lc_mtn_list);
+        if (list != null) list.removeAllViews();
+        fetchMountainNamesForLayer();
+        android.util.Log.d("LCMTN", "layer on");
+    }
+
+    private void hideMountainLayer() {
+        if (mountainLayer != null) mountainLayer.setVisibility(View.GONE);
+        mountainLayerOn = false;
+        android.util.Log.d("LCMTN", "layer off");
+    }
+
+    private LinearLayout buildMountainLayer() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setId(R.id.lc_mtn_layer);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setBackgroundColor(Color.argb(242, 26, 22, 18));
+        panel.setPadding(dp(14), dp(8), dp(14), dp(8));
+
+        LinearLayout head = new LinearLayout(this);
+        head.setOrientation(LinearLayout.HORIZONTAL);
+        TextView title = new TextView(this);
+        title.setId(R.id.lc_mtn_title);
+        title.setText("看山脉");
+        title.setTextSize(15f);
+        title.setTextColor(Color.rgb(235, 228, 215));
+        head.addView(title, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        Button close = new Button(this);
+        close.setId(R.id.lc_mtn_close);
+        close.setText("关闭");
+        close.setAllCaps(false);
+        close.setTextSize(11f);
+        close.setOnClickListener(v -> hideMountainLayer());
+        head.addView(close);
+        panel.addView(head, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        TextView status = new TextView(this);
+        status.setId(R.id.lc_mtn_status);
+        status.setText("视野内山名：查询中…（天地图地名搜索 · 分类 260203 山）");
+        status.setTextSize(11f);
+        status.setTextColor(Color.rgb(170, 162, 150));
+        panel.addView(status, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        LinearLayout list = new LinearLayout(this);
+        list.setId(R.id.lc_mtn_list);
+        list.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(list, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT));
+        panel.addView(scroll, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        return panel;
+    }
+
+    /** 取当前地图中心（与 openFeatureAtCenter 同一取法），再按 MountainActivity 的链路查山名。 */
+    private void fetchMountainNamesForLayer() {
+        if (compassMapView == null) {
+            queryMountainNamesForLayer(39.9042, 116.4074);
+            return;
+        }
+        compassMapView.evaluateJavascript(
+                "(function(){var s=getState();return s.lat+','+s.lng;})()",
+                v -> {
+                    double lat = 39.9042, lng = 116.4074;
+                    String[] parts = decodeJsString(v).split(",");
+                    if (parts.length == 2) {
+                        try {
+                            lat = Double.parseDouble(parts[0].trim());
+                            lng = Double.parseDouble(parts[1].trim());
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                    queryMountainNamesForLayer(lat, lng);
+                });
+    }
+
+    private void queryMountainNamesForLayer(final double lat, final double lng) {
+        final int seq = ++mountainFetchSeq;
+        new Thread(() -> {
+            java.util.List<MapPoints.Point> pts = null;
+            String note = "";
+            try {
+                String province = MapPoints.provinceCode(lat, lng);
+                pts = MapPoints.keywordNear("山", lat, lng, 10, 120);
+                if (pts == null || pts.isEmpty()) {
+                    pts = MapPoints.category(MapKeys.TYPE_MOUNTAIN, province, 120);
+                    note = "（视野关键词无结果，改用省级分类）";
+                }
+            } catch (Exception e) {
+                note = "（天地图检索失败：" + e.getClass().getSimpleName() + "）";
+            }
+            final java.util.List<MapPoints.Point> out = pts;
+            final String fnote = note;
+            runOnUiThread(() -> {
+                if (seq != mountainFetchSeq || !mountainLayerOn) return;
+                renderMountainRowsForLayer(out, fnote);
+            });
+        }).start();
+    }
+
+    private void renderMountainRowsForLayer(java.util.List<MapPoints.Point> pts, String note) {
+        if (mountainLayer == null) return;
+        TextView status = mountainLayer.findViewById(R.id.lc_mtn_status);
+        LinearLayout list = mountainLayer.findViewById(R.id.lc_mtn_list);
+        if (list == null) return;
+        list.removeAllViews();
+        int n = pts == null ? 0 : pts.size();
+        if (status != null) {
+            status.setText(String.format(java.util.Locale.US,
+                    "视野内山名 %d 个%s（天地图地名搜索 · 分类 260203 山）", n, note));
+        }
+        if (n == 0) {
+            TextView empty = new TextView(this);
+            empty.setText("视野内暂无山名（天地图检索无结果）");
+            empty.setTextSize(12f);
+            empty.setTextColor(Color.rgb(200, 192, 180));
+            list.addView(empty);
+            android.util.Log.d("LCMTN", "rows=0 empty");
+            return;
+        }
+        int show = Math.min(n, 40);
+        for (int i = 0; i < show; i++) {
+            MapPoints.Point p = pts.get(i);
+            TextView row = new TextView(this);
+            row.setText((i + 1) + ". " + (p.name == null ? "山" : p.name));
+            row.setTextSize(12f);
+            row.setTextColor(Color.rgb(232, 226, 214));
+            row.setPadding(0, dp(6), 0, dp(6));
+            final double rlat = p.lat, rlng = p.lng;
+            row.setOnClickListener(v -> {
+                if (compassMapView != null) {
+                    compassMapView.evaluateJavascript(String.format(java.util.Locale.US,
+                            "setView(%.6f,%.6f,null)", rlat, rlng), null);
+                }
+                hideMountainLayer();
+            });
+            list.addView(row);
+        }
+        android.util.Log.d("LCMTN", "rows=" + n + " shown=" + show + " note=" + note);
     }
 
     private String poiWgsLine(MapMarker m) {

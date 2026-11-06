@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.11.0",
+  "state": "right-mountains-entry",
+  "side": "lc",
+  "captured_at": "2026-11-06T22:16:47+0800",
+  "serial": "L2E0222531014833",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-C-mountains",
+  "build": {
+    "branch": "develop",
+    "commit": "4e398b32dd7851ceb52cb08693d17a2b0e6c1d97"
+  },
+  "apk": {
+    "path": "E:\\APPDetector\\wt\\lc-map-d0\\app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "e2053022cea979ce98b207c74d5f208d3b902603c1e981c5cc654f523d399a23",
+    "bytes": 7072629
+  },
+  "image": {
+    "file": "right-mountains-entry.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "5ccf11f2db6dbf0d54db0ce923012ce14f774edb7da7c6eceefc5a9ca0881257"
+  },
+  "dump": {
+    "file": "right-mountains-entry.xml",
+    "sha256": "a64c7327f997ab698e0f440dcb0ae973f17a5f416d83770c8de495f6012ad48e"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

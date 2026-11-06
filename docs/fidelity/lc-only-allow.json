@@ -30,6 +30,11 @@
       "state": "map-3d-img",
       "reason": "LC 侧补充证据、非对照态：与 map-3d-mode 同一 3D 状态，只把贴面切到影像（setBase('img') → drape=img，getState 断言 mode=3d/pitch=45/zoom=12/hasTexture=true），用于解决 vec 贴面下 3D 与 2D 肉眼难辨的证据可读性问题；原版同名态由「清单第 29 行」对照，不参与 diff 配对",
       "by": "LC地图"
+    },
+    {
+      "state": "right-mountains-off",
+      "reason": "LC 侧关闭态证据、非对照态：R2-030 把右列「山脉」改成地图内半屏图层后，关闭后的地图态原版没有对应 stem（原版该入口是右列 3D 之外的独立页/FLAG_SECURE），只用于证明「图层可开可关」的关闭半程",
+      "by": "LC地图"
     }
   ]
 }

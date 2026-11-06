@@ -87,7 +87,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** R2-025：调试广播可指定 tab（0 境内/1 境外/2 行政区域/3 收藏点），供复验确定性入口。 */
     private int pendingSearchTab = 0;
     private MapMarker elevPoint;
-    private LinearLayout drawerPanel;
+    private FrameLayout drawerPanel;   // M3：抽屉改 FrameLayout（原版每项固定 y，绝对定位）
+    /** M3：抽屉右侧 305px 遮罩（点它关闭抽屉）。 */
+    private FrameLayout drawerScrim;
     private Button menuButton;
     /** last raw (un-calibrated) azimuth, for the master-switch recompute. */
     private float lastRaw = 0f;
@@ -682,9 +684,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mbp.leftMargin = dp(6);
         frame.addView(menuButton, mbp);
 
+        // M3 抽屉：宽 923（原版面板）+ 右侧 305 遮罩（1228−923），点遮罩即关闭。
+        drawerScrim = new FrameLayout(this);
+        drawerScrim.setId(R.id.lc_drawer_scrim);
+        drawerScrim.setBackgroundColor(Color.argb(140, 0, 0, 0));
+        drawerScrim.setOnClickListener(v -> hideDrawer());
+        drawerScrim.setVisibility(View.GONE);
+        FrameLayout.LayoutParams dsp = new FrameLayout.LayoutParams(
+                DRAWER_SCRIM_W, FrameLayout.LayoutParams.MATCH_PARENT);
+        dsp.gravity = android.view.Gravity.END;
+        frame.addView(drawerScrim, dsp);
+
         drawerPanel = buildDrawer();
         drawerPanel.setVisibility(View.GONE);
-        FrameLayout.LayoutParams dlp = new FrameLayout.LayoutParams(dp(300), FrameLayout.LayoutParams.MATCH_PARENT);
+        FrameLayout.LayoutParams dlp = new FrameLayout.LayoutParams(
+                DRAWER_W, FrameLayout.LayoutParams.MATCH_PARENT);
         dlp.gravity = android.view.Gravity.START;
         frame.addView(drawerPanel, dlp);
 
@@ -1748,13 +1762,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private static final String[] DRAWER_ITEMS = {
             "地图设置", "账户设置", "投诉反馈", "关于我们", "联系我们",
-            "推荐给好友", "开具发票", "帮助中心", "用户协议"};
+            "推荐给好友", "帮助中心", "用户协议"};
+
+    // ---------------- M3：抽屉 1:1（原版抽屉几何全部取自 orig/drawer-menu-03.xml） ----------------
+    // 面板宽 923（遮罩 305 = 1228−923）；首项文字 [346,829][562,908]，行距**观测等差 189**
+    // （829→1018→…→2341，8 段零误差）；取消「开具发票」后第 7/8 项各上移 189：
+    // 帮助中心 2152−189=1963、用户协议 2341−189=2152。版本号 [150,2495][616,2574]，距内容帧底 4px。
+    // 829 之上原版是「未登录 / 立即登录 / 开通 VIP」区块（DI，不实现）——留白保留 829，不上移、不自造文案。
+    private static final int DRAWER_W = 923;
+    private static final int DRAWER_SCRIM_W = 305;
+    private static final int DRAWER_ITEM_TOP = 829;
+    private static final int DRAWER_ITEM_STEP = 189;
+    private static final int DRAWER_ITEM_H = 79;
+    private static final int DRAWER_TEXT_LEFT = 346;
+    private static final int DRAWER_VERSION_TOP = 2495;
+    private static final int DRAWER_VERSION_LEFT = 150;
+    private static final int[] DRAWER_ITEM_IDS = {
+            R.id.lc_drawer_item_0, R.id.lc_drawer_item_1, R.id.lc_drawer_item_2, R.id.lc_drawer_item_3,
+            R.id.lc_drawer_item_4, R.id.lc_drawer_item_5, R.id.lc_drawer_item_6, R.id.lc_drawer_item_7};
 
     private void showDrawer() {
         if (drawerPanel == null) drawerPanel = buildDrawer();
+        if (drawerScrim != null) {
+            drawerScrim.setVisibility(View.VISIBLE);
+            drawerScrim.bringToFront();
+        }
         drawerPanel.setVisibility(View.VISIBLE);
         drawerPanel.bringToFront();
-        android.util.Log.d("LCDRAWER", "open");
+        android.util.Log.d("LCDRAWER", "open w=" + drawerPanel.getWidth());
     }
 
     /** R2-018：推荐给好友 = 系统分享面板（真实动作，不造内容）。 */
@@ -1767,6 +1802,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void hideDrawer() {
         if (drawerPanel != null) drawerPanel.setVisibility(View.GONE);
+        if (drawerScrim != null) drawerScrim.setVisibility(View.GONE);
+        android.util.Log.d("LCDRAWER", "close");
     }
 
     private LinearLayout buildFavoriteColumn() {
@@ -1799,47 +1836,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return bar;
     }
 
-    private LinearLayout buildDrawer() {
-        LinearLayout panel = new LinearLayout(this);
+    /**
+     * M3 抽屉：**FrameLayout + 绝对定位**（原版每一项都是固定 y，不是等分列表）。
+     * 几何全部取自 `docs/fidelity/orig/drawer-menu-03.xml`：面板宽 923、首项 [346,829]、行距 189（观测等差）、
+     * 版本号 [150,2495][616,2574]（距内容帧底 4px）。829 之上原版是登录/VIP 区块（DI 不实现），留白保留。
+     */
+    private FrameLayout buildDrawer() {
+        FrameLayout panel = new FrameLayout(this);
         panel.setId(R.id.lc_drawer_panel);
-        panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setBackgroundColor(Color.argb(248, 26, 22, 18));
+        panel.setBackgroundColor(Color.rgb(26, 22, 18));
 
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        TextView close = new TextView(this);
-        close.setText("← 返回");
-        close.setTextSize(12f);
-        close.setTextColor(Color.rgb(220, 190, 130));
-        close.setPadding(dp(12), dp(12), dp(12), dp(12));
-        close.setOnClickListener(v -> hideDrawer());
-        header.addView(close);
-        panel.addView(header);
-
-        for (String label : DRAWER_ITEMS) {
-            Button item = new Button(this);
+        for (int i = 0; i < DRAWER_ITEMS.length; i++) {
+            final String label = DRAWER_ITEMS[i];
+            TextView item = new TextView(this);
+            if (i < DRAWER_ITEM_IDS.length) item.setId(DRAWER_ITEM_IDS[i]);
             item.setText(label);
-            item.setAllCaps(false);
-            item.setTextSize(13f);
-            item.setTextColor(Color.rgb(235, 228, 215));
-            item.setBackgroundColor(Color.TRANSPARENT);
+            item.setTextSize(16f);   // 原版 4 字占 216px（[346,829][562,908]）→ 54px/字 ≈ 16sp；行高 79 由 LayoutParams 固定
+            item.setTextColor(Color.rgb(0xE6, 0xE6, 0xE6));
             item.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
-            item.setPadding(dp(16), 0, dp(8), 0);
+            item.setIncludeFontPadding(false);
             item.setOnClickListener(v -> {
                 hideDrawer();
-                // R2-018：9 项每项都到达真实目标，不允许 toast 占位。
-                if ("地图设置".equals(label)) {
-                    startActivity(new android.content.Intent(this, SettingActivity.class));
-                } else if ("推荐给好友".equals(label)) {
-                    shareApp();
-                } else {
-                    android.content.Intent info = new android.content.Intent(this, InfoPageActivity.class);
-                    info.putExtra(InfoPageActivity.EXTRA_TITLE, label);
-                    startActivity(info);
-                }
+                openDrawerTarget(label);
             });
-            panel.addView(item, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, dp(46)));
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT, DRAWER_ITEM_H);
+            lp.leftMargin = DRAWER_TEXT_LEFT;
+            lp.topMargin = DRAWER_ITEM_TOP + i * DRAWER_ITEM_STEP;
+            panel.addView(item, lp);
         }
 
         TextView version = new TextView(this);
@@ -1847,9 +1871,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         version.setText("三维山水全景地图V 1.6.1");
         version.setTextSize(10f);
         version.setTextColor(Color.rgb(150, 130, 100));
-        version.setPadding(dp(16), dp(18), dp(8), dp(8));
-        panel.addView(version);
+        version.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
+        FrameLayout.LayoutParams vlp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, DRAWER_ITEM_H);
+        vlp.leftMargin = DRAWER_VERSION_LEFT;
+        vlp.topMargin = DRAWER_VERSION_TOP;
+        panel.addView(version, vlp);
         return panel;
+    }
+
+    /** M3：8 项各自落到真实目标（7 子页 + 地图设置），推荐给好友走页内分享面板。 */
+    private void openDrawerTarget(String label) {
+        switch (label) {
+            case "地图设置":
+                startActivity(new android.content.Intent(this, SettingActivity.class));
+                break;
+            case "推荐给好友":
+                shareApp();
+                break;
+            default: {
+                android.content.Intent page = new android.content.Intent(this, M3PageActivity.class);
+                page.putExtra(M3PageActivity.EXTRA_PAGE, label);
+                startActivity(page);
+            }
+        }
     }
 
     // ---------------- R2-004：POI 详情面板 ----------------

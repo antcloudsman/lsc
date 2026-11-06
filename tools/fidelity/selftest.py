@@ -228,6 +228,34 @@ def main() -> int:
             "report: known-red classification counted",
         )
         index_path.write_text(
+            "| # | missing-lc 条目 | R2 编号 | 分类 | 依据 |\n"
+            "|---|---|---|---|---|\n"
+            "| 1 | 02-missing | — | 真缺失 | selftest: 无独立 R2 |\n",
+            encoding="utf-8",
+        )
+        output = run(["report", "--root", str(report_root)])
+        check(
+            "known-red (index §5 ∪ §6): 1 registered" in output,
+            "report: R2 column accepts — (row still registered as known-red)",
+        )
+        check(
+            "known-red 真缺失 (1): 02-missing" in output,
+            "report: known-red stem list printed per class",
+        )
+        check("[FAIL] 02-missing" not in output, "report: registered known-red is not printed as FAIL")
+        check(
+            "registered as known-red" in output,
+            "report: not-compared line for registered known-red is informational",
+        )
+        index_path.write_text(
+            "| # | missing-lc 条目 | R2 编号 | 分类 | 依据 |\n"
+            "|---|---|---|---|---|\n"
+            "| 1 | 01-compass-main | — | 真缺失 | selftest: stale register |\n",
+            encoding="utf-8",
+        )
+        output = run(["report", "--root", str(report_root), "--state", "01-compass-main"], expect=1)
+        check("stale known-red entry" in output, "report: stale known-red registration fails the gate")
+        index_path.write_text(
             "| # | missing-lc 条目 | R2 编号 | 分类 |\n"
             "|---|---|---|---|\n"
             "| 1 | 02-missing | R2-002 | 乱写 |\n",
@@ -317,9 +345,13 @@ def main() -> int:
         )
         dump_allow_path.write_text(json.dumps(valid_dump_allow, ensure_ascii=False), encoding="utf-8")
         (report_root / "lc-captures.md").write_text(
+            "| # | missing-lc 条目 | R2 编号 | 分类 | 依据 |\n"
+            "|---|---|---|---|---|\n"
+            "| 1 | 02-missing | — | 真缺失 | selftest: 无独立 R2 |\n"
+            "\n"
             "| stem | 清单行 | R2 | 分类 | 依据 |\n"
             "|---|---|---|---|---|\n"
-            "| 14-dump-only | 26 | R2-030 | 证据不可得 | FLAG_SECURE, dump only |\n",
+            "| 14-dump-only | 26 | — | 证据不可得 | FLAG_SECURE, dump only |\n",
             encoding="utf-8",
         )
         run(["report", "--root", str(report_root), "--state", "14-dump-only"])
@@ -331,6 +363,23 @@ def main() -> int:
         check(
             dump_only_known["checksheet"]["required"] == 0,
             "report: §6 known-red states are excluded from checksheet coverage",
+        )
+        full_known_red = run([
+            "report", "--root", str(report_root), "--state", "02-missing", "--state", "14-dump-only",
+        ])
+        check(
+            "known-red (index §5 ∪ §6): 2 registered" in full_known_red,
+            "report: §5+§6 full known-red run aggregates the register",
+        )
+        check(
+            "真缺失 1" in full_known_red and "证据不可得 1" in full_known_red,
+            "report: §5+§6 full known-red run prints all four class counts",
+        )
+        check("[FAIL]" not in full_known_red, "report: fully registered known-red run has no FAIL lines")
+        full_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        check(
+            sorted(full_summary["known_red"]["registered"]) == ["02-missing", "14-dump-only"],
+            "report: §5+§6 registered stems visible in summary.json",
         )
 
         lc_only_states = ["07-lc-only-a", "08-lc-only-b", "09-lc-only-c", "10-lc-only-d"]

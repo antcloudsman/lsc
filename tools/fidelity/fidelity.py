@@ -879,16 +879,21 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
                 f"orig={_esc(conflict.get('orig', ''))} lc={_esc(conflict.get('lc', ''))}</p>"
             )
 
-    # known-red register from index §5: registered missing-lc states are expected, unregistered are leaks.
-    html.append("<h2>known-red（index §5）</h2>")
+    # known-red register from index §5 ∪ §6: registered missing-lc states are expected, unregistered are leaks.
+    html.append("<h2>known-red（index §5 ∪ §6）</h2>")
     classes = known_red.get("classes", {})
     html.append(
         "<p class=\"small\">" + _esc(" / ".join(f"{name} {count}" for name, count in classes.items())) + "</p>"
     )
+    registered = known_red.get("registered", {})
+    for name in KNOWN_RED_CLASSES:
+        stems = sorted(state for state, entry in registered.items() if entry["class"] == name)
+        if stems:
+            html.append(f"<p class=\"small\">{_esc(name)}: {_esc(', '.join(stems))}</p>")
     for state in known_red.get("unregistered_missing", []):
-        html.append(f"<p class=\"fail\">missing-lc not registered in index §5: {_esc(state)}</p>")
+        html.append(f"<p class=\"fail\">missing-lc not registered in index §5 ∪ §6: {_esc(state)}</p>")
     for state in known_red.get("stale", []):
-        html.append(f"<p class=\"warn\">§5 state is no longer missing-lc: {_esc(state)}</p>")
+        html.append(f"<p class=\"warn\">§5/§6 state is no longer missing-lc (stale): {_esc(state)}</p>")
 
     for row in rows:
         state = row["state"]
@@ -994,13 +999,18 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
             md.append(
                 f"- CONFLICT {conflict['state']}: orig={conflict.get('orig', '')} lc={conflict.get('lc', '')}"
             )
-    md.extend(["", "## known-red（index §5）", ""])
+    md.extend(["", "## known-red（index §5 ∪ §6）", ""])
     classes = known_red.get("classes", {})
     md.append("- " + " / ".join(f"{name} {count}" for name, count in classes.items()))
+    registered = known_red.get("registered", {})
+    for name in KNOWN_RED_CLASSES:
+        stems = sorted(state for state, entry in registered.items() if entry["class"] == name)
+        if stems:
+            md.append(f"- {name}: {', '.join(stems)}")
     for state in known_red.get("unregistered_missing", []):
-        md.append(f"- LEAK missing-lc not registered in §5: {state}")
+        md.append(f"- LEAK missing-lc not registered in §5 ∪ §6: {state}")
     for state in known_red.get("stale", []):
-        md.append(f"- STALE §5 state is no longer missing-lc: {state}")
+        md.append(f"- STALE §5/§6 state is no longer missing-lc: {state}")
     md.extend([
         "",
         "| state | status | diff px | ratio | bbox | mean dE2000 | controls (m/only orig/only lc) |",
@@ -1018,8 +1028,20 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
         )
     (out_dir / "summary.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     passed(f"report: {compared}/{total} pair(s) compared -> {out_dir / 'index.html'}")
-    if failed_rows:
-        failed(f"report: {len(failed_rows)} pair(s) not compared (missing/size mismatch/error)")
+    known_red_registered = known_red.get("registered", {})
+    known_red_missing = [
+        row for row in failed_rows
+        if row["status"] == "missing-lc" and row["state"] in known_red_registered
+    ]
+    known_red_ids = {id(row) for row in known_red_missing}
+    genuine_failed = [row for row in failed_rows if id(row) not in known_red_ids]
+    if genuine_failed:
+        failed(f"report: {len(genuine_failed)} pair(s) not compared (missing/size mismatch/error)")
+    if known_red_missing:
+        info(
+            f"report: {len(known_red_missing)} pair(s) not compared but registered as known-red "
+            "(index §5 ∪ §6)"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1200,6 +1222,18 @@ def cmd_report(args: argparse.Namespace) -> int:
 
     crop = parse_rect(args.crop, "--crop") if args.crop else None
     ignore_rects = [parse_rect(value, "--ignore-rect") for value in (args.ignore_rect or [])]
+    # Parse the known-red register first: registered missing-lc states are expected (index §5 ∪ §6)
+    # and must not be printed as FAIL lines while the pairs are walked.
+    index_path = Path(args.index) if getattr(args, "index", None) else root / "lc-captures.md"
+    if index_path.exists():
+        known_red, known_red_errors = _parse_known_red(index_path, root)
+    else:
+        known_red, known_red_errors = {}, []
+        info(f"warning: index not found ({index_path}); known-red register is empty")
+    if known_red_errors:
+        for error in known_red_errors:
+            failed(error)
+        raise FidelityError("invalid known-red register in the fidelity index (§5/§6)")
     rows = []
     for state in sorted(states):
         orig_png, lc_png = orig_dir / f"{state}.png", lc_dir / f"{state}.png"
@@ -1233,19 +1267,12 @@ def cmd_report(args: argparse.Namespace) -> int:
             except FidelityError as error:
                 row.update({"status": "error", "error": str(error)})
         if "error" in row:
-            failed(f"{state}: {row['status']} - {row['error']}")
+            if row["status"] == "missing-lc" and state in known_red:
+                info(f"{state}: missing-lc - {row['error']} (registered known-red: {known_red[state]['class']})")
+            else:
+                failed(f"{state}: {row['status']} - {row['error']}")
         rows.append(row)
 
-    index_path = Path(args.index) if getattr(args, "index", None) else root / "lc-captures.md"
-    if index_path.exists():
-        known_red, known_red_errors = _parse_known_red(index_path, root)
-    else:
-        known_red, known_red_errors = {}, []
-        info(f"warning: index not found ({index_path}); known-red register is empty")
-    if known_red_errors:
-        for error in known_red_errors:
-            failed(error)
-        raise FidelityError("invalid known-red register in the fidelity index (§5/§6)")
     checksheet = _collect_checksheet(orig_dir, lc_dir, states, set(lc_only), set(known_red))
     class_counts = {name: 0 for name in KNOWN_RED_CLASSES}
     for entry in known_red.values():
@@ -1256,14 +1283,23 @@ def cmd_report(args: argparse.Namespace) -> int:
     )
     missing_lc_states = [row["state"] for row in rows if row["status"] == "missing-lc"]
     unregistered_missing = [state for state in missing_lc_states if state not in known_red]
+    for name in KNOWN_RED_CLASSES:
+        stems = sorted(state for state, entry in known_red.items() if entry["class"] == name)
+        if stems:
+            info(f"known-red {name} ({len(stems)}): {', '.join(stems)}")
+    # Only states in this run's selection can be "no longer missing": with --state filtering,
+    # registrations outside the selection are simply not observed here.
     stale_known_red = [
         state for state, entry in known_red.items()
-        if state not in missing_lc_states and entry["class"] != "证据不可得"
+        if state in states and state not in missing_lc_states and entry["class"] != "证据不可得"
     ]
     for state in unregistered_missing:
         failed(f"missing-lc not registered in index §5 ∪ §6: {state}")
-    if stale_known_red:
-        info(f"warning: §5/§6 states that are no longer missing-lc: {', '.join(stale_known_red)}")
+    for state in stale_known_red:
+        failed(
+            f"stale known-red entry (no longer missing-lc): {state}; "
+            "update the index §5 ∪ §6 register"
+        )
     info(
         f"checksheet_id coverage: {checksheet['with_id']}/{checksheet['required']}"
         + (f", missing={','.join(checksheet['missing'])}" if checksheet["missing"] else "")
@@ -1285,6 +1321,7 @@ def cmd_report(args: argparse.Namespace) -> int:
         integrity_failed
         or bool(hard_missing)
         or bool(unregistered_missing)
+        or bool(stale_known_red)
         or checksheet_failed
     )
 
@@ -1571,7 +1608,11 @@ def _parse_known_red(index_path: Path, root: Path) -> tuple[dict, list]:
             if r2_col >= len(row) or class_col >= len(row):
                 continue
             r2 = row[r2_col].strip().strip("`").strip("*").strip()
-            if not re.fullmatch(r"R2-\d{3}", r2):
+            if r2 in ("", "—", "–", "-", "N/A", "n/a", "NA", "无"):
+                # A row without an R2 (e.g. a checklist line with no independent finding)
+                # is still a known-red registration; r2 stays empty in the register.
+                r2 = ""
+            elif not re.fullmatch(r"R2-\d{3}", r2):
                 continue
             classification = row[class_col].strip().strip("`").strip("*").strip()
             cells = [row[index] for index in state_columns if index < len(row)] if state_columns else row

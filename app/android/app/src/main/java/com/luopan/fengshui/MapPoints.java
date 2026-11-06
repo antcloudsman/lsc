@@ -61,7 +61,8 @@ final class MapPoints {
         static final String OK = "ok";
         static final String EMPTY = "empty";
         static final String RATE_LIMITED = "rate-limited";   // HTTP 429
-        static final String QUOTA = "quota";                 // 业务错误码 3xxxxx
+        static final String QUOTA = "quota";                 // 业务错误码 3xxxxx（配额/权限类）
+        static final String KEY_INVALID = "key-invalid";     // 301013：key 非法/未授权（不是配额，措辞要分开）
         static final String UNAVAILABLE = "unavailable";     // 其它 HTTP/超时/解析失败
 
         final String code;
@@ -81,7 +82,7 @@ final class MapPoints {
         }
     }
 
-    /** R2-025 境内/境外/行政区域：视野内关键词检索，返回带降级态的结果。 */
+    /** R2-025 境内：中心点 ±0.6° 视野内关键词检索（queryType=2 + mapBound）。 */
     static SearchResult searchNear(String keyword, double lat, double lng, int level, int count) {
         double d = 0.6;
         String bound = (lng - d) + "," + (lat - d) + "," + (lng + d) + "," + (lat + d);
@@ -89,6 +90,45 @@ final class MapPoints {
                 + ",\"mapBound\":\"" + bound + "\",\"queryType\":2,\"start\":0,\"count\":"
                 + Math.min(300, Math.max(1, count)) + "}";
         return execute(post);
+    }
+
+    /**
+     * R2-025 境外：不带国内的窄视野，用全球范围边界（-180,-85,180,85）+ queryType=2。
+     * 实测（2026-11-06）：东京塔 → total=1、139.745709,35.657869；故宫 → total=1283（境内同词 443）。
+     * 注：不带 mapBound 会 HTTP 400（天地图 queryType=2 必填 mapBound），所以这里用全球边界等价实现。
+     */
+    static SearchResult searchGlobal(String keyword, int count) {
+        String post = "{\"keyWord\":\"" + esc(keyword) + "\",\"level\":12"
+                + ",\"mapBound\":\"-180,-85,180,85\",\"queryType\":2,\"start\":0,\"count\":"
+                + Math.min(300, Math.max(1, count)) + "}";
+        return execute(post);
+    }
+
+    /**
+     * R2-025 行政区域：queryType=12 + specify=省码（9 位，形如 156110000）。
+     * 实测：故宫 → total=446；「朝阳」在北京(156110000)=196417/首条朝阳区，在上海(156310000)=168/首条朝阳，
+     * 即 specify 确实把结果收窄到该省。
+     */
+    static SearchResult searchInProvince(String keyword, String provinceCode9, int count) {
+        String code = provinceCode9 == null ? "" : provinceCode9.trim();
+        if (code.isEmpty()) return new SearchResult(SearchResult.UNAVAILABLE, "province-code empty", null, 0);
+        String post = "{\"keyWord\":\"" + esc(keyword) + "\",\"level\":12,\"queryType\":12,\"start\":0,\"count\":"
+                + Math.min(300, Math.max(1, count)) + ",\"specify\":\"" + esc(code) + "\"}";
+        return execute(post);
+    }
+
+    /**
+     * 行政区域用：把关键词解析成省码（9 位）。先按当前视野搜一次取首条坐标，再逆地理取 province_code；
+     * 都失败就退回用当前中心点算省码。解析不出返回 null（调用方按降级态处理，不编造）。
+     */
+    static String resolveProvince9(String keyword, double lat, double lng) {
+        SearchResult near = searchNear(keyword, lat, lng, 12, 5);
+        if (near.ok() && !near.points.isEmpty()) {
+            Point p = near.points.get(0);
+            String code = provinceCode(p.lat, p.lng);
+            if (code != null && !code.isEmpty()) return code;
+        }
+        return provinceCode(lat, lng);
     }
 
     /** R2-025 通用检索：queryType 由调用方给（1 普通 / 2 视野 / 3 周边 …），见天地图 v2/search。 */
@@ -105,7 +145,14 @@ final class MapPoints {
             String info = st == null ? "" : st.optString("infocode", "");
             String desc = st == null ? "" : st.optString("cndesc", "");
             if (!info.isEmpty() && !"1000".equals(info)) {
-                String code = info.startsWith("3") ? SearchResult.QUOTA : SearchResult.UNAVAILABLE;
+                String code;
+                if ("301013".equals(info)) {
+                    code = SearchResult.KEY_INVALID;      // key 非法/未授权，别当成配额不足
+                } else if (info.startsWith("3")) {
+                    code = SearchResult.QUOTA;
+                } else {
+                    code = SearchResult.UNAVAILABLE;
+                }
                 return new SearchResult(code, "infocode=" + info + " " + desc, new ArrayList<>(), 0);
             }
             List<Point> pts = parsePois(root);

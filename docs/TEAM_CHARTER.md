@@ -112,3 +112,14 @@ adb -s L2E0222531014833 shell am start -n com.luopan.fengshui/.MainActivity
 | D-009 | 2026-11-05 | 交互口径：无网磁偏角退回手动值（不做离线近似表）；3D 垂直夸张默认 2.5× | HUD 必须常显倍率与贴面类型；2.5× 是显示策略，不做隐藏自动变换 |
 | D-010 | 2026-11-05 | 修复阶段分工：**实现**＝在 `fix-p0` 有写权限的成员（当前 LC审客户端 主刀 / LC审地图 配合）；**复核**独立于实现（LC测试 管门禁与基线重冻、LC审核验 管条目核对）。台账「责任人」按实现承接人填写，不得写成只读角色 | 审查报告已冻结、审查角色转修复后，原「审查者不碰代码」不再成立；用「实现/复核分离」替代，并在台账写明双轨 |
 | D-011 | 2026-11-05 | **调试面只许在 debug 变体暴露**：导出 Activity（供 `adb am start`）、调试广播桥、debug 命令一律 `src/debug/AndroidManifest.xml` 覆盖或 `FLAG_DEBUGGABLE` 门槛，release 包里必须不存在 | 与 B-02 同口径；release 上用 `aapt2 dump xmltree` 验证 `android:exported=false`，违者不予合并 |
+
+## 9. 当前有效工作流（2026-11-06 技术总监裁定）
+
+| 项 | 规定 |
+|---|---|
+| 集成主线 | **`develop` 分支**。它是唯一合并与验收基线，所有成员以它为准 |
+| 作业方式 | 每个 Bot 在**自己的独立 worktree**（如 `wt/lc-wire-f0607`、`wt/stub-map`、`wt/features`）作业，提交 `feature/*` 分支，由**技术总监合并进 develop** |
+| 历史归档 | `E:\APPDetector\output`（分支 `feature/地图-3d-terrain`）与 `E:\APPDetector\fix-p0`（分支 `fix/p0-review-findings`）是**早期阶段的工作树**：只读归档，**不再提交**（不修改、不同步、不 rebase） |
+| AGENTS.md 口径 | `output/AGENTS.md` 里「唯一有效工作树是 fix-p0」**已失效**——该文件未被 git 跟踪、只存在于退役目录。新人/新会话看到这条，**以本章程为准** |
+| 冲突处理 | 本文与任何 AGENTS.md、旧工作树里的说明冲突时，**以 `docs/TEAM_CHARTER.md` 为准** |
+

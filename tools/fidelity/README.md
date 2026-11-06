@@ -13,7 +13,7 @@
 python tools\fidelity\selftest.py
 ```
 
-合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (25 checks)`，exit 0。
+合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。
 
 ## 1. 一键采集（`collect`）
 
@@ -125,7 +125,7 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
 - `summary.json` / `summary.md`：机读/人读汇总
 - `<state>/metrics.json`、`side_by_side.png`、`diff.png` 等
 
-缺一侧、尺寸不一致、解析失败都会在表里标 `missing-lc` / `missing-orig` / `error` 并列在控制台。**退出码**：`missing-orig`/`error`、完整性失败、checksheet 冲突、未登记的 `missing-lc`、或 `--require-checksheet-id` 下的覆盖缺失 → exit 1；**已在索引 §5/§6 登记的 `missing-lc` 属 known-red，不算失败**。确需在已知红状态下出报告时显式加 `--allow-known-red`（控制台会打印该提示）。`--strict` 保留兼容但已无作用（默认就是严格）。
+缺一侧、尺寸不一致、解析失败都会在表里标 `missing-lc` / `missing-orig` / `error` 并列在控制台。**退出码**：`missing-orig`/`error`、完整性失败、checksheet 冲突、未登记的 `missing-lc`、登记表里已 stale 的条目、或 `--require-checksheet-id` 下的覆盖缺失 → exit 1；**已在索引 §5/§6 登记的 `missing-lc` 属 known-red，控制台按分类汇总打印（含 stem 清单）但不计入失败**，因此无需任何开关就能对全量库出报告。`--allow-known-red` 只用于刻意压掉真实失败（完整性/覆盖/未登记缺口）出报告，**D3 最终核验不要加**。`--strict` 保留兼容但已无作用（默认就是严格）。
 
 **checksheet_id 覆盖与缺图**：报告自动汇总每个「有原版证据的 state」的 `meta.json.checksheet_id`，写进 `summary.json.checksheet`（`required/with_id/missing/conflicts`）、`summary.md` 与 `index.html` 的「checksheet_id 覆盖」小节；orig/lc 两侧 id 不一致记 conflict。D3 的 38/38 校验命令：
 
@@ -135,7 +135,7 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --require-checkshe
 
 退出码 0 = 覆盖齐全且无缺图/无完整性失败；缺 `checksheet_id`、orig/lc 冲突、缺图、重复图、0 字节图都会非 0。缺图清单同时列在 `summary.md` 的 state 表（`missing-orig`/`missing-lc`）。
 
-**known-red §5 ∪ §6 门禁**：`report` 解析索引 §5/§6（列序 `stem｜清单行｜R2｜分类`，`--index` 可另指）。每个 `missing-lc` 必须在登记表里，否则 exit 1；`分类` 必须严格是 `真缺失`/`命名不一致`/`载体不同`/`证据不可得` 之一，带括号注释或其它值直接报错；一个 state 重复登记不同 R2/分类、或一行解析出多个 state 也报错。§5/§6 只做登记与分类统计，**不作为 `checksheet_id` 来源**（避免 P0 补采后 orig 的 `R2-*` 与 lc 的 `ST-*` 冲突）。`required` 会扣掉这两组，`checksheet_id` 覆盖只在未登记态上计算。计数写进 `summary.json.known_red`（`classes/unregistered_missing/stale`）。
+**known-red §5 ∪ §6 门禁**：`report` 解析索引 §5/§6（列序 `stem｜清单行｜R2｜分类`，`--index` 可另指）。每个 `missing-lc` 必须在登记表里，否则 exit 1；`分类` 必须严格是 `真缺失`/`命名不一致`/`载体不同`/`证据不可得` 之一，带括号注释或其它值直接报错；一个 state 重复登记不同 R2/分类、或一行解析出多个 state 也报错。**R2 列允许 `—`、`-`、空、`N/A`**（表示该条目无独立 R2，例如 `tool-measure-mode` 在报告里没有对应编号），仍照常登记为 known-red。§5/§6 只做登记与分类统计，**不作为 `checksheet_id` 来源**（避免 P0 补采后 orig 的 `R2-*` 与 lc 的 `ST-*` 冲突）。`required` 会扣掉这两组，`checksheet_id` 覆盖只在未登记态上计算。计数与 stem 清单写进控制台和 `summary.json.known_red`（`registered/classes/unregistered_missing/stale`）；已登记态不再逐个打 `[FAIL]`，报告末尾那行 `N pair(s) not compared` 只在**未登记**缺口存在时才算 FAIL。登记表里仍是 `missing-lc`、但实际已可比对的态判 `stale` → exit 1，需回写索引（`--state` 过滤时只看本次选中的 state）。
 
 **证据完整性硬检查**（不看 `--strict`，命中即 exit 1）：
 

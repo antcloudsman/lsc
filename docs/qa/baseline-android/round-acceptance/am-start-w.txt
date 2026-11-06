@@ -1,0 +1,7 @@
+Starting: Intent { cmp=com.luopan.fengshui/.MainActivity }
+Status: ok
+LaunchState: COLD
+Activity: com.luopan.fengshui/.MainActivity
+TotalTime: 653
+WaitTime: 668
+Complete

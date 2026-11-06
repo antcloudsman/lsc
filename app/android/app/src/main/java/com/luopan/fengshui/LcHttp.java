@@ -73,6 +73,15 @@ final class LcHttp {
         return new String(bytes(url, MAX_BYTES, headers), StandardCharsets.UTF_8);
     }
 
+    /**
+     * 显式超时的 GET（R2-025）：检索链路用 8 s 连接 / 12 s 读取。
+     * 默认 {@link #get(String)} 是 8 s / 16 s；这里让调用方把「一次卡住的请求最多挂多久」写死，
+     * 避免用户侧出现「点了永远没反应」。
+     */
+    static String get(String url, int connectMs, int readMs) throws Exception {
+        return new String(bytes(url, MAX_BYTES, null, connectMs, readMs), StandardCharsets.UTF_8);
+    }
+
     /** 二进制下载（图片/瓦片）：与 get() 共用 UA、超时与字节上限。 */
     static byte[] bytes(String url) throws Exception {
         return bytes(url, MAX_BYTES);
@@ -102,7 +111,12 @@ final class LcHttp {
     }
 
     static byte[] bytes(String url, int maxBytes, Map<String, String> headers) throws Exception {
-        InputStream in = openStream(url, maxBytes, headers);
+        return bytes(url, maxBytes, headers, TIMEOUT_MS, TIMEOUT_MS * 2);
+    }
+
+    static byte[] bytes(String url, int maxBytes, Map<String, String> headers,
+                        int connectMs, int readMs) throws Exception {
+        InputStream in = openStream(url, maxBytes, headers, connectMs, readMs);
         try {
             return readAll(in);
         } finally {
@@ -128,9 +142,15 @@ final class LcHttp {
 
     /** @param headers 额外请求头（可 null）；UA 固定用 {@link #UA}，这里不接受覆盖 */
     static InputStream openStream(String url, int maxBytes, Map<String, String> headers) throws Exception {
+        return openStream(url, maxBytes, headers, TIMEOUT_MS, TIMEOUT_MS * 2);
+    }
+
+    /** R2-025：超时可显式给（检索链路 8000/12000），其余调用沿用默认 8000/16000。 */
+    static InputStream openStream(String url, int maxBytes, Map<String, String> headers,
+                                  int connectMs, int readMs) throws Exception {
         final HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(TIMEOUT_MS);
-        c.setReadTimeout(TIMEOUT_MS * 2);
+        c.setConnectTimeout(connectMs > 0 ? connectMs : TIMEOUT_MS);
+        c.setReadTimeout(readMs > 0 ? readMs : TIMEOUT_MS * 2);
         if (uaSpoof) c.setRequestProperty("User-Agent", UA);   /* 默认不设，用平台默认 UA */
         if (headers != null) {
             for (Map.Entry<String, String> e : headers.entrySet()) {

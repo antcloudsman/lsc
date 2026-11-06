@@ -40,7 +40,7 @@ final class MapPoints {
             String post = "{\"lon\":" + lng + ",\"lat\":" + lat + ",\"ver\":1}";
             String url = "https://api.tianditu.gov.cn/geocoder?postStr="
                     + URLEncoder.encode(post, "UTF-8") + "&type=geocode&tk=" + MapKeys.TDT;
-            JSONObject root = new JSONObject(LcHttp.get(url));
+            JSONObject root = new JSONObject(LcHttp.get(url, 8000, 12000));
             JSONObject comp = root.optJSONObject("result") == null ? null
                     : root.getJSONObject("result").optJSONObject("addressComponent");
             if (comp == null) return null;
@@ -140,7 +140,7 @@ final class MapPoints {
         try {
             String url = "https://api.tianditu.gov.cn/v2/search?postStr="
                     + URLEncoder.encode(post, "UTF-8") + "&type=query&tk=" + MapKeys.TDT;
-            JSONObject root = new JSONObject(LcHttp.get(url));
+            JSONObject root = new JSONObject(LcHttp.get(url, 8000, 12000));
             JSONObject st = root.optJSONObject("status");
             String info = st == null ? "" : st.optString("infocode", "");
             String desc = st == null ? "" : st.optString("cndesc", "");
@@ -219,7 +219,7 @@ final class MapPoints {
     private static List<Point> query(String post) throws Exception {
         String url = "https://api.tianditu.gov.cn/v2/search?postStr="
                 + URLEncoder.encode(post, "UTF-8") + "&type=query&tk=" + MapKeys.TDT;
-        JSONObject root = new JSONObject(LcHttp.get(url));
+        JSONObject root = new JSONObject(LcHttp.get(url, 8000, 12000));
         List<Point> out = new ArrayList<>();
         JSONArray pois = root.optJSONArray("pois");
         if (pois == null) return out;
@@ -246,7 +246,7 @@ final class MapPoints {
             String post = "{\"lon\":" + lng + ",\"lat\":" + lat + ",\"ver\":1}";
             String url = "https://api.tianditu.gov.cn/geocoder?postStr="
                     + URLEncoder.encode(post, "UTF-8") + "&type=geocode&tk=" + MapKeys.TDT;
-            JSONObject root = new JSONObject(LcHttp.get(url));
+            JSONObject root = new JSONObject(LcHttp.get(url, 8000, 12000));
             JSONObject result = root.optJSONObject("result");
             return result == null ? "" : result.optString("formatted_address", "");
         } catch (Throwable t) {

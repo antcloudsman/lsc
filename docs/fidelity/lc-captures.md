@@ -91,7 +91,7 @@ D2 采集注意：钓点页「加钓点」会写入 1 条自建钓点（`Fishing
 | 21 | `ST-C-track` | 轨迹记录 → 登录墙（`tool-track`） | 地图章节 | — | 入口「轨迹记录」[106,1540]-[359,1702]；LC 无登录墙（见 38） |
 | 22 | `ST-A-map-home` | 路网（图层面板，`map-home-01.xml`） | 地图章节 | — | 左列「路网」[6,1999]-[201,2127]（`map-home-01.xml`） |
 | 23 | `R2-036` | 等高线首用引导（`tool-contour-01`） | 地图章节 | — | 左列「等高线」[6,2194]-[201,2322] |
-| 24 | `ST-C-mountains` | 山脉（`map-mountains-entry`） | 地图章节 | — | 右列「山脉」[1027,1008]-[1222,1136] |
+| 24 | `ST-C-mountains` | 山脉（`right-mountains-entry`） | 地图章节 | — | 右列「山脉」[1027,1008]-[1222,1136]；R2-030 起为地图内半屏图层（stem 按原版命名） |
 | 25 | `ST-C-water` | 水系（`map-water-entry`） | 地图章节 | — | 右列「水系」[1027,1203]-[1222,1331] |
 | 26 | `ST-C-overlay` | 数据叠加面板（`map-overlay-sheet`） | 地图章节 | — | 右列「叠加」[1027,814]-[1222,942] |
 | 27 | `ST-C-explore` | 探索页（`map-explore-page`） | 地图章节 | — | 右列「探索」[1027,1398]-[1222,1526] |
@@ -147,7 +147,7 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | 21 | `ST-C-track` | `tool-track` | 实采 | png+xml+meta | 历史轨迹（无登录墙；空态「暂无历史轨迹记录」） |
 | 22 | `ST-C-roadnet` | `map-roadnet-on` | 实采（LC 侧同态） | png+xml+meta | 路网叠加开启；原版该行无独立 stem（对照物见行 03 dump） |
 | 23 | `R2-036` | `tool-contour-01` | 缺失（**证据不可得·环境不可用**） | 补充证据 `map-contour-relief` | 分类：**证据不可得**，**不是「待实现」**——LC 侧等高线能力已实测可用（`contour=true` 时山区画面出现等高线），缺的是「原版固定态同态对照」：原版 App 在保护壳初始化阶段阻塞，两轮（含重启）均 ANR，取不到对照（§4.2）。固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希完全相同（`13567:1033006902` 三次一致）；同一引擎在 40.35/116.00 z12 开启后哈希变化（`12547:4200479435`→`12575:898838800`）。原 `tool-contour-01.*` 与 3D 态逐字节相同：**D1 复核（`verify-round2.md` §3.9）确认两者都真在 3D**（`contour on=true uniform=1`），同图是平坦地形无可画等高线，不是状态没进；文件已删除以免被当成两态。R2-036 维持「未确认」 |
-| 24 | `ST-C-mountains` | `map-mountains-entry` | 实采 | png+xml+meta | 「看山脉」页：视野内山名 120 个、山脊/刷新视野 |
+| 24 | `ST-C-mountains` | `right-mountains-entry` | 实采（R2-030 改版） | png+xml+meta（+关闭态 `right-mountains-off`） | 山脉改为**地图内半屏山名图层**：`mResumedActivity` 仍 `MainActivity`；面板 `[0,1341]-[1228,2578]`、标题「看山脉」、关闭按钮 `[884,1368]-[1181,1530]`、状态行「视野内山名 113 个（天地图地名搜索 · 分类 260203 山）」；再点「山脉」可重开。stem 按原版命名（原版该态 FLAG_SECURE 仅 dump）。旧的 `map-mountains-entry`（跳 `MountainActivity` 整页）已被 R2-030 取代，文件删除 |
 | 25 | `ST-C-water` | `map-water-entry` | 实采 | png+xml+meta | 「看水系」页（D0 重采：`mResumedActivity=.WaterActivity`、dump 含 `看水系`、不含 `看山脉`） |
 | 26 | `ST-C-overlay` | `map-overlay-sheet` | 实采 | png+xml+meta | 「数据叠加」页：4 Tab + 公路(路网) + 全部开启/关闭 |
 | 27 | `ST-C-explore` | `map-explore-page` | 实采 | png+xml+meta | 「探索」页（D0 重采：`mResumedActivity=.DiscoveryActivity`、dump 含 `探索`/`专题地图`，不含 `看山脉`） |

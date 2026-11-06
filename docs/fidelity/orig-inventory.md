@@ -6,6 +6,17 @@
 - 自动量化表：`docs/fidelity/orig-inventory-auto.md`（每个文本/可点击节点的 bounds、尺寸 px、`sp≈`、矩形内主色 hex）
 - 采集工具（不入库，路径留档）：`E:\APPDetector\tmp-stage1-reverse\{cap.py,tour4.py,parse_dump.py,gen_inventory.py}`；原版被爱加密壳 + gadget 以 `wait` 模式启动，**必须先 Frida attach 后 `resume` 才能过启动页**（`resume_orig.py`）
 
+### 证据溯源（历史轮再采集）
+
+两件证据来自**上一轮同版本原机的再采集**（2026-11-05，非本轮 2026-11-06 窗口），已复制进交付目录并在 `_captures.tsv` 标「历史轮再采集」：
+
+| 文件 | SHA256（前 16） | 用途 | 为什么必须用历史轮 |
+|---|---|---|---|
+| `orig/win-02-compass.png` | `812C4B9B184AF207` | 状态 13/14/15：罗盘浮层左列/右列/底栏按钮外观 | 罗盘浮层是 WebView，本轮 `tool-compass-page.png` 只有 canvas，**按钮在历史轮截图里才看得见** |
+| `orig/w3-sheet.png` | `2F47122E0AE6827A` | 状态 16：智能读盘弹层 14 行 | 本轮未重开该弹层（读盘坐标 2070 已实测可用），文字侧另有 `MECHANICS.md` R4/R4b 的 DEX 证据 |
+
+两件均为 PNG-only：WebView/弹层无文本节点，`uiautomator dump` 不含按钮文字，故 `_captures.tsv` 记 `dump-BLOCKED`。
+
 ## 0. 全局结论（先给对标要用的硬事实）
 
 | 项 | 实测 |
@@ -43,12 +54,12 @@
 
 ### B. 罗盘浮层工具条
 
-| # | 状态 | 入口 | 证据 | 关键量化 |
+| # | 状态 | 入口 | 证据（文件名均在 `docs/fidelity/orig/`） | 关键量化 |
 |---|---|---|---|---|
-| 13 | 左列工具条（罗盘页） | 罗盘浮层页左列 | `tool-compass-page.xml` + `win-02-compass` 系列历史图 | 历史实测按钮中心：截屏 y≈1340 / 等高线 1500 / 罗盘复位 1690 / 罗盘锁定 1880 / **读盘 2070** / 贴地 2250，x≈132（**旧轮实测值，本轮 dump 无文本节点，待像素复核**） |
-| 14 | 右列（罗盘页） | 同上 | 同上 | 地图/实景/坐向朝北开关（标签在「坐北朝南↔坐南朝北」间切换，DEX `CompassToolsKt.n0` + `controller.g.x()`）/指针开关 |
-| 15 | 底栏（罗盘页） | 同上 | 同上 | 切换/旋转/缩放/透明度/天支线 |
-| 16 | 智能读盘弹层 | 罗盘页 → 读盘 (132,2070) | 旧轮 `orig-shots/w3-sheet.png` | 标题「智能读盘」；向北/坐南 + 坐山向山；14 行 `类型名 向：/坐：`，VIP 11 行只给 🔒+点击查看 |
+| 13 | 左列工具条（罗盘页） | 更多 → 罗盘 [23,1540]-[319,1771] → 浮层左列 | 本轮：`tool-compass-page.png` + `tool-compass-page.xml`（WebView，dump 仅暴露 `compass`/`pointer` 两个 DOM 节点，**无按钮文本节点**）；历史轮（2026-11-05，同版本原机）再采集：`win-02-compass.png`（SHA256 `812C4B9B…`，`_captures.tsv` 已标「历史轮再采集」） | 历史实测按钮中心：截屏 y≈1340 / 等高线 1500 / 罗盘复位 1690 / 罗盘锁定 1880 / **读盘 2070** / 贴地 2250，x≈132（旧轮实测值；本轮 dump 无文本节点，**待像素量取复核**，用 `tools/fidelity fidelity.py sample/measure`） |
+| 14 | 右列（罗盘页） | 罗盘浮层页右列（浮层顶栏 隐藏/显示 + 右列按钮） | 本轮：`tool-compass-page.png` + `tool-compass-page.xml`；历史轮再采集：`win-02-compass.png` | 地图/实景/坐向朝北开关（标签在「坐北朝南↔坐南朝北」间切换，DEX `CompassToolsKt.n0` + `controller.g.x()`，见 `app/MECHANICS.md` F5）/指针开关 |
+| 15 | 底栏（罗盘页） | 罗盘浮层页底栏 | 本轮：`tool-compass-page.png` + `tool-compass-page.xml`；历史轮再采集：`win-02-compass.png` | 切换/旋转/缩放/透明度/天支线（5 项，历史轮目视清点） |
+| 16 | 智能读盘弹层 | 罗盘页 → 读盘 (132,2070) | 历史轮再采集（2026-11-05，同版本原机）：`w3-sheet.png`（SHA256 `2F47122E…`，`_captures.tsv` 已标「历史轮再采集」）；文字侧证据见 `app/MECHANICS.md` R4/R4b（`CompassReadSheet.kt:54`/`ReadTypeItem:125`） | 标题「智能读盘」；向北/坐南 + 坐山向山；14 行 `类型名 向：/坐：`，VIP 11 行只给 🔒+点击查看 |
 
 ### C. 地图功能态（模式型，地图顶栏会变形）
 

@@ -139,7 +139,7 @@
 | AT/证据目录 | `checks\accept-121b2a8\`、`checks\accept-1fdc766\`、`checks\accept-857a471-b\`、`checks\accept-857a471-d\`（工作树 `E:\APPDetector\wt\lc-dev-regress\`）；门禁留档 `docs/qa/final-gates-20261106.md` |
 | 18 项结果 | **通过 18 / 待复验 0 / 未验 0** |
 | 未通过项与处置 | **无** |
-| 基线重冻 | `round-acceptance`（客户端进行中；完成后补目录路径） |
+| 基线重冻 | 客户端已落 `docs/qa/baseline-android/round-acceptance/README.md`；**设备接线后补跑读数与截图**，目录最终路径届时回填（合入 develop 后生效） |
 
 ## 6.1 设置入口（已知差异）
 
@@ -159,7 +159,7 @@
 | 8 | K-01 结构变更后基线 | 需重冻 | 结构变了，旧基线不再适用；收官前重冻一次 |
 | 9 | MD-10「UA 伪装登记风险」 | **已消除**（2026-11-05） | 改服务端 key + 原生 UA 后不再需要伪装浏览器 UA；URL 日志已脱敏（只留 host+path）。若地图实测仍出现 403，再退回登记并由技术总监通知 |
 | 10 | **release 未配签名** | 现状 | `app-release-unsigned.apk` 未签（`A9AF7096…8562`）；**正式分发前必须先配 signingConfig 并重打**，当前包只能自用安装/演示 |
-| 11 | 基线重冻未回填 | `round-acceptance` 进行中 | 客户端完成后把目录路径补进 §6「基线重冻」一行 |
+| 11 | 基线重冻未回填 | `round-acceptance` README 已落；读数与截图待设备接线后补跑 | 完成后把目录路径补进 §6「基线重冻」；在此之前 §6 的「最终构建校验」**仍是待办，不写成已完成** |
 
 ## 8 后续建议
 
@@ -185,3 +185,4 @@
 | v0.8 | 2026-11-05 | §5 增「F-17 独立验收」行（`checks\accept-857a471-b\`，dump+logcat+view 三重证据，记通过待全量轮定稿） |
 | v0.9 | 2026-11-05 | 基线 `0dda97e`（应用代码同 `857a471`）；§5 增「最后三项」行（`accept-857a471-d`：D 六 flag、F-13 记忆、F-12 亩/公顷）；§6 注明 18 项已按分轮证据记通过、最终全量轮复核+重冻后填结论 |
 | v0.10 | 2026-11-06 | **填实 §0 摘要与 §6 结论**：18 项通过（分轮证据 + 总监核定）、未通过项「无」、门禁七项 PASS（`docs/qa/final-gates-20261106.md`，debug `FF97AE8A…A435` / release unsigned `A9AF7096…8562`）；补两条门禁边界（`-SkipDevice` 不替代真机结论、APK sha 不作可复现校验）；§5 补验收目录与门禁留档行；§7 增 release 未签名、基线重冻待回填；基线 `f332b9c`（应用代码 `0dda97e` ≡ `857a471`）；标题去「骨架」 |
+| v0.11 | 2026-11-06 | 基线重冻状态写具体：客户端已落 `round-acceptance/README.md`，读数与截图待设备接线后补跑，路径届时回填；§7 第 11 条同步「最终构建校验仍是待办」；`TEAM_CHARTER.md` 新增 §9 当前有效工作流（develop 主线 + 各自 worktree feature 分支；`output`/`fix-p0` 只读归档；`output/AGENTS.md` 的「唯一 worktree 是 fix-p0」失效，以章程为准） |

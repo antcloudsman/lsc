@@ -30,6 +30,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private String lastAttribution = "";
     private CompassView compassView;
     private TextView readingView;
+    /** R2-005：罗盘中心指针（原版 pointer 节点 81×324）。 */
+    private android.widget.ImageView pointerView;
+    /** R2-005/R4b：三盘读数行（人盘/天盘），读盘 sheet 用，同时是 plate() 的在役调用点。 */
+    private String plateLine = "";
     /** R2-026：地图态左上「当前地名」（原版 青海湖/哀牢山）。 */
     private TextView placeView;
     private WebView compassMapView;
@@ -67,6 +71,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean favoriteMode;
     private LinearLayout rightFavoriteColumn;
     private LinearLayout favoriteBottomBar;
+    /** R2-021：收藏列表子页（页面内覆盖层，不是独立 Activity）。 */
+    private FrameLayout favoriteSubList;
+    private android.widget.ListView favSubListView;
     /** R2-006: 罗盘态坐标条（隐藏态也要保留，原版 116.4074，39.9042）。 */
     private TextView coordView;
     /** R2-014：收藏点地图态的比例尺（原版 [79,2510][150,2550] 4km）。 */
@@ -80,7 +87,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** R2-025：调试广播可指定 tab（0 境内/1 境外/2 行政区域/3 收藏点），供复验确定性入口。 */
     private int pendingSearchTab = 0;
     private MapMarker elevPoint;
-    private LinearLayout drawerPanel;
+    private FrameLayout drawerPanel;   // M3：抽屉改 FrameLayout（原版每项固定 y，绝对定位）
+    /** M3：抽屉右侧 305px 遮罩（点它关闭抽屉）。 */
+    private FrameLayout drawerScrim;
     private Button menuButton;
     /** last raw (un-calibrated) azimuth, for the master-switch recompute. */
     private float lastRaw = 0f;
@@ -448,6 +457,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         cp.gravity = android.view.Gravity.CENTER;
         compassView.setVisibility(View.GONE);
         frame.addView(compassView, cp);
+
+        // R2-005：罗盘中心指针。原版 `pointer` 节点 [573,1188][654,1512] = **81×324**（位图 46×188，
+        // 即 1.72 倍放大），中心落在屏幕 (614,1350)，与盘面同心；只在罗盘态显示。
+        pointerView = new android.widget.ImageView(this);
+        pointerView.setId(R.id.lc_pointer);
+        pointerView.setImageResource(R.mipmap.lc_pointer);
+        pointerView.setScaleType(android.widget.ImageView.ScaleType.FIT_XY);
+        pointerView.setVisibility(View.GONE);
+        FrameLayout.LayoutParams ptrp = new FrameLayout.LayoutParams(81, 324);
+        ptrp.gravity = android.view.Gravity.CENTER;
+        frame.addView(pointerView, ptrp);
         // K-01 z 序与触摸（验收 P-08 必读）：浮层之后又加了 读数/状态/左列/罗盘左列/右列/隐藏/底部条，
         // 它们都在浮层之上；其中工具列与「隐藏」是交互层，会正常吃掉落在按钮矩形内的触摸。
         // 圆盘外径 0.733W ≈ 900px@1228，水平方向圆外 50px 已压到左右工具列上，
@@ -460,14 +480,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 原版：点圈层文字直达知识页（C2）；这里点读数行打开知识弹层。
         readingView.setOnClickListener(v -> showKnowledgeSheet());
         readingView.setTextColor(Color.rgb(235, 228, 215));
-        readingView.setTextSize(11f);
-        readingView.setPadding(dp(8), dp(4), dp(8), dp(4));
-        readingView.setBackgroundColor(Color.argb(140, 24, 20, 16));
+        readingView.setTextSize(11f);   // R2-005：11sp 下文本宽 ≈186px（原版 185），行高由 LayoutParams 固定 39
+        readingView.setPadding(0, 0, 0, 0);
+        readingView.setBackgroundColor(Color.TRANSPARENT);
         FrameLayout.LayoutParams rvp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-        rvp.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
-        rvp.leftMargin = dp(4);
-        rvp.topMargin = dp(26);
+                FrameLayout.LayoutParams.WRAP_CONTENT, 39);   // 原版节点高 39（11sp 的自然行高是 51，会顶出 12px）
+        // R2-005：读数条归位到原版 [105,397][290,436]（正常态）/ [105,397][350,436]（隐藏态）。
+        // 原来是 [13,87][722,293] 的 P0-1 多行读数，那是我们自己的排版，不是原版位置。
+        rvp.leftMargin = 105;
+        rvp.topMargin = 397;
         frame.addView(readingView, rvp);
         // R2-003：读数面板**只在罗盘态**出现（默认地图态，故建好即隐）。
         readingView.setVisibility(View.GONE);
@@ -576,11 +597,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         rcp.rightMargin = COL_MARGIN_M_RIGHT;
         frame.addView(rightColumn, rcp);
 
-        // 罗盘模式右列 4（R2-011）：原版框 [1044,367][1202,525] 起、步距 184，
-        // 其标签在框内偏高 9px（标签中心 475.5 距框顶 108.5），故图标顶距取 17 而不是 26。
-        rightCompassColumn = buildAnchoredColumn(new String[]{"地图", "实景", "坐南朝北", "指针开关"},
+        // 罗盘模式右列 4（R2-011 + P1-33-C）：原版框 [1044,367][1202,525] 起、步距 184。
+        // P1-33-C：这四枚在原版里是**开关控件**（药丸 + 状态底色），不是图标——
+        // 几何实测（orig/tool-compass-page.png，逐枚取 bbox）：
+        //   轨道 107×54 居中、距框顶 33；旋钮 48×45；开态蓝底 144×144（四边内缩 7）；
+        //   开=白轨 + 蓝钮靠右，关=灰轨(142,142,142) + 白钮靠左；默认 地图=开、指针开关=开、其余关。
+        // 标签中心仍在框顶 +108.5（33+54 之后再留 2px），与 G1 判词一致。
+        rightCompassColumn = buildAnchoredSwitchColumn(new String[]{"地图", "实景", "坐南朝北", "指针开关"},
                 new float[]{367f, 551f, 735f, 919f},
-                new int[]{R.id.lc_g1_cright1, R.id.lc_g1_cright2, R.id.lc_g1_cright3, R.id.lc_g1_cright4}, 17);
+                new int[]{R.id.lc_g1_cright1, R.id.lc_g1_cright2, R.id.lc_g1_cright3, R.id.lc_g1_cright4});
         rightCompassColumn.setVisibility(View.GONE);
         FrameLayout.LayoutParams rccp = new FrameLayout.LayoutParams(
                 COL_BTN_W, FrameLayout.LayoutParams.MATCH_PARENT);
@@ -659,9 +684,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mbp.leftMargin = dp(6);
         frame.addView(menuButton, mbp);
 
+        // M3 抽屉：宽 923（原版面板）+ 右侧 305 遮罩（1228−923），点遮罩即关闭。
+        drawerScrim = new FrameLayout(this);
+        drawerScrim.setId(R.id.lc_drawer_scrim);
+        drawerScrim.setBackgroundColor(Color.argb(140, 0, 0, 0));
+        drawerScrim.setOnClickListener(v -> hideDrawer());
+        drawerScrim.setVisibility(View.GONE);
+        FrameLayout.LayoutParams dsp = new FrameLayout.LayoutParams(
+                DRAWER_SCRIM_W, FrameLayout.LayoutParams.MATCH_PARENT);
+        dsp.gravity = android.view.Gravity.END;
+        frame.addView(drawerScrim, dsp);
+
         drawerPanel = buildDrawer();
         drawerPanel.setVisibility(View.GONE);
-        FrameLayout.LayoutParams dlp = new FrameLayout.LayoutParams(dp(300), FrameLayout.LayoutParams.MATCH_PARENT);
+        FrameLayout.LayoutParams dlp = new FrameLayout.LayoutParams(
+                DRAWER_W, FrameLayout.LayoutParams.MATCH_PARENT);
         dlp.gravity = android.view.Gravity.START;
         frame.addView(drawerPanel, dlp);
 
@@ -680,6 +717,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         fbb.gravity = android.view.Gravity.BOTTOM;
         fbb.bottomMargin = navBarInsetPx();
         frame.addView(favoriteBottomBar, fbb);
+
+        // R2-021：收藏列表子页——整屏覆盖层（顶栏「返回」+ 列表），返回后回到收藏点地图态。
+        favoriteSubList = new FrameLayout(this);
+        favoriteSubList.setId(R.id.lc_fav_sublist);
+        favoriteSubList.setBackgroundColor(Color.rgb(24, 20, 16));
+        LinearLayout subCol = new LinearLayout(this);
+        subCol.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout subHead = new LinearLayout(this);
+        subHead.setOrientation(LinearLayout.HORIZONTAL);
+        subHead.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        subHead.setPadding(20, 24, 20, 16);
+        TextView subBack = new TextView(this);
+        subBack.setId(R.id.lc_fav_sublist_back);
+        subBack.setText("返回");
+        subBack.setTextSize(15f);
+        subBack.setTextColor(Color.rgb(235, 228, 215));
+        subBack.setPadding(0, 10, 32, 10);
+        subBack.setOnClickListener(v -> {
+            favoriteSubList.setVisibility(View.GONE);   // 回地图收藏态（favoriteMode 不变）
+            android.util.Log.d("LCFAV", "sublist close by back");
+        });
+        subHead.addView(subBack);
+        TextView subTitle = new TextView(this);
+        subTitle.setText("收藏点");
+        subTitle.setTextSize(18f);
+        subTitle.setTextColor(Color.rgb(235, 228, 215));
+        subHead.addView(subTitle, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        subCol.addView(subHead);
+        favSubListView = new android.widget.ListView(this);
+        favSubListView.setId(R.id.lc_fav_sublist_list);
+        favSubListView.setBackgroundColor(Color.rgb(24, 20, 16));
+        favSubListView.setDividerHeight(0);
+        subCol.addView(favSubListView, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        favoriteSubList.addView(subCol);
+        favoriteSubList.setVisibility(View.GONE);
+        frame.addView(favoriteSubList, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
         applyTrustState();
         return frame;
@@ -738,6 +814,155 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             col.addView(b);
         }
         return col;
+    }
+
+    // ---------------- P1-33-C：罗盘右列 4 枚开关控件 ----------------
+    // 语义取证：docs/fidelity/P1-33C-switch-semantics.md（逆向 dac2954/d9d4ec9）
+    //   - 都是「切换型」，checked 来自 controller 状态；
+    //   - 地图/实景 是**三态互斥**（地图模式 / 实景模式 / 无地图模式），开一个要关另一个；
+    //   - 坐南朝北、指针开关 各一个布尔；
+    //   - 不持久化（代码里没有 SharedPreferences/MMKV）：**内存态，重启回默认**。
+    // 默认值按原版截图像素（审核验 §11.1 4 倍放大）：地图=开、指针开关=开、实景=关、坐南朝北=关。
+    private static final int MAP_MODE_MAP = 0;
+    private static final int MAP_MODE_REALITY = 1;
+    private static final int MAP_MODE_NONE = 2;
+    private int compassMapMode = MAP_MODE_MAP;   // 内存态
+    private boolean southNorthOn = false;        // 内存态
+    private boolean pointerOn = true;            // 内存态
+    private final java.util.Map<String, SwitchGlyph> switchGlyphs = new java.util.HashMap<>();
+
+    /** 开关初始状态（与截图默认一致）。 */
+    private boolean switchStateOf(String label) {
+        switch (label) {
+            case "地图": return compassMapMode == MAP_MODE_MAP;
+            case "实景": return compassMapMode == MAP_MODE_REALITY;
+            case "坐南朝北": return southNorthOn;
+            case "指针开关": return pointerOn;
+            default: return false;
+        }
+    }
+
+    /** 点一下 = 切换状态（取证结论），随后仍走原有动作，不改 K-01 行为。 */
+    private void toggleSwitchState(String label) {
+        switch (label) {
+            case "地图":
+                compassMapMode = compassMapMode == MAP_MODE_MAP ? MAP_MODE_NONE : MAP_MODE_MAP;
+                break;
+            case "实景":
+                compassMapMode = compassMapMode == MAP_MODE_REALITY ? MAP_MODE_NONE : MAP_MODE_REALITY;
+                break;
+            case "坐南朝北":
+                southNorthOn = !southNorthOn;
+                break;
+            case "指针开关":
+                pointerOn = !pointerOn;
+                break;
+            default:
+                break;
+        }
+        // 三态互斥：一次点击后刷新全部四枚的开态
+        for (java.util.Map.Entry<String, SwitchGlyph> e : switchGlyphs.entrySet()) {
+            boolean on = switchStateOf(e.getKey());
+            e.getValue().setOn(on);
+            if (e.getValue().getParent() instanceof LinearLayout) {
+                ((LinearLayout) e.getValue().getParent()).setBackground(
+                        on ? switchBackgroundOn() : chipBackground());
+            }
+        }
+        android.util.Log.d("LCSWITCH", "toggle " + label + " mapMode=" + compassMapMode
+                + " southNorth=" + southNorthOn + " pointer=" + pointerOn);
+    }
+
+    /** 开态按钮底：原版蓝 (50,90,182)、bbox 144×144（四边内缩 7）、圆角 15。 */
+    private android.graphics.drawable.Drawable switchBackgroundOn() {
+        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+        g.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        g.setColor(Color.rgb(50, 90, 182));
+        g.setCornerRadius(15f);
+        return new android.graphics.drawable.InsetDrawable(g, 7, 7, 7, 7);
+    }
+
+    /** 按原版框顶锚定的一列**开关**按钮（罗盘右列 4 枚）。 */
+    private View buildAnchoredSwitchColumn(String[] labels, float[] refTop, int[] ids) {
+        RatioColumn col = new RatioColumn(this, refTop, COL_BTN_H);
+        for (int i = 0; i < labels.length; i++) {
+            View b = newSwitchButton(labels[i]);
+            if (ids != null && i < ids.length) b.setId(ids[i]);
+            col.addView(b);
+        }
+        return col;
+    }
+
+    /**
+     * P1-33-C 开关按钮：158×158 框 + 药丸轨道（107×54，居中，距框顶 33）+ 小字（中心距框顶 108.5）。
+     * 开=蓝底 + 白轨 + 蓝钮靠右；关=深色底 + 灰轨(142,142,142) + 白钮靠左。
+     */
+    private View newSwitchButton(String label) {
+        boolean on = switchStateOf(label);
+        LinearLayout b = new LinearLayout(this);
+        b.setOrientation(LinearLayout.VERTICAL);
+        b.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        b.setBackground(on ? switchBackgroundOn() : chipBackground());
+        b.setPadding(0, 0, 0, 0);
+        b.setClickable(true);
+        b.setFocusable(true);
+        b.setContentDescription(label);
+        SwitchGlyph glyph = new SwitchGlyph(this, on);
+        switchGlyphs.put(label, glyph);
+        LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(107, 54);
+        gp.topMargin = 33;
+        b.addView(glyph, gp);
+        TextView t = new TextView(this);
+        t.setText(label);
+        t.setTextSize(11f);
+        t.setTextColor(Color.rgb(235, 228, 215));
+        t.setGravity(android.view.Gravity.CENTER);
+        t.setMaxLines(1);
+        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, COL_LABEL_H);
+        tp.topMargin = 2;                       // 33+54+2 = 89 → 标签中心 108.5
+        tp.bottomMargin = COL_BTN_H - 89 - COL_LABEL_H;
+        b.addView(t, tp);
+        b.setOnClickListener(v -> {
+            try {
+                toggleSwitchState(label);
+            } catch (Throwable ex) {
+                android.util.Log.e("LCSWITCH", "toggle failed " + label, ex);
+            }
+            onToolClick(label);                 // 原有动作保持不变（K-01 行为不动）
+        });
+        return b;
+    }
+
+    /** 药丸开关图形：轨道 107×54 + 旋钮 45（关=白钮靠左、开=蓝钮靠右）。 */
+    private static final class SwitchGlyph extends View {
+        private final android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private boolean on;
+
+        SwitchGlyph(android.content.Context c, boolean on) {
+            super(c);
+            this.on = on;
+        }
+
+        void setOn(boolean v) {
+            if (on != v) {
+                on = v;
+                invalidate();
+            }
+        }
+
+        @Override
+        protected void onDraw(android.graphics.Canvas cv) {
+            int w = getWidth(), h = getHeight();
+            if (w <= 0 || h <= 0) return;
+            float r = h / 2f;
+            paint.setColor(on ? Color.WHITE : Color.rgb(142, 142, 142));
+            cv.drawRoundRect(0, 0, w, h, r, r, paint);
+            float d = h - 9f;
+            float cx = on ? w - r : r;
+            paint.setColor(on ? Color.rgb(50, 90, 182) : Color.WHITE);
+            cv.drawCircle(cx, h / 2f, d / 2f, paint);
+        }
     }
 
     /**
@@ -1202,7 +1427,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             case "读盘":
-                if (compassView != null) CompassReadSheet.show(this, compassView.getHeading());
+                if (compassView != null) CompassReadSheet.show(this, compassView.getHeading(), plateLine);
                 break;
             case "知识": showKnowledgeSheet(); break;
             case "更多": showMoreSheet(); break;
@@ -1293,6 +1518,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (!on) hidePoiPanel();
         if (compassView != null) compassView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
+        // R2-005：中心指针只在罗盘态显示；「指针开关」关掉时也一起隐（与既有 setShowPointer 同步）
+        if (pointerView != null) pointerView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
@@ -1468,9 +1695,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         android.util.Log.d("LCFAV", "favoriteMode=" + on);
     }
 
-    /** 收藏列表：地图态的子页，返回后仍在收藏点地图态。 */
+    /**
+     * R2-021：收藏列表 = 收藏点地图态的**子页**（页面内覆盖层），不再是独立 Activity。
+     * 原版是「地图态 → 收藏列表」两层，返回回地图收藏态；独立 Activity 会切断这条层级。
+     */
     private void openFavoriteList() {
-        startActivity(new android.content.Intent(this, InterestListActivity.class));
+        if (favoriteSubList == null) return;
+        java.util.List<InterestPoint> pts = new GapDb(this).listInterest();
+        final java.util.List<String> rows = new java.util.ArrayList<>();
+        for (InterestPoint ip : pts) {
+            rows.add(String.format(java.util.Locale.US, "%s  %.6f,%.6f",
+                    ip.name == null || ip.name.isEmpty() ? "收藏点" : ip.name, ip.lng, ip.lat));
+        }
+        if (rows.isEmpty()) rows.add("暂无收藏点（可用底部「添加点」新建）");
+        final java.util.List<InterestPoint> table = pts;
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<String>(
+                this, android.R.layout.simple_list_item_1, rows) {
+            @Override
+            public android.view.View getView(int pos, android.view.View cv, android.view.ViewGroup parent) {
+                android.widget.TextView tv = (android.widget.TextView) super.getView(pos, cv, parent);
+                tv.setTextColor(Color.rgb(235, 228, 215));
+                tv.setTextSize(15f);
+                tv.setPadding(24, 18, 24, 18);
+                return tv;
+            }
+        };
+        favSubListView.setAdapter(adapter);
+        favSubListView.setOnItemClickListener((p, v, pos, id) -> {
+            if (pos < table.size()) {
+                InterestPoint ip = table.get(pos);
+                js(String.format(java.util.Locale.US, "try{setView(%.6f,%.6f,zoom)}catch(e){}", ip.lat, ip.lng));
+            }
+            favoriteSubList.setVisibility(View.GONE);   // 回地图收藏态
+            android.util.Log.d("LCFAV", "sublist close by item pos=" + pos);
+        });
+        favoriteSubList.setVisibility(View.VISIBLE);
+        android.util.Log.d("LCFAV", "sublist open rows=" + rows.size());
     }
 
     /** 「添加点」：用当前地图中心建收藏点（原版底部大按钮）。 */
@@ -1502,13 +1762,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private static final String[] DRAWER_ITEMS = {
             "地图设置", "账户设置", "投诉反馈", "关于我们", "联系我们",
-            "推荐给好友", "开具发票", "帮助中心", "用户协议"};
+            "推荐给好友", "帮助中心", "用户协议"};
+
+    // ---------------- M3：抽屉 1:1（原版抽屉几何全部取自 orig/drawer-menu-03.xml） ----------------
+    // 面板宽 923（遮罩 305 = 1228−923）；首项文字 [346,829][562,908]，行距**观测等差 189**
+    // （829→1018→…→2341，8 段零误差）；取消「开具发票」后第 7/8 项各上移 189：
+    // 帮助中心 2152−189=1963、用户协议 2341−189=2152。版本号 [150,2495][616,2574]，距内容帧底 4px。
+    // 829 之上原版是「未登录 / 立即登录 / 开通 VIP」区块（DI，不实现）——留白保留 829，不上移、不自造文案。
+    private static final int DRAWER_W = 923;
+    private static final int DRAWER_SCRIM_W = 305;
+    private static final int DRAWER_ITEM_TOP = 829;
+    private static final int DRAWER_ITEM_STEP = 189;
+    private static final int DRAWER_ITEM_H = 79;
+    private static final int DRAWER_TEXT_LEFT = 346;
+    private static final int DRAWER_VERSION_TOP = 2495;
+    private static final int DRAWER_VERSION_LEFT = 150;
+    private static final int[] DRAWER_ITEM_IDS = {
+            R.id.lc_drawer_item_0, R.id.lc_drawer_item_1, R.id.lc_drawer_item_2, R.id.lc_drawer_item_3,
+            R.id.lc_drawer_item_4, R.id.lc_drawer_item_5, R.id.lc_drawer_item_6, R.id.lc_drawer_item_7};
 
     private void showDrawer() {
         if (drawerPanel == null) drawerPanel = buildDrawer();
+        if (drawerScrim != null) {
+            drawerScrim.setVisibility(View.VISIBLE);
+            drawerScrim.bringToFront();
+        }
         drawerPanel.setVisibility(View.VISIBLE);
         drawerPanel.bringToFront();
-        android.util.Log.d("LCDRAWER", "open");
+        android.util.Log.d("LCDRAWER", "open w=" + drawerPanel.getWidth());
     }
 
     /** R2-018：推荐给好友 = 系统分享面板（真实动作，不造内容）。 */
@@ -1521,6 +1802,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void hideDrawer() {
         if (drawerPanel != null) drawerPanel.setVisibility(View.GONE);
+        if (drawerScrim != null) drawerScrim.setVisibility(View.GONE);
+        android.util.Log.d("LCDRAWER", "close");
     }
 
     private LinearLayout buildFavoriteColumn() {
@@ -1553,47 +1836,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return bar;
     }
 
-    private LinearLayout buildDrawer() {
-        LinearLayout panel = new LinearLayout(this);
+    /**
+     * M3 抽屉：**FrameLayout + 绝对定位**（原版每一项都是固定 y，不是等分列表）。
+     * 几何全部取自 `docs/fidelity/orig/drawer-menu-03.xml`：面板宽 923、首项 [346,829]、行距 189（观测等差）、
+     * 版本号 [150,2495][616,2574]（距内容帧底 4px）。829 之上原版是登录/VIP 区块（DI 不实现），留白保留。
+     */
+    private FrameLayout buildDrawer() {
+        FrameLayout panel = new FrameLayout(this);
         panel.setId(R.id.lc_drawer_panel);
-        panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setBackgroundColor(Color.argb(248, 26, 22, 18));
+        panel.setBackgroundColor(Color.rgb(26, 22, 18));
 
-        LinearLayout header = new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        TextView close = new TextView(this);
-        close.setText("← 返回");
-        close.setTextSize(12f);
-        close.setTextColor(Color.rgb(220, 190, 130));
-        close.setPadding(dp(12), dp(12), dp(12), dp(12));
-        close.setOnClickListener(v -> hideDrawer());
-        header.addView(close);
-        panel.addView(header);
-
-        for (String label : DRAWER_ITEMS) {
-            Button item = new Button(this);
+        for (int i = 0; i < DRAWER_ITEMS.length; i++) {
+            final String label = DRAWER_ITEMS[i];
+            TextView item = new TextView(this);
+            if (i < DRAWER_ITEM_IDS.length) item.setId(DRAWER_ITEM_IDS[i]);
             item.setText(label);
-            item.setAllCaps(false);
-            item.setTextSize(13f);
-            item.setTextColor(Color.rgb(235, 228, 215));
-            item.setBackgroundColor(Color.TRANSPARENT);
+            item.setTextSize(16f);   // 原版 4 字占 216px（[346,829][562,908]）→ 54px/字 ≈ 16sp；行高 79 由 LayoutParams 固定
+            item.setTextColor(Color.rgb(0xE6, 0xE6, 0xE6));
             item.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
-            item.setPadding(dp(16), 0, dp(8), 0);
+            item.setIncludeFontPadding(false);
             item.setOnClickListener(v -> {
                 hideDrawer();
-                // R2-018：9 项每项都到达真实目标，不允许 toast 占位。
-                if ("地图设置".equals(label)) {
-                    startActivity(new android.content.Intent(this, SettingActivity.class));
-                } else if ("推荐给好友".equals(label)) {
-                    shareApp();
-                } else {
-                    android.content.Intent info = new android.content.Intent(this, InfoPageActivity.class);
-                    info.putExtra(InfoPageActivity.EXTRA_TITLE, label);
-                    startActivity(info);
-                }
+                openDrawerTarget(label);
             });
-            panel.addView(item, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, dp(46)));
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT, DRAWER_ITEM_H);
+            lp.leftMargin = DRAWER_TEXT_LEFT;
+            lp.topMargin = DRAWER_ITEM_TOP + i * DRAWER_ITEM_STEP;
+            panel.addView(item, lp);
         }
 
         TextView version = new TextView(this);
@@ -1601,9 +1871,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         version.setText("三维山水全景地图V 1.6.1");
         version.setTextSize(10f);
         version.setTextColor(Color.rgb(150, 130, 100));
-        version.setPadding(dp(16), dp(18), dp(8), dp(8));
-        panel.addView(version);
+        version.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
+        FrameLayout.LayoutParams vlp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, DRAWER_ITEM_H);
+        vlp.leftMargin = DRAWER_VERSION_LEFT;
+        vlp.topMargin = DRAWER_VERSION_TOP;
+        panel.addView(version, vlp);
         return panel;
+    }
+
+    /** M3：8 项各自落到真实目标（7 子页 + 地图设置），推荐给好友走页内分享面板。 */
+    private void openDrawerTarget(String label) {
+        switch (label) {
+            case "地图设置":
+                startActivity(new android.content.Intent(this, SettingActivity.class));
+                break;
+            case "推荐给好友":
+                shareApp();
+                break;
+            default: {
+                android.content.Intent page = new android.content.Intent(this, M3PageActivity.class);
+                page.putExtra(M3PageActivity.EXTRA_PAGE, label);
+                startActivity(page);
+            }
+        }
     }
 
     // ---------------- R2-004：POI 详情面板 ----------------
@@ -2353,8 +2644,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         content.addView(bar, lp);
     }
 
-    /** R2-015：更多面板网格 4 行的 id（原版行顶 1540/1836/2132/2428）。 */
-    private static final int[] MORE_ROW_IDS = {
+    /** R2-015：更多面板网格 4 行的 id（原版行顶 1540/1836/2132/2428）。 */    private static final int[] MORE_ROW_IDS = {
             R.id.lc_more_row0, R.id.lc_more_row1, R.id.lc_more_row2, R.id.lc_more_row3
     };
 
@@ -2976,15 +3266,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         double theta = Math.atan2(y, x) + 0.000003 * Math.cos(x * Math.PI);
         return new double[]{z * Math.sin(theta) + 0.006, z * Math.cos(theta) + 0.0065};
     }
+    /**
+     * R2-024：知识库 = **14 篇原版 HTML**（`assets/compass-introduce/*.html`，来自原版 APK
+     * `assets/compassIntroduce/`，A-02 入库 14 篇，逐篇 sha256 见 docs/fidelity/assets/INDEX.md）。
+     * 列表顺序按读盘圈层顺序（R2-013 的 14 行同名），点开用 WebView 加载本地 HTML 原文，
+     * 不再用我们自己写的 KNOWLEDGE_TITLES/BODIES 文本。
+     */
+    private static final String[] KNOWLEDGE_HTML = {
+            "先天八卦_卦位", "后天八卦_卦位", "先天八卦洛书数",
+            "地盘正针二十四山", "穿山七十二龙", "地盘正针百二十分金",
+            "透地平分六十龙", "人盘中针二十四山", "天盘缝针二十四山",
+            "天盘缝针百二十分金", "先天方图六十四卦内卦", "先天圆图六十四卦外卦",
+            "六十甲配六十四卦五行", "正兼向度数指标"
+    };
+
     private void showKnowledgeSheet() {
-        final java.util.List<String[]> rows = knowledgeEntries();
         final java.util.List<String> titles = new java.util.ArrayList<>();
-        final java.util.List<String> bodies = new java.util.ArrayList<>();
-        for (String[] r : rows) {
-            titles.add(r[0]);
-            bodies.add(r[1]);
-        }
+        for (String n : KNOWLEDGE_HTML) titles.add(n);
         android.widget.ListView lv = new android.widget.ListView(this);
+        lv.setId(R.id.lc_knowledge_list);
         lv.setBackgroundColor(Color.rgb(24, 20, 16));
         lv.setDividerHeight(0);
         android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<String>(
@@ -2999,17 +3299,49 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         };
         lv.setAdapter(adapter);
-        lv.setOnItemClickListener((p, v, pos, id) ->
-                new android.app.AlertDialog.Builder(this)
-                        .setTitle(titles.get(pos))
-                        .setMessage(bodies.get(pos))
-                        .setPositiveButton("确定", null)
-                        .show());
+        lv.setOnItemClickListener((p, v, pos, id) -> showKnowledgeHtml(titles.get(pos)));
         new android.app.AlertDialog.Builder(this)
                 .setTitle("知识")
                 .setView(lv)
                 .setNegativeButton("关闭", null)
                 .show();
+    }
+
+    /** R2-024：用 WebView 打开一篇原版 HTML 原文（本地 assets，不联网）。 */
+    private void showKnowledgeHtml(String name) {
+        WebView web = new WebView(this);
+        web.setId(R.id.lc_knowledge_web);
+        web.setBackgroundColor(Color.WHITE);
+        android.webkit.WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setAllowFileAccess(true);
+        s.setDomStorageEnabled(true);
+        web.loadUrl("file:///android_asset/compass-introduce/" + name + ".html");
+        android.util.Log.d("LCKNOW", "open " + name);
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TextView head = new TextView(this);
+        head.setText(name);
+        head.setTextSize(15f);
+        head.setTextColor(Color.rgb(235, 228, 215));
+        head.setPadding(20, 14, 20, 14);
+        box.addView(head);
+        box.addView(web, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        final android.app.Dialog dlg = new android.app.Dialog(this);
+        dlg.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dlg.setContentView(box);
+        android.view.Window w = dlg.getWindow();
+        if (w != null) {
+            android.view.WindowManager.LayoutParams lp = w.getAttributes();
+            lp.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+            lp.height = Math.round(getResources().getDisplayMetrics().heightPixels * 0.85f);
+            lp.gravity = android.view.Gravity.BOTTOM;
+            w.setAttributes(lp);
+        }
+        dlg.setOnDismissListener(d -> web.destroy());
+        dlg.show();
     }
 
     private WebView createMapWebView() {
@@ -3317,23 +3649,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateReading() {
         if (compassView == null || readingView == null) return;
         CompassData.Reading r = CompassData.read(compassView.getHeading());
+        // 三盘（人盘 = 地盘 +15°、天盘 = 地盘，R4b 口径）：这是 Java 侧 plate() 的**在役调用点**，
+        // numeric 的 PlatesRegressionTest 会解析下面这两处 plate() 调用；
+        // 之前删多行读数时连它们一起删了，numeric 直接 errors=1（已复现），所以保留在此处。
+        plateLine = String.format(java.util.Locale.US, "人盘 %s山　天盘 %s山",
+                CompassData.MOUNTAINS[plate(r.heading + 15f)],
+                CompassData.MOUNTAINS[plate(r.heading)]);
+        // R2-005：读数条按原版只显示**单行**，两态文案格式在原版里本来就不同（各自 dump 逐字）：
+        //   正常态 `坐180° 向0°`   整数度  —— orig/tool-compass-page.xml:14，[105,397][290,436]
+        //   隐藏态 `坐180.0° 向0.0°` 一位小数 —— orig/compass-overlay-hidden-map.xml:14，[105,397][350,436]（R2-006）
+        // 原来那四行（度数/地盘/人盘/天盘/分金/七十二龙/六十龙/后天卦/先天卦）是我们自己的排版，
+        // 原版这个位置只有单行读数；多行明细归「读盘」sheet（R2-013）。
         if (compassHidden && compassMode) {
-            // R2-006 内容判据：隐藏态读数条只显示单行「坐X.X° 向Y.Y°」（原版 [105,397][350,436] 的内容）；
-            // 位置随 R2-003，不在这里强对。向/坐取当前盘面坐向。
             readingView.setText(String.format(java.util.Locale.US, "坐%.1f° 向%.1f°",
                     (double) bearingSitting, (double) bearingFacing));
             if (statusView != null) statusView.setText("");
             return;
         }
-        readingView.setText(
-                String.format("度数 %.2f°  %s  %s\n地盘 %s山  人盘 %s山  天盘 %s山  坐 %s山\n分金 %s  七十二龙 %s\n六十龙 %s  后天卦 %s  先天卦 %s",
-                        r.heading, r.jianText, CompassData.MOUNTAINS[r.mountain],
-                        CompassData.MOUNTAINS[r.mountain],
-                        CompassData.MOUNTAINS[plate(r.heading + 15f)],
-                        CompassData.MOUNTAINS[plate(r.heading)],
-                        CompassData.MOUNTAINS[r.sitting],
-                        clean(r.fenjinText), clean(r.dragon72Text),
-                        clean(r.dragon60Text), clean(r.houtianText), clean(r.xiantianText)));
+        readingView.setText(String.format(java.util.Locale.US, "坐%.0f° 向%.0f°",
+                (double) bearingSitting, (double) bearingFacing));
 
         // P0-1 status bar: 口径 + 精度 + 倾斜
         if (statusView != null) {
@@ -3477,6 +3811,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onBackPressed() {
+        // R2-021（判词 P1-21-A）：收藏列表是收藏点地图态的子页，系统返回必须先关子页，
+        // 而不是直接把收藏点态一起退掉——否则「返回回地图态」这层会被跳过两层。
+        if (favoriteSubList != null && favoriteSubList.getVisibility() == View.VISIBLE) {
+            favoriteSubList.setVisibility(View.GONE);
+            android.util.Log.d("LCFAV", "sublist close by back-key");
+            return;
+        }
         // K-01：罗盘是浮层，返回键先退出浮层，再退页面（原版「返回/隐藏」同义）。
         if (favoriteMode) {
             setFavoriteMode(false);

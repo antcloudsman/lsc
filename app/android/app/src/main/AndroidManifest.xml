@@ -33,6 +33,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- M3：抽屉七子页骨架（文案取自原版 dump，逐字不改写） -->
+        <activity
+            android:name=".M3PageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".SettingActivity"
             android:exported="false"

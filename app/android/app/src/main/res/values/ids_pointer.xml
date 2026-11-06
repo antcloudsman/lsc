@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- R2-005：罗盘中心指针（原版 pointer 节点 [573,1188][654,1512] = 81×324，位图 46×188） -->
+    <item name="lc_pointer" type="id" />
+    <!-- R2-013：智能读盘白色 sheet -->
+    <item name="lc_read_sheet" type="id" />
+    <item name="lc_read_title" type="id" />
+    <item name="lc_read_close" type="id" />
+    <item name="lc_read_list" type="id" />
+    <!-- R2-024：知识库（14 篇原版 HTML） -->
+    <item name="lc_knowledge_list" type="id" />
+    <item name="lc_knowledge_web" type="id" />
+    <!-- R2-021：收藏列表子页 -->
+    <item name="lc_fav_sublist" type="id" />
+    <item name="lc_fav_sublist_back" type="id" />
+    <item name="lc_fav_sublist_list" type="id" />
+    <!-- M3：抽屉 8 项 + 遮罩（宽 923 / 遮罩 305 / 首项 829 / 行距 189） -->
+    <item name="lc_drawer_scrim" type="id" />
+    <item name="lc_drawer_item_0" type="id" />
+    <item name="lc_drawer_item_1" type="id" />
+    <item name="lc_drawer_item_2" type="id" />
+    <item name="lc_drawer_item_3" type="id" />
+    <item name="lc_drawer_item_4" type="id" />
+    <item name="lc_drawer_item_5" type="id" />
+    <item name="lc_drawer_item_6" type="id" />
+    <item name="lc_drawer_item_7" type="id" />
+    <!-- M3：七子页骨架 -->
+    <item name="lc_m3_root" type="id" />
+    <item name="lc_m3_back" type="id" />
+    <item name="lc_m3_title" type="id" />
+    <item name="lc_m3_dep_note" type="id" />
+    <item name="lc_m3_scroll" type="id" />
+    <item name="lc_m3_body" type="id" />
+    <item name="lc_m3_empty" type="id" />
+    <item name="lc_m3_web" type="id" />
+</resources>

@@ -108,13 +108,13 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | 20 | `tool-fishing` | 实采 | png+xml+meta | 钓点 |
 | 21 | `tool-track` | 实采 | png+xml+meta | 历史轨迹（无登录墙；空态「暂无历史轨迹记录」） |
 | 22 | `map-roadnet-on` | 实采（LC 侧同态） | png+xml+meta | 路网叠加开启；原版该行无独立 stem（对照物为 `map-home-01.xml`） |
-| 23 | `tool-contour-01` | 缺失（固定态不可得，待原版补采） | 补充证据 `map-contour-relief` | 固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希完全相同（`13567:1033006902` 三次一致）；同一引擎在 40.35/116.00 z12 开启后哈希变化（`12547:4200479435`→`12575:898838800`），故能力存在、固定态不可见。原 `tool-contour-01.*` 与 3D 态逐字节相同，已删除，不再冒充两态。**原版同态对照尚未取得**（原版 App 启动阶段 ANR，见 §4.2），R2-036 维持「未确认」 |
+| 23 | `tool-contour-01` | 缺失（固定态不可得，待原版补采） | 补充证据 `map-contour-relief` | 固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希完全相同（`13567:1033006902` 三次一致）；同一引擎在 40.35/116.00 z12 开启后哈希变化（`12547:4200479435`→`12575:898838800`），故能力存在、固定态不可见。原 `tool-contour-01.*` 与 3D 态逐字节相同：**D1 复核（`verify-round2.md` §3.9）确认两者都真在 3D**（`contour on=true uniform=1`），同图是平坦地形无可画等高线，不是状态没进；文件已删除以免被当成两态。**原版同态对照尚未取得**（原版 App 启动阶段 ANR，见 §4.2），R2-036 维持「未确认」 |
 | 24 | `map-mountains-entry` | 实采 | png+xml+meta | 「看山脉」页：视野内山名 120 个、山脊/刷新视野 |
 | 25 | `map-water-entry` | 实采 | png+xml+meta | 「看水系」页（D0 重采：`mResumedActivity=.WaterActivity`、dump 含 `看水系`、不含 `看山脉`） |
 | 26 | `map-overlay-sheet` | 实采 | png+xml+meta | 「数据叠加」页：4 Tab + 公路(路网) + 全部开启/关闭 |
 | 27 | `map-explore-page` | 实采 | png+xml+meta | 「探索」页（D0 重采：`mResumedActivity=.DiscoveryActivity`、dump 含 `探索`/`专题地图`，不含 `看山脉`） |
 | 28 | `map-layer-sheet` | 实采 | png+xml+meta | 右列「图层」→「底图源」12 源面板（3 可用 / 9 置灰） |
-| 29 | `map-3d-mode` | 实采 | png+xml+meta | 点 3D `(1124,2430)` 后断言通过：`logcat LC3D mode=3d` + `texture ok 36/36`、`getState()` = `mode=3d zoom=12 pitch=45 contour=false drape=vec`、`fps=56~60`；png 与固定态不同（`9cf8b080…` vs `68469c5c…`）。注：固定态北京地形平坦，成像近俯视；起伏与立体感在山区可见（见 `map-contour-relief`） |
+| 29 | `map-3d-mode` | 实采 | png+xml+meta | 点 3D `(1124,2430)` 后断言通过：`logcat LC3D mode=3d` + `texture ok 36/36`、`getState()` = `mode=3d zoom=12 pitch=45 contour=false drape=vec`、`fps=56~60`；png 与固定态不同（`9cf8b080…` vs `68469c5c…`）。**D1 复核订正**：旧证据 `f037f735…` 同样是真 3D（`drape=vec` + 平坦地形 + pitch45 → 画面近矢量路网），「实为 2D」的旧说法撤回；`vec` 贴面下 3D 与 2D 视觉难辨，是**证据可读性**问题，不是渲染缺陷 |
 | 30 | 相机权限弹窗 | 缺失 | — | LC 无相机/AR 入口（`map-home-01.xml` 全节点无相机相关控件） |
 
 统计：**实采 14 + 缺失 2 = 16**，无「待采」；另加 1 份补充证据 `map-contour-relief`（第 23 行的能力证明，不占清单行）。

@@ -89,6 +89,7 @@ function Js([string]$code) { Bc "--es cmd js --es value `"$code`"" }
 
 function Collect([string]$state, [string]$cid, [int]$DumpRetries = 1) {
   if (-not (Want $state)) { Info "skip $state (not in -Only)"; return }
+  if (-not $DryRun) { Assert-LcForeground }
   $tries = [Math]::Max(1, $DumpRetries)
   for ($i = 1; $i -le $tries; $i++) {
     $argv = @('tools\fidelity\fidelity.py', 'collect', '--side', 'lc', '--state', $state,
@@ -124,6 +125,13 @@ function Assert-Resumed([string]$expect) {
     Fail "前台 Activity 不是 $expect，实际=$cur（页面没进对，拒绝拍照）"
   }
   Info "前台 Activity ok: $cur"
+}
+# 拍照前必须确认前台还是我方包：第三方弹层（如应用市场推荐页）会劫持 dump 造成假 PASS
+function Assert-LcForeground() {
+  $cur = Get-Resumed
+  if ($cur -notmatch [regex]::Escape($Pkg)) {
+    Fail "前台不是 $Pkg，实际=$cur（被别的应用劫持，拒绝拍照；先 force-stop 该应用再重跑）"
+  }
 }
 function Get-PngSha([string]$state) {
   $p = Join-Path $root "docs\fidelity\lc\$state.png"

@@ -40,4 +40,5 @@
     <item name="lc_m3_share_cancel" type="id" />
     <item name="lc_m3_avatar" type="id" />
     <item name="lc_m3_login" type="id" />
+    <item name="lc_m3_copy_mail" type="id" />
 </resources>

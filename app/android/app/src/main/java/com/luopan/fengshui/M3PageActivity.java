@@ -119,6 +119,11 @@ public class M3PageActivity extends Activity {
             buildAccount(list);
         } else if ("关于我们".equals(page)) {
             buildAbout(list, lines);
+        } else if ("联系我们".equals(page)) {
+            buildContact(list, lines);
+        } else if (webUrlOf(page) != null) {
+            // 帮助中心 / 用户协议：原版就是远端 WebView，正文只由 WebView 呈现，不再叠一份本地文本
+            android.util.Log.d("LCM3", page + " -> webview only");
         } else {
             // 第一行是标题（已在标题栏显示），正文从第二行起
             for (int i = 1; i < lines.size(); i++) {
@@ -361,6 +366,37 @@ public class M3PageActivity extends Activity {
         }
         if (clickable) row.setOnClickListener(onClick);
         list.addView(row);
+    }
+
+    /**
+     * 联系我们（M3-04）：原生页，三条逐字文案 `邮箱地址` / `account@xinzhi.space` / `复制邮箱`。
+     * 原版 `复制邮箱` 的行为 = 把邮箱复制到剪贴板；这里做同一动作（不弹假成功提示）。
+     */
+    private void buildContact(LinearLayout list, List<String> lines) {
+        String email = null;
+        for (String s : lines) {
+            if (s.contains("@")) email = s.trim();
+        }
+        final String mail = email;
+        for (int i = 1; i < lines.size(); i++) {
+            String text = lines.get(i);
+            TextView tv = new TextView(this);
+            tv.setText(text);
+            tv.setTextSize(15f);
+            tv.setTextColor(Color.rgb(235, 228, 215));
+            tv.setPadding(0, 12, 0, 12);
+            if ("复制邮箱".equals(text) && mail != null) {
+                tv.setId(R.id.lc_m3_copy_mail);
+                tv.setTextColor(Color.rgb(120, 170, 240));
+                tv.setOnClickListener(v -> {
+                    android.content.ClipboardManager cm =
+                            (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    if (cm != null) cm.setPrimaryClip(android.content.ClipData.newPlainText("邮箱", mail));
+                    android.util.Log.d("LCM3", "copy mail ok");
+                });
+            }
+            list.addView(tv);
+        }
     }
 
     /**

@@ -3144,15 +3144,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         double theta = Math.atan2(y, x) + 0.000003 * Math.cos(x * Math.PI);
         return new double[]{z * Math.sin(theta) + 0.006, z * Math.cos(theta) + 0.0065};
     }
+    /**
+     * R2-024：知识库 = **14 篇原版 HTML**（`assets/compass-introduce/*.html`，来自原版 APK
+     * `assets/compassIntroduce/`，A-02 入库 14 篇，逐篇 sha256 见 docs/fidelity/assets/INDEX.md）。
+     * 列表顺序按读盘圈层顺序（R2-013 的 14 行同名），点开用 WebView 加载本地 HTML 原文，
+     * 不再用我们自己写的 KNOWLEDGE_TITLES/BODIES 文本。
+     */
+    private static final String[] KNOWLEDGE_HTML = {
+            "先天八卦_卦位", "后天八卦_卦位", "先天八卦洛书数",
+            "地盘正针二十四山", "穿山七十二龙", "地盘正针百二十分金",
+            "透地平分六十龙", "人盘中针二十四山", "天盘缝针二十四山",
+            "天盘缝针百二十分金", "先天方图六十四卦内卦", "先天圆图六十四卦外卦",
+            "六十甲配六十四卦五行", "正兼向度数指标"
+    };
+
     private void showKnowledgeSheet() {
-        final java.util.List<String[]> rows = knowledgeEntries();
         final java.util.List<String> titles = new java.util.ArrayList<>();
-        final java.util.List<String> bodies = new java.util.ArrayList<>();
-        for (String[] r : rows) {
-            titles.add(r[0]);
-            bodies.add(r[1]);
-        }
+        for (String n : KNOWLEDGE_HTML) titles.add(n);
         android.widget.ListView lv = new android.widget.ListView(this);
+        lv.setId(R.id.lc_knowledge_list);
         lv.setBackgroundColor(Color.rgb(24, 20, 16));
         lv.setDividerHeight(0);
         android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<String>(
@@ -3167,17 +3177,49 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         };
         lv.setAdapter(adapter);
-        lv.setOnItemClickListener((p, v, pos, id) ->
-                new android.app.AlertDialog.Builder(this)
-                        .setTitle(titles.get(pos))
-                        .setMessage(bodies.get(pos))
-                        .setPositiveButton("确定", null)
-                        .show());
+        lv.setOnItemClickListener((p, v, pos, id) -> showKnowledgeHtml(titles.get(pos)));
         new android.app.AlertDialog.Builder(this)
                 .setTitle("知识")
                 .setView(lv)
                 .setNegativeButton("关闭", null)
                 .show();
+    }
+
+    /** R2-024：用 WebView 打开一篇原版 HTML 原文（本地 assets，不联网）。 */
+    private void showKnowledgeHtml(String name) {
+        WebView web = new WebView(this);
+        web.setId(R.id.lc_knowledge_web);
+        web.setBackgroundColor(Color.WHITE);
+        android.webkit.WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setAllowFileAccess(true);
+        s.setDomStorageEnabled(true);
+        web.loadUrl("file:///android_asset/compass-introduce/" + name + ".html");
+        android.util.Log.d("LCKNOW", "open " + name);
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TextView head = new TextView(this);
+        head.setText(name);
+        head.setTextSize(15f);
+        head.setTextColor(Color.rgb(235, 228, 215));
+        head.setPadding(20, 14, 20, 14);
+        box.addView(head);
+        box.addView(web, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        final android.app.Dialog dlg = new android.app.Dialog(this);
+        dlg.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dlg.setContentView(box);
+        android.view.Window w = dlg.getWindow();
+        if (w != null) {
+            android.view.WindowManager.LayoutParams lp = w.getAttributes();
+            lp.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+            lp.height = Math.round(getResources().getDisplayMetrics().heightPixels * 0.85f);
+            lp.gravity = android.view.Gravity.BOTTOM;
+            w.setAttributes(lp);
+        }
+        dlg.setOnDismissListener(d -> web.destroy());
+        dlg.show();
     }
 
     private WebView createMapWebView() {

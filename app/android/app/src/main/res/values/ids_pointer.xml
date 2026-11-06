@@ -7,4 +7,7 @@
     <item name="lc_read_title" type="id" />
     <item name="lc_read_close" type="id" />
     <item name="lc_read_list" type="id" />
+    <!-- R2-024：知识库（14 篇原版 HTML） -->
+    <item name="lc_knowledge_list" type="id" />
+    <item name="lc_knowledge_web" type="id" />
 </resources>

@@ -140,7 +140,7 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | 20 | `ST-C-fishing` | `tool-fishing` | 实采 | png+xml+meta | 钓点 |
 | 21 | `ST-C-track` | `tool-track` | 实采 | png+xml+meta | 历史轨迹（无登录墙；空态「暂无历史轨迹记录」） |
 | 22 | `ST-C-roadnet` | `map-roadnet-on` | 实采（LC 侧同态） | png+xml+meta | 路网叠加开启；原版该行无独立 stem（对照物见行 03 dump） |
-| 23 | `R2-036` | `tool-contour-01` | 缺失（固定态不可得，待原版补采） | 补充证据 `map-contour-relief` | 固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希完全相同（`13567:1033006902` 三次一致）；同一引擎在 40.35/116.00 z12 开启后哈希变化（`12547:4200479435`→`12575:898838800`），故能力存在、固定态不可见。原 `tool-contour-01.*` 与 3D 态逐字节相同：**D1 复核（`verify-round2.md` §3.9）确认两者都真在 3D**（`contour on=true uniform=1`），同图是平坦地形无可画等高线，不是状态没进；文件已删除以免被当成两态。**原版同态对照尚未取得**（原版 App 启动阶段 ANR，见 §4.2），R2-036 维持「未确认」 |
+| 23 | `R2-036` | `tool-contour-01` | 缺失（**证据不可得·环境不可用**） | 补充证据 `map-contour-relief` | 分类：**证据不可得**，**不是「待实现」**——LC 侧等高线能力已实测可用（`contour=true` 时山区画面出现等高线），缺的是「原版固定态同态对照」：原版 App 在保护壳初始化阶段阻塞，两轮（含重启）均 ANR，取不到对照（§4.2）。固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希完全相同（`13567:1033006902` 三次一致）；同一引擎在 40.35/116.00 z12 开启后哈希变化（`12547:4200479435`→`12575:898838800`）。原 `tool-contour-01.*` 与 3D 态逐字节相同：**D1 复核（`verify-round2.md` §3.9）确认两者都真在 3D**（`contour on=true uniform=1`），同图是平坦地形无可画等高线，不是状态没进；文件已删除以免被当成两态。R2-036 维持「未确认」 |
 | 24 | `ST-C-mountains` | `map-mountains-entry` | 实采 | png+xml+meta | 「看山脉」页：视野内山名 120 个、山脊/刷新视野 |
 | 25 | `ST-C-water` | `map-water-entry` | 实采 | png+xml+meta | 「看水系」页（D0 重采：`mResumedActivity=.WaterActivity`、dump 含 `看水系`、不含 `看山脉`） |
 | 26 | `ST-C-overlay` | `map-overlay-sheet` | 实采 | png+xml+meta | 「数据叠加」页：4 Tab + 公路(路网) + 全部开启/关闭 |

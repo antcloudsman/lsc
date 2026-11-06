@@ -44,14 +44,20 @@ D2 采集注意：钓点页「加钓点」会写入 1 条自建钓点（`Fishing
 1. **不比图哈希，只比结构**：同一 UI 状态在不同时间点截图 SHA256 会变（瓦片/渲染时序），实测同一节点树
    `68469C5C…`（17:45）vs `AC06F0B5…`（19:49）。**跨批次只比控件 bounds / 文案 / 颜色**；orig↔lc 双图对照
    只在同一批次内做。`report` 的「不同 state 同图」判重是**同批次内**的检查，不受此影响。
-2. **固定态基线会被「立向点」累积污染**：每次点地图都会新增一个 `立向点 向X 坐Y` 标记
-   （`map.html:1730` `mk.title = "立向点 …"`），点 N 次就是 N 个，**隐藏态/固定态截图随之变化**。
-   这也是 `client09` 在 D1 被判 FAIL 的真因（判据写死了旧 sha），不是行为改变，也不是钓点。
+2. **漂移有两条并列原因，已用实验钉死**（`docs/fidelity/probes/marker-drift/README.md`，A/B/C 三轮）：
+   - **立向点累积（可复现）**：每次点地图都会新增 `立向点 向X 坐Y`（`map.html:1730`），
+     同一次会话内「干净 A」与「再冷启动的 C」sha 完全相同，点两次图后 B 变
+     （run3：A=C=`AC06F0B5…`、B=`A8AAAF42…`；dump 节点 38→**88**、`立向点` 节点 0→**2**）。
+     `立向点` 标记**在 uiautomator dump 里可见**（DOM 节点），不是抓不到的 canvas 元素。
+   - **跨会话渲染/缓存差异（有正面证据、未定位）**：同一脚本、同样 38 节点、无标记，
+     run1 冷启动得 `2D741941…`，run2/run3 得 `AC06F0B5…`；期间无任何点图。
 3. **干净基线做法**（采集前执行，已验证可用）：
    ```powershell
    adb -s L2E0222531014833 shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value 'clearMarkers()'"
    ```
    （`map.html:1734` `clearMarkers()`，会连带发 `pick-clear`）；或 `am force-stop` 后冷启动。
+4. **判定只看「同批次内能否复原」**：同一批次内 A/C 同 sha 才算基线干净；跨批次不比 sha，
+   只比 bounds/文案/颜色。
 4. **D2 副作用边界**：`加钓点` 写的是 `lc_fish/points`（仅钓点页），**不写收藏点库、不画主地图**；
    要恢复干净钓点列表可用 `pm clear com.luopan.fengshui`（会一并清掉 heading/偏角等 prefs，需重设前置）。
 

@@ -26,13 +26,23 @@ python tools\fidelity\selftest.py
 ```powershell
 # 原版侧
 python tools\fidelity\fidelity.py collect --side orig --state compass-main-01 --pkg space.xinzhi.globe --checksheet-id ST-01-compass-main
-# 我方侧（同一状态、同一 state id）
-python tools\fidelity\fidelity.py collect --side lc --state compass-main-01 --pkg com.luopan.fengshui --checksheet-id ST-01-compass-main
+# 我方侧（同一状态、同一 state id；checksheet §5 硬门槛：build 三字段缺一不可）
+python tools\fidelity\fidelity.py collect --side lc --state compass-main-01 --pkg com.luopan.fengshui --checksheet-id ST-01-compass-main `
+  --build-branch develop --build-commit <40位提交号> --apk app\android\app\build\outputs\apk\debug\app-debug.apk
 # 先看将执行什么，不碰设备
 python tools\fidelity\fidelity.py collect --side lc --state compass-main-01 --dry-run
 ```
 
 `--state` 用证据文件 stem（与 `docs/fidelity/orig/` 现有命名一致，如 `compass-main-01`、`map-beijing-z12`）；checksheet 的行 id（`PG-xx` / `ST-xx-...`）通过 `--checksheet-id` 记进 `meta.json`，两套编号各自唯一、不混用。
+
+**LC 侧构建来源强校验**：`--side lc` 必须给 `--build-commit`（40 位小写 sha）与 `--apk`；`--build-branch` 默认 `develop`、非 develop 拒绝。缺 commit/APK 直接报错退出，不落截图。meta 固定写：
+
+```json
+"build": { "branch": "develop", "commit": "<40hex>" },
+"apk":   { "path": "...", "sha256": "<hex>", "bytes": 3127xxx }
+```
+
+这是 checksheet §5 的作废条件（反例 `cd47703`）；原版侧 `build`/`apk` 为 `null`。
 
 写入 `docs/fidelity/{orig,lc}/<state>.png` + `.xml` + `.meta.json`（截图 SHA256、分辨率、设备型号/系统、包名、采集时间）。已有同名采集默认拒绝覆盖，确认要重拍加 `--force`。`--serial` 或 `ANDROID_SERIAL` 指定设备。
 

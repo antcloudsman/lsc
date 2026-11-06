@@ -68,6 +68,36 @@ def _newest_test_binary() -> Path | None:
     return max(cands, key=lambda p: p.stat().st_mtime)
 
 
+def _docker_ready() -> bool:
+    try:
+        proc = subprocess.run(["docker", "version", "--format", "{{.Server.Version}}"],
+                              capture_output=True, text=True)
+        return proc.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def _docker_cargo_test() -> tuple[bool, str]:
+    """在仓库自带的 Docker 桌面环境里跑 cargo test（宿主可能缺 MSVC link.exe）。"""
+    compose = ROOT / "app" / "docker-compose.yml"
+    if not compose.is_file():
+        return False, "missing app/docker-compose.yml"
+    command = ('export PATH=/usr/local/cargo/bin:/usr/local/rustup/bin:$PATH; '
+               'cargo test --manifest-path /src/Cargo.toml')
+    proc = subprocess.run(["docker", "compose", "-f", str(compose), "run", "--rm", "build",
+                           "bash", "-c", command],
+                          cwd=str(ROOT), capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+    for line in (proc.stdout or "").splitlines():
+        if line.startswith(("running ", "test result:", "test ")):
+            print(f"CARGO| {line}")
+    if proc.returncode != 0:
+        for line in (proc.stderr or "").splitlines()[-10:]:
+            print(f"CARGO! {line}")
+        return False, f"docker cargo test exit={proc.returncode}"
+    return True, "docker"
+
+
 def run_cargo_tests() -> bool:
     """F-02：真跑 `cargo test`（780 格由 b2_all_780_cells 执行）。"""
     cargo = shutil.which("cargo")
@@ -89,7 +119,16 @@ def run_cargo_tests() -> bool:
     if proc.returncode != 0:
         for line in (proc.stderr or "").splitlines()[-14:]:
             print(f"CARGO! {line}")
-        print(f"CARGO: FAIL exit={proc.returncode}")
+        print(f"CARGO: native cargo test exit={proc.returncode}")
+        if _docker_ready():
+            print("CARGO: native 链接失败（宿主缺 MSVC link.exe），改用仓库 Docker 桌面环境重跑")
+            ok, detail = _docker_cargo_test()
+            if ok:
+                print(f"CARGO: PASS ({detail})")
+                return True
+            print(f"CARGO: FAIL ({detail})")
+            return False
+        print("CARGO: FAIL（宿主缺 SDK 且 docker 不可用）")
         return False
     binary = _newest_test_binary()
     if binary is not None:

@@ -53,3 +53,18 @@
    左列任一按钮按下/抬起；图层入口 → 面板展开（页面过渡）。
 
 录完落 `docs/fidelity/motion/*.mp4` + 关键帧时间戳与时长（±100ms 口径）。
+
+## 2026-11-07T02:56–03:05 安装成功，但引导页卡住
+
+- 通过「风险提示 → 继续安装」（实际按钮坐标 `[81,2295][1147,2430]`；之前几次点到的是 `[81,2484][1147,2578]` 的「取消」）安装成功：
+  `space.xinzhi.globe` 装机 sha256 = **2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8**
+  （versionName 1.6.1 / versionCode 161），与原版素材同源；商店构建 `64af145d…` 未回装，设备对照构建 = `swss.apk`。
+- 启动后依次出现：隐私政策授权页（已点「同意并开始授权」）→ `GuideActivity` 引导页（4 页，底部「下一步」）。
+- **引导页对合成输入无响应**：`input tap`（614,2171 / 614,2182 / 612,2185）、`input swipe`（页面区左滑、按钮原地长按）、
+  `input motionevent DOWN/UP`、`TAB+ENTER` 全部无效，`mResumedActivity` 始终是 `GuideActivity`；
+  该页 `uiautomator dump` 返回空树（Compose 自绘，无文本节点）；`run-as` 不可用（`package not debuggable`），
+  不能直接改引导完成标记。
+- 设备已恢复：`package_verifier_enable=1`、`verifier_verify_adb_installs=1`、`com.huawei.appmarket` 已 `enabled`；
+  动画三项**暂留 1/1/1**（录制需要，录完归 0）。
+
+**下一步**：需要人工在引导页点 4 次「下一步」进入地图页（约 10 秒），之后三类动效可一次录完。

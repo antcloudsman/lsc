@@ -1,0 +1,27 @@
+{
+  "tool": "fidelity",
+  "version": "1.1.0",
+  "state": "compass-main-01",
+  "side": "lc",
+  "captured_at": "2026-11-06T13:49:01+0800",
+  "serial": "",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-01-compass-main",
+  "image": {
+    "file": "compass-main-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "964e59ee94583d4c2bbff68a77d5ffa7befd5915fee9adb3c723948c52a51632"
+  },
+  "dump": {
+    "file": "compass-main-01.xml",
+    "sha256": "8cf51f799afa9d7a66952e565b943ae4467c3ce4128a211198fc2ad40d34a12d"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

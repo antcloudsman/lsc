@@ -1729,6 +1729,12 @@ function placeMarker(x, y) {
   var lbl = document.getElementById("heading-label");
   mk.title = "立向点 " + (lbl ? lbl.textContent : "");
   mapEl.appendChild(mk);
+  /* R2-004：2D 点图也要落事件，POI 面板挂在立向点上（3D 走 pick3D 的 pick 事件）。 */
+  var ll3 = latLngOfScreen(x - rect.left, y - rect.top);
+  if (ll3) {
+    var hd = (typeof lastHeading === "number") ? lastHeading : 0;
+    emit({ type: "marker", lat: ll3.lat, lng: ll3.lng, heading: hd });
+  }
 }
 
 function clearMarkers() {

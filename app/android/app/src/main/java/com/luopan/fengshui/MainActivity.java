@@ -52,6 +52,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private long lastRingLog = 0L;
     /** D-005: single 3D pick marker (overwritten on every pick, cleared by pick-clear). */
     private MapMarker mapMarker;
+    /** R2-004: POI 详情面板（挂在立向点上，固定高 443px）。 */
+    private LinearLayout poiPanel;
+    private MapMarker poiMarker;
+    /** R2-006: 罗盘「隐藏」只隐盘面/指针/工具列，保留读数条与坐标，不退出罗盘态。 */
+    private boolean compassHidden;
+    /** R2-014: 收藏点地图态（右列 2 项 + 底部「添加点」），列表降为子页。 */
+    private boolean favoriteMode;
+    private LinearLayout rightFavoriteColumn;
+    private LinearLayout favoriteBottomBar;
+    /** R2-018: 左上抽屉（9 项 + 版本号）。 */
+    private LinearLayout drawerPanel;
+    private Button menuButton;
     /** last raw (un-calibrated) azimuth, for the master-switch recompute. */
     private float lastRaw = 0f;
 
@@ -511,7 +523,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         hideButton = newToolButton("隐藏");
         hideButton.setTextSize(10f);
         hideButton.setVisibility(View.GONE);
-        hideButton.setOnClickListener(v -> setCompassMode(false));
+        hideButton.setOnClickListener(v -> toggleCompassHidden());
         topBar.addView(topSearchButton, new LinearLayout.LayoutParams(dp(52), dp(34)));
         topBar.addView(topLayerButton, new LinearLayout.LayoutParams(dp(52), dp(34)));
         topBar.addView(hideButton, new LinearLayout.LayoutParams(dp(52), dp(34)));
@@ -544,6 +556,39 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         bp.gravity = android.view.Gravity.BOTTOM;
         frame.addView(bottom, bp);
+
+        // R2-018：左上抽屉入口（原版 (97,202) 打开）+ 抽屉面板
+        menuButton = newToolButton("≡");
+        menuButton.setId(R.id.lc_menu_button);
+        menuButton.setTextSize(16f);
+        menuButton.setOnClickListener(v -> showDrawer());
+        FrameLayout.LayoutParams mbp = new FrameLayout.LayoutParams(dp(40), dp(34));
+        mbp.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
+        mbp.topMargin = dp(57);
+        mbp.leftMargin = dp(6);
+        frame.addView(menuButton, mbp);
+
+        drawerPanel = buildDrawer();
+        drawerPanel.setVisibility(View.GONE);
+        FrameLayout.LayoutParams dlp = new FrameLayout.LayoutParams(dp(300), FrameLayout.LayoutParams.MATCH_PARENT);
+        dlp.gravity = android.view.Gravity.START;
+        frame.addView(drawerPanel, dlp);
+
+        // R2-014：收藏点地图态右列（2 项）+ 底部「添加点」
+        rightFavoriteColumn = buildFavoriteColumn();
+        rightFavoriteColumn.setVisibility(View.GONE);
+        FrameLayout.LayoutParams rfc = new FrameLayout.LayoutParams(dp(76), FrameLayout.LayoutParams.WRAP_CONTENT);
+        rfc.gravity = android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL;
+        rfc.rightMargin = dp(2);
+        frame.addView(rightFavoriteColumn, rfc);
+
+        favoriteBottomBar = buildFavoriteBottomBar();
+        favoriteBottomBar.setVisibility(View.GONE);
+        FrameLayout.LayoutParams fbb = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        fbb.gravity = android.view.Gravity.BOTTOM;
+        fbb.bottomMargin = navBarInsetPx();
+        frame.addView(favoriteBottomBar, fbb);
 
         applyTrustState();
         return frame;
@@ -1049,6 +1094,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             exitDraw();
         }
         compassMode = on;
+        if (on && favoriteMode) {
+            // 进罗盘态先退出收藏点地图态（不再回调 setFavoriteMode，避免递归）。
+            favoriteMode = false;
+            if (rightFavoriteColumn != null) rightFavoriteColumn.setVisibility(View.GONE);
+            if (favoriteBottomBar != null) favoriteBottomBar.setVisibility(View.GONE);
+        }
+        if (!on && compassHidden) {
+            compassHidden = false;
+            if (hideButton != null) hideButton.setText("隐藏");
+        }
+        if (!on) hidePoiPanel();
         if (compassView != null) compassView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : View.VISIBLE);
@@ -1059,7 +1115,369 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (topBackButton != null) topBackButton.setVisibility(on ? View.VISIBLE : View.GONE);
         if (topLayerButton != null) topLayerButton.setVisibility(on ? View.VISIBLE : View.GONE);
         applyMapUiMode(on ? "compass" : "map");
+        applyCompassHiddenVisuals();
         updateReading();
+    }
+
+    // ---------------- R2-006：隐藏只隐盘面 ----------------
+
+    private void toggleCompassHidden() {
+        if (!compassMode) return;
+        compassHidden = !compassHidden;
+        if (hideButton != null) hideButton.setText(compassHidden ? "显示" : "隐藏");
+        applyCompassHiddenVisuals();
+        android.util.Log.d("LCCOMPASS", "hidden=" + compassHidden);
+    }
+
+    private void setCompassHidden(boolean hidden) {
+        compassHidden = hidden;
+        if (hideButton != null) hideButton.setText(hidden ? "显示" : "隐藏");
+        applyCompassHiddenVisuals();
+    }
+
+    /** 隐藏态：盘面/指针/左右工具列/底栏全部消失；读数条与坐标由 readingView 常驻保留。 */
+    private void applyCompassHiddenVisuals() {
+        boolean showCompass = compassMode && !compassHidden;
+        if (compassView != null) compassView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        if (leftCompassColumn != null) leftCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        if (rightCompassColumn != null) rightCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        if (compassToolBar != null) compassToolBar.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        if (hideButton != null) hideButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
+        if (topBackButton != null) topBackButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
+        if (topLayerButton != null) topLayerButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
+        if (menuButton != null) menuButton.setVisibility(compassMode ? View.GONE : View.VISIBLE);
+    }
+
+    // ---------------- R2-014：收藏点地图态 ----------------
+
+    private void setFavoriteMode(boolean on) {
+        if (on) {
+            exitMeasure();
+            exitDraw();
+            if (compassMode) setCompassMode(false);
+            hidePoiPanel();
+        }
+        favoriteMode = on;
+        if (rightFavoriteColumn != null) rightFavoriteColumn.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (favoriteBottomBar != null) favoriteBottomBar.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : (compassMode ? View.GONE : View.VISIBLE));
+        if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : (compassMode ? View.GONE : View.VISIBLE));
+        android.util.Log.d("LCFAV", "favoriteMode=" + on);
+    }
+
+    /** 收藏列表：地图态的子页，返回后仍在收藏点地图态。 */
+    private void openFavoriteList() {
+        startActivity(new android.content.Intent(this, InterestListActivity.class));
+    }
+
+    /** 「添加点」：用当前地图中心建收藏点（原版底部大按钮）。 */
+    private void addFavoriteAtCenter() {
+        if (compassMapView == null) return;
+        compassMapView.evaluateJavascript("(function(){var s=getState();return s.lat+','+s.lng;})()", c -> {
+            String v = decodeJsString(c);
+            String[] parts = v == null ? new String[0] : v.split(",");
+            if (parts.length != 2) {
+                toast("地图未就绪，稍后再试");
+                return;
+            }
+            try {
+                double lat = Double.parseDouble(parts[0].trim());
+                double lng = Double.parseDouble(parts[1].trim());
+                android.content.Intent i = new android.content.Intent(this, SaveInterestActivity.class);
+                i.putExtra(MapJump.EXTRA_LAT, lat);
+                i.putExtra(MapJump.EXTRA_LNG, lng);
+                i.putExtra(SaveInterestActivity.EXTRA_SITTING, bearingSitting);
+                i.putExtra(SaveInterestActivity.EXTRA_FACING, bearingFacing);
+                startActivity(i);
+            } catch (NumberFormatException e) {
+                toast("地图未就绪，稍后再试");
+            }
+        });
+    }
+
+    // ---------------- R2-018：左上抽屉（9 项 + 版本号） ----------------
+
+    private static final String[] DRAWER_ITEMS = {
+            "地图设置", "账户设置", "投诉反馈", "关于我们", "联系我们",
+            "推荐给好友", "开具发票", "帮助中心", "用户协议"};
+
+    private void showDrawer() {
+        if (drawerPanel == null) drawerPanel = buildDrawer();
+        drawerPanel.setVisibility(View.VISIBLE);
+        drawerPanel.bringToFront();
+        android.util.Log.d("LCDRAWER", "open");
+    }
+
+    private void hideDrawer() {
+        if (drawerPanel != null) drawerPanel.setVisibility(View.GONE);
+    }
+
+    private LinearLayout buildFavoriteColumn() {
+        LinearLayout col = new LinearLayout(this);
+        col.setId(R.id.lc_fav_column);
+        col.setOrientation(LinearLayout.VERTICAL);
+        Button list = newToolButton("收藏列表");
+        list.setId(R.id.lc_fav_list);
+        list.setTextSize(11f);
+        list.setOnClickListener(v -> openFavoriteList());
+        Button contour = newToolButton("等高线");
+        contour.setId(R.id.lc_fav_contour);
+        contour.setTextSize(11f);
+        contour.setOnClickListener(v -> js("toggleContour()"));
+        col.addView(list, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(46)));
+        col.addView(contour, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(46)));
+        return col;
+    }
+
+    private LinearLayout buildFavoriteBottomBar() {
+        LinearLayout bar = new LinearLayout(this);
+        bar.setId(R.id.lc_fav_bottom);
+        bar.setOrientation(LinearLayout.VERTICAL);
+        bar.setBackgroundColor(Color.argb(170, 24, 20, 16));
+        Button add = newToolButton("添加点");
+        add.setId(R.id.lc_fav_add);
+        add.setTextSize(13f);
+        add.setOnClickListener(v -> addFavoriteAtCenter());
+        bar.addView(add, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)));
+        return bar;
+    }
+
+    private LinearLayout buildDrawer() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setId(R.id.lc_drawer_panel);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setBackgroundColor(Color.argb(248, 26, 22, 18));
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        TextView close = new TextView(this);
+        close.setText("← 返回");
+        close.setTextSize(12f);
+        close.setTextColor(Color.rgb(220, 190, 130));
+        close.setPadding(dp(12), dp(12), dp(12), dp(12));
+        close.setOnClickListener(v -> hideDrawer());
+        header.addView(close);
+        panel.addView(header);
+
+        for (String label : DRAWER_ITEMS) {
+            Button item = new Button(this);
+            item.setText(label);
+            item.setAllCaps(false);
+            item.setTextSize(13f);
+            item.setTextColor(Color.rgb(235, 228, 215));
+            item.setBackgroundColor(Color.TRANSPARENT);
+            item.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
+            item.setPadding(dp(16), 0, dp(8), 0);
+            item.setOnClickListener(v -> {
+                hideDrawer();
+                if ("地图设置".equals(label)) {
+                    showMoreSheet();
+                } else {
+                    toast(label + "：原版为抽屉子页，本步未实现");
+                }
+            });
+            panel.addView(item, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(46)));
+        }
+
+        TextView version = new TextView(this);
+        version.setId(R.id.lc_drawer_version);
+        version.setText("三维山水全景地图V 1.6.1");
+        version.setTextSize(10f);
+        version.setTextColor(Color.rgb(150, 130, 100));
+        version.setPadding(dp(16), dp(18), dp(8), dp(8));
+        panel.addView(version);
+        return panel;
+    }
+
+    // ---------------- R2-004：POI 详情面板 ----------------
+
+    /** 面板固定高 443px（原版底部卡片 2135–2578）。 */
+    private static final int POI_PANEL_H_PX = 443;
+
+    /**
+     * 内容帧之外的底部占位（窗口 2700 − 内容帧 2578 = 122px，见 REF_CONTENT_H 注释）。
+     * 沉浸式下 navigationBars inset 取到 0，所以直接用实测高度差，保证面板落在 [2135,2578]。
+     */
+    private int navBarInsetPx() {
+        try {
+            if (content != null && content.getHeight() > 0) {
+                return Math.max(0, content.getHeight() - (int) REF_CONTENT_H);
+            }
+        } catch (Exception ignored) {
+        }
+        return 122;
+    }
+
+    private void showPoiPanel(MapMarker m) {
+        if (m == null) return;
+        poiMarker = m;
+        if (poiPanel == null) poiPanel = buildPoiPanel();
+        if (poiPanel.getParent() == null && content != null) {
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, POI_PANEL_H_PX);
+            lp.gravity = android.view.Gravity.BOTTOM;
+            // 窗口是 2700 高、内容帧只到 2578：底部 122px 在导航栏下，面板会被裁掉。
+            // 用导航栏 inset 做下边距，面板才真正落在 [2135,2578]（高 443）。
+            lp.bottomMargin = navBarInsetPx();
+            content.addView(poiPanel, lp);
+        }
+        poiPanel.setVisibility(View.VISIBLE);
+        refreshPoiText();
+        android.util.Log.d("LCPOI", "show " + m);
+    }
+
+    private void hidePoiPanel() {
+        if (poiPanel != null) poiPanel.setVisibility(View.GONE);
+    }
+
+    private String poiWgsLine(MapMarker m) {
+        return String.format(java.util.Locale.US, "WGS84:%.4f，%.4f", m.lng, m.lat);
+    }
+
+    private void refreshPoiText() {
+        final MapMarker m = poiMarker;
+        if (m == null || poiPanel == null) return;
+        TextView meta = poiPanel.findViewById(R.id.lc_poi_meta);
+        TextView wgs = poiPanel.findViewById(R.id.lc_poi_wgs);
+        if (wgs != null) wgs.setText(poiWgsLine(m));
+        if (meta != null) {
+            String elev = m.elevM == null ? "未知" : (Math.round(m.elevM) + " m");
+            meta.setText("距我 " + poiDistanceText(m) + "    海拔 " + elev);
+        }
+        new Thread(() -> {
+            String addr = null;
+            try {
+                addr = MapPoints.reverseAddress(m.lat, m.lng);
+            } catch (Exception ignored) {
+            }
+            final String a = addr;
+            runOnUiThread(() -> {
+                if (poiPanel == null) return;
+                TextView name = poiPanel.findViewById(R.id.lc_poi_name);
+                if (name != null) {
+                    name.setText(a == null || a.trim().isEmpty()
+                            ? "名称：逆地理不可用（DEP-3）" : a.trim());
+                }
+            });
+        }).start();
+    }
+
+    /** 距我：优先系统最后已知位置；拿不到就写「—」，不臆造距离。 */
+    private String poiDistanceText(MapMarker m) {
+        try {
+            android.location.LocationManager lm =
+                    (android.location.LocationManager) getSystemService(LOCATION_SERVICE);
+            if (lm == null || checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                return "—";
+            }
+            android.location.Location best = null;
+            for (String p : new String[]{android.location.LocationManager.GPS_PROVIDER,
+                    android.location.LocationManager.NETWORK_PROVIDER}) {
+                android.location.Location l = lm.getLastKnownLocation(p);
+                if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
+            }
+            if (best == null) return "—";
+            double km = MapPoints.distanceKm(best.getLatitude(), best.getLongitude(), m.lat, m.lng);
+            return km < 1 ? String.format(java.util.Locale.US, "%.0f m", km * 1000)
+                    : String.format(java.util.Locale.US, "%.1f km", km);
+        } catch (Exception e) {
+            return "—";
+        }
+    }
+
+    private LinearLayout buildPoiPanel() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setId(R.id.lc_poi_panel);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setBackgroundColor(Color.argb(242, 26, 22, 18));
+        panel.setPadding(dp(14), dp(8), dp(14), dp(8));
+
+        LinearLayout head = new LinearLayout(this);
+        head.setOrientation(LinearLayout.HORIZONTAL);
+        TextView name = new TextView(this);
+        name.setId(R.id.lc_poi_name);
+        name.setText("名称：查询中…");
+        name.setTextSize(14f);
+        name.setTextColor(Color.rgb(235, 228, 215));
+        head.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        Button clear = new Button(this);
+        clear.setId(R.id.lc_poi_clear);
+        clear.setText("清除标记");
+        clear.setAllCaps(false);
+        clear.setTextSize(11f);
+        clear.setOnClickListener(v -> {
+            js("clearMarkers()");
+            hidePoiPanel();
+            mapMarker = null;
+            poiMarker = null;
+        });
+        head.addView(clear);
+        panel.addView(head);
+
+        TextView meta = new TextView(this);
+        meta.setId(R.id.lc_poi_meta);
+        meta.setTextSize(12f);
+        meta.setTextColor(Color.rgb(200, 190, 170));
+        panel.addView(meta);
+
+        TextView wgs = new TextView(this);
+        wgs.setId(R.id.lc_poi_wgs);
+        wgs.setTextSize(12f);
+        wgs.setTextColor(Color.rgb(200, 190, 170));
+        panel.addView(wgs);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        Button copy = new Button(this);
+        copy.setId(R.id.lc_poi_copy);
+        copy.setText("复制经纬度");
+        copy.setAllCaps(false);
+        copy.setTextSize(11f);
+        copy.setOnClickListener(v -> copyPoiLatLng());
+        Button fav = new Button(this);
+        fav.setId(R.id.lc_poi_fav);
+        fav.setText("收藏地点");
+        fav.setAllCaps(false);
+        fav.setTextSize(11f);
+        fav.setOnClickListener(v -> savePoiAsFavorite());
+        Button nav = new Button(this);
+        nav.setId(R.id.lc_poi_nav);
+        nav.setText("导航");
+        nav.setAllCaps(false);
+        nav.setTextSize(11f);
+        nav.setOnClickListener(v -> navigateToPoi());
+        actions.addView(copy, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        actions.addView(fav, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        actions.addView(nav, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        panel.addView(actions);
+        return panel;
+    }
+
+    private void copyPoiLatLng() {
+        if (poiMarker == null) return;
+        String text = String.format(java.util.Locale.US, "%.4f,%.4f", poiMarker.lng, poiMarker.lat);
+        android.content.ClipboardManager cm =
+                (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (cm != null) cm.setPrimaryClip(android.content.ClipData.newPlainText("经纬度", text));
+        toast("已复制经纬度 " + text);
+        android.util.Log.d("LCPOI", "copy " + text);
+    }
+
+    private void savePoiAsFavorite() {
+        if (poiMarker == null) return;
+        android.content.Intent i = new android.content.Intent(this, SaveInterestActivity.class);
+        i.putExtra(MapJump.EXTRA_LAT, poiMarker.lat);
+        i.putExtra(MapJump.EXTRA_LNG, poiMarker.lng);
+        i.putExtra(SaveInterestActivity.EXTRA_SITTING, bearingSitting);
+        i.putExtra(SaveInterestActivity.EXTRA_FACING, bearingFacing);
+        startActivity(i);
+    }
+
+    private void navigateToPoi() {
+        if (poiMarker == null) return;
+        startActivity(MapJump.intent(this, poiMarker.lat, poiMarker.lng));
     }
 
     // ---------------- F-12 测量 / F-13 画笔（地图内交互，底部浮条） ----------------
@@ -1415,8 +1833,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 } else if ("地理影像".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else if ("收藏点".equals(t) && flags.isEnabled("f11")) {
-                    // F-11：默认开；关掉则回退旧 stub（调试/回退用）
-                    startActivity(new android.content.Intent(this, InterestListActivity.class));
+                    // R2-014：收藏点回归地图态（右列 2 项 + 底部「添加点」），列表降为子页。
+                    setFavoriteMode(true);
                 } else if ("收藏点".equals(t)) {
                     toast(t + "：原版为工具子页，本步未实现");
                 } else {
@@ -1607,10 +2025,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         settings.setAllowFileAccess(true);
         settings.setGeolocationEnabled(true);
         webView.addJavascriptInterface(new LCAndroid((type, marker) -> {
-            if ("pick".equals(type)) {
+            if ("pick".equals(type) || "marker".equals(type)) {
+                // R2-004：3D pick 与 2D 点图都保留立向点，并把 POI 面板挂上去。
                 mapMarker = marker;
+                runOnUiThread(() -> showPoiPanel(marker));
             } else {
                 mapMarker = null;
+                runOnUiThread(this::hidePoiPanel);
             }
         }), "LCAndroid");
         webView.setWebViewClient(new WebViewClient() {

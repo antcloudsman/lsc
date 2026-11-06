@@ -16,15 +16,15 @@
 | 类别 | 条数 | 编号 |
 |---|---|---|
 | 已证实差异（P0） | 2 | C-01、C-06 |
-| 已证实差异（P1） | 5 | C-02、C-03、C-05、C-07、C-09 |
+| 已证实差异（P1） | 4 | C-02、C-03、C-05、C-09 |
 | 已证实差异（P2/DI） | 3 | C-08、C-10、C-11 |
-| 证据不可用，未确认 | 5 行 | 行 18/19/20/22/23/25/27（C-04、C-12） |
+| 未确认／证据无效（不进已证实） | 3 条 | C-04（证据无效·待重采）、C-07（证据错态）、C-12（等高线未确认） |
 | 缺失 | 1 行 | 行 30（C-13 相机权限） |
 | 正面结论（M3 已知项） | 2 | 罗盘浮层已对齐；「双 WebView」不成立 |
 
 **不给 P0 的一条**：`map-3d-mode` 的「3D 被 2D 覆盖」不成立为产品缺陷——同一 APK 上 3D 渲染链路实测可用；出问题的是证据本身（两态截图/两态 dump 逐字节相同），按技术总监裁定记为 **「证据无效·待重采」**（证据级 P1），见 C-04。
 
-**本轮回补（2026-11-06，按 `verify-round2.md` R6 与总监 §C-06 裁定）**：① C-02 的「青海湖」「哀牢山森林旅游区」分属 `orig/map-beijing-z12.xml` 与 `orig/map-mountains-entry.xml` 两张 dump，已拆开标注；② C-06 按 `checksheet.md:61`「页面层级不同 = P0」由 P1 升 **P0**，统计随之改为 P0 2 / P1 5 / P2 3。
+**本轮回补（2026-11-06，按 `verify-round2.md` R6 与总监 C-06/C-07 裁定）**：① C-02 的「青海湖」「哀牢山森林旅游区」分属 `orig/map-beijing-z12.xml` 与 `orig/map-mountains-entry.xml` 两张 dump，已拆开标注；② C-06 按 `checksheet.md:61`「页面层级不同 = P0」由 P1 升 **P0**；③ C-07 因现有证据把探索页拍成「看山脉」页，按裁定从 P1 移出、归入**未确认·证据错态**（与 C-04、C-12 同组），不计入已证实。桶统计：P0 2 / P1 4 / P2 3 / 未确认 3 / 缺失 1 = 13 条编号。
 
 ## 2. 差异条目（五要素）
 
@@ -38,7 +38,7 @@
 | C-04 | `orig/map-3d-mode.png` | `lc/map-3d-mode.png`（sha256 `f037f735…`，与 `lc/tool-contour-01.png` 相同） | 证据缺陷（采集态未生效），非渲染缺陷 | **证据级 P1（裁定：证据无效·待重采）** | `map.html:1380-1419`（`toggle3D/setMode` 层显隐）、`map.html:1635-1639`（等高线自动进 3D）、`tools/map/collect_map_lc.ps1:12,75`（3D 默认点击 `155,576`，与真实按钮 `[1027,2366][1222,2494]` 不符） | 用真实中心 `(1124,2430)` 点 3D；截图前以按钮文案「返回 2D」+ logcat `LC3D mode=3d` 双确认；先退出 3D（显示「3D 地形」）再拍下一态。修脚本默认坐标 |
 | C-05 | `orig/map-overlay-sheet.png` | `lc/map-overlay-sheet.png` | 功能/结构：数据叠加面板条目与文案 | **P1** | `map.html:748`（`setOverlayLayer`）、`map.html:1203`（`setRoadNet`）；LC dump `[41,1417]..[41,2092]` | 原版有「行政区域（面/线/筛选）」三级条目 + 底部「全部关闭/全部开启」；LC 把面/线做成「无数据」说明并缺「行政区域筛选」入口。按原版补筛选入口，无数据行改为禁用态而非说明段 |
 | C-06 | `orig/map-mountains-entry.png` | `lc/map-mountains-entry.png` | 结构：页面层级不同（地图内图层 vs 整页 Activity） | **P0**（`checksheet.md:61` 页面层级不同 = P0） | `MainActivity.java:965-968`（`山脉` → `MountainActivity` 整页） | 原版点「山脉」后截图仍是地图页（无子页、无可见山名图层）；LC 直接跳整屏「看山脉」。按原版做地图内山峰/山名图层或半屏面板，不再以整页 Activity 承接 |
-| C-07 | `orig/map-explore-page.png` | `lc/map-explore-page.png`（图为「看山脉」页，见 §4） | 结构：探索入口 | **P1（未确认，证据错态）** | `MainActivity.java:916-922`（`探索` → `DiscoveryActivity`） | 原版是 3 个分类（专题地图/环球地理/历史战争）+ 卡片列表；LC 的 `map-explore-page.*` 拍成了「看山脉」页，须重采后逐项比对 |
+| C-07 | `orig/map-explore-page.png` | `lc/map-explore-page.png`（图为「看山脉」页，见 §4） | 结构：探索入口 | **未确认·证据错态（不进已证实）** | `MainActivity.java:916-922`（`探索` → `DiscoveryActivity`） | 原版是 3 个分类（专题地图/环球地理/历史战争）+ 卡片列表；LC 的 `map-explore-page.*` 拍成了「看山脉」页，须重采后逐项比对 |
 | C-08 | `orig/map-beijing-z12.png` | `lc/map-beijing-z12.png` | 文案：底部来源条 | **P2（DI 授权部分不计缺陷）** | `map.html:87`（`srcInfo` 文本） | 原版「数据来自世纪空间 审图号：GS(2026)1219号」；LC「数据来自天地图地形（等价替代原版世纪空间）· 审图号：未确认」。图源替换属 D-006，但「审图号：未确认」须换成天地图官方审图号或按源分源显示 |
 | C-09 | `orig/map-beijing-z12.png` | `lc/map-beijing-z12.png` | 布局/按钮：左右列按钮体量与样式 | **P1** | `MainActivity.java:471-480`（右列 10 项与锚点 y）、`MainActivity.java:561-569`（`newToolButton`，`argb(120,24,20,16)` 底、9sp） | 实测：LC 右列按钮框 `195×128 px`（`[1027,619][1222,747]`）；原版同名标签文字仅 `71×39 px`（`[1081,632][1152,671]`），图标在文字上方（图标 bounds 不在 dump 中，故只比文字与按钮框）。LC 左列 `[6,432][201,560]` 同样 195×128。按原版改为图标+小字、收窄按钮、去掉大面积半透明底 |
 | C-10 | `orig/tool-track.png` | `lc/tool-track.png` | 业务逻辑：轨迹记录登录墙 | **P2（DI：D-006 去登录墙）** | `MainActivity.java` 轨迹入口（`更多 → 轨迹记录`）；LC 页 `TrackReplayActivity.java:159` | 原版是手机号+验证码登录墙；LC 直接是「历史轨迹」页（空态「暂无历史轨迹记录」）。属有意差异，不计还原度；但空态文案与「轨迹设置/开始记录」需与原版功能页对齐 |

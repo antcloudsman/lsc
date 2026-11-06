@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-track",
+  "side": "orig",
+  "checksheet_id": "ST-C-track",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "tool-track.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "d2629e1cf04b541cea86e479a3cb5455309d1726446082272fd2d1e32f583d45"
+  },
+  "dump": {
+    "file": "tool-track.xml",
+    "sha256": "175345c749ba20eb66838b477ae7d6ee708f9c2d7e150fcd7721b6e1efe25287"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

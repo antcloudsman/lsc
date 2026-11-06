@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-fishing",
+  "side": "orig",
+  "checksheet_id": "ST-C-fishing",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "tool-fishing.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "1494bd686a5b318b7f4eab72fc8036e0b8bac7c53b84dec8b764d325f835ffa1"
+  },
+  "dump": {
+    "file": "tool-fishing.xml",
+    "sha256": "98bdf6de5652cc750ccee81067090c19f9d49e3afc70af3db0271f42d2053245"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

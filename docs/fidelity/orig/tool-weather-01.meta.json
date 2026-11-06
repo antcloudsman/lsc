@@ -1,0 +1,15 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-weather-01",
+  "side": "orig",
+  "checksheet_id": "ST-F-weather",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": null,
+  "dump": {
+    "file": "tool-weather-01.xml",
+    "sha256": "2acddebe07840645a4c9ade9393950e4dab5d2f587ed62be188c25b997586108"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

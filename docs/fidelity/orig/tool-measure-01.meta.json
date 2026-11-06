@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-measure-01",
+  "side": "orig",
+  "checksheet_id": "ST-C-measure",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "tool-measure-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "7d3f7efc3e6ba65cfa4ce7a2c8a487cddfeae5f750deb1177d41e8dc38dc68ad"
+  },
+  "dump": {
+    "file": "tool-measure-01.xml",
+    "sha256": "b8a7d27f940850b387fcf519757a23194c1990b3bb169aae9097e9e3039e5a20"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

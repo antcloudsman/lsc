@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- R2-015：更多面板（底部 sheet）可量取 id。原版 more-sheet-03-fresh.xml：
+         sheet [0,1350][1228,2578]、格 296×231、行顶 1540/1836/2132（步距 296）。 -->
+    <item name="lc_more_sheet" type="id" />
+    <item name="lc_more_header" type="id" />
+    <item name="lc_more_title" type="id" />
+    <item name="lc_more_edit" type="id" />
+    <item name="lc_more_grid" type="id" />
+    <item name="lc_more_row0" type="id" />
+    <item name="lc_more_row1" type="id" />
+    <item name="lc_more_row2" type="id" />
+    <item name="lc_more_row3" type="id" />
+</resources>

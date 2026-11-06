@@ -148,6 +148,8 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 
 ## 附D：证据脱敏（LC测试，2026-11-06）—— logcat 会整条打出天地图 web key
 
+**纪律一句话**：WebView 内部日志（`hwbr_engine_ContentUriUtils`）会把 `file:///android_asset/map.html?tk=…` 连同 key 打出来，是所有 logcat 采集的主要泄漏点；冻结/冒烟/AT 一律走 `LogRedact`，不要手工拼 logcat 落盘。
+
 docs/qa/baseline-android/round-acceptance/logcat.txt 里出现过一行华为 WebView 内部日志：
 
 ```

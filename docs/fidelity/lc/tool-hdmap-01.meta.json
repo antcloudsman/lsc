@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.3.0",
+  "state": "tool-hdmap-01",
+  "side": "lc",
+  "captured_at": "2026-11-06T14:15:43+0800",
+  "serial": "",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-A-hdmap",
+  "build": {
+    "branch": "develop",
+    "commit": "e88ed0c2aa70272e36f6d03a0a6f12511d6bf532"
+  },
+  "apk": {
+    "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "8dd5bf13dbbd0763b961a42df8bb35706f743ae2338d3bbd336f748ed0ab1763",
+    "bytes": 7059509
+  },
+  "image": {
+    "file": "tool-hdmap-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "a6d7f37a78094e09b9316f6dddb3f58daa913dce909b9f218f6158e03f1abb80"
+  },
+  "dump": {
+    "file": "tool-hdmap-01.xml",
+    "sha256": "1043f62b4bb02043a2cd091166b29fae0522d135da3bff341168f081c8e8b627"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

@@ -213,6 +213,38 @@ def main() -> int:
             "report: missing pair in summary.json",
         )
 
+        index_path = report_root / "lc-captures.md"
+        index_path.write_text(
+            "| # | missing-lc 条目 | R2 编号 | 分类 | 依据 |\n"
+            "|---|---|---|---|---|\n"
+            "| 1 | 02-missing | R2-002 | 真缺失 | selftest |\n",
+            encoding="utf-8",
+        )
+        output = run(["report", "--root", str(report_root)])
+        check("真缺失 1" in output, "report: registered missing-lc is treated as known-red")
+        known_red_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        check(
+            known_red_summary["known_red"]["classes"]["真缺失"] == 1,
+            "report: known-red classification counted",
+        )
+        index_path.write_text(
+            "| # | missing-lc 条目 | R2 编号 | 分类 |\n"
+            "|---|---|---|---|\n"
+            "| 1 | 02-missing | R2-002 | 乱写 |\n",
+            encoding="utf-8",
+        )
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("invalid classification" in output, "report: illegal §5 classification fails")
+        index_path.write_text(
+            "| # | missing-lc 条目 | R2 编号 | 分类 |\n"
+            "|---|---|---|---|\n"
+            "| 1 | 01-compass-main | R2-001 | 真缺失 |\n",
+            encoding="utf-8",
+        )
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("not registered in index §5" in output, "report: unregistered missing-lc fails")
+        index_path.unlink()
+
         shutil.copyfile(report_root / "orig" / "01-compass-main.png", report_root / "orig" / "03-duplicate.png")
         shutil.copyfile(report_root / "lc" / "01-compass-main.png", report_root / "lc" / "03-duplicate.png")
         output = run(["report", "--root", str(report_root)], expect=1)
@@ -278,6 +310,28 @@ def main() -> int:
         output = run(["report", "--root", str(report_root)], expect=1)
         check("empty screenshot (0 bytes)" in output, "report: dump-only exemption does not skip 0-byte PNG check")
         (report_root / "orig" / "05-dump-only.png").unlink()
+
+        shutil.copyfile(orig_xml, report_root / "orig" / "14-dump-only.xml")
+        valid_dump_allow["allow"].append(
+            {"state": "14-dump-only", "reason": "selftest: FLAG_SECURE, dump only", "by": "LC服务端"}
+        )
+        dump_allow_path.write_text(json.dumps(valid_dump_allow, ensure_ascii=False), encoding="utf-8")
+        (report_root / "lc-captures.md").write_text(
+            "| stem | 清单行 | R2 | 分类 | 依据 |\n"
+            "|---|---|---|---|---|\n"
+            "| 14-dump-only | 26 | R2-030 | 证据不可得 | FLAG_SECURE, dump only |\n",
+            encoding="utf-8",
+        )
+        run(["report", "--root", str(report_root), "--state", "14-dump-only"])
+        dump_only_known = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        check(
+            dump_only_known["known_red"]["classes"]["证据不可得"] == 1,
+            "report: §6 证据不可得 class registered",
+        )
+        check(
+            dump_only_known["checksheet"]["required"] == 0,
+            "report: §6 known-red states are excluded from checksheet coverage",
+        )
 
         lc_only_states = ["07-lc-only-a", "08-lc-only-b", "09-lc-only-c", "10-lc-only-d"]
         for index, name in enumerate(lc_only_states):
@@ -379,11 +433,31 @@ def main() -> int:
         meta05 = json.loads((report_root / "orig" / "05-dump-only.meta.json").read_text(encoding="utf-8"))
         check(meta05["image"] is None and meta05["dump"] is not None,
               "meta-backfill: dump-only state gets dump hash and no image")
+        Image.new("RGB", (320, 600), (200, 100, 50)).save(report_root / "orig" / "13-known-red.png")
+        index_path.write_text(
+            index_path.read_text(encoding="utf-8")
+            + "\n| # | missing-lc 条目 | R2 编号 | 分类 | 依据 |\n"
+            + "|---|---|---|---|---|\n"
+            + "| 1 | 13-known-red | R2-013 | 真缺失 | selftest |\n",
+            encoding="utf-8",
+        )
+        output = run([
+            "meta-backfill", "--root", str(report_root), "--side", "orig",
+            "--index", str(index_path), "--dry-run", "--force",
+        ])
+        check("known-red (index §5)" in output, "meta-backfill: §5 known-red states are skipped with a reason")
+        check(
+            not (report_root / "orig" / "13-known-red.meta.json").exists(),
+            "meta-backfill: no meta written for known-red §5 state",
+        )
         output = run(["report", "--root", str(report_root), "--state", "01-compass-main", "--require-checksheet-id"])
         check("1/1" in output, "report: backfilled checksheet_id satisfies coverage gate")
 
         index_path.write_text(
-            index_path.read_text(encoding="utf-8") + "| 3 | ST-12-ghost | `12-ghost.png` |\n",
+            index_path.read_text(encoding="utf-8")
+            + "\n| # | checksheet_id | 我方文件 |\n"
+            + "|---|---|---|\n"
+            + "| 3 | ST-12-ghost | `12-ghost.png` |\n",
             encoding="utf-8",
         )
         output = run([

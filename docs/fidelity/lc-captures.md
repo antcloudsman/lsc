@@ -231,3 +231,19 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | 29 | `tool-elevation-01` | 10 | R2-007 | 真缺失 | P0 未实现，实现后自然消失；同族采集：行 10 海拔查询（lc 对应 compass-main-01） |
 
 合计 **29** 条：清单直引 6 条、同族别名 23 条、未取证 0 条
+
+## 6. dump-only / 证据不可得登记（Stage 1 · D3）
+
+口径：本表三态是 `orig-inventory.md` **U8** 记录的探测态，原版 `screencap` 返回 **0 字节**（`OpenVipActivity` 为 `FLAG_SECURE`），**原版侧与 lc 侧都没有 png**，只有 dump。它们不是 `missing-lc`（§5 的语义是「缺我方采集」），也不占用 `checksheet_id`；`report` 的 `required` 应同时扣掉 §5 与 §6。
+
+| stem | 清单行 | R2 | 分类 | 依据 |
+|---|---|---|---|---|
+| `right-mountains-entry` | 24 | R2-030 | 证据不可得 | FLAG_SECURE，原版仅 dump（U8「山脉探测」）；C-06 山脉页，不参与双图配对 |
+| `tool-contour-guide-dismissed` | 23 | R2-036 | 证据不可得 | FLAG_SECURE，仅 dump（U8「等高线引导关闭后」）；C-12 等高线，不参与双图配对 |
+| `tool-measure-mode` | 18 | — | 证据不可得 | FLAG_SECURE，仅 dump（U8「测量模式探测」）；行 18 测量无独立 R2（`findings-map` 记「未确认·缺 dump」） |
+
+> 清单行/R2 已按清单核过，改了两处：`right-mountains-entry` 是 **行 24（山脉）**、不是 26（26 是数据叠加）；`tool-measure-mode` 是 **行 18（测量）**，且测量在 `round2-report.md` 里没有独立 R2，故 R2 记 `—`，不硬挂一个无关编号。
+
+补充说明（为什么本表不是 5 条）：`tool-weather-01`（原版天气页 VIP + FLAG_SECURE）与 `map-water-entry`（原版水系页）的原版 png 同样不可得，但 **lc 侧有我方图**，已在 `dump-only-allow.json` 里按 `dump-only` 计（`report` 给 `status=dump-only`，两侧 dump 都在时仍做控件量取）。本表只收「两侧都没有 png、永远无法配对」的探测态。
+
+判定口径：`known-red = §5 ∪ §6`，且 §6 的 `分类` = `证据不可得`（§5 另有 `真缺失`/`命名不一致`/`载体不同` 三值）。每轮 `report` 要求 `missing_orig = 0`、`duplicates = 0`（两侧）、`zero_byte = 0`；每个 `missing-lc` 必须在 §5 登记且分类合法；本表三态不参与 `missing-lc` 与 `required`，也不得拿来掩盖真实漏采（要加必须先有 dump 在库）。

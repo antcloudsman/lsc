@@ -539,6 +539,46 @@
       "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
       "evidence": "assets/webapp/assets/imgs/compass/compass13.png；APK 条目路径未混淆",
       "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "res/TE.webp",
+      "target": "brand/ic_splash_bg.webp",
+      "kind": "brand",
+      "resource": "ic_splash_bg",
+      "raster": "mipmap-xxxhdpi",
+      "use": "启动页背景实景图（1500x3248）",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+      "checksheet": "A-08 启动页品牌图"
+    },
+    {
+      "entry": "res/uO.webp",
+      "target": "brand/ic_splash_logo.webp",
+      "kind": "brand",
+      "resource": "ic_splash_logo",
+      "raster": "mipmap-xxxhdpi",
+      "use": "启动页品牌 logo",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+      "checksheet": "A-08 启动页品牌图"
+    },
+    {
+      "entry": "res/ec.webp",
+      "target": "brand/ic_splash_bg2.webp",
+      "kind": "brand",
+      "resource": "ic_splash_bg2",
+      "raster": "mipmap-xxxhdpi",
+      "use": "启动页次级背景",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+      "checksheet": "A-08 启动页品牌图"
+    },
+    {
+      "entry": "res/o-.png",
+      "target": "brand/ic_launcher.png",
+      "kind": "brand",
+      "resource": "ic_launcher",
+      "raster": "mipmap-xxxhdpi",
+      "use": "应用图标（192x192，山体+3D实景）",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+      "checksheet": "A-08 启动页品牌图"
     }
   ]
 }

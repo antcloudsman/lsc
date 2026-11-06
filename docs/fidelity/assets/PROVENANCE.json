@@ -7,6 +7,77 @@
   },
   "items": [
     {
+      "target": "brand/ic_launcher.png",
+      "entry": "res/o-.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "3da3b70380fe766db3d1e2ddee1f7de5f39d5293d2267ef5985f5e9ea21e4196",
+      "bytes": 57571,
+      "image": {
+        "width": 192,
+        "height": 192
+      },
+      "kind": "brand",
+      "note": "",
+      "meta": {
+        "resource": "ic_launcher",
+        "raster": "mipmap-xxxhdpi",
+        "use": "应用图标（192x192，山体+3D实景）",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+        "checksheet": "A-08 启动页品牌图"
+      }
+    },
+    {
+      "target": "brand/ic_splash_bg.webp",
+      "entry": "res/TE.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "03b5719c707aee7726d3c1f78c0bf3ac3f9bd380e4789193e9ddd4b58730057f",
+      "bytes": 245750,
+      "image": null,
+      "kind": "brand",
+      "note": "",
+      "meta": {
+        "resource": "ic_splash_bg",
+        "raster": "mipmap-xxxhdpi",
+        "use": "启动页背景实景图（1500x3248）",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+        "checksheet": "A-08 启动页品牌图"
+      }
+    },
+    {
+      "target": "brand/ic_splash_bg2.webp",
+      "entry": "res/ec.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "dfb2e9c14c328161d00d0b5647a77f7ca6385730c02251ed597e3335d6af3341",
+      "bytes": 9884,
+      "image": null,
+      "kind": "brand",
+      "note": "",
+      "meta": {
+        "resource": "ic_splash_bg2",
+        "raster": "mipmap-xxxhdpi",
+        "use": "启动页次级背景",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+        "checksheet": "A-08 启动页品牌图"
+      }
+    },
+    {
+      "target": "brand/ic_splash_logo.webp",
+      "entry": "res/uO.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "a96bf89f123ed96af68cfe53406ec083ba001ff76873471304155193c0f4fd39",
+      "bytes": 22352,
+      "image": null,
+      "kind": "brand",
+      "note": "",
+      "meta": {
+        "resource": "ic_splash_logo",
+        "raster": "mipmap-xxxhdpi",
+        "use": "启动页品牌 logo",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+        "checksheet": "A-08 启动页品牌图"
+      }
+    },
+    {
       "target": "compass-introduce/人盘中针二十四山.html",
       "entry": "assets/compassIntroduce/人盘中针二十四山.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",

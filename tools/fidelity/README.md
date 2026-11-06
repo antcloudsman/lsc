@@ -14,7 +14,7 @@ python tools\fidelity\selftest.py
 python tools\fidelity\assets.py selftest
 ```
 
-合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (35 checks)`），同样不需要设备与原版 APK。
+合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (37 checks)`），同样不需要设备与原版 APK。
 
 ## 1. 一键采集（`collect`）
 
@@ -280,6 +280,7 @@ python tools\fidelity\assets.py verify --dir docs\fidelity\assets --apk E:\APPDe
 ```
 
 - 命中口径：`targets` 精确路径 ∪ `prefixes` 路径前缀 ∪ `kinds`（`PROVENANCE.json` 的 `kind`）∪ `globs`（仓库根相对，给 A-09 录屏用），`count` 是最少文件数；**缺项行会打出树里现有的 kind**，命名对不上时一眼能看出该改哪边；
+- **`checksheet` 前缀**：一条素材可带 `meta.checksheet`（如 `A-02 抽屉 9 项图标`），依赖项写 `"checksheet": "A-02"` 就只算该 A 项——A-02（9 抽屉）与 A-04（15 左右列矢量）共用 `kind=icon-drawer`，靠它精确归属（否则 A-02 会显示 24/9）；
 - 带 `manual` 的 A-10/A-11/A-12 是取证/真机项，不进素材门禁（挂起规则见计划 §6.1），只打印提示；
 - 依赖未齐 → `verify` exit 1（Stage 1 素材门禁）；只想查完整性时加 `--no-deps`；`--deps <file>` 可换清单；
 - `docs/fidelity/assets-deps.json` 是计划 §6.1 的机器镜像（口径以 LC产品 的计划为准，计划改动时同步）；

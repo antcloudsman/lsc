@@ -1,4 +1,30 @@
 {
   "note": "dump-only 豁免：截图确实不可得、但 dump 存在的状态。每条 {\"state\":\"...\",\"reason\":\"...\",\"by\":\"...\"}；缺 reason/by 会让 report 报错。豁免只跳过 PNG 配对，0 字节 PNG 仍失败，引用不存在的 state 或没有任何 dump 直接报错，不得用来掩盖漏采。",
-  "allow": []
+  "allow": [
+    {
+      "state": "right-mountains-entry",
+      "reason": "原版 screencap 返回 0 字节（OpenVipActivity FLAG_SECURE），空文件已删；dump 可取，orig/right-mountains-entry.xml 在库",
+      "by": "LC逆向"
+    },
+    {
+      "state": "tool-contour-guide-dismissed",
+      "reason": "原版 screencap 返回 0 字节（OpenVipActivity FLAG_SECURE），空文件已删；dump 可取，orig/tool-contour-guide-dismissed.xml 在库",
+      "by": "LC逆向"
+    },
+    {
+      "state": "tool-measure-mode",
+      "reason": "原版 screencap 返回 0 字节（OpenVipActivity FLAG_SECURE），空文件已删；dump 可取，orig/tool-measure-mode.xml 在库",
+      "by": "LC逆向"
+    },
+    {
+      "state": "tool-weather-01",
+      "reason": "OpenVipActivity FLAG_SECURE，screencap 返回 0 字节；dump 可取（VIP 门禁页「忍痛放弃」等文案），orig/tool-weather-01.xml 在库",
+      "by": "LC逆向"
+    },
+    {
+      "state": "map-water-entry",
+      "reason": "OpenVipActivity FLAG_SECURE，screencap 返回 0 字节；dump 可取（右列水系入口直达 VIP 门禁页），orig/map-water-entry.xml 在库",
+      "by": "LC逆向"
+    }
+  ]
 }

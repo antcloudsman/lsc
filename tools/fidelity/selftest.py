@@ -172,13 +172,31 @@ def main() -> int:
         check(report_summary["states"][0]["controls"]["matched"] == 3, "report: control diff embedded")
         check("1/1 pair(s) compared" in output, "report: summary line")
 
-        (report_root / "orig" / "02-missing.png").write_bytes(orig_png.read_bytes())
+        Image.new("RGB", (320, 600), (0, 128, 0)).save(report_root / "orig" / "02-missing.png")
         output = run(["report", "--root", str(report_root), "--strict"], expect=1)
         check("missing-lc" in output, "report: missing lc pair reported")
         missing_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
         check(
             any(row["state"] == "02-missing" and row["status"] == "missing-lc" for row in missing_summary["states"]),
             "report: missing pair in summary.json",
+        )
+
+        shutil.copyfile(report_root / "orig" / "01-compass-main.png", report_root / "orig" / "03-duplicate.png")
+        shutil.copyfile(report_root / "lc" / "01-compass-main.png", report_root / "lc" / "03-duplicate.png")
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("duplicate screenshot across states" in output, "report: duplicate screenshot is a hard error")
+        dup_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        dup_groups = dup_summary["integrity"]["orig"]["duplicates"] + dup_summary["integrity"]["lc"]["duplicates"]
+        check(len(dup_groups) == 2, f"report: duplicates recorded on both sides (got {len(dup_groups)})")
+        check("证据完整性" in (report_dir / "index.html").read_text(encoding="utf-8"), "report: integrity section in HTML")
+
+        (report_root / "orig" / "04-empty.png").write_bytes(b"")
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("empty screenshot (0 bytes)" in output, "report: empty screenshot is a hard error")
+        empty_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        check(
+            "04-empty.png" in empty_summary["integrity"]["orig"]["empty"],
+            "report: empty file recorded in integrity",
         )
 
         output = run([

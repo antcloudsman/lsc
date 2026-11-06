@@ -46,6 +46,8 @@ docs/fidelity/
 
 `findings/` 由 `python tools/fidelity/fidelity.py report --root docs/fidelity` 生成，是可再生成的派生证据，不手工编辑；需要留档的结论写进审阅文档并引用 `state id` 与 metrics 数值。
 
+`report` 带证据完整性硬检查：同一侧不同 state 的 PNG sha256 相同、或出现 0 字节 PNG，都会 exit 1 并在 `summary.json` 的 `integrity` 与 `index.html` 标出；不要用一张图冒充多个状态，缺图按「缺失」登记。
+
 ## 快速命令
 
 ```powershell

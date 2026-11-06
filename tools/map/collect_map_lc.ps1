@@ -15,6 +15,9 @@
 #   4) 装包改用 push + pm install -r -t --user 0，避开 PackageInstaller 确认弹窗。
 #   5) 等高线只拍 ON 一张（tool-contour-01）；OFF 态即 map-3d-mode（同为 3D + 无等高线），
 #      两张不同图、不产生重复 sha256（report 的重复图硬门会拦）。
+#   6) 覆盖地图章全部 15 态（原 7 态 + 搜索 2 / 画笔 / 钓点 / 轨迹 / 路网 / 叠加 / 图层），
+#      每条都在拍照前按 repro-round2.md §5 的「状态指纹」做前置断言（前台 Activity 或 dump 文本），
+#      做到「15 态一条命令可复跑」；坐标全部由 dump bounds 定，-SelfTest 逐条自证。
 param(
   [string]$Apk = '',
   [string]$Commit = '',
@@ -32,6 +35,20 @@ param(
   # 更多 (103,2453) → 测量 (486,1453)；画笔 (740,1453)；只用于 -Only 重采时的入口
   [int]$MoreX = 103, [int]$MoreY = 2453,
   [int]$MeasureX = 486, [int]$MeasureY = 1453,
+  # 更多面板其余 3 项（more-sheet-03-fresh.xml 实测）：画笔 [613,1372][867,1534]、
+  # 钓点 [867,1372][1121,1534]、轨迹记录 [106,1540][359,1702]
+  [int]$BrushX = 740, [int]$BrushY = 1453,
+  [int]$FishingX = 994, [int]$FishingY = 1453,
+  [int]$TrackX = 232, [int]$TrackY = 1621,
+  # 左列 路网 [6,1999][201,2127]
+  [int]$RoadX = 104, [int]$RoadY = 2063,
+  # 右列 叠加 [1027,814][1222,942] / 图层 [1027,619][1222,747]
+  [int]$OverlayX = 1124, [int]$OverlayY = 878,
+  [int]$LayerX = 1124, [int]$LayerY = 683,
+  # 顶栏 搜索 [1040,192][1215,306]；搜索框 [86,766][1141,918]
+  [int]$SearchX = 1127, [int]$SearchY = 249,
+  [int]$SearchInputX = 613, [int]$SearchInputY = 842,
+  [string]$SearchText = '116.4074,39.9042',
   # 只跑指定 state（逗号分隔）；默认全跑
   [string[]]$Only = @(),
   # 无设备自检：校验坐标锚点 / 重复图门（不需要真机）
@@ -115,8 +132,47 @@ function Assert-PngDistinct([string]$a, [string]$b) {
   if ($ha -eq $hb) { Fail "截图与 $b 逐字节相同（$ha），说明状态没变，拒绝记账：$a" }
   Info "png 不同 ok: $a($($ha.Substring(0,8))) != $b($($hb.Substring(0,8)))"
 }
-function Wait-Logcat([string]$pattern, [int]$timeoutSec = 20) {
-  $deadline = (Get-Date).AddSeconds($timeoutSec)
+# 拍照前的活体 dump：状态指纹不符就拒绝拍照（避免把错态覆盖掉既有好证据）
+function Get-LiveDumpText([int]$Retries = 2) {
+  for ($i = 1; $i -le $Retries; $i++) {
+    Sh 'rm -f /sdcard/a.xml'
+    $out = Adb @('shell', 'uiautomator dump /sdcard/a.xml')
+    if ($out -match 'dumped to') {
+      $raw = Adb @('exec-out', 'cat', '/sdcard/a.xml')
+      if ($raw -match '<hierarchy') {
+        $texts = @([regex]::Matches($raw, 'text="([^"]*)"') |
+          ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ })
+        return ($texts -join ' | ')
+      }
+    }
+    Info "live dump 第 $i 次失败，2 s 后重试"
+    Start-Sleep -Seconds 2
+  }
+  return ''
+}
+function Assert-LiveText([string]$pattern, [string]$hint) {
+  $txt = Get-LiveDumpText
+  if (-not $txt) { Fail "前置断言无法执行：$hint 的 live dump 两次都超时（拒绝拍照）" }
+  if ($txt -notmatch $pattern) {
+    Fail ("前置断言失败：{0}，期望 /{1}/；实际文本前 200 字：{2}" -f `
+      $hint, $pattern, $txt.Substring(0, [Math]::Min(200, $txt.Length)))
+  }
+  Info "前置断言 ok: $hint /$pattern/"
+}
+function Assert-LiveTextAbsent([string]$pattern, [string]$hint) {
+  $txt = Get-LiveDumpText
+  if (-not $txt) {
+    # 负向指纹是补强（Activity 已断言），dump 超时只告警不阻断
+    Info "警告：$hint 的 live dump 超时，负向指纹 /$pattern/ 未校验（前台 Activity 已断言 ok）"
+    return
+  }
+  if ($txt -match $pattern) {
+    Fail ("前置断言失败：{0} 出现了不该有的 /{1}/（页面错态，拒绝拍照）" -f $hint, $pattern)
+  }
+  Info "前置断言 ok（负向）: $hint 不含 /$pattern/"
+}
+
+function Wait-Logcat([string]$pattern, [int]$timeoutSec = 20) {  $deadline = (Get-Date).AddSeconds($timeoutSec)
   while ((Get-Date) -lt $deadline) {
     $logs = Adb @('logcat', '-d', '-s', 'LC3D:V', 'LCJS:V', 'LCDEBUG:V')
     if ($logs -match $pattern) { Info "logcat ok: $pattern"; return $logs }
@@ -152,13 +208,14 @@ function Assert-Mode([string]$mode, $state) {
 }
 
 # 从 dump 里取某个可点按钮的真实中心（用于自检「脚本坐标 == dump 坐标」）
-function Get-DumpBtnCenter([string]$xmlPath, [string]$text, [int]$xMax = 400) {
+function Get-DumpBtnCenter([string]$xmlPath, [string]$text, [int]$xMin = 0, [int]$xMax = 0) {
   if (-not (Test-Path $xmlPath)) { return $null }
   $doc = [xml](Get-Content $xmlPath -Raw)
   foreach ($n in @($doc.SelectNodes('//node'))) {
     if ($n.text -ne $text -or $n.clickable -ne 'true') { continue }
     if ($n.bounds -notmatch '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$') { continue }
     $l = [int]$Matches[1]; $tp = [int]$Matches[2]; $r = [int]$Matches[3]; $bt = [int]$Matches[4]
+    if ($xMin -gt 0 -and $l -lt $xMin) { continue }
     if ($xMax -gt 0 -and $l -ge $xMax) { continue }
     return [pscustomobject]@{ l = $l; t = $tp; r = $r; b = $bt
       cx = [int](($l + $r) / 2); cy = [int](($tp + $bt) / 2) }
@@ -169,16 +226,26 @@ function Get-DumpBtnCenter([string]$xmlPath, [string]$text, [int]$xMax = 400) {
 # 无设备自检：坐标锚点来自 dump、重复图门必须能拦住 Stage 2 那对同图
 if ($SelfTest) {
   $bad = @()
-  $xml = Join-Path $root 'docs\fidelity\lc\map-home-01.xml'
+  $dumpHome = Join-Path $root 'docs\fidelity\lc\map-home-01.xml'
+  $dumpMore = Join-Path $root 'docs\fidelity\lc\more-sheet-03-fresh.xml'
   $checks = @(
-    @{ name = '3D';     text = '3D';    x = $ThreeDX;   y = $ThreeDY;   xMax = 0 },
-    @{ name = '等高线'; text = '等高线'; x = $ContourX;  y = $ContourY;  xMax = 400 },
-    @{ name = '山脉';   text = '山脉';   x = $MountainX; y = $MountainY; xMax = 0 },
-    @{ name = '水系';   text = '水系';   x = $WaterX;    y = $WaterY;    xMax = 0 },
-    @{ name = '探索';   text = '探索';   x = $ExploreX;  y = $ExploreY;  xMax = 0 }
+    @{ name = '3D';       xml = $dumpHome; text = '3D';       x = $ThreeDX;    y = $ThreeDY;    xMin = 1000 },
+    @{ name = '等高线';   xml = $dumpHome; text = '等高线';   x = $ContourX;   y = $ContourY;   xMin = 0;    xMax = 400 },
+    @{ name = '山脉';     xml = $dumpHome; text = '山脉';     x = $MountainX;  y = $MountainY;  xMin = 1000 },
+    @{ name = '水系';     xml = $dumpHome; text = '水系';     x = $WaterX;     y = $WaterY;     xMin = 1000 },
+    @{ name = '探索';     xml = $dumpHome; text = '探索';     x = $ExploreX;   y = $ExploreY;   xMin = 1000 },
+    @{ name = '叠加';     xml = $dumpHome; text = '叠加';     x = $OverlayX;   y = $OverlayY;   xMin = 1000 },
+    @{ name = '图层';     xml = $dumpHome; text = '图层';     x = $LayerX;     y = $LayerY;     xMin = 1000 },
+    @{ name = '搜索';     xml = $dumpHome; text = '搜索';     x = $SearchX;    y = $SearchY;    xMin = 1000 },
+    @{ name = '路网';     xml = $dumpHome; text = '路网';     x = $RoadX;      y = $RoadY;      xMin = 0;    xMax = 400 },
+    @{ name = '更多';     xml = $dumpHome; text = '更多';     x = $MoreX;      y = $MoreY;      xMin = 0;    xMax = 400 },
+    @{ name = '测量';     xml = $dumpMore; text = '测量';     x = $MeasureX;   y = $MeasureY;   xMin = 0 },
+    @{ name = '画笔';     xml = $dumpMore; text = '画笔';     x = $BrushX;     y = $BrushY;     xMin = 0 },
+    @{ name = '钓点';     xml = $dumpMore; text = '钓点';     x = $FishingX;   y = $FishingY;   xMin = 0 },
+    @{ name = '轨迹记录'; xml = $dumpMore; text = '轨迹记录'; x = $TrackX;     y = $TrackY;     xMin = 0 }
   )
   foreach ($c in $checks) {
-    $btn = Get-DumpBtnCenter $xml $c.text $c.xMax
+    $btn = Get-DumpBtnCenter $c.xml $c.text $c.xMin $c.xMax
     if (-not $btn) { $bad += "$($c.name): dump 里找不到该按钮"; continue }
     $inside = ($c.x -ge $btn.l -and $c.x -le $btn.r -and $c.y -ge $btn.t -and $c.y -le $btn.b)
     if (-not $inside) {
@@ -188,7 +255,20 @@ if ($SelfTest) {
         $c.name, $c.x, $c.y, $btn.l, $btn.t, $btn.r, $btn.b, $btn.cx, $btn.cy)
     }
   }
-  $hit3d = Get-DumpBtnCenter $xml '3D' 0
+
+  # 「15 态一条命令可复跑」：每个 stem 必须在脚本里有采集入口（Collect '<stem>' 或状态表 state = '<stem>'）
+  $src = Get-Content (Join-Path $root 'tools\map\collect_map_lc.ps1') -Raw
+  $stems = @('map-beijing-z12', 'search-result-01', 'search-result-02', 'tool-measure-01', 'tool-brush',
+    'tool-fishing', 'tool-track', 'map-roadnet-on', 'tool-contour-01', 'map-mountains-entry',
+    'map-water-entry', 'map-overlay-sheet', 'map-explore-page', 'map-layer-sheet', 'map-3d-mode')
+  $missing = @($stems | Where-Object {
+      $e = [regex]::Escape($_)
+      -not ($src -match ("Collect '" + $e + "'") -or $src -match ("state\s*=\s*'" + $e + "'"))
+    })
+  if ($missing.Count -gt 0) { $bad += ("state 未接入脚本: " + ($missing -join ', ')) }
+  else { Write-Host ("PASS coverage 15/15 地图态都在脚本里（Collect 或状态表各一条）：" + ($stems -join ', ')) }
+
+  $hit3d = Get-DumpBtnCenter $dumpHome '3D' 1000 0
   if ($hit3d) {
     $old = (155 -ge $hit3d.l -and 155 -le $hit3d.r -and 576 -ge $hit3d.t -and 576 -le $hit3d.b)
     if ($old) { $bad += '旧默认坐标 (155,576) 竟落在 3D 按钮内' }
@@ -208,7 +288,7 @@ if ($SelfTest) {
     Write-Host "SELFTEST: FAIL ($($bad.Count) issue(s))"
     exit 1
   }
-  Write-Host "SELFTEST: PASS ($($checks.Count + 3) checks)"
+  Write-Host "SELFTEST: PASS ($($checks.Count + 4) checks)"
   exit 0
 }
 
@@ -257,8 +337,8 @@ function Enter-App() {
   Start-Sleep -Milliseconds 500
 }
 
-# 3) 地图默认态 + 固定态
-if (Want 'map-beijing-z12' -or Want 'map-3d-mode' -or Want 'tool-contour-01') {
+# 每个状态拍之前都回到「干净的地图固定态」：重拉 App → 切地图 Tab → setView → 读 getState 断言
+function Reset-ToMap() {
   Enter-App
   Js 'setView(39.9042,116.4074,12)'
   Start-Sleep -Seconds 2
@@ -269,61 +349,163 @@ if (Want 'map-beijing-z12' -or Want 'map-3d-mode' -or Want 'tool-contour-01') {
     Fail ("固定态断言失败：" + ($st | ConvertTo-Json -Compress))
   }
   Info "固定态 ok: 39.9042/116.4074 z=12"
+  return $st
+}
+
+# 3) 固定态（04）：地图固定 39.9042/116.4074 z=12
+if (Want 'map-beijing-z12') {
+  Reset-ToMap | Out-Null
   Collect 'map-beijing-z12' 'ST-A-map-fixed'
 }
 
-# 4) 3D：点真实中心 → 断言 mode=3d → 断言 png 与 2D 不同 → 拍照
-if (Want 'map-3d-mode') {
+# 4) 3D（29）+ 等高线（23）：都在 3D 可见态下拍，OFF 态即 map-3d-mode
+if ((Want 'map-3d-mode') -or (Want 'tool-contour-01')) {
+  Reset-ToMap | Out-Null
   Adb @('logcat', '-c') | Out-Null
   Tap $ThreeDX $ThreeDY
-  Wait-Logcat 'LC3D mode=3d' 25
-  Wait-Logcat 'LC3D texture (ok|fail)' 30
+  Wait-Logcat 'LC3D mode=3d' 25 | Out-Null
+  Wait-Logcat 'LC3D texture (ok|fail)' 30 | Out-Null
   $st = Get-MapState
   Assert-Mode '3d' $st
-  Collect 'map-3d-mode' 'ST-C-3d'
-  Assert-PngDistinct 'map-3d-mode' 'map-beijing-z12'
+  if (Want 'map-3d-mode') {
+    Collect 'map-3d-mode' 'ST-C-3d'
+    Assert-PngDistinct 'map-3d-mode' 'map-beijing-z12'
+  }
+  if (Want 'tool-contour-01') {
+    Adb @('logcat', '-c') | Out-Null
+    Tap $ContourX $ContourY
+    Wait-Logcat 'LC3D contour on=True' 20 | Out-Null
+    $st2 = Get-MapState
+    Assert-Mode '3d' $st2
+    if (-not $st2.contour) { Fail ("contour 断言失败：" + ($st2 | ConvertTo-Json -Compress)) }
+    Collect 'tool-contour-01' 'ST-C-contour'
+    Assert-PngDistinct 'tool-contour-01' 'map-3d-mode'
+  }
 }
 
-# 5) 等高线：3D 可见态下开（OFF 态 = map-3d-mode）
-if (Want 'tool-contour-01') {
-  Adb @('logcat', '-c') | Out-Null
-  Tap $ContourX $ContourY
-  Wait-Logcat 'LC3D contour on=True' 20
-  $st = Get-MapState
-  Assert-Mode '3d' $st
-  if (-not $st.contour) { Fail ("contour 断言失败：" + ($st | ConvertTo-Json -Compress)) }
-  Collect 'tool-contour-01' 'ST-C-contour'
-  Assert-PngDistinct 'tool-contour-01' 'map-3d-mode'
-}
-
-# 6) 山脉 / 水系 / 探索：断言前台 Activity 再拍
+# 5) 山脉（24）/ 水系（25）/ 探索（27）：断言前台 Activity + 页面指纹再拍
+#    Stage 2 曾把水系、探索都拍成「看山脉」页，故对这两态加负向指纹「不得含 看山脉」。
 $pages = @(
-  @{ state = 'map-mountains-entry'; cid = 'ST-C-mountains'; x = $MountainX; y = $MountainY; act = 'MountainActivity' },
-  @{ state = 'map-water-entry'; cid = 'ST-C-water'; x = $WaterX; y = $WaterY; act = 'WaterActivity' },
-  @{ state = 'map-explore-page'; cid = 'ST-C-explore'; x = $ExploreX; y = $ExploreY; act = 'DiscoveryActivity' }
+  @{ state = 'map-mountains-entry'; cid = 'ST-C-mountains'; x = $MountainX; y = $MountainY
+     act = 'MountainActivity'; expect = '看山脉'; absent = $null },
+  @{ state = 'map-water-entry'; cid = 'ST-C-water'; x = $WaterX; y = $WaterY
+     act = 'WaterActivity'; expect = $null; absent = '看山脉' },
+  @{ state = 'map-explore-page'; cid = 'ST-C-explore'; x = $ExploreX; y = $ExploreY
+     act = 'DiscoveryActivity'; expect = $null; absent = '看山脉' }
 )
 foreach ($p in $pages) {
   if (-not (Want $p.state)) { continue }
-  Enter-App
-  Js 'setView(39.9042,116.4074,12)'
-  Start-Sleep -Seconds 2
+  Reset-ToMap | Out-Null
   Tap $p.x $p.y
   Start-Sleep -Seconds 3
   Assert-Resumed $p.act
+  if ($p.expect) { Assert-LiveText $p.expect "$($p.state) 页面标题" }
+  if ($p.absent) { Assert-LiveTextAbsent $p.absent "$($p.state) 山脉页指纹" }
   Collect $p.state $p.cid
 }
 
-# 7) 测量（地图内测量态）：dump 可能因持续动画 idle 超时，重试后兜底 png-only
+# 6) 测量（18）：地图内测量态；png 必得、dump 尽力（该页持续动画易 idle 超时）
 if (Want 'tool-measure-01') {
-  Enter-App
+  Reset-ToMap | Out-Null
   Tap $MoreX $MoreY
   Start-Sleep -Seconds 2
   Tap $MeasureX $MeasureY
-  Start-Sleep -Seconds 2
+  Start-Sleep -Seconds 3
+  Assert-Resumed 'MainActivity'
   Collect 'tool-measure-01' 'ST-C-measure' -DumpRetries 3
 }
 
-# 8) 收尾：释放设备
+# 7) 画笔（19）：地图内绘制态，前台仍 MainActivity；指纹 = 底栏 颜色/粗细/撤销/清除/导出
+if (Want 'tool-brush') {
+  Reset-ToMap | Out-Null
+  Tap $MoreX $MoreY
+  Start-Sleep -Seconds 2
+  Tap $BrushX $BrushY
+  Start-Sleep -Seconds 2
+  Assert-Resumed 'MainActivity'
+  Assert-LiveText '撤销|清除|导出' '画笔底栏'
+  Collect 'tool-brush' 'ST-C-brush'
+}
+
+# 8) 钓点（20）：FishingActivity
+if (Want 'tool-fishing') {
+  Reset-ToMap | Out-Null
+  Tap $MoreX $MoreY
+  Start-Sleep -Seconds 2
+  Tap $FishingX $FishingY
+  Start-Sleep -Seconds 3
+  Assert-Resumed 'FishingActivity'
+  Assert-LiveText '钓点' '钓点页标题'
+  Collect 'tool-fishing' 'ST-C-fishing'
+}
+
+# 9) 轨迹记录（21）：TrackListActivity
+if (Want 'tool-track') {
+  Reset-ToMap | Out-Null
+  Tap $MoreX $MoreY
+  Start-Sleep -Seconds 2
+  Tap $TrackX $TrackY
+  Start-Sleep -Seconds 3
+  Assert-Resumed 'TrackListActivity'
+  Assert-LiveText '历史轨迹' '历史轨迹页标题'
+  Collect 'tool-track' 'ST-C-track'
+}
+
+# 10) 路网（22）：开关是持久化状态，点一次可能是「关」——与固定态同图就再点一次重采
+if (Want 'map-roadnet-on') {
+  Reset-ToMap | Out-Null
+  Tap $RoadX $RoadY
+  Start-Sleep -Seconds 2
+  Collect 'map-roadnet-on' 'ST-C-roadnet'
+  $ha = Get-PngSha 'map-roadnet-on'; $hb = Get-PngSha 'map-beijing-z12'
+  if ($ha -and $hb -and $ha -eq $hb) {
+    Info "路网这次被点成「关」（与固定态同图），再点一次重采"
+    Tap $RoadX $RoadY
+    Start-Sleep -Seconds 2
+    Collect 'map-roadnet-on' 'ST-C-roadnet'
+    Assert-PngDistinct 'map-roadnet-on' 'map-beijing-z12'
+  } else {
+    Info "路网开态 ok（png 与固定态不同）"
+  }
+}
+
+# 11) 数据叠加（26）：OverlayActivity
+if (Want 'map-overlay-sheet') {
+  Reset-ToMap | Out-Null
+  Tap $OverlayX $OverlayY
+  Start-Sleep -Seconds 3
+  Assert-Resumed 'OverlayActivity'
+  Assert-LiveText '数据叠加' '叠加面板标题'
+  Collect 'map-overlay-sheet' 'ST-C-overlay'
+}
+
+# 12) 图层 / 底图源（28）：面板在 WebView 内，指纹 = 「底图源」
+if (Want 'map-layer-sheet') {
+  Reset-ToMap | Out-Null
+  Tap $LayerX $LayerY
+  Start-Sleep -Seconds 2
+  Assert-LiveText '底图源' '底图源面板'
+  Collect 'map-layer-sheet' 'ST-C-layer'
+}
+
+# 13) 搜索（06 空结果 / 07 四坐标系结果）：LC 现状是盘面/圈层/知识条目检索（findings C-01）
+if ((Want 'search-result-01') -or (Want 'search-result-02')) {
+  Reset-ToMap | Out-Null
+  Tap $SearchX $SearchY
+  Start-Sleep -Seconds 2
+  Assert-LiveText '搜索：盘面 / 圈层 / 知识条目' '搜索弹层（LC 现状）'
+  if (Want 'search-result-01') { Collect 'search-result-01' 'ST-A-search-empty' }
+  if (Want 'search-result-02') {
+    Tap $SearchInputX $SearchInputY
+    Start-Sleep -Seconds 1
+    Adb @('shell', "input text $SearchText") | Out-Null
+    Start-Sleep -Seconds 2
+    Assert-LiveText ([regex]::Escape($SearchText)) '坐标输入回显'
+    Collect 'search-result-02' 'ST-A-search-coords'
+  }
+}
+
+# 14) 收尾：释放设备
 Sh "am force-stop $Pkg"
 Sh 'input keyevent KEYCODE_HOME'
 Sh 'settings put global window_animation_scale 1'

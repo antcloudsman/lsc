@@ -14,7 +14,7 @@ python tools\fidelity\selftest.py
 python tools\fidelity\assets.py selftest
 ```
 
-合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (37 checks)`），同样不需要设备与原版 APK。
+合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (38 checks)`），同样不需要设备与原版 APK。
 
 ## 1. 一键采集（`collect`）
 
@@ -343,6 +343,35 @@ python tools\fidelity\assets.py stamp --apk E:\APPDetector\input\swss.apk --sour
 - `manifest` 对 **0 字节文件**、**没有 provenance 的文件** exit 1；`verify` 对缺文件、清单外文件、hash 不符、尺寸/字节数不符、provenance 无 APK 条目、文件与 APK 条目不一致、`--strict` 下内容重复 exit 1；干净树打印 `sha256 + provenance + APK source all match`；
 - 中文条目名会被 APK zip 按 cp437 误解码，`extract`/`list-apk` 已自动按 UTF-8 还原，**不要手工改名**；
 - 仓库**不提交 APK**：`swss.apk` 只在 `E:\APPDetector\input\`，清单只记路径与 sha256。
+
+### 7.2 M3 子页素材接入（页面 HTML / 图标 / 图片）
+
+抽屉七子页（账户设置、投诉反馈、关于我们、联系我们、推荐给好友、帮助中心、用户协议）的素材同样进这套索引，约定：
+
+| 类型 | `kind` | `target` 前缀 | 说明 |
+|---|---|---|---|
+| 页面内图标 | `page-icon` | `pages/<page>/icons/` | 矢量走 `decoded`+`stamp`（见 §7.1），位图走 `extract` |
+| 页面 HTML / 长文本 | `page-html` | `pages/<page>/` | 原版 `assets/**/*.html` 直接 `extract` |
+| 页面图片（logo/二维码/截图） | `page-image` | `pages/<page>/img/` | png/webp 直接 `extract` |
+
+```powershell
+# 找候选：按关键字 / 扩展名 / 尺寸（有 aapt2 时用资源 id 反查更稳）
+python tools\fidelity\assets.py list-apk --apk E:\APPDetector\input\swss.apk --grep qq --ext png
+python tools\fidelity\assets.py list-apk --apk E:\APPDetector\input\swss.apk --ext html
+# 落库 → 清单 → 校验（每条仍要 resource/use/evidence/checksheet 四列）
+python tools\fidelity\assets.py extract --apk E:\APPDetector\input\swss.apk --sources docs\fidelity\assets-sources.json
+python tools\fidelity\assets.py manifest --dir docs\fidelity\assets
+python tools\fidelity\assets.py verify --dir docs\fidelity\assets --apk E:\APPDetector\input\swss.apk --strict
+```
+
+**实测事实（M3 Stage 1 取证前提，2026-11-07 核）**：
+
+- APK 内 `assets/**/*.html` 共 **35** 个：14 个 `assets/compassIntroduce/*.html`（M2 已入库）+ 21 个 `assets/webapp/**` 地图页（`index/explore/water/special/gmba/pe/global-*`、`AirportMap/EarthQuakeMap/HarborMap/NaturalHeritageMap/ScenicMap`、`doc/*.html`），**没有「用户协议 / 帮助中心」HTML**——这两页的正文不来自 assets；
+- 打包内 `classes*.dex` 是壳（`classes.dex` 70 852 B，其余各 **2 432 B**），文案不在打包 dex 里，须用 M1 的 Frida dump dex 取证（`mem_dump/classes06.dex`）；
+- `aapt2 dump strings` 里只有「隐私协议」「隐私协议：」等条目（无「用户协议」整串），且出现 `res/qq.png`、`res/qq.webp`、`res/Qq.xml` —— 联系/分享页的图标走资源提取，正文走 dump dex；
+- 结论：**子页「素材」按 §7.2 走 `assets.py`；子页「文案」不进 assets 索引**，由动态取证（dump dex / 真机）产出并落 `docs/fidelity/pages/`，两者不混。
+
+依赖门禁里加一条子页素材时，写 `{"id": "S-账户设置", "requires": {"kinds": ["page-icon"], "prefixes": ["pages/account/"], "checksheet": "S-账户设置", "count": N}}`；`exclude` 可排除已裁定取消的条目（例如抽屉「开具发票」取消后，A-02 用 `"exclude": ["svg_bill_apply"]` 把该图标留档但不计数，A-02 判定为 8/8）。
 
 ## 8. 写发现时的硬要求
 

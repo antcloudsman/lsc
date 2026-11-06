@@ -217,12 +217,21 @@ def _dep_matches(requirement: dict, actual: dict[str, bytes], provenance: dict[s
     prefixes = [str(value).replace("\\", "/") for value in requirement.get("prefixes") or []]
     kinds = [str(value) for value in requirement.get("kinds") or []]
     checksheet = str(requirement.get("checksheet") or "").strip()
+    excluded = [str(value) for value in requirement.get("exclude") or []]
+
+    def is_excluded(relative: str) -> bool:
+        """Named exceptions (e.g. the cancelled 开具发票 icon) never count toward the item."""
+        base = relative.rsplit("/", 1)[-1]
+        return any(token in relative or token in base for token in excluded)
+
     for relative in sorted(actual):
         record = provenance.get(relative) or {}
         if checksheet:
             tag = str((record.get("meta") or {}).get("checksheet") or "")
             if not tag.startswith(checksheet):
                 continue
+        if is_excluded(relative):
+            continue
         if relative in targets:
             matched.append(relative)
             continue
@@ -1091,6 +1100,12 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         ]}, ensure_ascii=False), encoding="utf-8")
         code, text = verify_text(deps=str(other_sheet))
         check(code == 1, "verify --deps: non-matching checksheet tag reports a gap")
+        excluded_deps = temp / "deps-excluded.json"
+        excluded_deps.write_text(json.dumps({"items": [
+            {"id": "A-02", "name": "drawer", "requires": {"checksheet": "A-02", "exclude": ["svg_layer"], "count": 1}},
+        ]}, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(excluded_deps))
+        check(code == 1, "verify --deps: exclude removes a named file from the count")
 
         mismatch = temp / "sources-mismatch.json"
         mismatch.write_text(json.dumps({

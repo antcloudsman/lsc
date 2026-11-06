@@ -108,15 +108,31 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | 20 | `tool-fishing` | 实采 | png+xml+meta | 钓点 |
 | 21 | `tool-track` | 实采 | png+xml+meta | 历史轨迹（无登录墙；空态「暂无历史轨迹记录」） |
 | 22 | `map-roadnet-on` | 实采（LC 侧同态） | png+xml+meta | 路网叠加开启；原版该行无独立 stem（对照物为 `map-home-01.xml`） |
-| 23 | `tool-contour-01` | 实采（异常） | png+xml+meta | 等高线开启；`logcat` 有 `LC3D contour on=true uniform=1`，但截图与 3D 态逐字节相同（见 29） |
+| 23 | `tool-contour-01` | 缺失（固定态不可得） | 补充证据 `map-contour-relief` | 固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希完全相同（`13567:1033006902` 三次一致）；同一引擎在 40.35/116.00 z12 开启后哈希变化（`12547:4200479435`→`12575:898838800`），故能力存在、固定态不可见。原 `tool-contour-01.*` 与 3D 态逐字节相同，已删除，不再冒充两态 |
 | 24 | `map-mountains-entry` | 实采 | png+xml+meta | 「看山脉」页：视野内山名 120 个、山脊/刷新视野 |
-| 25 | `map-water-entry` | 实采 | png+xml+meta | 「看水系」页 |
+| 25 | `map-water-entry` | 实采 | png+xml+meta | 「看水系」页（D0 重采：`mResumedActivity=.WaterActivity`、dump 含 `看水系`、不含 `看山脉`） |
 | 26 | `map-overlay-sheet` | 实采 | png+xml+meta | 「数据叠加」页：4 Tab + 公路(路网) + 全部开启/关闭 |
-| 27 | `map-explore-page` | 实采 | png+xml+meta | 探索页 |
+| 27 | `map-explore-page` | 实采 | png+xml+meta | 「探索」页（D0 重采：`mResumedActivity=.DiscoveryActivity`、dump 含 `探索`/`专题地图`，不含 `看山脉`） |
 | 28 | `map-layer-sheet` | 实采 | png+xml+meta | 右列「图层」→「底图源」12 源面板（3 可用 / 9 置灰） |
-| 29 | `map-3d-mode` | 实采（异常） | png+xml+meta | 点 3D 后 `logcat` `LC3D texture ok 36/36`、`fps=60 zoom=12 z=11`，但截图仍是 2D 路网图，且与 23 逐字节相同 → 3D 画面被 2D 层遮挡/未切换，待 Stage 3 复核 |
+| 29 | `map-3d-mode` | 实采 | png+xml+meta | 点 3D `(1124,2430)` 后断言通过：`logcat LC3D mode=3d` + `texture ok 36/36`、`getState()` = `mode=3d zoom=12 pitch=45 contour=false drape=vec`、`fps=56~60`；png 与固定态不同（`9cf8b080…` vs `68469c5c…`）。注：固定态北京地形平坦，成像近俯视；起伏与立体感在山区可见（见 `map-contour-relief`） |
 | 30 | 相机权限弹窗 | 缺失 | — | LC 无相机/AR 入口（`map-home-01.xml` 全节点无相机相关控件） |
 
-统计：**实采 15（其中 1 个 png-only、2 个异常态）+ 缺失 1 = 16**，无「待采」。
+统计：**实采 14 + 缺失 2 = 16**，无「待采」；另加 1 份补充证据 `map-contour-relief`（第 23 行的能力证明，不占清单行）。
+
+### 4.1 D0 重采记录（2026-11-06 17:12–17:16）
+
+一条命令复跑：`pwsh -File tools\map\collect_map_lc.ps1 -Apk <develop 464ebb8 构建 apk> -Commit 464ebb8c50b427fb42b0ea0cbafabb1f4f03d58a -Only <state,...>`（脚本 `beb8c47`，采集前逐态断言）。
+
+| stem | sha256（前 16） | 字节 | mtime | 断言 |
+|---|---|---|---|---|
+| `map-3d-mode` | `9cf8b080a998c9f6` | 1,847,514 | 17:14:53 | `LC3D mode=3d`、`texture ok 36/36`、`getState().mode=3d` |
+| `map-water-entry` | `c1499a5703444e65` | 2,906,691 | 17:12:18 | `mResumedActivity=.WaterActivity`、dump 含 `看水系`、不含 `看山脉` |
+| `map-explore-page` | `077b61228f1de6f2` | 173,185 | 17:12:36 | `mResumedActivity=.DiscoveryActivity`、dump 含 `探索`、不含 `看山脉` |
+| `map-contour-relief` | `334427de4cc54059` | 2,572,309 | 17:15:36 | 40.35/116.00 z12、`contour=true`、画面含黑色等高线（补充证据） |
+
+- 3D 重复图已消：`map-3d-mode`(`9cf8b080…`) ≠ 任何其它 state；`tool-contour-01.*` 已删除。
+- 采集期间 USB 瞬断一次（`adb: device not found`），重连后重跑补齐，所有 meta `build.commit` = `464ebb8c50b427fb42b0ea0cbafabb1f4f03d58a`、`apk.sha256` = `ccd5686f…`（7,059,457 B）。
+- 等高线「固定态不可见」判定依据不是肉眼：`canvas.toDataURL` 缩略图哈希在 contour off/on/off 三次均为 `13567:1033006902`；同一引擎在山区同参数下 off=`12547:4200479435`、on=`12575:898838800`。
+
 
 **采集过程（可复现）**：`uiautomator dump` 在传感器活跃时报 `could not get idle state`，先 `am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value 0` 冻结航向即稳定；装包后立即广播可能被忽略（应用未完成 onResume），需等 4 s。3D 按钮真实 bounds `[1027,2366]-[1222,2494]`、中心 `(1124,2430)`（点 `(1126,2187)` 落在 `−` 与 `定位` 之间的缝里）。

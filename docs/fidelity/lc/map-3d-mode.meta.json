@@ -1,9 +1,9 @@
 {
   "tool": "fidelity",
-  "version": "1.3.0",
+  "version": "1.7.0",
   "state": "map-3d-mode",
   "side": "lc",
-  "captured_at": "2026-11-06T15:45:09+0800",
+  "captured_at": "2026-11-06T17:14:56+0800",
   "serial": "L2E0222531014833",
   "package": "com.luopan.fengshui",
   "checksheet_id": "ST-C-3d",
@@ -20,11 +20,11 @@
     "file": "map-3d-mode.png",
     "width": 1228,
     "height": 2700,
-    "sha256": "f037f73577c5b56d68d94364172ec6fc284dbbbe70464e3290a2f461bcb6fcb6"
+    "sha256": "9cf8b080a998c9f69211591c64fb0e32354a0fa1cf9ddca174b1e4d45021f97e"
   },
   "dump": {
     "file": "map-3d-mode.xml",
-    "sha256": "3d14b3c2539a165d111a4bd1351a134f099f68a4a5bc1865de411467fdffcbb2"
+    "sha256": "21ae4bca4810551c23efe976dfd5e3ed25a8fca8ce723aa57ffce703a67c45d5"
   },
   "device": {
     "ro.product.model": "JAD-AL00",

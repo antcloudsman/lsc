@@ -181,9 +181,32 @@ def main() -> int:
         check(report_summary["states"][0]["controls"]["matched"] == 3, "report: control diff embedded")
         check("1/1 pair(s) compared" in output, "report: summary line")
 
+        orig_meta = report_root / "orig" / "01-compass-main.meta.json"
+        lc_meta = report_root / "lc" / "01-compass-main.meta.json"
+        orig_meta.write_text(json.dumps({"checksheet_id": "ST-01-compass-main"}), encoding="utf-8")
+        lc_meta.write_text(json.dumps({"checksheet_id": "ST-01-compass-main"}), encoding="utf-8")
+        run(["report", "--root", str(report_root), "--state", "01-compass-main", "--require-checksheet-id"])
+        checksheet_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        check(checksheet_summary["checksheet"]["with_id"] == 1, "report: checksheet_id coverage counted")
+        lc_meta.write_text(json.dumps({"checksheet_id": "ST-OTHER"}), encoding="utf-8")
+        output = run(
+            ["report", "--root", str(report_root), "--state", "01-compass-main", "--require-checksheet-id"],
+            expect=1,
+        )
+        check("checksheet_id conflict" in output, "report: checksheet_id conflict fails")
+        orig_meta.unlink()
+        lc_meta.unlink()
+        output = run(
+            ["report", "--root", str(report_root), "--state", "01-compass-main", "--require-checksheet-id"],
+            expect=1,
+        )
+        check("missing checksheet_id" in output, "report: missing checksheet_id fails")
+
         Image.new("RGB", (320, 600), (0, 128, 0)).save(report_root / "orig" / "02-missing.png")
-        output = run(["report", "--root", str(report_root), "--strict"], expect=1)
-        check("missing-lc" in output, "report: missing lc pair reported")
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("missing-lc" in output, "report: missing lc pair makes exit code 1")
+        output = run(["report", "--root", str(report_root), "--allow-known-red"])
+        check("known-red" in output, "report: --allow-known-red explicitly overrides exit code")
         missing_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
         check(
             any(row["state"] == "02-missing" and row["status"] == "missing-lc" for row in missing_summary["states"]),
@@ -206,7 +229,7 @@ def main() -> int:
             ]
         }
         allow_path.write_text(json.dumps(valid_allow, ensure_ascii=False), encoding="utf-8")
-        run(["report", "--root", str(report_root)])  # 02-missing only fails under --strict
+        run(["report", "--root", str(report_root), "--allow-known-red"])  # 02-missing is a known red here
         allowed_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
         allowed_groups = (
             allowed_summary["integrity"]["orig"]["duplicates"] + allowed_summary["integrity"]["lc"]["duplicates"]
@@ -230,7 +253,7 @@ def main() -> int:
         }
         shutil.copyfile(orig_xml, report_root / "orig" / "05-dump-only.xml")
         dump_allow_path.write_text(json.dumps(valid_dump_allow, ensure_ascii=False), encoding="utf-8")
-        run(["report", "--root", str(report_root)])  # 02-missing only fails under --strict
+        run(["report", "--root", str(report_root), "--allow-known-red"])  # 02-missing is a known red here
         dump_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
         dump_row = next((row for row in dump_summary["states"] if row["state"] == "05-dump-only"), None)
         check(dump_row is not None and dump_row["status"] == "dump-only",
@@ -259,7 +282,7 @@ def main() -> int:
         lc_only_states = ["07-lc-only-a", "08-lc-only-b", "09-lc-only-c", "10-lc-only-d"]
         for index, name in enumerate(lc_only_states):
             Image.new("RGB", (320, 600), (10 + index * 40, 50, 200)).save(report_root / "lc" / f"{name}.png")
-        run(["report", "--root", str(report_root)])
+        run(["report", "--root", str(report_root), "--allow-known-red"])  # 02-missing + lc-only are known red here
         before_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
         missing_before = sum(1 for row in before_summary["states"] if row["status"] == "missing-orig")
         check(missing_before == 4, f"report: lc-only states are missing-orig before exemption (got {missing_before})")
@@ -272,7 +295,7 @@ def main() -> int:
             ]
         }
         lc_only_allow_path.write_text(json.dumps(valid_lc_only, ensure_ascii=False), encoding="utf-8")
-        run(["report", "--root", str(report_root)])
+        run(["report", "--root", str(report_root), "--allow-known-red"])  # 02-missing is a known red here
         after_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
         missing_after = sum(1 for row in after_summary["states"] if row["status"] == "missing-orig")
         check(missing_after == 0, f"report: lc-only exemption removes 4 missing-orig rows (got {missing_after})")

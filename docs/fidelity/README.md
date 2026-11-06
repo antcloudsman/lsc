@@ -66,6 +66,12 @@ python tools\fidelity\fidelity.py collect --side lc   --state compass-main-01 --
 # 批量对照页
 python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
 
+# D3 门禁：38/38 checksheet_id 覆盖 + 无缺图（有 FAIL 即 exit 1）
+python tools\fidelity\fidelity.py report --root docs\fidelity --require-checksheet-id
+
+# 已知红状态下出报告（显式放行退出码，报告内容仍标红）
+python tools\fidelity\fidelity.py report --root docs\fidelity --allow-known-red
+
 # 无设备自检
 python tools\fidelity\selftest.py
 ```

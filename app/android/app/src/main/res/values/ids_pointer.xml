@@ -10,4 +10,8 @@
     <!-- R2-024：知识库（14 篇原版 HTML） -->
     <item name="lc_knowledge_list" type="id" />
     <item name="lc_knowledge_web" type="id" />
+    <!-- R2-021：收藏列表子页 -->
+    <item name="lc_fav_sublist" type="id" />
+    <item name="lc_fav_sublist_back" type="id" />
+    <item name="lc_fav_sublist_list" type="id" />
 </resources>

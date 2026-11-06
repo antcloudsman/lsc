@@ -69,6 +69,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean favoriteMode;
     private LinearLayout rightFavoriteColumn;
     private LinearLayout favoriteBottomBar;
+    /** R2-021：收藏列表子页（页面内覆盖层，不是独立 Activity）。 */
+    private FrameLayout favoriteSubList;
+    private android.widget.ListView favSubListView;
     /** R2-006: 罗盘态坐标条（隐藏态也要保留，原版 116.4074，39.9042）。 */
     private TextView coordView;
     /** R2-014：收藏点地图态的比例尺（原版 [79,2510][150,2550] 4km）。 */
@@ -698,6 +701,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         fbb.gravity = android.view.Gravity.BOTTOM;
         fbb.bottomMargin = navBarInsetPx();
         frame.addView(favoriteBottomBar, fbb);
+
+        // R2-021：收藏列表子页——整屏覆盖层（顶栏「返回」+ 列表），返回后回到收藏点地图态。
+        favoriteSubList = new FrameLayout(this);
+        favoriteSubList.setId(R.id.lc_fav_sublist);
+        favoriteSubList.setBackgroundColor(Color.rgb(24, 20, 16));
+        LinearLayout subCol = new LinearLayout(this);
+        subCol.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout subHead = new LinearLayout(this);
+        subHead.setOrientation(LinearLayout.HORIZONTAL);
+        subHead.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        subHead.setPadding(20, 24, 20, 16);
+        TextView subBack = new TextView(this);
+        subBack.setId(R.id.lc_fav_sublist_back);
+        subBack.setText("返回");
+        subBack.setTextSize(15f);
+        subBack.setTextColor(Color.rgb(235, 228, 215));
+        subBack.setPadding(0, 10, 32, 10);
+        subBack.setOnClickListener(v -> {
+            favoriteSubList.setVisibility(View.GONE);   // 回地图收藏态（favoriteMode 不变）
+            android.util.Log.d("LCFAV", "sublist close by back");
+        });
+        subHead.addView(subBack);
+        TextView subTitle = new TextView(this);
+        subTitle.setText("收藏点");
+        subTitle.setTextSize(18f);
+        subTitle.setTextColor(Color.rgb(235, 228, 215));
+        subHead.addView(subTitle, new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        subCol.addView(subHead);
+        favSubListView = new android.widget.ListView(this);
+        favSubListView.setId(R.id.lc_fav_sublist_list);
+        favSubListView.setBackgroundColor(Color.rgb(24, 20, 16));
+        favSubListView.setDividerHeight(0);
+        subCol.addView(favSubListView, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        favoriteSubList.addView(subCol);
+        favoriteSubList.setVisibility(View.GONE);
+        frame.addView(favoriteSubList, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
         applyTrustState();
         return frame;
@@ -1637,9 +1679,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         android.util.Log.d("LCFAV", "favoriteMode=" + on);
     }
 
-    /** 收藏列表：地图态的子页，返回后仍在收藏点地图态。 */
+    /**
+     * R2-021：收藏列表 = 收藏点地图态的**子页**（页面内覆盖层），不再是独立 Activity。
+     * 原版是「地图态 → 收藏列表」两层，返回回地图收藏态；独立 Activity 会切断这条层级。
+     */
     private void openFavoriteList() {
-        startActivity(new android.content.Intent(this, InterestListActivity.class));
+        if (favoriteSubList == null) return;
+        java.util.List<InterestPoint> pts = new GapDb(this).listInterest();
+        final java.util.List<String> rows = new java.util.ArrayList<>();
+        for (InterestPoint ip : pts) {
+            rows.add(String.format(java.util.Locale.US, "%s  %.6f,%.6f",
+                    ip.name == null || ip.name.isEmpty() ? "收藏点" : ip.name, ip.lng, ip.lat));
+        }
+        if (rows.isEmpty()) rows.add("暂无收藏点（可用底部「添加点」新建）");
+        final java.util.List<InterestPoint> table = pts;
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<String>(
+                this, android.R.layout.simple_list_item_1, rows) {
+            @Override
+            public android.view.View getView(int pos, android.view.View cv, android.view.ViewGroup parent) {
+                android.widget.TextView tv = (android.widget.TextView) super.getView(pos, cv, parent);
+                tv.setTextColor(Color.rgb(235, 228, 215));
+                tv.setTextSize(15f);
+                tv.setPadding(24, 18, 24, 18);
+                return tv;
+            }
+        };
+        favSubListView.setAdapter(adapter);
+        favSubListView.setOnItemClickListener((p, v, pos, id) -> {
+            if (pos < table.size()) {
+                InterestPoint ip = table.get(pos);
+                js(String.format(java.util.Locale.US, "try{setView(%.6f,%.6f,zoom)}catch(e){}", ip.lat, ip.lng));
+            }
+            favoriteSubList.setVisibility(View.GONE);   // 回地图收藏态
+            android.util.Log.d("LCFAV", "sublist close by item pos=" + pos);
+        });
+        favoriteSubList.setVisibility(View.VISIBLE);
+        android.util.Log.d("LCFAV", "sublist open rows=" + rows.size());
     }
 
     /** 「添加点」：用当前地图中心建收藏点（原版底部大按钮）。 */

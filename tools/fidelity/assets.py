@@ -25,7 +25,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 MANIFEST_NAME = "MANIFEST.sha256"
 PROVENANCE_NAME = "PROVENANCE.json"
 INDEX_NAME = "INDEX.md"
@@ -147,6 +147,148 @@ def iter_assets(directory: Path) -> list[Path]:
     return files
 
 
+def repo_root() -> Path:
+    """tools/fidelity/assets.py -> repository root (for --globs in the deps file)."""
+    return Path(__file__).resolve().parents[2]
+
+
+def load_deps(path: Path) -> dict:
+    if not path.exists():
+        raise AssetError(f"deps file not found: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise AssetError(f"cannot parse {path}: {error}") from error
+    items = payload.get("items") or []
+    if not items:
+        raise AssetError(f"{path}: no items")
+    seen = set()
+    for item in items:
+        identifier = str(item.get("id", "")).strip()
+        if not identifier:
+            raise AssetError(f"{path}: every item needs an id (A-xx)")
+        if identifier in seen:
+            raise AssetError(f"{path}: duplicate dependency id {identifier}")
+        seen.add(identifier)
+        if not item.get("requires") and not item.get("manual"):
+            raise AssetError(f"{path}: {identifier} needs 'requires' or 'manual'")
+    return payload
+
+
+def _dep_matches(requirement: dict, actual: dict[str, bytes], provenance: dict[str, dict],
+                 root: Path) -> tuple[list[str], list[str]]:
+    """Return (matched relative paths, notes) for one dependency requirement."""
+    matched: list[str] = []
+    notes: list[str] = []
+    targets = [safe_target(str(value)) for value in requirement.get("targets") or []]
+    prefixes = [str(value).replace("\\", "/") for value in requirement.get("prefixes") or []]
+    kinds = [str(value) for value in requirement.get("kinds") or []]
+    for relative in sorted(actual):
+        record = provenance.get(relative) or {}
+        if relative in targets:
+            matched.append(relative)
+            continue
+        if any(relative.startswith(prefix) for prefix in prefixes):
+            matched.append(relative)
+            continue
+        if str(record.get("kind") or "") in kinds:
+            matched.append(relative)
+    for pattern in requirement.get("globs") or []:
+        for path in sorted(root.glob(str(pattern))):
+            if path.is_file():
+                relative = path.relative_to(root).as_posix()
+                if relative not in matched:
+                    matched.append(relative)
+    image = requirement.get("image")
+    if image:
+        wanted = str(image).lower()
+        kept = []
+        for relative in matched:
+            dimensions = png_size(actual[relative])
+            actual_size = f"{dimensions[0]}x{dimensions[1]}" if dimensions else None
+            if actual_size == wanted:
+                kept.append(relative)
+            else:
+                notes.append(f"{relative} 尺寸 {actual_size or '非 PNG'} != {wanted}")
+        matched = kept
+    return matched, notes
+
+
+def check_deps(deps: dict, directory: Path, actual: dict[str, bytes],
+               provenance: dict[str, dict]) -> tuple[list[dict], list[dict]]:
+    """Per A-xx coverage: (rows, manual items). Each row carries its own pass/fail detail."""
+    root = repo_root()
+    rows: list[dict] = []
+    manuals: list[dict] = []
+    for item in deps.get("items", []):
+        identifier = str(item["id"])
+        name = str(item.get("name", ""))
+        if item.get("manual"):
+            manuals.append(item)
+            continue
+        requirement = item.get("requires") or {}
+        matched, notes = _dep_matches(requirement, actual, provenance, root)
+        required = int(requirement.get("count", 1) or 1)
+        hint = []
+        if requirement.get("kinds"):
+            hint.append("kind " + "/".join(requirement["kinds"]))
+        if requirement.get("prefixes"):
+            hint.append("prefix " + "/".join(requirement["prefixes"]))
+        if requirement.get("targets"):
+            hint.append("target " + "/".join(str(value) for value in requirement["targets"]))
+        if requirement.get("globs"):
+            hint.append("glob " + "/".join(str(value) for value in requirement["globs"]))
+        if requirement.get("image"):
+            hint.append(f"尺寸 {requirement['image']}")
+        rows.append({
+            "id": identifier,
+            "name": name,
+            "ok": len(matched) >= required,
+            "matched": matched,
+            "required": required,
+            "hint": " | ".join(hint),
+            "notes": notes,
+        })
+    return rows, manuals
+
+
+def print_deps(rows: list[dict], manuals: list[dict], source: str,
+               available_kinds: list[str] | None = None) -> list[str]:
+    """Print the A-xx table; return the ids that are not yet satisfied."""
+    total = len(rows) + len(manuals)
+    info(f"deps: {source}（{total} 项）")
+    missing: list[str] = []
+    for row in rows:
+        label = f"{row['id']} {row['name']}".strip()
+        detail = f"{len(row['matched'])}/{row['required']}"
+        if row["matched"]:
+            detail += "：" + ", ".join(row["matched"][:6]) + (" …" if len(row["matched"]) > 6 else "")
+        if row["ok"]:
+            passed(f"deps {label}: {detail}")
+        else:
+            missing.append(row["id"])
+            if row["hint"]:
+                detail += f"（{row['hint']}）"
+            if row["notes"]:
+                detail += "；" + "；".join(row["notes"][:3])
+            elif not row["matched"] and available_kinds:
+                detail += "；树里现有 kind: " + ", ".join(available_kinds[:8])
+            failed(f"deps {label}: {detail}")
+    for item in manuals:
+        info(f"deps {item['id']} {item.get('name', '')}: 手工判据 — {item['manual']}")
+    manual_ids = ", ".join(str(item["id"]) for item in manuals) or "无"
+    asset_ok = len(rows) - len(missing)
+    line = f"deps: 素材 {asset_ok}/{len(rows)} 齐"
+    if missing:
+        line += f"；缺 {', '.join(missing)}"
+    line += f"；手工判据 {len(manuals)} 项（{manual_ids}）"
+    if missing:
+        failed(line)
+    else:
+        passed(line)
+    return missing
+
+
 def apk_entries(path: Path) -> dict[str, zipfile.ZipInfo]:
     try:
         with zipfile.ZipFile(path) as archive:
@@ -240,6 +382,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
         raise AssetError(f"{len(missing)} source entry(ies) missing from {apk}")
 
     provenance = load_provenance(out) if (out / PROVENANCE_NAME).exists() else {}
+    by_target = by_target_map(items)
     written = identical = 0
     with zipfile.ZipFile(apk) as archive:
         for target, entry in wanted:
@@ -263,6 +406,13 @@ def cmd_extract(args: argparse.Namespace) -> int:
                     destination.write_bytes(data)
                     written += 1
             dimensions = png_size(data)
+            source_item = by_target.get(target) or {}
+            # Extra source fields (resource/raster/size/use/enum/evidence/checksheet …) are the
+            # reviewer's traceability anchors; keep them so provenance does not lose them.
+            meta = {
+                key: value for key, value in source_item.items()
+                if key not in ("entry", "target", "kind", "note") and value not in (None, "")
+            }
             provenance[target] = {
                 "target": target,
                 "entry": entry_name(entry),
@@ -270,8 +420,9 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 "entry_sha256": digest,
                 "bytes": len(data),
                 "image": {"width": dimensions[0], "height": dimensions[1]} if dimensions else None,
-                "kind": str(item_kind(items, target) or ""),
-                "note": str(item_note(items, target) or ""),
+                "kind": str(source_item.get("kind") or ""),
+                "note": str(source_item.get("note") or ""),
+                "meta": meta or None,
             }
             shape = f", {dimensions[0]}x{dimensions[1]}" if dimensions else ""
             passed(f"extract {target} <- {entry_name(entry)} ({len(data)} B{shape}, sha256 {digest[:12]}…)")
@@ -284,18 +435,14 @@ def cmd_extract(args: argparse.Namespace) -> int:
     return 0
 
 
-def item_kind(items: list[dict], target: str) -> str | None:
+def by_target_map(items: list[dict]) -> dict[str, dict]:
+    mapping: dict[str, dict] = {}
     for item in items:
-        if safe_target(str(item.get("target", ""))) == target:
-            return item.get("kind")
-    return None
-
-
-def item_note(items: list[dict], target: str) -> str | None:
-    for item in items:
-        if safe_target(str(item.get("target", ""))) == target:
-            return item.get("note")
-    return None
+        try:
+            mapping[safe_target(str(item.get("target", "")))] = item
+        except AssetError:
+            continue
+    return mapping
 
 
 def cmd_manifest(args: argparse.Namespace) -> int:
@@ -330,6 +477,8 @@ def cmd_manifest(args: argparse.Namespace) -> int:
             "sha256": digest,
             "entry": (record or {}).get("entry", "-"),
             "kind": (record or {}).get("kind", "-"),
+            "resource": ((record or {}).get("meta") or {}).get("resource", "-"),
+            "use": ((record or {}).get("meta") or {}).get("use", "-"),
         })
     (directory / MANIFEST_NAME).write_text("\n".join(lines) + "\n", encoding="utf-8")
     md = [
@@ -339,13 +488,13 @@ def cmd_manifest(args: argparse.Namespace) -> int:
         f"- 文件数：**{len(files)}**，合计 **{total}** 字节",
         f"- 校验：`python tools\\fidelity\\assets.py verify --dir docs\\fidelity\\assets`",
         "",
-        "| # | 文件（`docs/fidelity/assets/` 下） | 字节 | 尺寸 | sha256 | APK 内条目 | 类别 |",
-        "|---|---|---|---|---|---|---|",
+        "| # | 文件（`docs/fidelity/assets/` 下） | 字节 | 尺寸 | sha256 | APK 内条目 | 资源名 | 用途 | 类别 |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for number, row in enumerate(rows, 1):
         md.append(
             f"| {number} | `{row['target']}` | {row['bytes']} | {row['image']} | "
-            f"`{row['sha256'][:16]}…` | `{row['entry']}` | {row['kind']} |"
+            f"`{row['sha256'][:16]}…` | `{row['entry']}` | {row['resource']} | {row['use']} | {row['kind']} |"
         )
     (directory / INDEX_NAME).write_text("\n".join(md) + "\n", encoding="utf-8")
     passed(f"manifest: {len(files)} file(s), {total} bytes -> {MANIFEST_NAME} + {INDEX_NAME}")
@@ -454,11 +603,25 @@ def cmd_verify(args: argparse.Namespace) -> int:
         if archive is not None:
             archive.close()
 
+    deps_missing: list[str] = []
+    deps_path = Path(args.deps) if getattr(args, "deps", None) else directory.parent / "assets-deps.json"
+    if not getattr(args, "no_deps", False):
+        if deps_path.exists():
+            deps = load_deps(deps_path)
+            rows, manuals = check_deps(deps, directory, actual, provenance)
+            available = sorted({
+                str((record or {}).get("kind") or "") for record in provenance.values()
+            } - {""})
+            deps_missing = print_deps(rows, manuals, str(deps.get("plan") or deps_path), available)
+        else:
+            info(f"warning: deps file not found ({deps_path}); A-xx coverage not checked")
+
     for problem in problems:
         failed(problem)
     summary = f"verify: {len(actual)} file(s), {len(manifest)} manifest entr(ies), {len(provenance)} provenance row(s)"
-    if problems:
-        info(summary + f", {len(problems)} problem(s)")
+    problem_count = len(problems) + (1 if deps_missing else 0)
+    if problem_count:
+        info(summary + f", {problem_count} problem(s)")
         return 1
     passed(summary + "; sha256 + provenance + APK source all match")
     return 0
@@ -517,6 +680,51 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         check("先天八卦_卦位.html" in (out / INDEX_NAME).read_text(encoding="utf-8"), "manifest: INDEX.md lists the asset")
         code = cmd_verify(argparse.Namespace(dir=str(out), apk=str(apk), strict=True, require_min=2))
         check(code == 0, "verify: clean tree with APK source passes")
+
+        def verify_text(**overrides) -> tuple[int, str]:
+            import contextlib
+            import io
+
+            namespace = {
+                "dir": str(out), "apk": str(apk), "strict": False, "require_min": 0,
+                "deps": None, "no_deps": False,
+            }
+            namespace.update(overrides)
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                result = cmd_verify(argparse.Namespace(**namespace))
+            return result, buffer.getvalue()
+
+        partial_deps = temp / "deps-partial.json"
+        partial_deps.write_text(json.dumps({
+            "plan": "selftest §6.1",
+            "items": [
+                {"id": "A-01", "name": "pointer", "requires": {"targets": ["compass/pointer.png"], "image": "46x188"}},
+                {"id": "A-02", "name": "drawer", "requires": {"kinds": ["icon-drawer"], "count": 2}},
+                {"id": "A-10", "name": "re-capture", "manual": "selftest manual"},
+            ],
+        }, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(partial_deps))
+        check(code == 1, "verify --deps: incomplete A-xx dependency fails")
+        check("deps A-01 pointer: 1/1" in text, "verify --deps: satisfied dependency reported")
+        check("缺 A-02" in text, "verify --deps: missing dependency listed in the summary")
+        check("A-10 re-capture: 手工判据" in text, "verify --deps: manual item reported, not gated")
+        code, text = verify_text(deps=str(partial_deps), no_deps=True)
+        check(code == 0, "verify --no-deps: integrity-only run stays green")
+
+        complete_deps = temp / "deps-complete.json"
+        complete_deps.write_text(json.dumps({"items": [
+            {"id": "A-01", "name": "pointer", "requires": {"targets": ["compass/pointer.png"], "image": "46x188"}},
+        ]}, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(complete_deps))
+        check(code == 0 and "素材 1/1 齐" in text, "verify --deps: complete dependency set passes")
+
+        wrong_size = temp / "deps-size.json"
+        wrong_size.write_text(json.dumps({"items": [
+            {"id": "A-01", "name": "pointer", "requires": {"targets": ["compass/pointer.png"], "image": "46x46"}},
+        ]}, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(wrong_size))
+        check(code == 1 and "尺寸" in text, "verify --deps: image size requirement is enforced")
 
         (out / "compass/pointer.png").write_bytes(make_png(1, 1))
         code = cmd_verify(argparse.Namespace(dir=str(out), apk=str(apk), strict=False, require_min=0))
@@ -639,6 +847,8 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--apk", help="also re-extract each entry from this APK and compare sha256")
     verify.add_argument("--strict", action="store_true", help="duplicate asset content across targets fails")
     verify.add_argument("--require-min", type=int, default=0, help="fail when fewer files exist")
+    verify.add_argument("--deps", help="A-xx dependency file (default: <dir>/../assets-deps.json)")
+    verify.add_argument("--no-deps", action="store_true", help="skip the A-xx coverage report")
     verify.set_defaults(func=cmd_verify)
 
     selftest = commands.add_parser("selftest", help="hermetic self-test on a synthetic APK")

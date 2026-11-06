@@ -293,6 +293,252 @@
       "enum": "SUPER_MAP_OLD",
       "evidence": "ToolsEnum.smali:563（sget R$mipmap）",
       "checksheet": "A-03 更多 16 格图标"
+    },
+    {
+      "entry": "res/58.webp",
+      "target": "map/source-thumb/ic_base_map_amap_normal.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_amap_normal",
+      "raster": "mipmap-xxxhdpi",
+      "use": "高德·标准",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/BG.webp",
+      "target": "map/source-thumb/ic_base_map_amap_satellite.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_amap_satellite",
+      "raster": "mipmap-xxxhdpi",
+      "use": "高德·卫星",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/nc1.webp",
+      "target": "map/source-thumb/ic_base_map_custome.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_custome",
+      "raster": "mipmap-xxxhdpi",
+      "use": "自定义源",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/UE.png",
+      "target": "map/source-thumb/ic_base_map_jilin1_satellite_2023.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_jilin1_satellite_2023",
+      "raster": "mipmap-xxxhdpi",
+      "use": "吉林一号·2023 卫星",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/b0.png",
+      "target": "map/source-thumb/ic_base_map_jilin1_satellite_globe.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_jilin1_satellite_globe",
+      "raster": "mipmap-xxxhdpi",
+      "use": "吉林一号·球面卫星",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/AY.webp",
+      "target": "map/source-thumb/ic_base_map_tdt_normal.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_tdt_normal",
+      "raster": "mipmap-xxxhdpi",
+      "use": "天地图·标准",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/eV.webp",
+      "target": "map/source-thumb/ic_base_map_tdt_satellite.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_tdt_satellite",
+      "raster": "mipmap-xxxhdpi",
+      "use": "天地图·卫星",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/aw.webp",
+      "target": "map/source-thumb/ic_base_map_tdt_terrain.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_tdt_terrain",
+      "raster": "mipmap-xxxhdpi",
+      "use": "天地图·地形",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/Nv.webp",
+      "target": "map/source-thumb/ic_base_map_tecent_normal.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_tecent_normal",
+      "raster": "mipmap-xxxhdpi",
+      "use": "腾讯·标准",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/UL.webp",
+      "target": "map/source-thumb/ic_base_map_tencent_satellite.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_tencent_satellite",
+      "raster": "mipmap-xxxhdpi",
+      "use": "腾讯·卫星",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/5z.webp",
+      "target": "map/source-thumb/ic_base_map_tencent_terrain.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_tencent_terrain",
+      "raster": "mipmap-xxxhdpi",
+      "use": "腾讯·地形",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "res/Eo.webp",
+      "target": "map/source-thumb/ic_base_map_xintu_satellite.png",
+      "kind": "source-thumb",
+      "resource": "ic_base_map_xintu_satellite",
+      "raster": "mipmap-xxxhdpi",
+      "use": "星图·卫星",
+      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "checksheet": "A-07 12 源卡片缩略图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass.png",
+      "target": "compass/plate/compass.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass",
+      "use": "默认盘面（二十四山·阴）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass1.png",
+      "target": "compass/plate/compass1.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass1",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass1.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass2.png",
+      "target": "compass/plate/compass2.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass2",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass2.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass3.png",
+      "target": "compass/plate/compass3.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass3",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass3.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass4.png",
+      "target": "compass/plate/compass4.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass4",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass4.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass5.png",
+      "target": "compass/plate/compass5.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass5",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass5.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass6.png",
+      "target": "compass/plate/compass6.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass6",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass6.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass7.png",
+      "target": "compass/plate/compass7.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass7",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass7.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass8.png",
+      "target": "compass/plate/compass8.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass8",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass8.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass9.png",
+      "target": "compass/plate/compass9.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass9",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass9.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass10.png",
+      "target": "compass/plate/compass10.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass10",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass10.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass11.png",
+      "target": "compass/plate/compass11.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass11",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass11.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass12.png",
+      "target": "compass/plate/compass12.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass12",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass12.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/compass13.png",
+      "target": "compass/plate/compass13.png",
+      "kind": "plate",
+      "resource": "webapp/imgs/compass/compass13",
+      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+      "evidence": "assets/webapp/assets/imgs/compass/compass13.png；APK 条目路径未混淆",
+      "checksheet": "A-05 读盘图"
     }
   ]
 }

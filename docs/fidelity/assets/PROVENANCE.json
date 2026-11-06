@@ -1,6 +1,6 @@
 {
   "tool": "fidelity-assets",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "apk": {
     "path": "E:\\APPDetector\\input\\swss.apk",
     "sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8"
@@ -14,7 +14,8 @@
       "bytes": 52550,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/先天八卦_卦位.html",
@@ -24,7 +25,8 @@
       "bytes": 59545,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/先天八卦洛书数.html",
@@ -34,7 +36,8 @@
       "bytes": 59853,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/先天圆图六十四卦外卦.html",
@@ -44,7 +47,8 @@
       "bytes": 55057,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/先天方图六十四卦内卦.html",
@@ -54,7 +58,8 @@
       "bytes": 54850,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/六十甲配六十四卦五行.html",
@@ -64,7 +69,8 @@
       "bytes": 53452,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/后天八卦_卦位.html",
@@ -74,7 +80,8 @@
       "bytes": 56574,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/地盘正针二十四山.html",
@@ -84,7 +91,8 @@
       "bytes": 53736,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/地盘正针百二十分金.html",
@@ -94,7 +102,8 @@
       "bytes": 53510,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/天盘缝针二十四山.html",
@@ -104,7 +113,8 @@
       "bytes": 52136,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/天盘缝针百二十分金.html",
@@ -114,7 +124,8 @@
       "bytes": 52747,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/正兼向度数指标.html",
@@ -124,7 +135,8 @@
       "bytes": 53426,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/穿山七十二龙.html",
@@ -134,7 +146,8 @@
       "bytes": 54169,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
     },
     {
       "target": "compass-introduce/透地平分六十龙.html",
@@ -144,7 +157,250 @@
       "bytes": 52818,
       "image": null,
       "kind": "knowledge-html",
-      "note": ""
+      "note": "",
+      "meta": null
+    },
+    {
+      "target": "compass/plate/compass.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "0721754d5595c065c98f4280f8e5aae45e14be135b1cd3099c7575ed76c47408",
+      "bytes": 130543,
+      "image": {
+        "width": 1080,
+        "height": 1080
+      },
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass",
+        "use": "默认盘面（二十四山·阴）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass1.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass1.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "06b975768a81eabb17596d1995c7a1f04fe81c0d8e8eda0fde948b761685adba",
+      "bytes": 562028,
+      "image": {
+        "width": 2048,
+        "height": 2048
+      },
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass1",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass1.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass10.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass10.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "df232aa879f6a609c2cb0b11aaf6127716529e67e650b785936758b3363185d8",
+      "bytes": 804750,
+      "image": null,
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass10",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass10.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass11.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass11.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "2f10266bd88872760d0440655d596f0a45ddf9da5aaf12cfbfd8ec98dda29e93",
+      "bytes": 587188,
+      "image": null,
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass11",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass11.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass12.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass12.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "0da88946c781a6a692704942b00424418589e8c79701b0efb6fa0721a0dd59ae",
+      "bytes": 851668,
+      "image": null,
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass12",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass12.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass13.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass13.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "e1df77f8faf6f88525d821382ceb590794b60e61e34a435e56fc26b1f1de98ed",
+      "bytes": 785988,
+      "image": null,
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass13",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass13.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass2.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass2.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "5edc358f12d84945fa26480d2c94a590591d0e2fa9471d3b86c42a0a49d30700",
+      "bytes": 742097,
+      "image": {
+        "width": 2048,
+        "height": 2048
+      },
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass2",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass2.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass3.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass3.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "e05b78e36c37a3f1b09824320a6d972f3935815e48b436ecbb3387c0fa08923f",
+      "bytes": 829947,
+      "image": {
+        "width": 2045,
+        "height": 2045
+      },
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass3",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass3.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass4.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass4.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "a8334e0573b244047ce49d38ab6bcbb22589db2697506a517eb88b6b7ce5c907",
+      "bytes": 840533,
+      "image": {
+        "width": 2048,
+        "height": 2048
+      },
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass4",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass4.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass5.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass5.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "d01ae4ea5d15147472db4c9e567621d54514df2fd1b2e352f5353d7469814769",
+      "bytes": 401842,
+      "image": null,
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass5",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass5.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass6.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass6.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "678f9169bd9f417037a58127187fa9364327ebd3dd74823bf68241b92022cc43",
+      "bytes": 208706,
+      "image": null,
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass6",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass6.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass7.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass7.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "e18effc2975d333827bb21f373ea786efc0a72eeba8184d454aa76f5e3a2bc32",
+      "bytes": 246172,
+      "image": null,
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass7",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass7.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass8.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass8.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "e6f9466540d9a9ec7f4616dda88ec9787617f5add7470fb3074f7bcf254b780e",
+      "bytes": 341149,
+      "image": {
+        "width": 1684,
+        "height": 1684
+      },
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass8",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass8.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
+    },
+    {
+      "target": "compass/plate/compass9.png",
+      "entry": "assets/webapp/assets/imgs/compass/compass9.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "b2ca34d5d72606b880bbe77bca8e40ecfd732bbb254bc8a79150290cf1c33c5e",
+      "bytes": 716688,
+      "image": null,
+      "kind": "plate",
+      "note": "",
+      "meta": {
+        "resource": "webapp/imgs/compass/compass9",
+        "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+        "evidence": "assets/webapp/assets/imgs/compass/compass9.png；APK 条目路径未混淆",
+        "checksheet": "A-05 读盘图"
+      }
     },
     {
       "target": "compass/pointer.png",
@@ -157,7 +413,218 @@
         "height": 188
       },
       "kind": "bitmap",
-      "note": "罗盘中心指针，46x188"
+      "note": "罗盘中心指针，46x188",
+      "meta": null
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_amap_normal.png",
+      "entry": "res/58.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "0efc767015d6fba03a9cf54ace1034ded371bde8c9ba93d1dda32ba4a49d79cb",
+      "bytes": 9138,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_amap_normal",
+        "raster": "mipmap-xxxhdpi",
+        "use": "高德·标准",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_amap_satellite.png",
+      "entry": "res/BG.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "0654df2b4d3eb4589a7088bd0a2b6b6a3e286d8298c72cdd9068afa9b35198d0",
+      "bytes": 8332,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_amap_satellite",
+        "raster": "mipmap-xxxhdpi",
+        "use": "高德·卫星",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_custome.png",
+      "entry": "res/nc1.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "bef274b31d92fe089203ea20a6cf761835d7dfeb5f401b5428fe0a402c351df7",
+      "bytes": 30358,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_custome",
+        "raster": "mipmap-xxxhdpi",
+        "use": "自定义源",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_jilin1_satellite_2023.png",
+      "entry": "res/UE.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "941e28e51848100b37e15c36faf23169525486893abe6091d4f0a28271f0df43",
+      "bytes": 377454,
+      "image": {
+        "width": 600,
+        "height": 372
+      },
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_jilin1_satellite_2023",
+        "raster": "mipmap-xxxhdpi",
+        "use": "吉林一号·2023 卫星",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_jilin1_satellite_globe.png",
+      "entry": "res/b0.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "3764722d3716ad04879905b0a74f57ec5bccd21b662be92546338e10be45049a",
+      "bytes": 414519,
+      "image": {
+        "width": 602,
+        "height": 372
+      },
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_jilin1_satellite_globe",
+        "raster": "mipmap-xxxhdpi",
+        "use": "吉林一号·球面卫星",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_tdt_normal.png",
+      "entry": "res/AY.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "ca343bb0221a6f20ed8ba249c5b61ab3b33b95d794215ac7574f6ad5c98983fb",
+      "bytes": 7438,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_tdt_normal",
+        "raster": "mipmap-xxxhdpi",
+        "use": "天地图·标准",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_tdt_satellite.png",
+      "entry": "res/eV.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "be0b9c303d5fccb6311644acd64630f877fd910d9c21842fc2aa08557b9595fd",
+      "bytes": 10124,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_tdt_satellite",
+        "raster": "mipmap-xxxhdpi",
+        "use": "天地图·卫星",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_tdt_terrain.png",
+      "entry": "res/aw.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "4c77cbbff2968d2a736da36468e51cb904370133c7855d70f52b9e9295014e6d",
+      "bytes": 5168,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_tdt_terrain",
+        "raster": "mipmap-xxxhdpi",
+        "use": "天地图·地形",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_tecent_normal.png",
+      "entry": "res/Nv.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "f5ec1b87febb79f5a6841b61ed833374a6c437ed28963dca2eecb8ba806907e6",
+      "bytes": 16582,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_tecent_normal",
+        "raster": "mipmap-xxxhdpi",
+        "use": "腾讯·标准",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_tencent_satellite.png",
+      "entry": "res/UL.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "1f7496ab8b7c1478281660b2b4978a88f4eb75c72fe4e20e5efb860b2b01e989",
+      "bytes": 11260,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_tencent_satellite",
+        "raster": "mipmap-xxxhdpi",
+        "use": "腾讯·卫星",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_tencent_terrain.png",
+      "entry": "res/5z.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "0f4eff35dfcb09276ad6c66eee2e96801beb739a21e93568e8aaf583ab1a2e4c",
+      "bytes": 6938,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_tencent_terrain",
+        "raster": "mipmap-xxxhdpi",
+        "use": "腾讯·地形",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/ic_base_map_xintu_satellite.png",
+      "entry": "res/Eo.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "626d04b3f90551b5877880a5631af008984457e3dea8cdd7b7fb4f3b419f7fa2",
+      "bytes": 104638,
+      "image": null,
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "ic_base_map_xintu_satellite",
+        "raster": "mipmap-xxxhdpi",
+        "use": "星图·卫星",
+        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "checksheet": "A-07 12 源卡片缩略图"
+      }
     },
     {
       "target": "tools/ic_tool_altitude.png",
@@ -170,7 +637,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_altitude",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "海拔查询",
+        "enum": "ALTITUDE",
+        "evidence": "ToolsEnum.smali:275（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_collect.png",
@@ -183,7 +659,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_collect",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "收藏点",
+        "enum": "COLLECT",
+        "evidence": "ToolsEnum.smali:371（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_compass.png",
@@ -196,7 +681,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_compass",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "罗盘",
+        "enum": "COMPASS",
+        "evidence": "ToolsEnum.smali:155（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_fish.png",
@@ -209,7 +703,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_fish",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "钓点",
+        "enum": "FISH",
+        "evidence": "ToolsEnum.smali:467（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_history.png",
@@ -222,7 +725,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_history",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "历史影像",
+        "enum": "HISTORY",
+        "evidence": "ToolsEnum.smali:323（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_isoline.png",
@@ -235,7 +747,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_isoline",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "等高线",
+        "enum": "ISOLINE",
+        "evidence": "ToolsEnum.smali:347（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_measure.png",
@@ -248,7 +769,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_measure",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "测量",
+        "enum": "MEASURE",
+        "evidence": "ToolsEnum.smali:419（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_mountain.png",
@@ -261,7 +791,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_mountain",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "看山脉",
+        "enum": "MOUNTAIN",
+        "evidence": "ToolsEnum.smali:203（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_paint.png",
@@ -274,7 +813,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_paint",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "画笔",
+        "enum": "DRAW",
+        "evidence": "ToolsEnum.smali:443（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_super_map.png",
@@ -287,7 +835,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_super_map",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "超清地图",
+        "enum": "SUPER_MAP",
+        "evidence": "ToolsEnum.smali:179（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_super_map_old.png",
@@ -300,7 +857,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_super_map_old",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "超清优化",
+        "enum": "SUPER_MAP_OLD",
+        "evidence": "ToolsEnum.smali:563（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_vr.png",
@@ -313,7 +879,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_vr",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "（当前面板未展示：more-sheet-03-fresh.xml 无此项）",
+        "enum": "VR",
+        "evidence": "ToolsEnum.smali:251（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_water.png",
@@ -326,7 +901,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_water",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "看水系",
+        "enum": "WATER",
+        "evidence": "ToolsEnum.smali:227（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tool_weather.png",
@@ -339,7 +923,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tool_weather",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "天气",
+        "enum": "WEATHER",
+        "evidence": "ToolsEnum.smali:299（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tools_geographic_imagery.png",
@@ -352,7 +945,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tools_geographic_imagery",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "地理影像",
+        "enum": "GEOGRAPHIC_IMAGERY",
+        "evidence": "ToolsEnum.smali:539（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tools_road.png",
@@ -365,7 +967,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tools_road",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "路网",
+        "enum": "ROAD",
+        "evidence": "ToolsEnum.smali:515（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tools_street.png",
@@ -378,7 +989,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tools_street",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "（当前面板未展示：dump 无「景点」项）",
+        "enum": "STREET",
+        "evidence": "ToolsEnum.smali:395（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     },
     {
       "target": "tools/ic_tools_track.png",
@@ -391,7 +1011,16 @@
         "height": 184
       },
       "kind": "tool-icon",
-      "note": ""
+      "note": "",
+      "meta": {
+        "resource": "ic_tools_track",
+        "raster": "mipmap-xxxhdpi",
+        "size": "184x184",
+        "use": "轨迹记录",
+        "enum": "TRACK_RECORD",
+        "evidence": "ToolsEnum.smali:491（sget R$mipmap）",
+        "checksheet": "A-03 更多 16 格图标"
+      }
     }
   ]
 }

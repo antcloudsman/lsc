@@ -24,7 +24,15 @@
     <item name="lc_info_content" type="id" />
     <item name="lc_info_body" type="id" />
 
+    <item name="lc_search_input" type="id" />
+    <item name="lc_search_results" type="id" />
+    <item name="lc_search_tab0" type="id" />
+    <item name="lc_search_tab1" type="id" />
+    <item name="lc_search_tab2" type="id" />
+    <item name="lc_search_tab3" type="id" />
 </resources>
+
+
 
 
 

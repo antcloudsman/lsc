@@ -98,6 +98,7 @@
 13. **截屏状态**：`b366065` 已修（IS_PENDING 流程 + 保存提示 + 分享独立 try + LCCAP 日志 + 私有目录兜底），**按「待修已修、待真机验」记**，不按红处理、也不写通过。
 14. **收官全量门禁（`f332b9c`，留档 `docs/qa/final-gates-20261106.md`）**：copy / secret / smoke 六门 / numeric 85 / cargo 5 / Debug+Release 打包 = **七项 PASS**；debug sha `FF97AE8A…A435`、release unsigned `A9AF7096…8562`。**两条边界**：① `smoke -SkipDevice` 不能替代真机启动无崩溃结论（真机以 18 项证据为准）；② APK sha256 含签名与时间戳，重打会变，**不作可复现校验**。release 未配签名，正式分发前需签名。
 15. **基线重冻完成（`round-acceptance`，develop `f8f22e9`）**：`docs/qa/baseline-android/round-acceptance/`；构建提交 `f332b9c`、APK 7,059,441 B / sha `A928023F…7E07BB`、冷启 653 ms；左 8/右 10/更多 16/罗盘文字 19、中心偏差最大 8.5 px（容差 ±45）、门禁 85 + `CARGO: PASS`、FATAL/ANR 0。两条待办（**只在以后做像素 diff 时才需要**）：SW-006 面板裁切窗待按新布局实测；裁切窗测量依据未提供。`k01-compass.png` 与 `needle-on` 同哈希＝采集时序同一状态，非丢图。
+16. **网页端天地图 key 曾进入公开仓库 git history（已登记，不轮换）**：`docs/qa/baseline-android/round-acceptance/logcat.txt` 初版含 WebView 日志 `map.html?tk=<key>` 共 10 处（`02e6a6e` 引入），已就地脱敏为 `***REDACTED***`（`c86f10e`），但 **history 保留原文**。该 key 为浏览器类型、本就会打进 APK，实际风险＝**配额被第三方蹭用**，非数据泄露；**服务端 key 未泄露**。**用户裁决：不轮换，接受并登记**。`tests/secrets/secret_gate.py` 保持硬门禁（FAIL 即阻断，**不可豁免**）；`tests/lib/LogRedact.ps1` 统一脱敏 logcat/ui/manifest/文件名，写入前自检、失败拒写。
 
 ## 变更记录
 
@@ -119,3 +120,4 @@
 | v14 | 2026-11-05 | **18 项全部记「通过（分轮；待最终轮复核）」**：最后三项 `checks\accept-857a471-d\`（D 六 flag 单跑 6/6、F-13 记忆 `#36B44B`/粗细 2/`lc_paint.xml` 落盘、F-12 亩 `26705.6`/公顷 `1780.38`）；D 证据补进 F-01/05/08/10/11/17 行；总览改「通过 18 / 待复验 0 / 未验 0」并注明「最终全量轮统一复核+重冻基线」；环境结论新增 4/5（测量态 dump 必失败→截图+比例换算；写 flag 只能 `run-as cp`）；基线 `0dda97e`（应用代码同 `857a471`）；FINAL 同步 |
 | v15 | 2026-11-06 | 基线 `f332b9c`（文档；应用代码同 `0dda97e` ≡ `857a471`）；备注 14 记**收官全量门禁七项 PASS**（`docs/qa/final-gates-20261106.md`，copy/secret/smoke 六门/numeric 85/cargo 5/双端包；debug `FF97AE8A…A435`、release unsigned `A9AF7096…8562`）与两条边界（`-SkipDevice` 不替代真机、APK sha 不作可复现校验）；release 未签名需正式分发前处理；`00-FINAL.md` §0/§6 同期填实 |
 | v16 | 2026-11-06 | 基线 `f8f22e9`（含基线重冻 `round-acceptance`）；备注 15 记重冻数据（目录/构建提交 `f332b9c`/APK sha `A928023F…7E07BB`/冷启 653 ms/左8右10更多16/中心偏差 8.5 px/门禁 85+FATAL 0）与两条像素 diff 待办；`k01-compass` 同哈希＝时序非丢图；`00-FINAL.md` §6 回填、§7 第 11 条关闭 |
+| v17 | 2026-11-06 | 备注 16 风险登记：网页端天地图 key 曾进公开 git history（`logcat.txt` 10 处、`02e6a6e` 引入、`c86f10e` 就地脱敏但 history 保留）；浏览器类型 key、风险＝配额蹭用、服务端 key 未泄；**用户裁决不轮换**；`secret_gate` FAIL 即阻断**不可豁免**、`LogRedact` 统一脱敏；`00-FINAL.md` §7 第 14 条与 §4.1 同步 |

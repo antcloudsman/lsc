@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- G1（R2-003、R2-010、R2-011、R2-026、R2-033）可量取控件 id。
+         逐条验收要按控件比 delta，没有稳定 id 就只能靠 bounds 猜节点，故单列一份。 -->
+    <item name="lc_g1_cleft1" type="id" />
+    <item name="lc_g1_cleft2" type="id" />
+    <item name="lc_g1_cleft3" type="id" />
+    <item name="lc_g1_cleft4" type="id" />
+    <item name="lc_g1_cleft5" type="id" />
+    <item name="lc_g1_cleft6" type="id" />
+    <item name="lc_g1_cright1" type="id" />
+    <item name="lc_g1_cright2" type="id" />
+    <item name="lc_g1_cright3" type="id" />
+    <item name="lc_g1_cright4" type="id" />
+    <item name="lc_g1_mleft1" type="id" />
+    <item name="lc_g1_mleft2" type="id" />
+    <item name="lc_g1_mleft3" type="id" />
+    <item name="lc_g1_mleft4" type="id" />
+    <item name="lc_g1_mleft5" type="id" />
+    <item name="lc_g1_mleft6" type="id" />
+    <item name="lc_g1_mleft7" type="id" />
+    <item name="lc_g1_mleft8" type="id" />
+    <item name="lc_g1_mright1" type="id" />
+    <item name="lc_g1_mright2" type="id" />
+    <item name="lc_g1_mright3" type="id" />
+    <item name="lc_g1_mright4" type="id" />
+    <item name="lc_g1_mright5" type="id" />
+    <item name="lc_g1_mright6" type="id" />
+    <item name="lc_g1_mright7" type="id" />
+    <item name="lc_g1_mright8" type="id" />
+    <item name="lc_g1_mright9" type="id" />
+    <item name="lc_g1_mright10" type="id" />
+    <item name="lc_g1_place" type="id" />
+</resources>

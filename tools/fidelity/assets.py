@@ -204,21 +204,45 @@ def load_deps(path: Path) -> dict:
 
 def _dep_matches(requirement: dict, actual: dict[str, bytes], provenance: dict[str, dict],
                  root: Path) -> tuple[list[str], list[str]]:
-    """Return (matched relative paths, notes) for one dependency requirement."""
+    """Return (matched relative paths, notes) for one dependency requirement.
+
+    Matchers: targets (exact, ignores the checksheet filter) / prefixes / kinds /
+    checksheet (provenance meta.checksheet prefix) / exclude (named files never count) /
+    globs (repo-root relative). One kind can serve two A-items (A-02 drawer icons and
+    A-04 column vectors both `icon-drawer`); `checksheet` keeps them apart.
+    """
     matched: list[str] = []
     notes: list[str] = []
     targets = [safe_target(str(value)) for value in requirement.get("targets") or []]
     prefixes = [str(value).replace("\\", "/") for value in requirement.get("prefixes") or []]
     kinds = [str(value) for value in requirement.get("kinds") or []]
+    checksheet = str(requirement.get("checksheet") or "").strip()
+    excluded = [str(value) for value in requirement.get("exclude") or []]
+
+    def is_excluded(relative: str) -> bool:
+        base = relative.rsplit("/", 1)[-1]
+        return any(token and (token in relative or token in base) for token in excluded)
+
     for relative in sorted(actual):
         record = provenance.get(relative) or {}
-        if relative in targets:
+        if is_excluded(relative):
+            continue
+        explicit = relative in targets
+        if checksheet and not explicit:
+            tag = str((record.get("meta") or {}).get("checksheet") or "")
+            if not tag.startswith(checksheet):
+                continue
+        if explicit:
             matched.append(relative)
             continue
         if any(relative.startswith(prefix) for prefix in prefixes):
             matched.append(relative)
             continue
         if str(record.get("kind") or "") in kinds:
+            matched.append(relative)
+            continue
+        if checksheet and not prefixes and not kinds:
+            # The checksheet tag alone identifies the A-item.
             matched.append(relative)
     for pattern in requirement.get("globs") or []:
         for path in sorted(root.glob(str(pattern))):
@@ -265,6 +289,8 @@ def check_deps(deps: dict, directory: Path, actual: dict[str, bytes],
             hint.append("target " + "/".join(str(value) for value in requirement["targets"]))
         if requirement.get("globs"):
             hint.append("glob " + "/".join(str(value) for value in requirement["globs"]))
+        if requirement.get("checksheet"):
+            hint.append("checksheet " + str(requirement["checksheet"]))
         if requirement.get("image"):
             hint.append(f"尺寸 {requirement['image']}")
         rows.append({
@@ -654,6 +680,25 @@ def cmd_stamp(args: argparse.Namespace) -> int:
     return 1 if problems else 0
 
 
+def cmd_prune(args: argparse.Namespace) -> int:
+    """Drop provenance rows whose file no longer exists (renames/removals leave drift)."""
+    directory = Path(args.dir)
+    if not directory.exists():
+        raise AssetError(f"assets directory not found: {directory}")
+    provenance = load_provenance(directory)
+    actual = {path.relative_to(directory).as_posix() for path in iter_assets(directory)}
+    stale = sorted(set(provenance) - actual)
+    if not stale:
+        passed(f"prune: {len(provenance)} provenance row(s), nothing stale")
+        return 0
+    for relative in stale:
+        dropped = provenance.pop(relative)
+        info(f"prune: dropped stale row {relative} (was {dropped.get('entry') or '-'})")
+    write_provenance(directory, provenance, None)
+    passed(f"prune: dropped {len(stale)} stale row(s), {len(provenance)} left")
+    return 0
+
+
 def cmd_manifest(args: argparse.Namespace) -> int:
     directory = Path(args.dir)
     if not directory.exists():
@@ -751,6 +796,12 @@ def cmd_verify(args: argparse.Namespace) -> int:
     for relative in sorted(actual):
         if relative not in manifest:
             problems.append(f"unlisted file (no manifest entry): {relative}")
+    stale_provenance = sorted(set(provenance) - set(actual))
+    for relative in stale_provenance:
+        problems.append(
+            f"provenance row without file (stale): {relative}; re-stamp the file or run "
+            "`assets.py prune --dir <assets>` to drop the row"
+        )
 
     duplicates: dict[str, list[str]] = {}
     for relative, data in actual.items():
@@ -981,6 +1032,14 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         (out / "stray.txt").write_text("not from the APK\n", encoding="utf-8")
         code = cmd_verify(argparse.Namespace(dir=str(out), apk=str(apk), strict=False, require_min=0))
         check(code == 1, "verify: unlisted file fails")
+
+        ghost = load_provenance(out)
+        ghost["ghost/missing.png"] = {"target": "ghost/missing.png", "mode": "verbatim", "entry": "res/a1.png"}
+        write_provenance(out, ghost, None)
+        code, text = verify_text()
+        check(code == 1 and "provenance row without file (stale)" in text, "verify: stale provenance row fails")
+        code = cmd_prune(argparse.Namespace(dir=str(out)))
+        check(code == 0 and "ghost/missing.png" not in load_provenance(out), "prune: stale provenance row dropped")
         (out / "stray.txt").unlink()
 
         (out / "compass/copy-of-pointer.png").write_bytes((out / "compass/pointer.png").read_bytes())
@@ -1025,7 +1084,7 @@ def cmd_selftest(args: argparse.Namespace) -> int:
             "decode": {"tool": "apktool", "version": "selftest", "command": "apktool d -f"},
             "items": [{
                 "entry": "res/drawable/svg_layer.xml", "target": "drawer/svg_layer.xml",
-                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer", "use": "图层",
+                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer", "checksheet": "A-02 selftest", "use": "图层",
             }],
         }, ensure_ascii=False), encoding="utf-8")
         (out / "drawer").mkdir(parents=True, exist_ok=True)
@@ -1052,7 +1111,7 @@ def cmd_selftest(args: argparse.Namespace) -> int:
             "items": [{
                 "entry": "0x7f0803da", "apk_entry": "res/drawable/svg_layer.xml",
                 "target": "drawer/svg_layer2.xml",
-                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer",
+                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer", "checksheet": "A-02 selftest",
             }],
         }, ensure_ascii=False), encoding="utf-8")
         code = cmd_stamp(argparse.Namespace(apk=str(apk), sources=str(id_sources), out=str(out),
@@ -1061,6 +1120,25 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         code = cmd_manifest(argparse.Namespace(dir=str(out)))
         code, text = verify_text(deps=str(complete_deps))
         check(code == 0, "verify: resource-id decoded asset passes")
+
+        sheet_deps = temp / "deps-checksheet.json"
+        sheet_deps.write_text(json.dumps({"items": [
+            {"id": "A-02", "name": "drawer", "requires": {"checksheet": "A-02", "count": 1}},
+        ]}, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(sheet_deps))
+        check(code == 0 and "素材 1/1 齐" in text, "verify --deps: checksheet tag selects the right item")
+        other_sheet = temp / "deps-checksheet-other.json"
+        other_sheet.write_text(json.dumps({"items": [
+            {"id": "A-02", "name": "drawer", "requires": {"checksheet": "A-99", "count": 1}},
+        ]}, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(other_sheet))
+        check(code == 1, "verify --deps: non-matching checksheet tag reports a gap")
+        excluded_deps = temp / "deps-excluded.json"
+        excluded_deps.write_text(json.dumps({"items": [
+            {"id": "A-02", "name": "drawer", "requires": {"checksheet": "A-02", "exclude": ["svg_layer"], "count": 2}},
+        ]}, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(excluded_deps))
+        check(code == 1, "verify --deps: exclude removes a named file from the count")
 
         mismatch = temp / "sources-mismatch.json"
         mismatch.write_text(json.dumps({
@@ -1144,6 +1222,10 @@ def build_parser() -> argparse.ArgumentParser:
     stamp.add_argument("--out", default="docs/fidelity/assets")
     stamp.add_argument("--no-apk-record", action="store_true")
     stamp.set_defaults(func=cmd_stamp)
+
+    prune = commands.add_parser("prune", help="drop provenance rows whose file no longer exists")
+    prune.add_argument("--dir", default="docs/fidelity/assets")
+    prune.set_defaults(func=cmd_prune)
 
     manifest = commands.add_parser("manifest", help="write MANIFEST.sha256 + INDEX.md from the asset tree")
     manifest.add_argument("--dir", default="docs/fidelity/assets")

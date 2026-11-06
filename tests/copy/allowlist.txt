@@ -8,4 +8,9 @@
 #
 # 原则：能改文案就别加豁免；只给「负向断言 / 取证记录 / 第三方原文」开豁免。
 # 例：
-#   copy  app/android/app/src/main/res/values/strings_xxx.xml  用户在离线契约页必须看到原协议原文，签约方要求逐字保留
+#   copy  app/android/app/src/main/assets/m3/xxx.txt  用户必须看到原版原文，逐字保留
+
+# M3 七子页原文（总监 2026-11-07 裁定 (a)：精确文件 + 计数钉子）
+# 计数钉在 copy_gate.py 的 ALLOWLIST_PINS：contact=1 处、agreement=2 处，多一处即 FAIL。
+tiles  app/android/app/src/main/assets/m3/contact.txt  联系我们页正文就是原版 account@xinzhi.space（取证 docs/fidelity/m3/contact.xml），用户可见文案、非瓦片端点；计数钉 1 处
+tiles  app/android/app/src/main/assets/m3/agreement.txt  用户协议 WebView 原文两处域名引用（ApiHelper.smali:97 USER_AGREEMENT / :82 SECRECY_POLICY，取证 docs/fidelity/m3/agreement.xml），逐字保留、非瓦片端点；计数钉 2 处

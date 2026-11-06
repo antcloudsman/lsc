@@ -30,6 +30,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private String lastAttribution = "";
     private CompassView compassView;
     private TextView readingView;
+    /** R2-005：罗盘中心指针（原版 pointer 节点 81×324）。 */
+    private android.widget.ImageView pointerView;
     /** R2-026：地图态左上「当前地名」（原版 青海湖/哀牢山）。 */
     private TextView placeView;
     private WebView compassMapView;
@@ -448,6 +450,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         cp.gravity = android.view.Gravity.CENTER;
         compassView.setVisibility(View.GONE);
         frame.addView(compassView, cp);
+
+        // R2-005：罗盘中心指针。原版 `pointer` 节点 [573,1188][654,1512] = **81×324**（位图 46×188，
+        // 即 1.72 倍放大），中心落在屏幕 (614,1350)，与盘面同心；只在罗盘态显示。
+        pointerView = new android.widget.ImageView(this);
+        pointerView.setId(R.id.lc_pointer);
+        pointerView.setImageResource(R.mipmap.lc_pointer);
+        pointerView.setScaleType(android.widget.ImageView.ScaleType.FIT_XY);
+        pointerView.setVisibility(View.GONE);
+        FrameLayout.LayoutParams ptrp = new FrameLayout.LayoutParams(81, 324);
+        ptrp.gravity = android.view.Gravity.CENTER;
+        frame.addView(pointerView, ptrp);
         // K-01 z 序与触摸（验收 P-08 必读）：浮层之后又加了 读数/状态/左列/罗盘左列/右列/隐藏/底部条，
         // 它们都在浮层之上；其中工具列与「隐藏」是交互层，会正常吃掉落在按钮矩形内的触摸。
         // 圆盘外径 0.733W ≈ 900px@1228，水平方向圆外 50px 已压到左右工具列上，
@@ -460,14 +473,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 原版：点圈层文字直达知识页（C2）；这里点读数行打开知识弹层。
         readingView.setOnClickListener(v -> showKnowledgeSheet());
         readingView.setTextColor(Color.rgb(235, 228, 215));
-        readingView.setTextSize(11f);
-        readingView.setPadding(dp(8), dp(4), dp(8), dp(4));
-        readingView.setBackgroundColor(Color.argb(140, 24, 20, 16));
+        readingView.setTextSize(11f);   // R2-005：11sp 下文本宽 ≈186px（原版 185），行高由 LayoutParams 固定 39
+        readingView.setPadding(0, 0, 0, 0);
+        readingView.setBackgroundColor(Color.TRANSPARENT);
         FrameLayout.LayoutParams rvp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-        rvp.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
-        rvp.leftMargin = dp(4);
-        rvp.topMargin = dp(26);
+                FrameLayout.LayoutParams.WRAP_CONTENT, 39);   // 原版节点高 39（11sp 的自然行高是 51，会顶出 12px）
+        // R2-005：读数条归位到原版 [105,397][290,436]（正常态）/ [105,397][350,436]（隐藏态）。
+        // 原来是 [13,87][722,293] 的 P0-1 多行读数，那是我们自己的排版，不是原版位置。
+        rvp.leftMargin = 105;
+        rvp.topMargin = 397;
         frame.addView(readingView, rvp);
         // R2-003：读数面板**只在罗盘态**出现（默认地图态，故建好即隐）。
         readingView.setVisibility(View.GONE);
@@ -1446,6 +1460,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (!on) hidePoiPanel();
         if (compassView != null) compassView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
+        // R2-005：中心指针只在罗盘态显示；「指针开关」关掉时也一起隐（与既有 setShowPointer 同步）
+        if (pointerView != null) pointerView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
@@ -3469,23 +3485,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateReading() {
         if (compassView == null || readingView == null) return;
         CompassData.Reading r = CompassData.read(compassView.getHeading());
+        // R2-005：读数条按原版只显示**单行**，两态文案格式在原版里本来就不同（各自 dump 逐字）：
+        //   正常态 `坐180° 向0°`   整数度  —— orig/tool-compass-page.xml:14，[105,397][290,436]
+        //   隐藏态 `坐180.0° 向0.0°` 一位小数 —— orig/compass-overlay-hidden-map.xml:14，[105,397][350,436]（R2-006）
+        // 原来那四行（度数/地盘/人盘/天盘/分金/七十二龙/六十龙/后天卦/先天卦）是我们自己的排版，
+        // 原版这个位置只有单行读数；多行明细归「读盘」sheet（R2-013）。
         if (compassHidden && compassMode) {
-            // R2-006 内容判据：隐藏态读数条只显示单行「坐X.X° 向Y.Y°」（原版 [105,397][350,436] 的内容）；
-            // 位置随 R2-003，不在这里强对。向/坐取当前盘面坐向。
             readingView.setText(String.format(java.util.Locale.US, "坐%.1f° 向%.1f°",
                     (double) bearingSitting, (double) bearingFacing));
             if (statusView != null) statusView.setText("");
             return;
         }
-        readingView.setText(
-                String.format("度数 %.2f°  %s  %s\n地盘 %s山  人盘 %s山  天盘 %s山  坐 %s山\n分金 %s  七十二龙 %s\n六十龙 %s  后天卦 %s  先天卦 %s",
-                        r.heading, r.jianText, CompassData.MOUNTAINS[r.mountain],
-                        CompassData.MOUNTAINS[r.mountain],
-                        CompassData.MOUNTAINS[plate(r.heading + 15f)],
-                        CompassData.MOUNTAINS[plate(r.heading)],
-                        CompassData.MOUNTAINS[r.sitting],
-                        clean(r.fenjinText), clean(r.dragon72Text),
-                        clean(r.dragon60Text), clean(r.houtianText), clean(r.xiantianText)));
+        readingView.setText(String.format(java.util.Locale.US, "坐%.0f° 向%.0f°",
+                (double) bearingSitting, (double) bearingFacing));
 
         // P0-1 status bar: 口径 + 精度 + 倾斜
         if (statusView != null) {

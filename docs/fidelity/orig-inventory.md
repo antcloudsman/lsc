@@ -124,6 +124,8 @@
 | U4 | 罗盘浮层工具条逐按钮 bounds | 罗盘页是 WebView，dump 无文本节点 | 用像素量取（左列按钮深色块 ROI + 图标中心）；旧轮实测中心值仅作参考 |
 | U5 | ~~设置 / 工具管理 / 收藏列表 / 天气~~ **已关闭** | 2026-11-06 真机窗口补采：设置=35 行、工具管理=36 行、收藏=37/38 行、天气=33 行（受阻 U1） | 无 |
 | U7 | 收藏保存后的列表（38 行） | 未登录：点「添加点」/「收藏地点」均跳 LoginActivity，无法取得保存成功后的列表 | 需要测试账号，或由 LC 侧以「本地收藏」实现后单列对标 |
+| U8 | 3 个探测态截图不可得（已删除空文件，仅留 dump） | `right-mountains-entry`（山脉探测）、`tool-contour-guide-dismissed`（等高线引导关闭后）、`tool-measure-mode`（测量模式探测）三个 PNG 均为 **0 字节**（FLAG_SECURE / 截图失败），已删除；对应 `.xml` 保留，清单行不引用它们 | 若需这三个态的外观，需在可截图状态下重拍；当前以 dump 文字为准 |
+| U9 | 重复证据已合并（同一画面被贴多个 state） | `search-page-01`≡`map-fixed-beijing`（后者已改名 `search-typed-coords-01`，内容为搜索页已输入坐标态）；`right-explore-page`≡`right-overlay-sheet`≡`compass-overlay-hidden-map`（保留后者）；`right-3d-mode`≡`right-layer-sheet`（保留后者）。删除后 orig 侧 **无重复组、无 0 字节图**（55 PNG + 60 XML） | 后续采集同一画面只落一份，索引行指向同一文件并注明「同态」 |
 | U6 | 各页动效（转场/弹层动画） | 采集前置要求动画三项置 0 | 另开一轮：动画恢复 1 后录屏/截帧，单列「动效」证据 |
 
 ## 4. 与 LC 现有实现的初步对照信号（只列已实测差异，供 Stage 3 使用）

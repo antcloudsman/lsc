@@ -741,22 +741,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
-     * R2-033（判词撤回后重做）：按钮底 = **深色半透明圆角方块**，不是全透明。
+     * R2-033（判词撤回后重做）：按钮底 = **深色半透明圆角方块**。
      * 原版实测（docs/fidelity/orig/tool-compass-page.png，可点框 [27,1291][185,1449]）：
      * - 绘制区 [33,1297]…[179,1443] ≈ 146×146，即框内**四周内缩 6px**；圆角 ≈ 15px；
      * - 内部两处采样 (40,1305)-(60,1320)=(11.9,25.8,15.0)、(50,1428)-(160,1442)=(11.8,23.8,14.1)；
-     * - 同带地图底 (2,1350)-(24,1400)=(81.1,118.7,77.6)（**卫星深色底**）。
+     * - 同带卫星底图 (2,1350)-(24,1400)=(81.1,118.7,77.6)。
      *
-     * 反解要注意：合成色 = a×C + (1−a)×底图，**底图不同则同 alpha 出不同像素**。
-     * 原版底图是世纪空间卫星（深色，G≈119），我方罗盘态底图是天地图地形（浅色，G≈244），
-     * 若照抄原版 alpha=0.88 会得到 (32,41,34)——实测过，偏亮 4 倍。
-     * 因此按**我方实际底图**反解：a=0.96、C=(2,17,5) → 0.96×(2,17,5)+0.04×(245,244,238)
-     * = (11.7, 25.1, 14.3)，与原版参考 (11.9,25.8,15.0) 每通道差 ≤1。
+     * 参数取**底板固有值**，不按我方底图反解：
+     * 由 (1−a)×底图 ≈ 合成值 的绿通道 25.8/118.7 ≈ 0.22 → **a ≈ 0.78**，C ≈ 黑。
+     * 这里用 a=0.80 / C=(0,0,0)（204/255）。注意：合成像素会随底图变——
+     * 我方默认是天地图地形（浅色），合成会比原版亮；那是**底图差异（D-021）**，
+     * 不是按钮底缺陷。判据比对时须在**卫星底图**下采（同类型底图才可比）。
      */
     private android.graphics.drawable.Drawable chipBackground() {
         android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
         g.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        g.setColor(Color.argb(245, 2, 17, 5));
+        g.setColor(Color.argb(204, 0, 0, 0));
         g.setCornerRadius(15f);
         return new android.graphics.drawable.InsetDrawable(g, 6, 6, 6, 6);
     }

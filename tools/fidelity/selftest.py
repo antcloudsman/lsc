@@ -187,6 +187,21 @@ def main() -> int:
         ])
         check("screencap -p" in output, "collect: dry-run prints screencap")
         check("uiautomator dump" in output, "collect: dry-run prints uiautomator dump")
+
+        missing_build = run([
+            "collect", "--root", str(report_root), "--side", "lc", "--state", "03-collect-dry",
+            "--serial", "FAKE-SERIAL",
+        ], expect=1)
+        check("--build-commit" in missing_build, "collect: lc capture rejects missing build provenance")
+
+        fake_apk = temp / "fake-debug.apk"
+        fake_apk.write_bytes(b"PK\x03\x04" + b"\x00" * (200 * 1024))
+        bad_build = run([
+            "collect", "--root", str(report_root), "--side", "lc", "--state", "03-collect-dry",
+            "--serial", "FAKE-SERIAL", "--build-branch", "develop",
+            "--build-commit", "abc", "--apk", str(fake_apk),
+        ], expect=1)
+        check("40-char" in bad_build, "collect: lc capture rejects a non-40-hex build commit")
         check(not (report_root / "lc" / "03-collect-dry.meta.json").exists(), "collect: dry-run writes nothing")
 
         print("")

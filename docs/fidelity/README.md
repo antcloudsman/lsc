@@ -9,7 +9,7 @@ docs/fidelity/
   orig/                          # 原版采集（只读对照，不改原版数据）
     <state>.png                  # 1228×2700 截图
     <state>.xml                  # uiautomator dump（原生控件；WebView 内部不可见）
-    <state>.meta.json            # 采集时间、设备、包名、checksheet_id、sha256、分辨率
+    <state>.meta.json            # 采集时间、设备、包名、checksheet_id、build 来源、sha256、分辨率
     _captures.tsv                # 采集流水（页面/时间/Activity/dump 状态），由采集人维护
   lc/                            # 我方采集，文件名与 orig 一一对应
     <state>.png / .xml / .meta.json
@@ -38,6 +38,7 @@ docs/fidelity/
 | 地图 | 固定 `39.9042,116.4074`，`z=12` |
 | 亮度/滤镜 | 默认，不额外调色 |
 | 设备 | 单台真机，按项目群窗口串行使用 |
+| LC 构建来源 | `meta.build.branch=develop`、`build.commit` 40 位、`meta.apk.sha256`/`apk.bytes`；缺一整批作废（checksheet §5） |
 
 原版只作对照：不修改其数据、收藏、设置；采集结束按纪律释放设备。日志与 dump 不含 key/token；如需提交日志，先按项目 LogRedact 脱敏。
 
@@ -50,7 +51,8 @@ docs/fidelity/
 ```powershell
 # 采一侧（另一侧换 --side/--state 同名）
 python tools\fidelity\fidelity.py collect --side orig --state compass-main-01 --pkg space.xinzhi.globe --checksheet-id ST-01-compass-main
-python tools\fidelity\fidelity.py collect --side lc   --state compass-main-01 --pkg com.luopan.fengshui --checksheet-id ST-01-compass-main
+python tools\fidelity\fidelity.py collect --side lc   --state compass-main-01 --pkg com.luopan.fengshui --checksheet-id ST-01-compass-main `
+  --build-branch develop --build-commit <40位提交号> --apk app\android\app\build\outputs\apk\debug\app-debug.apk
 
 # 批量对照页
 python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8

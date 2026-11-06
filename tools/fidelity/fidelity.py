@@ -44,7 +44,7 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.1.0"
+VERSION = "1.3.0"
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
 DEFAULT_THRESHOLD = 8
@@ -862,6 +862,34 @@ def _adb_command(adb: str, serial: str | None, *parts: str) -> list[str]:
     return command + list(parts)
 
 
+def _resolve_build(args: argparse.Namespace) -> dict | None:
+    """LC evidence must record its build provenance (checksheet §5)."""
+    if args.side != "lc":
+        if args.build_commit or args.apk:
+            info("orig side: --build-* / --apk ignored (original build provenance is not applicable)")
+        return None
+    branch = (args.build_branch or "develop").strip()
+    commit = (args.build_commit or "").strip().lower()
+    if branch != "develop":
+        raise FidelityError(
+            f"lc capture build branch must be develop (got {branch!r}); evidence built from another branch is invalid"
+        )
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise FidelityError("lc capture requires --build-commit as a 40-char lowercase git sha (checksheet §5)")
+    if not args.apk:
+        raise FidelityError("lc capture requires --apk <path> so apk.sha256/apk.bytes are recorded (checksheet §5)")
+    apk_path = Path(args.apk)
+    if not apk_path.exists():
+        raise FidelityError(f"apk not found: {apk_path}")
+    size = apk_path.stat().st_size
+    if size < 100 * 1024:
+        raise FidelityError(f"apk looks too small ({size} bytes): {apk_path}")
+    return {
+        "build": {"branch": branch, "commit": commit},
+        "apk": {"path": str(apk_path), "sha256": sha256_file(apk_path), "bytes": size},
+    }
+
+
 def cmd_collect(args: argparse.Namespace) -> int:
     if not STATE_RE.match(args.state):
         raise FidelityError(
@@ -895,9 +923,13 @@ def cmd_collect(args: argparse.Namespace) -> int:
         info(f"dry-run: side={args.side} state={args.state}")
         for command in commands:
             print("[DRY] " + " ".join(command))
+        if args.side == "lc":
+            info("note: a real lc capture also requires --build-branch develop "
+                 "--build-commit <40-hex> --apk <apk>")
         info(f"dry-run: would write {png_path} and {xml_path}")
         return 0
 
+    build = _resolve_build(args)
     side_dir.mkdir(parents=True, exist_ok=True)
     if not args.skip_anim:
         for key in ("window_animation_scale", "transition_animation_scale", "animator_duration_scale"):
@@ -957,6 +989,8 @@ def cmd_collect(args: argparse.Namespace) -> int:
         "serial": serial or "",
         "package": args.pkg or "",
         "checksheet_id": args.checksheet_id or "",
+        "build": build["build"] if build else None,
+        "apk": build["apk"] if build else None,
         "image": {
             "file": png_path.name,
             "width": width,
@@ -1032,6 +1066,9 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--serial")
     collect.add_argument("--pkg", help="package name recorded in meta.json and used to validate the dump")
     collect.add_argument("--checksheet-id", help="checksheet row id (PG-xx / ST-xx-...) recorded in meta.json")
+    collect.add_argument("--build-branch", default="develop", help="build source branch (must be develop; default)")
+    collect.add_argument("--build-commit", help="required for --side lc: 40-char git sha of the build source")
+    collect.add_argument("--apk", help="required for --side lc: APK path; sha256/bytes recorded in meta")
     collect.add_argument("--adb", default="adb")
     collect.add_argument("--skip-anim", action="store_true", help="do not force animation scales to 0")
     collect.add_argument("--skip-dump", action="store_true")

@@ -114,7 +114,7 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | 26 | `map-overlay-sheet` | 实采 | png+xml+meta | 「数据叠加」页：4 Tab + 公路(路网) + 全部开启/关闭 |
 | 27 | `map-explore-page` | 实采 | png+xml+meta | 「探索」页（D0 重采：`mResumedActivity=.DiscoveryActivity`、dump 含 `探索`/`专题地图`，不含 `看山脉`） |
 | 28 | `map-layer-sheet` | 实采 | png+xml+meta | 右列「图层」→「底图源」12 源面板（3 可用 / 9 置灰） |
-| 29 | `map-3d-mode` | 实采 | png+xml+meta | 点 3D `(1124,2430)` 后断言通过：`logcat LC3D mode=3d` + `texture ok 36/36`、`getState()` = `mode=3d zoom=12 pitch=45 contour=false drape=vec`、`fps=56~60`；png 与固定态不同（`9cf8b080…` vs `68469c5c…`）。**D1 复核订正**：旧证据 `f037f735…` 同样是真 3D（`drape=vec` + 平坦地形 + pitch45 → 画面近矢量路网），「实为 2D」的旧说法撤回；`vec` 贴面下 3D 与 2D 视觉难辨，是**证据可读性**问题，不是渲染缺陷 |
+| 29 | `map-3d-mode` | 实采 | png+xml+meta | 点 3D `(1124,2430)` 后断言通过：`logcat LC3D mode=3d` + `texture ok 36/36`、`getState()` = `mode=3d zoom=12 pitch=45 contour=false drape=vec`、`fps=56~60`；png 与固定态不同（`9cf8b080…` vs `68469c5c…`）。**D1 复核订正**：旧证据 `f037f735…` 同样是真 3D（`drape=vec` + 平坦地形 + pitch45 → 画面近矢量路网），「实为 2D」的旧说法撤回；`vec` 贴面下 3D 与 2D 视觉难辨，是**证据可读性**问题，不是渲染缺陷。可读性补充证据：`map-3d-img`（`0da7d801…`，`setBase('img')` → `drape=img`，卫星贴面 3D，同样断言 `mode=3d/pitch=45/zoom=12/hasTexture=true`） |
 | 30 | 相机权限弹窗 | 缺失 | — | LC 无相机/AR 入口（`map-home-01.xml` 全节点无相机相关控件） |
 
 统计：**实采 14 + 缺失 2 = 16**，无「待采」；另加 1 份补充证据 `map-contour-relief`（第 23 行的能力证明，不占清单行）。
@@ -129,6 +129,7 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | `map-water-entry` | `c1499a5703444e65` | 2,906,691 | 17:12:18 | `mResumedActivity=.WaterActivity`、dump 含 `看水系`、不含 `看山脉` |
 | `map-explore-page` | `077b61228f1de6f2` | 173,185 | 17:12:36 | `mResumedActivity=.DiscoveryActivity`、dump 含 `探索`、不含 `看山脉` |
 | `map-contour-relief` | `334427de4cc54059` | 2,572,309 | 17:15:36 | 40.35/116.00 z12、`contour=true`、画面含黑色等高线（补充证据） |
+| `map-3d-img` | `0da7d801a5664235` | 3,100,385 | 19:29:43 | 固定态 3D + `setBase('img')` → `drape=img`、`mode=3d/pitch=45/zoom=12/hasTexture=true`（可读性补充证据） |
 
 - 3D 重复图已消：`map-3d-mode`(`9cf8b080…`) ≠ 任何其它 state；`tool-contour-01.*` 已删除。
 - 采集期间 USB 瞬断一次（`adb: device not found`），重连后重跑补齐，所有 meta `build.commit` = `464ebb8c50b427fb42b0ea0cbafabb1f4f03d58a`、`apk.sha256` = `ccd5686f…`（7,059,457 B）。

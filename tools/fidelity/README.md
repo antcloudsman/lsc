@@ -14,7 +14,7 @@ python tools\fidelity\selftest.py
 python tools\fidelity\assets.py selftest
 ```
 
-合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (38 checks)`），同样不需要设备与原版 APK。
+合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (40 checks)`），同样不需要设备与原版 APK。
 
 ## 1. 一键采集（`collect`）
 
@@ -340,7 +340,7 @@ python tools\fidelity\assets.py stamp --apk E:\APPDetector\input\swss.apk --sour
 
 - `MANIFEST.sha256`（`sha256sum` 兼容，`<hash>  <相对路径>`）、`INDEX.md`（文件/载体/字节/尺寸/sha256/APK 条目/资源名/用途/类别）、`PROVENANCE.json`（每条：`mode`、`entry`、`entry_sha256`/`file_sha256`、`apk_sha256`、字节、宽高、kind/note/meta）**全部由工具生成，手改无效**；
 - `extract` 幂等：同 hash 跳过；已有文件 hash 不同则拒绝，`--force` 才覆盖；`apk_sha256` 与 sources 不符直接拒绝；APK 里找不到的条目整次失败、一条不写；
-- `manifest` 对 **0 字节文件**、**没有 provenance 的文件** exit 1；`verify` 对缺文件、清单外文件、hash 不符、尺寸/字节数不符、provenance 无 APK 条目、文件与 APK 条目不一致、`--strict` 下内容重复 exit 1；干净树打印 `sha256 + provenance + APK source all match`；
+- `manifest` 对 **0 字节文件**、**没有 provenance 的文件** exit 1；`verify` 对缺文件、清单外文件、**provenance 里登记了但盘上没有的文件（改名/误删残留）**、hash 不符、尺寸/字节数不符、provenance 无 APK 条目、文件与 APK 条目不一致、`--strict` 下内容重复 exit 1；残留行用 `assets.py prune --dir docs\fidelity\assets` 清掉（只删注册表行，不动文件）；干净树打印 `sha256 + provenance + APK source all match`；
 - 中文条目名会被 APK zip 按 cp437 误解码，`extract`/`list-apk` 已自动按 UTF-8 还原，**不要手工改名**；
 - 仓库**不提交 APK**：`swss.apk` 只在 `E:\APPDetector\input\`，清单只记路径与 sha256。
 

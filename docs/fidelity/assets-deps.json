@@ -141,108 +141,81 @@
     },
     {
       "id": "S-账户设置",
-      "name": "账户设置页素材（标题栏/页内图标）",
+      "name": "账户设置页素材（头像占位）",
       "requires": {
-        "kinds": [
-          "page-icon"
+        "targets": [
+          "pages/account/icons/ic_default_avatar.png"
         ],
-        "prefixes": [
-          "pages/account/"
-        ],
-        "checksheet": "S-账户设置",
         "count": 1
       },
-      "note": "原生页（当前已登录态）；正文与 bounds 由 dump 取证、不进 assets；服务端依赖强（登录/注销，D-022 须页内可见标注）"
+      "note": "原生页（当前已登录态）；ic_default_avatar 为「头像」行候选资源（0x7f0f0048），身份由审核验判；正文/bounds 由 dump 取证、不进 assets；登录/注销链路 D-022，页内须可见标注"
     },
     {
       "id": "S-投诉反馈",
-      "name": "投诉反馈页素材（标题栏/Tab 图标）",
+      "name": "投诉反馈页素材（添加图片）",
       "requires": {
-        "kinds": [
-          "page-icon"
+        "targets": [
+          "pages/feedback/icons/ic_add_image.png"
         ],
-        "prefixes": [
-          "pages/feedback/"
-        ],
-        "checksheet": "S-投诉反馈",
         "count": 1
       },
-      "note": "原生页，Tab 问题反馈/订单投诉 + 右上「我的」；提交链路服务端依赖强（D-022 须页内可见标注）"
+      "note": "两级原生页；ic_add_image 对应「添加图片 [39,1333][243,1412]」；提交链路 D-022（不向原版服务端发请求）；本地必填校验文案只用已取证静态文本"
     },
     {
       "id": "S-关于我们",
-      "name": "关于我们页素材（标题栏/logo）",
+      "name": "关于我们页素材（复用 brand logo）",
       "requires": {
-        "kinds": [
-          "page-icon"
+        "targets": [
+          "brand/ic_launcher.png"
         ],
-        "prefixes": [
-          "pages/about/"
-        ],
-        "checksheet": "S-关于我们",
         "count": 1
       },
-      "note": "原生页；版本号与备案号由 dump 取证；《用户协议》《隐私政策》两个链接节点 bounds 待复核"
+      "note": "页面 logo 复用 brand/ic_launcher.png（同一份内容不重复落库）；《用户协议》《隐私政策》链接指向 WebView，bounds 待重拍"
     },
     {
       "id": "S-联系我们",
-      "name": "联系我们页素材（标题栏/QQ/复制）",
+      "name": "联系我们标题栏素材（共用返回）",
       "requires": {
-        "kinds": [
-          "page-icon"
+        "targets": [
+          "pages/_shared/icons/svg_title_back.xml"
         ],
-        "prefixes": [
-          "pages/contact/"
-        ],
-        "checksheet": "S-联系我们",
         "count": 1
       },
-      "note": "原生页；邮箱 account@xinzhi.space 与「复制邮箱」由 dump 取证；图标走 APK 资源（res/qq.* 等）"
+      "note": "该页无页内图标（dump 无返回节点/无 widget id，只用截图取证）；只要求共用返回矢量"
     },
     {
       "id": "S-推荐给好友",
-      "name": "推荐给好友面板素材（平台图标）",
+      "name": "推荐给好友面板素材（微信/朋友圈 2 枚）",
       "requires": {
-        "kinds": [
-          "page-icon"
+        "targets": [
+          "pages/share/icons/icon_share_wx.png",
+          "pages/share/icons/icon_share_circle.png"
         ],
-        "prefixes": [
-          "pages/share/"
-        ],
-        "checksheet": "S-推荐给好友",
-        "count": 1
+        "count": 2
       },
-      "note": "底部分享面板：选择要分享到的平台 + 微信/微信朋友圈/取消分享；图标须原版导出，行为=分享 Intent"
+      "note": "两个 ImageButton socialize_image_view：[241,2140][405,2304]、[822,2140][986,2304]；行为=分享 Intent"
     },
     {
       "id": "S-帮助中心",
-      "name": "帮助中心标题栏素材",
+      "name": "帮助中心标题栏素材（共用返回）",
       "requires": {
-        "kinds": [
-          "page-icon"
+        "targets": [
+          "pages/_shared/icons/svg_title_back.xml"
         ],
-        "prefixes": [
-          "pages/help/"
-        ],
-        "checksheet": "S-帮助中心",
         "count": 1
       },
-      "note": "正文是 WebView 远端 URL（ApiHelper HELP_CENTER = https://xinzhispace.yuque.com/…），无本地正文素材；本条只判标题栏/页内图标"
+      "note": "正文是 WebView 远端 URL（ApiHelper HELP_CENTER），无本地正文、不逼造 HTML；只要求共用返回矢量"
     },
     {
       "id": "S-用户协议",
-      "name": "用户协议标题栏素材",
+      "name": "用户协议标题栏素材（共用返回）",
       "requires": {
-        "kinds": [
-          "page-icon"
+        "targets": [
+          "pages/_shared/icons/svg_title_back.xml"
         ],
-        "prefixes": [
-          "pages/agreement/"
-        ],
-        "checksheet": "S-用户协议",
         "count": 1
       },
-      "note": "原生长文本页（178 节点）；正文来源待逆向确认（DEX 常量 vs 接口），无本地 HTML；本条只判标题栏/页内图标"
+      "note": "WebView 远端 URL（ApiHelper USER_AGREEMENT = agreement.yuan9.cn/…/yhxyb.html，只记出处，不进 app/ 字面量）；离线/失败态标 DI；只要求共用返回矢量"
     }
   ]
 }

@@ -31,4 +31,6 @@
     <item name="lc_m3_dep_note" type="id" />
     <item name="lc_m3_scroll" type="id" />
     <item name="lc_m3_body" type="id" />
+    <item name="lc_m3_empty" type="id" />
+    <item name="lc_m3_web" type="id" />
 </resources>

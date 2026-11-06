@@ -1,7 +1,7 @@
 # 18 项功能 · 收官台账（00-STATUS）
 
 > 维护：LC产品｜更新触发：每次真机验收后更新一行，不攒批。
-> 基线：`develop` = **`f332b9c`**（文档；应用代码同 `0dda97e` ≡ `857a471`）。收官门禁全绿（`docs/qa/final-gates-20261106.md`）。提交号一律指 develop 已合并的提交。
+> 基线：`develop` = **`f8f22e9`**（应用代码同 `0dda97e` ≡ `857a471`；含基线重冻 `round-acceptance`）。收官门禁全绿（`docs/qa/final-gates-20261106.md`）。提交号一律指 develop 已合并的提交。
 > **判定口径（写死，防注水）**：真机验收只认**有记录的证据**（AT 表 / 日志 / 截图 + 对应提交）；只有文档、只有代码、只有原版取证，都记「未验」。状态只取 `未验` / `通过` / `待复验`；拿不准写 `待核`，不编。
 > 证据原件在本机 `E:\APPDetector\lc-gap-evidence\probe\`（大图不入库），表格里只记文件名。
 
@@ -97,6 +97,7 @@
 12. **`SettingActivity` 无入口＝真缺口（已批客户端修）**：全仓此前零引用；已批在「更多」面板标题栏加「设置」按钮。口径：**原版入口在抽屉，K-01 抽屉未实现 → 入口位置有差异、页面 1:1**。`00-UI-ROUTES.md` 已按此更新，不再写「等抽屉裁决」。
 13. **截屏状态**：`b366065` 已修（IS_PENDING 流程 + 保存提示 + 分享独立 try + LCCAP 日志 + 私有目录兜底），**按「待修已修、待真机验」记**，不按红处理、也不写通过。
 14. **收官全量门禁（`f332b9c`，留档 `docs/qa/final-gates-20261106.md`）**：copy / secret / smoke 六门 / numeric 85 / cargo 5 / Debug+Release 打包 = **七项 PASS**；debug sha `FF97AE8A…A435`、release unsigned `A9AF7096…8562`。**两条边界**：① `smoke -SkipDevice` 不能替代真机启动无崩溃结论（真机以 18 项证据为准）；② APK sha256 含签名与时间戳，重打会变，**不作可复现校验**。release 未配签名，正式分发前需签名。
+15. **基线重冻完成（`round-acceptance`，develop `f8f22e9`）**：`docs/qa/baseline-android/round-acceptance/`；构建提交 `f332b9c`、APK 7,059,441 B / sha `A928023F…7E07BB`、冷启 653 ms；左 8/右 10/更多 16/罗盘文字 19、中心偏差最大 8.5 px（容差 ±45）、门禁 85 + `CARGO: PASS`、FATAL/ANR 0。两条待办（**只在以后做像素 diff 时才需要**）：SW-006 面板裁切窗待按新布局实测；裁切窗测量依据未提供。`k01-compass.png` 与 `needle-on` 同哈希＝采集时序同一状态，非丢图。
 
 ## 变更记录
 
@@ -117,3 +118,4 @@
 | v13 | 2026-11-05 | **F-17 独立验收通过**（`857a471`，`checks\accept-857a471-b\`）：dump `checked=true` + logcat `persisted` + `view tianzhiLines=true`，记「通过（待最终全量轮统一定稿）」；总览改「通过 1 / 待复验 12 / 未验 5」；验收轮记录新增 F-17 行与「验收环境结论」三条（dump 前 `rm -f /sdcard/a.xml`、抢前台时 `pm disable-user com.huawei.appmarket` 收尾恢复、罗盘按钮位置随面板高度变必须 dump 不写死）；补缺口轮说明补「最后小段在跑：F-12 亩/公顷、F-13 记忆、D 六 flag」；FINAL 同步 |
 | v14 | 2026-11-05 | **18 项全部记「通过（分轮；待最终轮复核）」**：最后三项 `checks\accept-857a471-d\`（D 六 flag 单跑 6/6、F-13 记忆 `#36B44B`/粗细 2/`lc_paint.xml` 落盘、F-12 亩 `26705.6`/公顷 `1780.38`）；D 证据补进 F-01/05/08/10/11/17 行；总览改「通过 18 / 待复验 0 / 未验 0」并注明「最终全量轮统一复核+重冻基线」；环境结论新增 4/5（测量态 dump 必失败→截图+比例换算；写 flag 只能 `run-as cp`）；基线 `0dda97e`（应用代码同 `857a471`）；FINAL 同步 |
 | v15 | 2026-11-06 | 基线 `f332b9c`（文档；应用代码同 `0dda97e` ≡ `857a471`）；备注 14 记**收官全量门禁七项 PASS**（`docs/qa/final-gates-20261106.md`，copy/secret/smoke 六门/numeric 85/cargo 5/双端包；debug `FF97AE8A…A435`、release unsigned `A9AF7096…8562`）与两条边界（`-SkipDevice` 不替代真机、APK sha 不作可复现校验）；release 未签名需正式分发前处理；`00-FINAL.md` §0/§6 同期填实 |
+| v16 | 2026-11-06 | 基线 `f8f22e9`（含基线重冻 `round-acceptance`）；备注 15 记重冻数据（目录/构建提交 `f332b9c`/APK sha `A928023F…7E07BB`/冷启 653 ms/左8右10更多16/中心偏差 8.5 px/门禁 85+FATAL 0）与两条像素 diff 待办；`k01-compass` 同哈希＝时序非丢图；`00-FINAL.md` §6 回填、§7 第 11 条关闭 |

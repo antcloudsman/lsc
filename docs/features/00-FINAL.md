@@ -12,7 +12,7 @@
 | 验收设备 | `L2E0222531014833`（固定） |
 | 18 项结果 | **通过 18 / 待复验 0 / 未验 0** |
 | 未通过项与处置 | **无**（F-18 经三段取证判非缺陷；截屏 `b366065` 已修，待最终轮复核） |
-| 收官结论 | 18 项全部「通过」（分轮真机证据 + 技术总监核定）；服务端全量门禁全绿；**release 未配签名，正式分发前需签名**；最终构建校验以基线重冻 `round-acceptance` 为准（客户端进行中） |
+| 收官结论 | 18 项全部「通过」（分轮真机证据 + 技术总监核定）；服务端全量门禁全绿；**基线重冻已完成**（`docs/qa/baseline-android/round-acceptance/`，APK sha `A928023F…7E07BB`，冷启 653 ms）；**release 未配签名，正式分发前需签名** |
 
 ## 1 项目定位与边界
 
@@ -112,6 +112,7 @@
 | 台账（唯一状态源） | `docs/features/00-STATUS.md` | 18 项实现/接线/验收/证据/差异 |
 | 真机验收 | `checks\accept-121b2a8\`、`accept-1fdc766\`、`accept-857a471-b\`、`accept-857a471-d\`（工作树 `E:\APPDetector\wt\lc-dev-regress\`） | 分轮证据；逐项目录见 `00-STATUS.md` |
 | 收官门禁留档 | `docs/qa/final-gates-20261106.md` | 七项 PASS（copy/secret/smoke 六门/numeric 85/cargo 5/Debug+Release 打包）；debug sha `FF97AE8A…A435`、release unsigned `A9AF7096…8562` |
+| 基线重冻（round-acceptance） | `docs/qa/baseline-android/round-acceptance/` | 构建提交 `f332b9c`、APK sha `A928023F…7E07BB`；结构/读数/门禁/截图全套，硬项与冷启数据见 §6 |
 | 数值门禁 | `python tests/numeric/run_all.py` | 全绿（tests 数以本轮输出为准） |
 | 文案/红线门禁 | `tests/copy/copy_gate.py`（接入 smoke） | 无门槛文案零命中 + 禁抄审图号/私有瓦片域静态检查；**已绿（`6d0b9f5` 起，实跑 `COPY: PASS`）**；收官前必须保持全绿 |
 | 真机回归（旧包） | `E:\APPDetector\wt\lc-dev-regress\checks\regress-20261105\` | `SUMMARY.txt` + `sha256.txt`；`f06664f` 旧包，只能作「待复验」线索 |
@@ -139,7 +140,7 @@
 | AT/证据目录 | `checks\accept-121b2a8\`、`checks\accept-1fdc766\`、`checks\accept-857a471-b\`、`checks\accept-857a471-d\`（工作树 `E:\APPDetector\wt\lc-dev-regress\`）；门禁留档 `docs/qa/final-gates-20261106.md` |
 | 18 项结果 | **通过 18 / 待复验 0 / 未验 0** |
 | 未通过项与处置 | **无** |
-| 基线重冻 | 客户端已落 `docs/qa/baseline-android/round-acceptance/README.md`；**设备接线后补跑读数与截图**，目录最终路径届时回填（合入 develop 后生效） |
+| 基线重冻 | **已完成（2026-11-06）**：`docs/qa/baseline-android/round-acceptance/`（`manifest.md`/`README.md`/`nodes-k01.csv`/`numeric-gate.txt`/`am-start-w.txt`/`logcat.txt`/`SHA256SUMS.txt` + 5 份 UI dump + 6 张截图）。口径 `-Round round-acceptance -Branch develop -BuildHead 0dda97e`，构建提交 `f332b9c`；APK `7,059,441 B`、sha256 `A928023F…7E07BB`（`pm path` pull 现算与磁盘一致）；冷启 `am start -W TotalTime = 653 ms`；左列 8/8、右列 10/10、更多 16/16、罗盘态可读文字 19/19，侧别错误 0、列内顺序异常 0，**中心偏差最大 8.5 px（容差 ±45）**；数值门禁 `tests=85` 全绿 + `CARGO: PASS`；logcat 应用/非应用 FATAL 0、ANR 0 |
 
 ## 6.1 设置入口（已知差异）
 
@@ -159,7 +160,9 @@
 | 8 | K-01 结构变更后基线 | 需重冻 | 结构变了，旧基线不再适用；收官前重冻一次 |
 | 9 | MD-10「UA 伪装登记风险」 | **已消除**（2026-11-05） | 改服务端 key + 原生 UA 后不再需要伪装浏览器 UA；URL 日志已脱敏（只留 host+path）。若地图实测仍出现 403，再退回登记并由技术总监通知 |
 | 10 | **release 未配签名** | 现状 | `app-release-unsigned.apk` 未签（`A9AF7096…8562`）；**正式分发前必须先配 signingConfig 并重打**，当前包只能自用安装/演示 |
-| 11 | 基线重冻未回填 | `round-acceptance` README 已落；读数与截图待设备接线后补跑 | 完成后把目录路径补进 §6「基线重冻」；在此之前 §6 的「最终构建校验」**仍是待办，不写成已完成** |
+| 11 | ~~基线重冻未回填~~ **已完成（2026-11-06）** | `docs/qa/baseline-android/round-acceptance/` 已落（构建提交 `f332b9c`，APK sha `A928023F…7E07BB`） | §6 已回填；`k01-compass.png` 与 `k01-compass-needle-on.png` 哈希相同＝采集时序落在同一状态（默认进罗盘态指针就是开的），**不是丢图** |
+| 12 | SW-006 面板裁切窗 | **待按 round-acceptance 新布局实测**（旧裁切窗已随上一轮 UI 失效，不得沿用） | 只在以后做像素 diff 时才需要；届时重测并写进 AT |
+| 13 | 裁切窗测量依据 | **未提供**（谁量、哪张截图、怎么定面板上缘均未写） | 重取时必须写明测量方法/取样点，否则 diff 结果不可复现 |
 
 ## 8 后续建议
 
@@ -186,3 +189,4 @@
 | v0.9 | 2026-11-05 | 基线 `0dda97e`（应用代码同 `857a471`）；§5 增「最后三项」行（`accept-857a471-d`：D 六 flag、F-13 记忆、F-12 亩/公顷）；§6 注明 18 项已按分轮证据记通过、最终全量轮复核+重冻后填结论 |
 | v0.10 | 2026-11-06 | **填实 §0 摘要与 §6 结论**：18 项通过（分轮证据 + 总监核定）、未通过项「无」、门禁七项 PASS（`docs/qa/final-gates-20261106.md`，debug `FF97AE8A…A435` / release unsigned `A9AF7096…8562`）；补两条门禁边界（`-SkipDevice` 不替代真机结论、APK sha 不作可复现校验）；§5 补验收目录与门禁留档行；§7 增 release 未签名、基线重冻待回填；基线 `f332b9c`（应用代码 `0dda97e` ≡ `857a471`）；标题去「骨架」 |
 | v0.11 | 2026-11-06 | 基线重冻状态写具体：客户端已落 `round-acceptance/README.md`，读数与截图待设备接线后补跑，路径届时回填；§7 第 11 条同步「最终构建校验仍是待办」；`TEAM_CHARTER.md` 新增 §9 当前有效工作流（develop 主线 + 各自 worktree feature 分支；`output`/`fix-p0` 只读归档；`output/AGENTS.md` 的「唯一 worktree 是 fix-p0」失效，以章程为准） |
+| v0.12 | 2026-11-06 | **基线重冻回填完成**（develop `f8f22e9`）：§6 写目录、口径 `-BuildHead 0dda97e`、构建提交 `f332b9c`、APK `7,059,441 B`/sha `A928023F…7E07BB`、冷启 653 ms、左 8/右 10/更多 16/罗盘文字 19、中心偏差最大 8.5 px（容差 ±45）、门禁 85 + CARGO PASS、FATAL/ANR 0；§7 第 11 条关闭（并注明 `k01-compass` 与 `needle-on` 同哈希是采集时序、非丢图），新增第 12/13 条（SW-006 裁切窗待按新布局实测、裁切窗测量依据未提供）；§5 增基线重冻证据行；**全文已无【待填】** |

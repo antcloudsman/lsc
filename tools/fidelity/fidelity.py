@@ -44,7 +44,8 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.9.0"
+VERSION = "1.10.0"
+KNOWN_RED_CLASSES = ("真缺失", "命名不一致", "载体不同")
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
 DEFAULT_THRESHOLD = 8
@@ -770,12 +771,13 @@ def _collect_checksheet(orig_dir: Path, lc_dir: Path, states: set[str], lc_only:
 
 
 def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, integrity: dict,
-                 checksheet: dict) -> None:
+                 checksheet: dict, known_red: dict) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     total = len(rows)
     compared = sum(1 for row in rows if row["status"] == "compared")
     dump_only = sum(1 for row in rows if row["status"] == "dump-only")
     lc_only = sum(1 for row in rows if row["status"] == "lc-only")
+    missing_lc = sum(1 for row in rows if row["status"] == "missing-lc")
     failed_rows = [row for row in rows if row["status"] not in ("compared", "dump-only", "lc-only")]
 
     summary = {
@@ -789,10 +791,12 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
             "compared": compared,
             "dump_only": dump_only,
             "lc_only": lc_only,
+            "missing_lc": missing_lc,
             "not_compared": len(failed_rows),
         },
         "integrity": integrity,
         "checksheet": checksheet,
+        "known_red": known_red,
         "states": rows,
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -872,6 +876,17 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
                 f"<p class=\"fail\">checksheet_id conflict {_esc(conflict['state'])}: "
                 f"orig={_esc(conflict.get('orig', ''))} lc={_esc(conflict.get('lc', ''))}</p>"
             )
+
+    # known-red register from index §5: registered missing-lc states are expected, unregistered are leaks.
+    html.append("<h2>known-red（index §5）</h2>")
+    classes = known_red.get("classes", {})
+    html.append(
+        "<p class=\"small\">" + _esc(" / ".join(f"{name} {count}" for name, count in classes.items())) + "</p>"
+    )
+    for state in known_red.get("unregistered_missing", []):
+        html.append(f"<p class=\"fail\">missing-lc not registered in index §5: {_esc(state)}</p>")
+    for state in known_red.get("stale", []):
+        html.append(f"<p class=\"warn\">§5 state is no longer missing-lc: {_esc(state)}</p>")
 
     for row in rows:
         state = row["state"]
@@ -977,6 +992,13 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
             md.append(
                 f"- CONFLICT {conflict['state']}: orig={conflict.get('orig', '')} lc={conflict.get('lc', '')}"
             )
+    md.extend(["", "## known-red（index §5）", ""])
+    classes = known_red.get("classes", {})
+    md.append("- " + " / ".join(f"{name} {count}" for name, count in classes.items()))
+    for state in known_red.get("unregistered_missing", []):
+        md.append(f"- LEAK missing-lc not registered in §5: {state}")
+    for state in known_red.get("stale", []):
+        md.append(f"- STALE §5 state is no longer missing-lc: {state}")
     md.extend([
         "",
         "| state | status | diff px | ratio | bbox | mean dE2000 | controls (m/only orig/only lc) |",
@@ -1213,13 +1235,35 @@ def cmd_report(args: argparse.Namespace) -> int:
         rows.append(row)
 
     checksheet = _collect_checksheet(orig_dir, lc_dir, states, set(lc_only))
+    index_path = Path(args.index) if getattr(args, "index", None) else root / "lc-captures.md"
+    if index_path.exists():
+        known_red, known_red_errors = _parse_known_red(index_path, root)
+    else:
+        known_red, known_red_errors = {}, []
+        info(f"warning: index not found ({index_path}); known-red register is empty")
+    if known_red_errors:
+        for error in known_red_errors:
+            failed(error)
+        raise FidelityError("invalid known-red register in the fidelity index (§5)")
+    class_counts = {name: 0 for name in KNOWN_RED_CLASSES}
+    for entry in known_red.values():
+        class_counts[entry["class"]] = class_counts.get(entry["class"], 0) + 1
+    info(
+        f"known-red (index §5): {len(known_red)} registered | "
+        + " / ".join(f"{name} {count}" for name, count in class_counts.items())
+    )
+    missing_lc_states = [row["state"] for row in rows if row["status"] == "missing-lc"]
+    unregistered_missing = [state for state in missing_lc_states if state not in known_red]
+    stale_known_red = [state for state in known_red if state not in missing_lc_states]
+    for state in unregistered_missing:
+        failed(f"missing-lc not registered in index §5: {state}")
+    if stale_known_red:
+        info(f"warning: §5 states that are no longer missing-lc: {', '.join(stale_known_red)}")
     info(
         f"checksheet_id coverage: {checksheet['with_id']}/{checksheet['required']}"
         + (f", missing={','.join(checksheet['missing'])}" if checksheet["missing"] else "")
         + (f", conflicts={len(checksheet['conflicts'])}" if checksheet["conflicts"] else "")
     )
-    not_compared = [row for row in rows if row["status"] not in ("compared", "dump-only", "lc-only")]
-    checksheet_failed = bool(args.require_checksheet_id and (checksheet["missing"] or checksheet["conflicts"]))
     if args.require_checksheet_id:
         for state in checksheet["missing"]:
             failed(f"missing checksheet_id: {state}")
@@ -1228,9 +1272,24 @@ def cmd_report(args: argparse.Namespace) -> int:
                 f"checksheet_id conflict {conflict['state']}: "
                 f"orig={conflict.get('orig', '')} lc={conflict.get('lc', '')}"
             )
-    failed_run = integrity_failed or bool(not_compared) or checksheet_failed
+    hard_missing = [row for row in rows if row["status"] in ("missing-orig", "error")]
+    checksheet_failed = bool(checksheet["conflicts"]) or bool(
+        args.require_checksheet_id and checksheet["missing"]
+    )
+    failed_run = (
+        integrity_failed
+        or bool(hard_missing)
+        or bool(unregistered_missing)
+        or checksheet_failed
+    )
 
-    write_report(rows, out_dir, root, args.threshold, integrity, checksheet)
+    known_red_report = {
+        "registered": known_red,
+        "classes": class_counts,
+        "unregistered_missing": unregistered_missing,
+        "stale": stale_known_red,
+    }
+    write_report(rows, out_dir, root, args.threshold, integrity, checksheet, known_red_report)
     if failed_run:
         if args.allow_known_red:
             info("known-red run: failures reported above but exit code forced to 0 (--allow-known-red)")
@@ -1466,6 +1525,78 @@ def _parse_index_checksheet_map(index_path: Path, root: Path) -> tuple[dict, lis
     return mapping, conflicts, unresolved
 
 
+def _parse_known_red(index_path: Path, root: Path) -> tuple[dict, list]:
+    """Read the index §5 table (state | R2 | classification) used as the known-red register."""
+    if not index_path.exists():
+        raise FidelityError(f"index not found: {index_path}")
+    known = set()
+    for side in ("orig", "lc"):
+        directory = root / side
+        if directory.exists():
+            known.update(path.stem for path in directory.glob("*.png"))
+            known.update(path.stem for path in directory.glob("*.xml"))
+    lines = index_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    entries: dict[str, dict] = {}
+    errors: list[str] = []
+    position = 0
+    while position < len(lines):
+        if not lines[position].strip().startswith("|"):
+            position += 1
+            continue
+        table_lines = []
+        while position < len(lines) and lines[position].strip().startswith("|"):
+            table_lines.append(lines[position])
+            position += 1
+        rows = [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in table_lines]
+        if len(rows) < 2:
+            continue
+        header = [cell.lower() for cell in rows[0]]
+        r2_columns = [index for index, cell in enumerate(header) if "r2" in cell]
+        class_columns = [index for index, cell in enumerate(header) if "分类" in cell or "class" in cell]
+        if not r2_columns or not class_columns:
+            continue
+        state_columns = [
+            index for index, cell in enumerate(header)
+            if any(key in cell for key in ("stem", "state", "条目", "missing"))
+        ]
+        r2_col, class_col = r2_columns[0], class_columns[0]
+        for row in rows[1:]:
+            if not row or all(set(cell) <= set("-: ") for cell in row):
+                continue
+            if r2_col >= len(row) or class_col >= len(row):
+                continue
+            r2 = row[r2_col].strip().strip("`").strip("*").strip()
+            if not re.fullmatch(r"R2-\d{3}", r2):
+                continue
+            classification = row[class_col].strip().strip("`").strip("*").strip()
+            cells = [row[index] for index in state_columns if index < len(row)] if state_columns else row
+            stems = set()
+            for cell in cells:
+                for token in re.findall(r"[A-Za-z0-9][A-Za-z0-9-]*", cell):
+                    if token in known:
+                        stems.add(token)
+                for filename in re.findall(r"([A-Za-z0-9][A-Za-z0-9._-]*)\.(?:png|xml)\b", cell):
+                    stems.add(filename)
+            if len(stems) != 1:
+                errors.append(f"§5 {r2}: expected exactly one state, got {sorted(stems) or 'none'}")
+                continue
+            state = next(iter(stems))
+            if classification not in KNOWN_RED_CLASSES:
+                errors.append(
+                    f"§5 {state}: invalid classification {classification!r}; "
+                    f"expected one of {', '.join(KNOWN_RED_CLASSES)}"
+                )
+            existing = entries.get(state)
+            if existing and (existing["r2"] != r2 or existing["class"] != classification):
+                errors.append(
+                    f"§5 {state}: duplicate registration with conflicting values "
+                    f"({existing['r2']}/{existing['class']} vs {r2}/{classification})"
+                )
+                continue
+            entries[state] = {"r2": r2, "class": classification}
+    return entries, errors
+
+
 def cmd_meta_backfill(args: argparse.Namespace) -> int:
     """Generate missing meta.json for existing evidence, deriving checksheet_id from the index."""
     root = Path(args.root)
@@ -1474,6 +1605,9 @@ def cmd_meta_backfill(args: argparse.Namespace) -> int:
         raise FidelityError(f"side directory not found: {side_dir}")
     index_path = Path(args.index) if args.index else root / "lc-captures.md"
     mapping, conflicts, unresolved = _parse_index_checksheet_map(index_path, root)
+    known_red, known_red_errors = _parse_known_red(index_path, root)
+    for error in known_red_errors:
+        info(f"warning: {error}")
     if conflicts:
         for conflict in conflicts:
             failed(
@@ -1501,6 +1635,9 @@ def cmd_meta_backfill(args: argparse.Namespace) -> int:
             errors.append(f"{state}: no png or xml evidence on either side")
     for state in sorted(stems):
         meta_path = side_dir / f"{state}.meta.json"
+        if state in known_red:
+            skips.append((state, f"known-red (index §5): {known_red[state]['class']}"))
+            continue
         if meta_path.exists() and not args.force:
             skips.append((state, "meta already exists (use --force to overwrite)"))
             continue
@@ -1609,6 +1746,7 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--crop", help="common crop x,y,w,h applied to both images")
     report.add_argument("--ignore-rect", action="append", metavar="x,y,w,h")
     report.add_argument("--state", action="append", help="only these state ids (repeatable)")
+    report.add_argument("--index", help="index markdown for the §5 known-red register (default: <root>/lc-captures.md)")
     report.add_argument("--allow-file", help="duplicates allowlist JSON (default: <root>/duplicates-allow.json)")
     report.add_argument("--dump-only-file",
                         help="dump-only allowlist JSON (default: <root>/dump-only-allow.json)")

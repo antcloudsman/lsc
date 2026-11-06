@@ -53,7 +53,7 @@ impl DialCanvas for PainterCanvas<'_> {
 // ---------------------------------------------------------------------------
 
 // >>> BEGIN GENERATED (app/mechanics.json) >>>
-// Source: app/mechanics.json (sha256: 984c5fb618634b0a1202908243acfa1dfbd3d1e4efa0b34df2a778e0d31f34ca). Regenerate: tools/mechanics/gen-mechanics.ps1
+// Source: app/mechanics.json (sha256: fa256de5c80335e8cfe6f62dceccb8f0755262b9bcc14c4fc2d0a0d9afdb70ee). Regenerate: tools/mechanics/gen-mechanics.ps1
 // Hand edits inside the markers are rejected by gen-mechanics.ps1 -Check.
 const MOUNTAINS: [&str; 24] = [
     "子", "癸", "丑", "艮", "寅", "甲",

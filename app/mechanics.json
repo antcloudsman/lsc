@@ -1615,7 +1615,7 @@
     },
     "pressure": {
       "computed_locally": false,
-      "source": "GET https://globe.xinzhi.space/api/weather/getPressure?longitude=&latitude=",
+      "source": "GET https://globe.<redacted>.space/api/weather/getPressure?longitude=&latitude=",
       "smali": "net/ApiService.smali:926-951; net/ApiHelper.smali BASE_URL; model/smart/SmartLngLat.smali:1086-1164",
       "display": "round2(value) + '千帕' (ui/tools/o.1.smali:4930-4986, unit string L4983)",
       "sample_56m": 102.4,

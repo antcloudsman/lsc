@@ -22,6 +22,8 @@ param(
   [string]$Apk = '',
   [string]$Commit = '',
   [string]$Serial = 'L2E0222531014833',
+  # 会劫持点击的第三方应用市场（本机实测：联想应用市场会把点击变成「安装」页）
+  [string[]]$HijackPkgs = @('com.lenovo.leos.appstore', 'com.huawei.appmarket'),
   [string]$Pkg = 'com.luopan.fengshui',
   [int]$MapTabX = 615, [int]$MapTabY = 2525,
   # 右列 3D：[1027,2366]-[1222,2494]，中心 (1124,2430)
@@ -87,9 +89,19 @@ function Bc([string]$extra) {
 }
 function Js([string]$code) { Bc "--es cmd js --es value `"$code`"" }
 
-function Collect([string]$state, [string]$cid, [int]$DumpRetries = 1) {
+# 证据纪律（§4.4）：应用市场会把点击截胡成「安装/详情」页，dump 于是变成别人的界面，
+# 看起来像「空白态」。采集前先 force-stop，并逐次校验前台是我方包。
+function Stop-HijackApps() {
+  foreach ($hp in $HijackPkgs) {
+    if (-not $hp) { continue }
+    Adb @('shell', "am force-stop $hp") | Out-Null
+  }
+  Info ("force-stop hijack pkgs: " + ($HijackPkgs -join ', '))
+}
+
+function Collect([string]$state, [string]$cid, [int]$DumpRetries = 1, [string]$Expect = '') {
   if (-not (Want $state)) { Info "skip $state (not in -Only)"; return }
-  if (-not $DryRun) { Assert-LcForeground }
+  if (-not $DryRun) { Stop-HijackApps; Assert-LcForeground }
   $tries = [Math]::Max(1, $DumpRetries)
   for ($i = 1; $i -le $tries; $i++) {
     $argv = @('tools\fidelity\fidelity.py', 'collect', '--side', 'lc', '--state', $state,
@@ -98,7 +110,10 @@ function Collect([string]$state, [string]$cid, [int]$DumpRetries = 1) {
     if ($DryRun) { $argv += '--dry-run' }
     Info ("collect: " + ($argv -join ' '))
     python @argv
-    if ($LASTEXITCODE -eq 0) { return }
+    if ($LASTEXITCODE -eq 0) {
+      if ($Expect) { Assert-DumpText -State $state -Pattern $Expect }
+      return
+    }
     if ($i -lt $tries) { Info "${state}: dump/shot failed (try $i/$tries)，3 s 后重试"; Start-Sleep -Seconds 3 }
   }
   # 最后兜底：png-only，理由必须写进索引（测量态持续动画导致 uiautomator idle 超时）
@@ -132,6 +147,16 @@ function Assert-LcForeground() {
   if ($cur -notmatch [regex]::Escape($Pkg)) {
     Fail "前台不是 $Pkg，实际=$cur（被别的应用劫持，拒绝拍照；先 force-stop 该应用再重跑）"
   }
+}
+# 拍照后校验：产出 dump 里必须出现预期关键节点（防止拍到别人的界面却当成本状态）
+function Assert-DumpText([string]$State, [string]$Pattern) {
+  $p = Join-Path $root "docs\fidelity\lc\$State.xml"
+  if (-not (Test-Path $p)) { Fail "${State}: dump 不存在，无法做关键节点校验（png-only 状态请传 -Expect ''）" }
+  $raw = Get-Content $p -Raw
+  if ($raw -notmatch $Pattern) {
+    Fail ("{0}: dump 里找不到关键节点 /{1}/（可能被别的应用劫持或页面没进对，拒绝记账）" -f $State, $Pattern)
+  }
+  Info "关键节点 ok: $State /$Pattern/"
 }
 # 路网开/关的真实状态：MainActivity.toggleRoadNet() 写 MapManager prefs 的 showRoad（默认 true）。
 # 用 run-as 读内存盘上的 prefs，避免拿 png 差异当状态判据（D1：同态 ≠ 同 sha）。
@@ -352,6 +377,7 @@ if (-not $DryRun) {
 }
 
 function Enter-App() {
+  if (-not $DryRun) { Stop-HijackApps }
   Sh "am force-stop $Pkg"
   Sh "am start -n $Pkg/.MainActivity"
   Start-Sleep -Seconds 4          # 未完成 onResume 时广播会被忽略
@@ -414,9 +440,9 @@ $pages = @(
   @{ state = 'map-mountains-entry'; cid = 'ST-C-mountains'; x = $MountainX; y = $MountainY
      act = 'MountainActivity'; expect = '看山脉'; absent = $null },
   @{ state = 'map-water-entry'; cid = 'ST-C-water'; x = $WaterX; y = $WaterY
-     act = 'WaterActivity'; expect = $null; absent = '看山脉' },
+     act = 'WaterActivity'; expect = '看水系'; absent = '看山脉' },
   @{ state = 'map-explore-page'; cid = 'ST-C-explore'; x = $ExploreX; y = $ExploreY
-     act = 'DiscoveryActivity'; expect = $null; absent = '看山脉' }
+     act = 'DiscoveryActivity'; expect = '探索'; absent = '看山脉' }
 )
 foreach ($p in $pages) {
   if (-not (Want $p.state)) { continue }
@@ -426,7 +452,8 @@ foreach ($p in $pages) {
   Assert-Resumed $p.act
   if ($p.expect) { Assert-LiveText $p.expect "$($p.state) 页面标题" }
   if ($p.absent) { Assert-LiveTextAbsent $p.absent "$($p.state) 山脉页指纹" }
-  Collect $p.state $p.cid
+  # 拍照后再校验 dump 里确实有这个页面的关键节点（防止被劫持成别人的界面）
+  if ($p.expect) { Collect $p.state $p.cid -Expect $p.expect } else { Collect $p.state $p.cid }
 }
 
 # 6) 测量（18）：地图内测量态；png 必得、dump 尽力（该页持续动画易 idle 超时）

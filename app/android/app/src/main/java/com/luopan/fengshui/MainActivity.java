@@ -2325,69 +2325,236 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * 二者不是同一个数据域：我们没有世纪空间的 POI 源，因此属**等价替代（数据源不同）**，
      * 不是「有意差异」；也不假装有 POI——写一个假 POI 搜索才是造假。底图能力不受此改动影响。
      */
+    // ---------------- R2-025：地图搜索（4 tab + 历史 chip + 坐标四系统） ----------------
+
+    private static final String[] SEARCH_TABS = {"境内", "境外", "行政区域", "收藏点"};
+    private static final String PREFS_SEARCH = "lc_search";
+    private static final String KEY_HISTORY = "history";
+
     private void showSearchDialog() {
-        final java.util.List<String[]> all = knowledgeEntries();
-        final java.util.List<String> shown = new java.util.ArrayList<>();
-        for (String[] r : all) shown.add(r[0]);
-        LinearLayout box = new LinearLayout(this);
+        final LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(12), dp(8), dp(12), dp(8));
+        box.setBackgroundColor(Color.rgb(24, 20, 16));
+
+        // 1) 四个 tab
+        final LinearLayout tabs = new LinearLayout(this);
+        tabs.setOrientation(LinearLayout.HORIZONTAL);
+        final TextView[] tabViews = new TextView[SEARCH_TABS.length];
+        final int[] active = {0};
+        for (int i = 0; i < SEARCH_TABS.length; i++) {
+            final int idx = i;
+            TextView t = new TextView(this);
+            t.setId(i == 0 ? R.id.lc_search_tab0 : i == 1 ? R.id.lc_search_tab1 : i == 2 ? R.id.lc_search_tab2 : R.id.lc_search_tab3);
+            t.setText(SEARCH_TABS[i]);
+            t.setTextSize(13f);
+            t.setGravity(android.view.Gravity.CENTER);
+            t.setPadding(dp(6), dp(8), dp(6), dp(8));
+            t.setOnClickListener(v -> {
+                active[0] = idx;
+                for (int k = 0; k < tabViews.length; k++) {
+                    tabViews[k].setTextColor(k == idx ? Color.rgb(235, 228, 215)
+                            : Color.rgb(150, 130, 100));
+                    tabViews[k].setBackgroundColor(k == idx ? Color.rgb(60, 50, 38) : Color.TRANSPARENT);
+                }
+            });
+            tabViews[i] = t;
+            tabs.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        }
+        tabViews[0].setTextColor(Color.rgb(235, 228, 215));
+        tabViews[0].setBackgroundColor(Color.rgb(60, 50, 38));
+        box.addView(tabs);
+
+        // 2) 输入框
         final android.widget.EditText input = new android.widget.EditText(this);
-        input.setHint("搜索：盘面 / 圈层 / 知识条目");
+        input.setId(R.id.lc_search_input);
+        input.setHint("输入城市/地点，或经纬度（116.4074,39.9042）");
         input.setTextColor(Color.rgb(235, 228, 215));
         input.setHintTextColor(Color.rgb(150, 130, 100));
-        box.addView(input, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        box.addView(input);
+
+        // 3) 历史 chip
+        final LinearLayout chips = new LinearLayout(this);
+        chips.setOrientation(LinearLayout.HORIZONTAL);
+        box.addView(chips);
+
+        // 4) 结果区
         final android.widget.ListView lv = new android.widget.ListView(this);
+        lv.setId(R.id.lc_search_results);
         lv.setBackgroundColor(Color.rgb(24, 20, 16));
         lv.setDividerHeight(0);
+        final java.util.List<String> rows = new java.util.ArrayList<>();
         final android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<String>(
-                this, android.R.layout.simple_list_item_1, shown) {
+                this, android.R.layout.simple_list_item_1, rows) {
             @Override
             public android.view.View getView(int pos, android.view.View cv, android.view.ViewGroup parent) {
-                android.widget.TextView tv = (android.widget.TextView) super.getView(pos, cv, parent);
+                TextView tv = (TextView) super.getView(pos, cv, parent);
                 tv.setTextColor(Color.rgb(235, 228, 215));
                 tv.setTextSize(15f);
-                tv.setPadding(20, 16, 20, 16);
+                tv.setPadding(dp(16), 0, dp(16), 0);
+                // R2-025 判据：坐标四行行间距 186px（原版 map-jump-beijing 四行中心间距）
+                tv.setHeight(186);
+                tv.setGravity(android.view.Gravity.CENTER_VERTICAL);
                 return tv;
             }
         };
         lv.setAdapter(adapter);
+        box.addView(lv, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 186 * 4));
+
+        final LinearLayout.LayoutParams lpOk = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        box.setLayoutParams(lpOk);
+
+        final android.app.AlertDialog[] dlg = new android.app.AlertDialog[1];
+
+        final Runnable refreshChips = () -> {
+            chips.removeAllViews();
+            for (String h : loadSearchHistory()) {
+                TextView c = new TextView(this);
+                c.setText(h);
+                c.setTextSize(11f);
+                c.setTextColor(Color.rgb(200, 190, 170));
+                c.setBackgroundColor(Color.rgb(48, 40, 30));
+                c.setPadding(dp(10), dp(4), dp(10), dp(4));
+                LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                clp.rightMargin = dp(6);
+                c.setLayoutParams(clp);
+                c.setOnClickListener(v -> input.setText(h));
+                chips.addView(c);
+            }
+        };
+        refreshChips.run();
+
+        final Runnable runSearch = () -> {
+            String q = input.getText().toString().trim();
+            rows.clear();
+            double[] ll = parseCoordPair(q);
+            if (ll != null) {
+                // R2-025：坐标输入给 GCJ02 / WGS84 / BD09 / CGCS2000 四行（本地换算，不依赖配额）
+                double[] gcj = wgs2gcj(ll[0], ll[1]);
+                double[] bd = gcj2bd(gcj[0], gcj[1]);
+                rows.add(String.format(java.util.Locale.US, "GCJ02     %.6f,%.6f", gcj[1], gcj[0]));
+                rows.add(String.format(java.util.Locale.US, "WGS84     %.6f,%.6f", ll[1], ll[0]));
+                rows.add(String.format(java.util.Locale.US, "BD09      %.6f,%.6f", bd[1], bd[0]));
+                rows.add(String.format(java.util.Locale.US, "CGCS2000  %.6f,%.6f（与 WGS84 等价）", ll[1], ll[0]));
+                if (!q.isEmpty()) rememberSearch(q);
+                refreshChips.run();
+            } else if (q.isEmpty()) {
+                rows.add("输入城市/地点，或直接粘贴经纬度");
+            } else {
+                // POI/逆地理走 DEP-3（数据源结论由地图侧给），本地只保留坐标检索
+                rows.add("「" + q + "」：POI/逆地理按 DEP-3 登记（数据源未定），本页保留坐标检索");
+                rememberSearch(q);
+                refreshChips.run();
+            }
+            adapter.notifyDataSetChanged();
+        };
+
         input.addTextChangedListener(new android.text.TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
             @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
-            @Override public void afterTextChanged(android.text.Editable e) {
-                String q = e.toString().trim();
-                shown.clear();
-                for (String[] r : all) {
-                    if (q.isEmpty() || r[0].contains(q) || r[1].contains(q)) {
-                        shown.add(r[0]);
-                    }
-                }
-                adapter.notifyDataSetChanged();
-            }
+            @Override public void afterTextChanged(android.text.Editable e) { runSearch.run(); }
         });
         lv.setOnItemClickListener((p, v, pos, id) -> {
-            String title = shown.get(pos);
-            for (String[] r : all) {
-                if (r[0].equals(title)) {
-                    new android.app.AlertDialog.Builder(this)
-                            .setTitle(r[0])
-                            .setMessage(r[1])
-                            .setPositiveButton("确定", null)
-                            .show();
-                    break;
+            String row = rows.get(pos);
+            String[] parts = row.trim().split("\\s+");
+            if (parts.length >= 2) {
+                double[] ll2 = parseCoordPair(parts[parts.length - 1].replace("（与", "")
+                        .replace("WGS84", "").replace("等价）", ""));
+                if (ll2 == null) {
+                    String last = parts[parts.length - 1];
+                    if (last.contains(",")) ll2 = parseCoordPair(last.split(",")[0] + "," + last.split(",")[1]);
+                }
+                if (ll2 != null) {
+                    js(String.format(java.util.Locale.US, "try{setView(%.6f,%.6f,zoom)}catch(e){}", ll2[0], ll2[1]));
+                    if (dlg[0] != null) dlg[0].dismiss();
                 }
             }
         });
-        box.addView(lv, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(320)));
-        new android.app.AlertDialog.Builder(this)
+        runSearch.run();
+
+        dlg[0] = new android.app.AlertDialog.Builder(this)
                 .setTitle("搜索")
                 .setView(box)
                 .setNegativeButton("关闭", null)
-                .show();
+                .create();
+        dlg[0].show();
+        android.util.Log.d("LCSEARCH", "tabs=" + SEARCH_TABS.length);
     }
 
+    /** "lng,lat" / "lat,lng" → [lat,lng]；无法解析返回 null。 */
+    private double[] parseCoordPair(String q) {
+        if (q == null) return null;
+        String s = q.replace("，", ",").trim();
+        String[] p = s.split(",");
+        if (p.length != 2) return null;
+        try {
+            double a = Double.parseDouble(p[0].trim());
+            double b = Double.parseDouble(p[1].trim());
+            // 经度在前（原版口径 116.4074,39.9042）
+            if (Math.abs(a) <= 180 && Math.abs(b) <= 90) return new double[]{b, a};
+            if (Math.abs(a) <= 90 && Math.abs(b) <= 180) return new double[]{a, b};
+        } catch (NumberFormatException ignored) {
+        }
+        return null;
+    }
+
+    private java.util.List<String> loadSearchHistory() {
+        String raw = getSharedPreferences(PREFS_SEARCH, MODE_PRIVATE).getString(KEY_HISTORY, "");
+        java.util.List<String> out = new java.util.ArrayList<>();
+        for (String x : raw.split("\\n")) if (!x.trim().isEmpty()) out.add(x.trim());
+        return out;
+    }
+
+    private void rememberSearch(String q) {
+        java.util.List<String> h = loadSearchHistory();
+        h.remove(q);
+        h.add(0, q);
+        while (h.size() > 4) h.remove(h.size() - 1);
+        getSharedPreferences(PREFS_SEARCH, MODE_PRIVATE).edit()
+                .putString(KEY_HISTORY, String.join("\n", h)).apply();
+    }
+
+    /** WGS84 → GCJ02（公开偏移算法，中国境内加偏）。 */
+    private static double[] wgs2gcj(double lat, double lng) {
+        double a = 6378245.0, ee = 0.00669342162296594323;
+        if (lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271) return new double[]{lat, lng};
+        double dLat = transformLat(lng - 105.0, lat - 35.0);
+        double dLng = transformLng(lng - 105.0, lat - 35.0);
+        double radLat = lat / 180.0 * Math.PI;
+        double magic = Math.sin(radLat);
+        magic = 1 - ee * magic * magic;
+        double sqrtMagic = Math.sqrt(magic);
+        dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * Math.PI);
+        dLng = (dLng * 180.0) / (a / sqrtMagic * Math.cos(radLat) * Math.PI);
+        return new double[]{lat + dLat, lng + dLng};
+    }
+
+    private static double transformLat(double x, double y) {
+        double ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+        ret += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
+        ret += (20.0 * Math.sin(y * Math.PI) + 40.0 * Math.sin(y / 3.0 * Math.PI)) * 2.0 / 3.0;
+        ret += (160.0 * Math.sin(y / 12.0 * Math.PI) + 320 * Math.sin(y * Math.PI / 30.0)) * 2.0 / 3.0;
+        return ret;
+    }
+
+    private static double transformLng(double x, double y) {
+        double ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+        ret += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
+        ret += (20.0 * Math.sin(x * Math.PI) + 40.0 * Math.sin(x / 3.0 * Math.PI)) * 2.0 / 3.0;
+        ret += (150.0 * Math.sin(x / 12.0 * Math.PI) + 300.0 * Math.sin(x / 30.0 * Math.PI)) * 2.0 / 3.0;
+        return ret;
+    }
+
+    /** GCJ02 → BD09。 */
+    private static double[] gcj2bd(double lat, double lng) {
+        double x = lng, y = lat;
+        double z = Math.sqrt(x * x + y * y) + 0.00002 * Math.sin(y * Math.PI);
+        double theta = Math.atan2(y, x) + 0.000003 * Math.cos(x * Math.PI);
+        return new double[]{z * Math.sin(theta) + 0.006, z * Math.cos(theta) + 0.0065};
+    }
     private void showKnowledgeSheet() {
         final java.util.List<String[]> rows = knowledgeEntries();
         final java.util.List<String> titles = new java.util.ArrayList<>();

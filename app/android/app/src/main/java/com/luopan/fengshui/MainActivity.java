@@ -741,7 +741,28 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
-     * G1/R2-033：原版形态的工具钮 = 图标 + 小字、158×158 透明底（去掉整块半透明背景）。
+     * R2-033（判词撤回后重做）：按钮底 = **深色半透明圆角方块**。
+     * 原版实测（docs/fidelity/orig/tool-compass-page.png，可点框 [27,1291][185,1449]）：
+     * - 绘制区 [33,1297]…[179,1443] ≈ 146×146，即框内**四周内缩 6px**；圆角 ≈ 15px；
+     * - 内部两处采样 (40,1305)-(60,1320)=(11.9,25.8,15.0)、(50,1428)-(160,1442)=(11.8,23.8,14.1)；
+     * - 同带卫星底图 (2,1350)-(24,1400)=(81.1,118.7,77.6)。
+     *
+     * 参数取**底板固有值**，不按我方底图反解：
+     * 由 (1−a)×底图 ≈ 合成值 的绿通道 25.8/118.7 ≈ 0.22 → **a ≈ 0.78**，C ≈ 黑。
+     * 这里用 a=0.80 / C=(0,0,0)（204/255）。注意：合成像素会随底图变——
+     * 我方默认是天地图地形（浅色），合成会比原版亮；那是**底图差异（D-021）**，
+     * 不是按钮底缺陷。判据比对时须在**卫星底图**下采（同类型底图才可比）。
+     */
+    private android.graphics.drawable.Drawable chipBackground() {
+        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+        g.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        g.setColor(Color.argb(204, 0, 0, 0));
+        g.setCornerRadius(15f);
+        return new android.graphics.drawable.InsetDrawable(g, 6, 6, 6, 6);
+    }
+
+    /**
+     * G1/R2-033：原版形态的工具钮 = 图标 + 小字、158×158 框（深色圆角底）。
      * 图标位固定 72×72，图标顶距取 26（左列/地图列，标签中心距框顶 117.5）或 17（罗盘右列，108.5）；
      * 没有图标的项留同尺寸占位，保证标签几何一致——缺图标自画图形等于造假，宁可留空并列明缺口。
      */
@@ -749,7 +770,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         LinearLayout b = new LinearLayout(this);
         b.setOrientation(LinearLayout.VERTICAL);
         b.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
-        b.setBackgroundColor(Color.TRANSPARENT);
+        b.setBackground(chipBackground());
+        // InsetDrawable 会把它自己的 6px 内缩上报成 View 的 padding，从而把图标与标签整体推下/推右 6px
+        // （实测标签从 1389 变 1395，正好落进采样带里）。这里显式归零，让底图内缩只影响绘制、不影响内容几何。
+        b.setPadding(0, 0, 0, 0);
         b.setClickable(true);
         b.setFocusable(true);
         b.setContentDescription(label);
@@ -758,6 +782,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (iconRes != 0) {
             android.widget.ImageView iv = new android.widget.ImageView(this);
             iv.setImageResource(iconRes);
+            // 原版工具列图标是**白色**线稿；A-02 导出的矢量按深色填充入库，
+            // 这里只改填充色、不改形状（形状仍来自原版资源，不是手绘）。
+            iv.setColorFilter(Color.WHITE);
             iv.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
             icon = iv;
         } else {
@@ -780,19 +807,49 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return b;
     }
 
-    /** 原版 mipmap 里的工具图标（只收语义确定、资源确实存在的项；缺的留占位，不臆造）。 */
+    /**
+     * 工具列图标：**原版矢量/位图**，取自 A-02/A-04 入库件
+     * （`docs/fidelity/assets/icons/drawer/svg_*.xml`、`assets/tools/ic_*.png`，资源 id 见 assets/INDEX.md）。
+     * 形状不改，只做白色着色。P1-33-A 补的 7 确认 + 3 候选（实景/坐南朝北/指针开关 名字直配、
+     * smali 里右列按钮无 R$drawable 引用，按候选先用，以截图确认为准）。
+     * 仍未覆盖的只有「地图」一项：原版该按钮是 Compose 内联绘制、无独立 drawable
+     * （检索清单 `docs/fidelity/assets-P133A.md`，逆向 edcfc5d）——留 72×72 空占位，
+     * 不自绘、不拿近似图标顶替。
+     */
     private int toolIcon(String label) {
         switch (label) {
-            case "超清优化": return R.mipmap.ic_tool_super_map;
-            case "海拔查询": return R.mipmap.ic_tool_altitude;
-            case "罗盘":
-            case "罗盘复位":
-            case "罗盘锁定": return R.mipmap.ic_tool_compass;
-            case "路网": return R.mipmap.ic_tools_road;
-            case "等高线": return R.mipmap.ic_tool_isoline;
-            case "山脉": return R.mipmap.ic_tool_mountain;
-            case "水系": return R.mipmap.ic_tool_water;
-            case "收藏": return R.mipmap.ic_tool_collect;
+            case "截屏": return R.drawable.lc_ic_scropy;
+            case "超清优化": return R.drawable.lc_ic_super_map_old;
+            case "海拔查询": return R.drawable.lc_ic_altitude;
+            case "罗盘": return R.drawable.lc_ic_compass;
+            case "路网": return R.drawable.lc_ic_road;
+            case "等高线": return R.drawable.lc_ic_isoline;
+            case "更多": return R.drawable.lc_ic_more;
+            case "图层": return R.drawable.lc_ic_layer;
+            case "叠加": return R.drawable.lc_ic_overlay;
+            case "山脉": return R.drawable.lc_ic_mountain;
+            case "水系": return R.drawable.lc_ic_water;
+            case "探索": return R.drawable.lc_ic_discovery;
+            case "定位": return R.drawable.lc_ic_locate;
+            case "+": return R.drawable.lc_ic_zoom_in;
+            case "−": return R.drawable.lc_ic_zoom_out;
+            // P1-33-A 补入（逆向 edcfc5d）
+            case "全地图工具": return R.drawable.lc_ic_tool_folder;
+            case "罗盘复位": return R.drawable.lc_ic_compass_reset;
+            case "罗盘锁定": return R.drawable.lc_ic_compass_lock;
+            case "读盘": return R.drawable.lc_ic_read_compass;
+            case "贴地": return R.drawable.lc_ic_tiedi;
+            case "3D": return R.mipmap.lc_ic_3d;
+            case "指北针": return R.mipmap.lc_ic_north;
+            // 以下三项：**已撤回**（审核验 86a027e 对照图证实语义不符）。
+            // 原版右列这四枚不是图标，而是**有开/关两态的开关控件**（蓝=开、灰=关 + 文字）：
+            // 地图=蓝(开)、实景=灰(关)、坐南朝北=灰(关)、指针开关=蓝(开)。
+            // 早期我按「名字直配」接过 svg_street/svg_surround/svg_compass_switch，
+            // 渲染出来是人形/立方体箭头/左右箭头，与原版开关图形不符，已撤掉，留占位等形态口径。
+            case "实景":
+            case "坐南朝北":
+            case "指针开关":
+            case "地图": return 0;
             default: return 0;
         }
     }
@@ -2296,30 +2353,57 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         content.addView(bar, lp);
     }
 
+    /** R2-015：更多面板网格 4 行的 id（原版行顶 1540/1836/2132/2428）。 */
+    private static final int[] MORE_ROW_IDS = {
+            R.id.lc_more_row0, R.id.lc_more_row1, R.id.lc_more_row2, R.id.lc_more_row3
+    };
+
     /** 「更多」＝底部面板（README §6），不是新页面。 */
     private void showMoreSheet() {
         final FeatureFlags flags = new FeatureFlags(this);
         final String[] tools = {"罗盘", "超清地图", "看山脉", "看水系", "海拔查询", "天气", "历史影像",
                 "等高线", "收藏点", "测量", "画笔", "钓点", "轨迹记录", "路网", "地理影像", "超清优化"};
         LinearLayout grid = new LinearLayout(this);
+        grid.setId(R.id.lc_more_grid);
         grid.setOrientation(LinearLayout.VERTICAL);
-        grid.setPadding(dp(6), dp(6), dp(6), dp(6));
+        // 原版网格：4 列 ×296，行高 231，行顶 1540/1836/2132（步距 296，行间空 65），左起 23。
+        grid.setPadding(23, 0, 21, 0);
         LinearLayout row = null;
-        final android.app.AlertDialog[] dialogRef = new android.app.AlertDialog[1];
+        final android.app.Dialog[] dialogRef = new android.app.Dialog[1];
         for (int i = 0; i < tools.length; i++) {
             if (i % 4 == 0) {
                 row = new LinearLayout(this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
-                grid.addView(row, new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, dp(50)));
+                row.setId(MORE_ROW_IDS[i / 4]);
+                LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, 231);
+                if (i > 0) rlp.topMargin = 65;
+                grid.addView(row, rlp);
             }
             final String t = tools[i];
-            Button b = new Button(this);
-            b.setText(t);
-            b.setTextSize(10f);
-            b.setMinHeight(0);
-            b.setMinimumHeight(0);
-            b.setOnClickListener(v -> {
+            // 原版格内：图标 158×158（格顶 13、水平居中）+ 文字行 54（图标下 6）。
+            LinearLayout cell = new LinearLayout(this);
+            cell.setOrientation(LinearLayout.VERTICAL);
+            cell.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+            cell.setContentDescription(t);
+            cell.setClickable(true);
+            cell.setFocusable(true);
+            android.widget.ImageView cellIcon = new android.widget.ImageView(this);
+            cellIcon.setImageResource(ToolCatalog.ICONS[i]);
+            cellIcon.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            LinearLayout.LayoutParams cip = new LinearLayout.LayoutParams(158, 158);
+            cip.topMargin = 13;
+            cell.addView(cellIcon, cip);
+            TextView cellLabel = new TextView(this);
+            cellLabel.setText(t);
+            cellLabel.setTextSize(16f);
+            cellLabel.setTextColor(Color.rgb(235, 228, 215));
+            cellLabel.setGravity(android.view.Gravity.CENTER);
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, 54);
+            clp.topMargin = 6;
+            cell.addView(cellLabel, clp);
+            cell.setOnClickListener(v -> {
                 // 选中即关面板：测量/画笔等页内动作若让 dialog 留在上面会挡住地图与浮条。
                 if (dialogRef[0] != null) dialogRef[0].dismiss();
                 if ("罗盘".equals(t)) {
@@ -2394,25 +2478,36 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(t + "：原版为工具子页，本步未实现");
                 }
             });
-            row.addView(b, new LinearLayout.LayoutParams(0, dp(48), 1f));
+            row.addView(cell, new LinearLayout.LayoutParams(296, 231));
         }
 
-        // 标题栏：左「地图工具」+ 右「设置」「功能开关（调试）」。
-        // 「设置」：原版入口在抽屉「地图设置」（MapSettingActivity），K-01 单页布局没做抽屉，
-        //           故暂时置于「更多」标题栏——这是入口位置差异，页面本身仍是 1:1 的 SettingActivity。
-        // 「功能开关（调试）」：LC 自用的调试/回退入口（D-001），不改 MapSettingActivity 的 1:1 页面。
+        // 标题栏：左「地图工具」+ 右「编辑」。原版头高 164（编辑可点区 [1020,1350][1182,1514]，
+        // 文字 [1079,1393][1182,1472]），标题文字 [46,1393][234,1472] —— 左边距 46、右边距 46。
+        // R2-015：原版头部**没有**「功能开关（调试）」，该项已删（调试入口不再放在 1:1 页面上）。
         LinearLayout header = new LinearLayout(this);
+        header.setId(R.id.lc_more_header);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        header.setPadding(dp(16), dp(10), dp(8), dp(2));
+        header.setPadding(46, 0, 46, 0);
 
         TextView sheetTitle = new TextView(this);
+        sheetTitle.setId(R.id.lc_more_title);
         sheetTitle.setText("地图工具");
-        sheetTitle.setTextSize(16f);
+        sheetTitle.setTextSize(20f);
         sheetTitle.setTextColor(Color.rgb(235, 228, 215));
         header.addView(sheetTitle, new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
+        TextView editEntry = new TextView(this);
+        editEntry.setId(R.id.lc_more_edit);
+        editEntry.setText("编辑");
+        editEntry.setTextSize(16f);
+        editEntry.setTextColor(Color.rgb(235, 228, 215));
+        editEntry.setPadding(dp(6), dp(6), 0, dp(6));
+        header.addView(editEntry);
+
+        // 「设置」保留为辅助入口（原版此处在抽屉「地图设置」；我们抽屉同样可达，
+        // 保留这一枚是为了不切断已有的自动化路径，属入口冗余、不是页面差异）。
         TextView settingsEntry = new TextView(this);
         settingsEntry.setId(R.id.lc_settings_entry);
         settingsEntry.setText("设置");
@@ -2421,33 +2516,54 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         settingsEntry.setPadding(dp(8), dp(6), dp(8), dp(6));
         header.addView(settingsEntry);
 
-        TextView flagsEntry = new TextView(this);
-        flagsEntry.setId(R.id.lc_featureflag_entry);
-        flagsEntry.setText(R.string.lc_featureflag_entry);
-        flagsEntry.setTextSize(12f);
-        flagsEntry.setTextColor(Color.rgb(220, 190, 130));
-        flagsEntry.setPadding(dp(8), dp(6), dp(8), dp(6));
-        header.addView(flagsEntry);
-
         LinearLayout panel = new LinearLayout(this);
+        panel.setId(R.id.lc_more_sheet);
         panel.setOrientation(LinearLayout.VERTICAL);
-        panel.addView(header);
-        panel.addView(grid);
+        panel.setBackgroundColor(Color.rgb(24, 20, 16));
+        panel.addView(header, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 164));
+        // 网格区：原版行顶 1540 起，到 sheet 底 2578 只放得下 3 行，第 4 行需滚动。
+        android.widget.ScrollView gridScroll = new android.widget.ScrollView(this);
+        gridScroll.addView(grid);
+        // 原版首行格顶 1540（头到 1514 之后还留 26px），这里补同量，行顶 1540/1836/2132 才逐项对上。
+        LinearLayout.LayoutParams gsp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
+        gsp.topMargin = 26;
+        panel.addView(gridScroll, gsp);
 
-        final android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
-                .setView(panel)
-                .setNegativeButton("关闭", null)
-                .create();
+        // 原版 sheet = [0,1350][1228,2578]：顶 1350、高 1228、满宽；上方 0..1350 是遮罩。
+        // 用 TOP 重力 + y 绝对偏移定位（我方窗口原点与内容帧原点同为屏幕 (0,0)），
+        // 不能用 BOTTOM 重力——本窗高 2700，BOTTOM 会把顶边推到 1472，正好差导航栏那 122px。
+        final android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dialog.setContentView(panel);
         dialogRef[0] = dialog;
-        flagsEntry.setOnClickListener(v -> {
-            dialog.dismiss();
-            startActivity(new android.content.Intent(this, FeatureFlagsActivity.class));
-        });
         settingsEntry.setOnClickListener(v -> {
             dialog.dismiss();
             startActivity(new android.content.Intent(this, SettingActivity.class));
         });
+        editEntry.setOnClickListener(v -> {
+            dialog.dismiss();
+            toast("编辑：原版为网格编辑态，本步未实现");
+        });
         dialog.show();
+        android.view.Window w = dialog.getWindow();
+        if (w != null) {
+            w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+            w.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            // dialog 窗口默认的 y 原点在系统栏之内（实测 y=1350 落到了 1472，正好差 122px），
+            // 加 FLAG_LAYOUT_IN_SCREEN 后 y 才是**屏幕绝对坐标**，与原版 dump 的 2578 帧对齐。
+            w.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+            android.view.WindowManager.LayoutParams lp = w.getAttributes();
+            lp.gravity = android.view.Gravity.TOP;
+            lp.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+            lp.height = 1228;
+            lp.y = 1350;
+            lp.dimAmount = 0.35f;
+            w.setAttributes(lp);
+        }
+        android.util.Log.d("LCMORE", "sheet top=1350 h=1228 rows=" + ((tools.length + 3) / 4)
+                + " cell=" + 296 + "x" + 231);
     }
 
     /** 知识＝弹层（原版是点圈层文字直达，不做 Tab）。 */

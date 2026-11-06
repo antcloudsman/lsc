@@ -47,7 +47,12 @@ public class SettingActivity extends Activity {
 
     private static final float ROW_H_DP = 46.5f;
     private static final float CHIP_W_DP = 72.6f;
-    private static final float CHIP_H_DP = 28.7f;
+    /**
+     * R2-019：chip 高按原版 158px（`docs/fidelity/orig/setting-map-01.xml`：常规 chip
+     * `[39,567][285,725]` = 246×158）。本机 540dpi → 158/3.375 = 46.81dp；
+     * 旧值 28.7dp 只有 96.9px，差 61px，正是 R2-019 报的那 61px。
+     */
+    private static final float CHIP_H_DP = 46.81f;
 
     private static final int[] ROW_IDS = {
             R.id.lc_setting_row_0, R.id.lc_setting_row_1, R.id.lc_setting_row_2,
@@ -118,7 +123,9 @@ public class SettingActivity extends Activity {
     // ---------------- 地图滤镜（模式 + 预览） ----------------
 
     private void buildFilter(LinearLayout list) {
-        list.addView(sectionTitle(getString(R.string.lc_setting_filter)));
+        // R2-019：「地图滤镜」由分节标题改为**内联标签**（原版 [39,343][247,405] 是左对齐文字，
+        // 不是带分隔的分节栏；分节栏那套样式是我们自己加的）。
+        list.addView(grayLabel(getString(R.string.lc_setting_filter)), padLp(12, 14, 12, 6));
 
         TextView modeLabel = grayLabel(getString(R.string.lc_setting_filter_mode));
         list.addView(modeLabel, padLp(12, 14, 12, 6));

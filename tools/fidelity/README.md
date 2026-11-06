@@ -354,6 +354,18 @@ python tools\fidelity\assets.py stamp --apk E:\APPDetector\input\swss.apk --sour
 | 页面 HTML / 长文本 | `page-html` | `pages/<page>/` | 原版 `assets/**/*.html` 直接 `extract` |
 | 页面图片（logo/二维码/截图） | `page-image` | `pages/<page>/img/` | png/webp 直接 `extract` |
 
+页目录与 S 编号固定（`assets-deps.json` 已按此建好 7 条，`count: 1` 只判该页至少有原版图标落地；正文本体不进 assets）：
+
+| S 编号 | 页目录 | 正文载体（实测） |
+|---|---|---|
+| `S-账户设置` | `pages/account/` | 原生页 + dump 文案；服务端依赖强（D-022） |
+| `S-投诉反馈` | `pages/feedback/` | 原生页 + 两个 Tab；提交链路服务端依赖强（D-022） |
+| `S-关于我们` | `pages/about/` | 原生页 + dump 文案（版本号/备案号） |
+| `S-联系我们` | `pages/contact/` | 原生页 + dump 文案；图标走 APK 资源（`res/qq.*` 等） |
+| `S-推荐给好友` | `pages/share/` | 底部面板：微信/朋友圈/取消分享 + 分享 Intent |
+| `S-帮助中心` | `pages/help/` | WebView 远端 URL（`ApiHelper` 的 `HELP_CENTER`），无本地正文 |
+| `S-用户协议` | `pages/agreement/` | 原生长文本（178 节点），无本地 HTML；正文来源待确认 |
+
 ```powershell
 # 找候选：按关键字 / 扩展名 / 尺寸（有 aapt2 时用资源 id 反查更稳）
 python tools\fidelity\assets.py list-apk --apk E:\APPDetector\input\swss.apk --grep qq --ext png

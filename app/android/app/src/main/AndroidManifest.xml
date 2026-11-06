@@ -29,6 +29,11 @@
           入口：设置/收藏点等按 00-UI-ROUTES.md，功能开关挂「更多」面板标题栏。
         -->
         <activity
+            android:name=".InfoPageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
+        <activity
             android:name=".SettingActivity"
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />

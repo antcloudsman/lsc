@@ -1300,6 +1300,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         android.util.Log.d("LCDRAWER", "open");
     }
 
+    /** R2-018：推荐给好友 = 系统分享面板（真实动作，不造内容）。 */
+    private void shareApp() {
+        android.content.Intent send = new android.content.Intent(android.content.Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(android.content.Intent.EXTRA_TEXT, "三维山水全景地图（LC）");
+        startActivity(android.content.Intent.createChooser(send, "推荐给好友"));
+    }
+
     private void hideDrawer() {
         if (drawerPanel != null) drawerPanel.setVisibility(View.GONE);
     }
@@ -1362,11 +1370,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             item.setPadding(dp(16), 0, dp(8), 0);
             item.setOnClickListener(v -> {
                 hideDrawer();
+                // R2-018：9 项每项都到达真实目标，不允许 toast 占位。
                 if ("地图设置".equals(label)) {
-                    // R2-018：直接连现成的 SettingActivity（不再借「更多」面板）。
                     startActivity(new android.content.Intent(this, SettingActivity.class));
+                } else if ("推荐给好友".equals(label)) {
+                    shareApp();
                 } else {
-                    toast(label + "：原版为抽屉子页，本步未实现");
+                    android.content.Intent info = new android.content.Intent(this, InfoPageActivity.class);
+                    info.putExtra(InfoPageActivity.EXTRA_TITLE, label);
+                    startActivity(info);
                 }
             });
             panel.addView(item, new LinearLayout.LayoutParams(

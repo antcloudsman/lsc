@@ -19,6 +19,11 @@
     <item name="lc_fav_add" type="id" />
     <item name="lc_coord_text" type="id" />
     <item name="lc_scale_text" type="id" />
+    <item name="lc_info_back" type="id" />
+    <item name="lc_info_title" type="id" />
+    <item name="lc_info_content" type="id" />
+    <item name="lc_info_body" type="id" />
 </resources>
+
 
 

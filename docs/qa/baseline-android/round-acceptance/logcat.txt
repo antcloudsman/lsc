@@ -539,7 +539,7 @@
 11-06 13:09:08.767  2305  3039 I HwAudioServiceEx: sendAppKilledIntentForKit, isKitPackageOnPause = false, isKitPackageKill = false, isKitPackageOnResume = false
 11-06 13:09:08.767 14043 14043 I hwschromium-21705: [INFO:global_cloud_data_manager.cc(65)] GlobalCloudDataManager PrefService init error or no data.
 11-06 13:09:08.767 14043 14043 I hwschromium-21705: [INFO:render_process_host_impl.cc(6304)] Send image denoms to renderer, global_cloud_data: denom_for_image: 25, denom_for_jpeg_image: 50, denom_for_png_image: 25
-11-06 13:09:08.768 14043 14181 I hwbr_engine_ContentUriUtils: final url after convert is file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051
+11-06 13:09:08.768 14043 14181 I hwbr_engine_ContentUriUtils: final url after convert is file:///android_asset/map.html?tk=***REDACTED***
 11-06 13:09:08.768 14043 14043 I InputMethodManager: mCurRootView is null
 11-06 13:09:08.769  3558 18279 D Hicom_Monitor: ActivityNotifier not support:com.luopan.fengshui
 11-06 13:09:08.770 26009 26254 I CAWARENESS_34472_AppUsageManager: onEvent, packageName=com.luopan.fengshui, activityName=com.luopan.fengshui.MainActivity, moduleName=, uid=10359, cancelCompleteMiniProgram= false
@@ -547,7 +547,7 @@
 11-06 13:09:08.771  1936  2289 I MediaCodecList: Time check for MediaCodecList_getLocalInstance stuck issue mediaserver
 11-06 13:09:08.771 14043 14043 I RmeSchedManager: init Rme, version is: v1.0
 11-06 13:09:08.771  3558  3884 I OllieMsgCenter: publishEvt=2135097351
-11-06 13:09:08.772 14043 14182 I hwbr_engine_ContentUriUtils: final url after convert is file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051
+11-06 13:09:08.772 14043 14182 I hwbr_engine_ContentUriUtils: final url after convert is file:///android_asset/map.html?tk=***REDACTED***
 11-06 13:09:08.772  3558  3884 I NetworkQoeChr: updateTopAppInfo: com.luopan.fengshui, appState1, uid10359
 11-06 13:09:08.772  3558  3884 I NetworkQoeChr: checkForegroundApp timer end
 11-06 13:09:08.773  3558  3884 E Booster_BroadcastProxy: [isDebugModemEnabled]get package info fail.
@@ -686,12 +686,12 @@
 11-06 13:09:08.919 14176 14212 W hwschromium-21705: [WARNING:local_frame.cc(3793)] [Adblock] Set adblock enable for site: 0 fixed adblock enable for site:0
 11-06 13:09:08.919 14043 14043 I hwbr_engine_a: AndroidRDefaultNetworkCallback onLinkPropertiesChanged
 11-06 13:09:08.921 14043 14156 D OpenGLRenderer: disableOutlineDraw is true
-11-06 13:09:08.921 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setHeading is not defined", source: file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051 (1)
-11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setSitFace is not defined", source: file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051 (1)
-11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setHeading is not defined", source: file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051 (1)
-11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setSitFace is not defined", source: file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051 (1)
-11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setHeading is not defined", source: file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051 (1)
-11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setSitFace is not defined", source: file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051 (1)
+11-06 13:09:08.921 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setHeading is not defined", source: file:///android_asset/map.html?tk=***REDACTED*** (1)
+11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setSitFace is not defined", source: file:///android_asset/map.html?tk=***REDACTED*** (1)
+11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setHeading is not defined", source: file:///android_asset/map.html?tk=***REDACTED*** (1)
+11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setSitFace is not defined", source: file:///android_asset/map.html?tk=***REDACTED*** (1)
+11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setHeading is not defined", source: file:///android_asset/map.html?tk=***REDACTED*** (1)
+11-06 13:09:08.922 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1)] "Uncaught ReferenceError: setSitFace is not defined", source: file:///android_asset/map.html?tk=***REDACTED*** (1)
 11-06 13:09:08.922 14043 14156 D OpenGLRenderer: disableOutlineDraw is true
 11-06 13:09:08.929  2007  5760 I sensors-hal: handle_sns_std_sensor_event:563, [ambient_light] ts=48226682342778, lux = 23, cct = 23, ir = 2, raw_red=136 raw_green=134 raw_blue=75 raw_clear=310
 11-06 13:09:08.929  2305  2573 I HwRestoreStateManager: com.luopan.fengshui doesn't support recovery
@@ -916,7 +916,7 @@
 11-06 13:09:09.532 14176 14212 W hwschromium-21705: [WARNING:render_frame_impl.cc(4207)] event_message: page load finished, routing_id: 1, url ***
 11-06 13:09:09.535 14043 14043 D LCCOMPASS: uiMode -> map
 11-06 13:09:09.544 14043 14300 W LCPICK  : ignore type=roadnet
-11-06 13:09:09.545 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1216)] "LC3D roadnet on=true base=vec", source: file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051 (1216)
+11-06 13:09:09.545 14043 14043 I hwschromium-21705: [INFO:CONSOLE(1216)] "LC3D roadnet on=true base=vec", source: file:///android_asset/map.html?tk=***REDACTED*** (1216)
 11-06 13:09:09.590  1274  1787 I SDM     : HWPeripheralDRM::SetupConcurrentWriteback: Tear down the Concurrent Writeback topology
 11-06 13:09:09.591  1274  1787 I SDM     : HWPeripheralDRM::SetupConcurrentWriteback: Tear down the Concurrent Writeback topology
 11-06 13:09:09.628  2007  5760 I sensors-hal: handle_sns_std_sensor_event:563, [ambient_light] ts=48227382343142, lux = 34, cct = 34, ir = 2, raw_red=129 raw_green=130 raw_blue=74 raw_clear=299
@@ -2586,7 +2586,7 @@
 11-06 13:09:25.053 14043 14043 D LCRING  : type=13 h=0.00 i=0 center=2.81 text=复甲子金
 11-06 13:09:25.053 14043 14043 D LCRING  : type=14 h=0.00 i=0 center=1.50 text=癸山九度外
 11-06 13:09:25.054 14043 14300 W LCPICK  : ignore type=measure-clear
-11-06 13:09:25.055 14043 14043 I hwschromium-21705: [INFO:CONSOLE(514)] "LC3D measure clear was=false", source: file:///android_asset/map.html?tk=5b9082542d6673a9c5b7ae590959c051 (514)
+11-06 13:09:25.055 14043 14043 I hwschromium-21705: [INFO:CONSOLE(514)] "LC3D measure clear was=false", source: file:///android_asset/map.html?tk=***REDACTED*** (514)
 11-06 13:09:25.055 14043 14300 W LCPICK  : ignore type=paint
 11-06 13:09:25.060  1385  1466 I VSyncPredictor: setPeriod: 16666666
 11-06 13:09:25.080  3558  3884 E Booster_BoosterdDelegate: [bindService]bindService start

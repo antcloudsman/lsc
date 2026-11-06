@@ -127,6 +127,16 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
 
 缺一侧、尺寸不一致、解析失败都会在表里标 `missing-lc` / `missing-orig` / `error` 并列在控制台；`--strict` 时任一未比成返回 exit 1（用于 CI/门禁），默认 exit 0 只做报告。
 
+**证据完整性硬检查**（不看 `--strict`，命中即 exit 1）：
+
+- **同一侧不同 state 的 PNG sha256 相同** → 报 `duplicate screenshot across states`，列出全部 state；同一张图冒充两个状态直接算证据缺陷（Stage 2 的 `map-3d-mode`↔`tool-contour-01` 就是这么被抓出来的）；
+- **0 字节 PNG** → 报 `empty screenshot (0 bytes)`，空文件不是截图；
+- `_` 前缀文件（如 `_launch-probe.png`）是探针，不参与配对与判重；
+- 判重按侧独立（orig 自己比、lc 自己比），跨侧同图不判重；
+- 完整性扫描**整个 root**，`--state` 只过滤配对，不会跳过其它 state 的重复图。
+
+结果同时写进 `summary.json` 的 `integrity` 段与 `index.html` 的「证据完整性」小节。
+
 ## 6. 写发现时的硬要求
 
 每条“差异”至少带：`state id` + 复现命令（或入口路径 + 坐标）+ 量化值（px / hex / sp / 文案逐字）。工具输出只是证据，结论里不要出现“差不多/基本一致/类似”；无法复现的不写进报告。

@@ -44,7 +44,7 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
 DEFAULT_THRESHOLD = 8
@@ -559,7 +559,29 @@ def _rel(path: Path, start: Path) -> str:
     return Path(os.path.relpath(path, start)).as_posix()
 
 
-def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int) -> None:
+def _scan_image_integrity(directory: Path) -> dict:
+    """Find evidence that cannot be trusted: 0-byte PNGs and one image reused for several states."""
+    result = {"duplicates": [], "empty": []}
+    if not directory.exists():
+        return result
+    by_hash: dict[str, list[str]] = {}
+    for png in sorted(directory.glob("*.png")):
+        if png.name.startswith("_"):
+            continue  # _launch-probe etc. are probes, not states
+        size = png.stat().st_size
+        if size == 0:
+            result["empty"].append(png.name)
+            continue
+        by_hash.setdefault(sha256_file(png), []).append(png.name)
+    for digest, names in sorted(by_hash.items()):
+        if len(names) > 1:
+            result["duplicates"].append(
+                {"sha256": digest, "states": [Path(name).stem for name in names], "files": names}
+            )
+    return result
+
+
+def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, integrity: dict) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     summary = {
         "tool": "fidelity",
@@ -567,6 +589,7 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int) ->
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "root": str(root),
         "threshold": threshold,
+        "integrity": integrity,
         "states": rows,
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -607,6 +630,23 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int) ->
             "</tr>"
         )
     html.append("</table>")
+
+    # Evidence integrity: duplicate screenshots / empty files are hard errors, not findings.
+    html.append("<h2>证据完整性</h2>")
+    integrity_rows = 0
+    for side in ("orig", "lc"):
+        for group in integrity.get(side, {}).get("duplicates", []):
+            integrity_rows += 1
+            html.append(
+                "<table><tr><th>duplicate</th><td>"
+                f"{_esc(side)}: {_esc(', '.join(group['states']))} share sha256 {_esc(group['sha256'][:16])}…"
+                "</td></tr></table>"
+            )
+        for name in integrity.get(side, {}).get("empty", []):
+            integrity_rows += 1
+            html.append(f"<p class=\"fail\">empty screenshot (0 bytes): {_esc(side)}/{_esc(name)}</p>")
+    if integrity_rows == 0:
+        html.append("<p class=\"pass\">no duplicate or empty screenshots</p>")
 
     for row in rows:
         state = row["state"]
@@ -659,9 +699,26 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int) ->
         f"- states compared: {compared}/{total}",
         f"- threshold: {threshold}",
         "",
+        "## 证据完整性",
+        "",
+    ]
+    duplicate_total = sum(len(integrity.get(side, {}).get("duplicates", [])) for side in ("orig", "lc"))
+    empty_total = sum(len(integrity.get(side, {}).get("empty", [])) for side in ("orig", "lc"))
+    if duplicate_total == 0 and empty_total == 0:
+        md.append("- no duplicate or empty screenshots")
+    else:
+        for side in ("orig", "lc"):
+            for group in integrity.get(side, {}).get("duplicates", []):
+                md.append(
+                    f"- DUPLICATE {side}: {', '.join(group['states'])} share sha256 `{group['sha256'][:16]}…`"
+                )
+            for name in integrity.get(side, {}).get("empty", []):
+                md.append(f"- EMPTY {side}/{name} (0 bytes)")
+    md.extend([
+        "",
         "| state | status | diff px | ratio | bbox | mean dE2000 | controls (m/only orig/only lc) |",
         "|---|---|---|---|---|---|---|",
-    ]
+    ])
     for row in rows:
         metrics = row.get("metrics") or {}
         diff = metrics.get("diff") or {}
@@ -801,12 +858,25 @@ def cmd_report(args: argparse.Namespace) -> int:
     states = set()
     for directory in (orig_dir, lc_dir):
         if directory.exists():
-            states.update(path.stem for path in directory.glob("*.png"))
+            states.update(path.stem for path in directory.glob("*.png") if not path.name.startswith("_"))
     if args.state:
         wanted = set(args.state)
         states = {state for state in states if state in wanted}
     if not states:
         raise FidelityError(f"no *.png pairs found under {root}")
+
+    integrity = {"orig": _scan_image_integrity(orig_dir), "lc": _scan_image_integrity(lc_dir)}
+    for side in ("orig", "lc"):
+        for group in integrity[side]["duplicates"]:
+            failed(
+                f"duplicate screenshot across states ({side}): {', '.join(group['states'])} "
+                f"share sha256 {group['sha256'][:16]}…; re-capture or mark the state as missing"
+            )
+        for name in integrity[side]["empty"]:
+            failed(f"empty screenshot (0 bytes) ({side}): {name}; remove it or re-capture with a real screenshot")
+    integrity_failed = any(
+        integrity[side]["duplicates"] or integrity[side]["empty"] for side in ("orig", "lc")
+    )
 
     crop = parse_rect(args.crop, "--crop") if args.crop else None
     ignore_rects = [parse_rect(value, "--ignore-rect") for value in (args.ignore_rect or [])]
@@ -836,8 +906,10 @@ def cmd_report(args: argparse.Namespace) -> int:
             failed(f"{state}: {row['status']} - {row['error']}")
         rows.append(row)
 
-    write_report(rows, out_dir, root, args.threshold)
+    write_report(rows, out_dir, root, args.threshold, integrity)
     compared = sum(1 for row in rows if row["status"] == "compared")
+    if integrity_failed:
+        return 1
     if compared == len(rows):
         return 0
     return 0 if not args.strict else 1

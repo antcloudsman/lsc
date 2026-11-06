@@ -53,3 +53,30 @@ map-explore-page	map-explore-page.png	map-explore-page.xml	ActivityRecord{acf14f
 map-3d-mode	map-3d-mode.png	map-3d-mode.xml	ActivityRecord{cd6eb89 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025621}	2026-11-06 13:41:21	png-ok/dump-ok
 win-02-compass    win-02-compass.png    -    space.xinzhi.globe/.ui.pages.MainActivity (历史轮 2026-11-05 再采集，原机同版本)    2026-11-05 (历史轮)    png-ok/dump-BLOCKED(WebView 无文本节点)
 w3-sheet    w3-sheet.png    -    space.xinzhi.globe/.ui.pages.MainActivity (历史轮 2026-11-05 再采集，原机同版本)    2026-11-05 (历史轮)    png-ok/dump-BLOCKED(弹层截图，文字见 CompassReadSheet 取证)
+drawer-menu-02	drawer-menu-02.png	-	ActivityRecord{b2d4d66 u0 space.xinzhi.globe/com.beizi.ad.v2.activity.BeiZiNewInterstitialActivity t1025628}	2026-11-06 13:51:00	png-ok/dump-BLOCKED
+drawer-probe-01	drawer-probe-01.png	drawer-probe-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:51:10	png-ok/dump-ok
+drawer-menu-02	drawer-menu-02.png	drawer-menu-02.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:51:26	png-ok/dump-ok
+drawer-probe-01	drawer-probe-01.png	drawer-probe-01.xml	ActivityRecord{b78a8fe u0 space.xinzhi.globe/.ui.pages.OpenVipActivity t1025628}	2026-11-06 13:51:31	png-EMPTY(FLAG_SECURE)/dump-ok
+drawer-menu-03	drawer-menu-03.png	drawer-menu-03.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:52:05	png-ok/dump-ok
+drawer-menu-04	drawer-menu-04.png	drawer-menu-04.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:52:09	png-ok/dump-ok
+drawer-menu-05	drawer-menu-05.png	drawer-menu-05.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:52:13	png-ok/dump-ok
+setting-map-01	setting-map-01.png	setting-map-01.xml	ActivityRecord{8e4354 u0 space.xinzhi.globe/.ui.pages.setting.MapSettingActivity t1025628}	2026-11-06 13:52:32	png-ok/dump-ok
+tool-manage-01	tool-manage-01.png	tool-manage-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:52:43	png-ok/dump-ok
+more-sheet-04-edit-entry	more-sheet-04-edit-entry.png	more-sheet-04-edit-entry.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:53:01	png-ok/dump-ok
+tool-manage-01	tool-manage-01.png	tool-manage-01.xml	ActivityRecord{df22983 u0 space.xinzhi.globe/.ui.pages.ToolsManagerActivity t1025628}	2026-11-06 13:53:07	png-ok/dump-ok
+favorite-list-01	favorite-list-01.png	favorite-list-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:53:21	png-ok/dump-ok
+poi-select-01	poi-select-01.png	poi-select-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:53:40	png-ok/dump-ok
+poi-select-02	poi-select-02.png	poi-select-02.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:54:06	png-ok/dump-ok
+favorite-list-02	favorite-list-02.png	favorite-list-02.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:54:32	png-ok/dump-ok
+search-result-02	search-result-02.png	search-result-02.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:54:43	png-ok/dump-ok
+favorite-list-03	favorite-list-03.png	favorite-list-03.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:55:05	png-ok/dump-ok
+favorite-save-01	favorite-save-01.png	favorite-save-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:55:15	png-ok/dump-ok
+favorite-list-03	favorite-list-03.png	favorite-list-03.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:55:41	png-ok/dump-ok
+favorite-save-01	favorite-save-01.png	favorite-save-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:55:51	png-ok/dump-ok
+favorite-mode-01	favorite-mode-01.png	favorite-mode-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:56:12	png-ok/dump-ok
+favorite-list-04	favorite-list-04.png	favorite-list-04.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:56:21	png-ok/dump-ok
+search-result-02	search-result-02.png	search-result-02.xml	ActivityRecord{93f206c u0 space.xinzhi.globe/.ui.pages.SearchActivity t1025628}	2026-11-06 13:56:31	png-ok/dump-ok
+search-result-crs-01	search-result-crs-01.png	search-result-crs-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:56:52	png-ok/dump-ok
+favorite-mode-02	favorite-mode-02.png	favorite-mode-02.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:57:05	png-ok/dump-ok
+favorite-addpoint-01	favorite-addpoint-01.png	favorite-addpoint-01.xml	ActivityRecord{2528683 u0 space.xinzhi.globe/.ui.pages.LoginActivity t1025628}	2026-11-06 13:57:11	png-ok/dump-ok
+favorite-save-login-01	favorite-save-login-01.png	favorite-save-login-01.xml	ActivityRecord{ef0a502 u0 space.xinzhi.globe/.ui.pages.MainActivity t1025628}	2026-11-06 13:57:36	png-ok/dump-ok

@@ -23,6 +23,7 @@
 | 亮度/滤镜 | 系统亮度固定、关闭护眼/滤镜 |
 | dump | `rm -f /sdcard/a.xml` 后再 `uiautomator dump`，`pull` 前校验属于目标包 |
 | 装包 | 原版只对照；LC 侧 `adb push` + `pm install -r -t` |
+| **LC 构建来源** | **APK 必须从 `develop` 构建**（`fix-p0` 只提供清单/工具，不是可采版本）；`meta` 必须写死 `build.branch=develop`、`build.commit=<40 位>`、`apk.sha256`。缺任一字段 → 该批 LC 证据作废 |
 | 脱敏 | 日志/dump 经 LogRedact；任何 key/token 不入库、不贴群 |
 
 ---
@@ -45,7 +46,7 @@
 | 12 | `diff_type` | enum[] | ✅ | `结构/功能/业务逻辑/布局/按钮/模块/样式/效果/文案/数据源/付费墙/缺失/多余/性能` |
 | 13 | `sev` | enum | ✅ | `P0/P1/P2/DI（有意差异）/NC（不可比）`，判定依据见 §2 |
 | 14 | `repro` | string | ✅ | 复现命令或坐标序列（adb / uiautomator / 点击路径），与 `entry_path` 互补 |
-| 15 | `status` | enum | ✅ | `待采集/已对齐/差异/待补/不可比` |
+| 15 | `status` | enum | ✅ | `待采集/已对齐/差异/待补/待定级/不可比`（`待定级`＝证据本身无效，如构建来源错误，现象不入清单） |
 | 16 | `owner` | enum | ✅ | 责任模块：`客户端/地图/服务端/产品/逆向` |
 | 17 | `notes` | string | ⬜ | 已知原因、关联 bug 号（B-xx/K-xx）、阻塞点 |
 
@@ -118,14 +119,17 @@ tools/fidelity/   对齐/差图/取色/HTML 对照页（LC服务端 提供）
 
 ---
 
-## 5. 可复核性硬门槛（4 条，缺一不可）
+## 5. 可复核性硬门槛（5 条，缺一不可）
 
 1. **入口可复现**：`entry_path` 能照着点到（坐标或文案选择器），不接受「在设置里」这类模糊描述。
 2. **命令可复现**：`repro` 给出 adb/uiautomator 命令或点击序列，第三人可原样执行。
 3. **证据有指纹**：截图/dump 有路径 + sha256，且属于声明的包与状态。
 4. **量化有单位**：px/hex/ΔE/sp/ms/逐字，任一差异必须带单位与算法。
+5. **构建来源可核**：LC 侧 `meta.build.branch=develop`、`build.commit` 为 40 位提交号、`apk.sha256` 已记录；三者缺一，整批证据作废。
 
-> 不满足 1–4 的发现：写入「待补」区，**不得**进 `findings` 正式表，也不得进 Stage 5 计划。
+> 不满足 1–5 的发现：写入「待补」区或标 `待定级`，**不得**进 `findings` 正式表，也不得进 Stage 5 计划。
+
+**已发生的反例（2026-11-06，`cd47703`）**：LC 侧 `compass-main-01` 从 `fix-p0` 分支构建（该分支缺 96 个 `app/` 文件、13,636 行，`strings_gap/weather/overlay/mountain…` 为空），截图整屏黑底、盘面/底图未渲染，`logcat` 无 FATAL；`meta` 里也没有 `build.commit`。处置：**现象挂「待定级（构建来源无效）」、不进差异清单**；用 `develop` 重建后同名重采，并在提交信息里写「证据作废原因」。
 
 ---
 
@@ -156,6 +160,8 @@ tools/fidelity/   对齐/差图/取色/HTML 对照页（LC服务端 提供）
 | 有截图+dump | 每条 `orig_evidence` 两件齐全 | 齐全率 ≥90% | 待校核 |
 | 有交互/动效记录 | `interaction` 不得为空 | 完整率 ≥90% | 待校核 |
 | 证据指纹 | 抽查 5 份文件 `sha256` 与清单一致 | 5/5 | 待校核 |
+| 构建来源 | LC 证据 `meta.build.branch/commit/apk.sha256` 齐全且 branch=develop | 100% | 待校核 |
+| **清单取自提交** | 校核对象必须是 `git show <commit>:docs/fidelity/orig-inventory.md`，并在结论写明提交号 | 提交口径 | ✅ 强制 |
 
 ### 6.3 校核流程（清单落盘后 10 分钟）
 

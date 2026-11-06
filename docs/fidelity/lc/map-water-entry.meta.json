@@ -1,9 +1,9 @@
 {
   "tool": "fidelity",
-  "version": "1.3.0",
+  "version": "1.7.0",
   "state": "map-water-entry",
   "side": "lc",
-  "captured_at": "2026-11-06T15:45:28+0800",
+  "captured_at": "2026-11-06T17:12:21+0800",
   "serial": "L2E0222531014833",
   "package": "com.luopan.fengshui",
   "checksheet_id": "ST-C-water",
@@ -20,11 +20,11 @@
     "file": "map-water-entry.png",
     "width": 1228,
     "height": 2700,
-    "sha256": "d601ae579f07d5b39626334a1b9bf0280d82f21eff00419b49c52237682359e4"
+    "sha256": "c1499a5703444e6553bd2e52e1181b5e194e6ec633222235315be1c9ed62c658"
   },
   "dump": {
     "file": "map-water-entry.xml",
-    "sha256": "784b2d29e1875edf3b1b725f3afdc29cc8e25dfe640ba3fb1d0c183827ac3ea3"
+    "sha256": "14ad11e4d44ef89bb7b860ee08299478c88a899cc4d7750bdcc61a9cd56957d9"
   },
   "device": {
     "ro.product.model": "JAD-AL00",

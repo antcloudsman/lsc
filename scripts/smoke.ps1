@@ -163,7 +163,7 @@ if ($SkipDevice) { $androidArgs += @('-SkipDevice') }
 $androidCode = $LASTEXITCODE
 
 # --- summary -------------------------------------------------------------
-function Get-Result([int]$Code) { if ($Code -eq 0) { 'PASS' } else { 'FAIL' } }
+function Get-Result([int]$Code) { if ($Code -eq 0) { 'PASS' } elseif ($Code -eq 3) { 'SKIP' } else { 'FAIL' } }
 $copyResult = Get-Result $copyCode
 $secretResult = Get-Result $secretCode
 $desktopResult = Get-Result $desktopCode
@@ -172,7 +172,13 @@ $mechanicsResult = Get-Result $mechanicsCode
 $androidResult = Get-Result $androidCode
 $overallCode = 0
 foreach ($code in @($copyCode, $secretCode, $desktopCode, $numericCode, $mechanicsCode, $androidCode)) {
-    if ($code -ne 0) { $overallCode = 1 }
+    if ($code -eq 1) { $overallCode = 1 }
+    elseif ($code -eq 3 -and $overallCode -eq 0) { $overallCode = 3 }
+}
+$desktopSkipReason = ''
+$desktopResultFile = Join-Path $desktopOut 'result.txt'
+if ($desktopCode -eq 3 -and (Test-Path -LiteralPath $desktopResultFile)) {
+    $desktopSkipReason = ((Select-String -LiteralPath $desktopResultFile -Pattern '^reason=') | ForEach-Object { $_.Line -replace '^reason=', '' }) -join '; '
 }
 
 Write-Host ''
@@ -187,7 +193,11 @@ if ($secretDetail) {
 } else {
     Write-Host ("secret   : {0}  (log: {1})" -f $secretResult, $secretLog)
 }
-Write-Host ("desktop  : {0}  (logs: {1})" -f $desktopResult, $desktopOut)
+if ($desktopResult -eq 'SKIP') {
+    Write-Host ("desktop  : {0}  (环境缺口: {1}; logs: {2})" -f $desktopResult, $desktopSkipReason, $desktopOut)
+} else {
+    Write-Host ("desktop  : {0}  (logs: {1})" -f $desktopResult, $desktopOut)
+}
 if ($numericDetail) {
     Write-Host ("numeric  : {0}  ({1})" -f $numericResult, $numericDetail)
 } else {
@@ -220,6 +230,9 @@ Set-Content -LiteralPath (Join-Path $OutDir 'summary.txt') -Value $summary -Enco
 if ($overallCode -eq 0) {
     Write-Host 'SMOKE: PASS' -ForegroundColor Green
     exit 0
+} elseif ($overallCode -eq 3) {
+    Write-Host 'SMOKE: SKIP (环境缺口，见上面 desktop 行)' -ForegroundColor Yellow
+    exit 3
 } else {
     Write-Host 'SMOKE: FAIL' -ForegroundColor Red
     exit 1

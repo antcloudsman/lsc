@@ -42,3 +42,5 @@ __pycache__/
 *.pyc
 /checks-*.png
 
+# ---- Docker 桌面门禁的容器内截图落点（宿主机可见、不入库） ----
+/app/checks/

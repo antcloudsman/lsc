@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.3.0",
+  "state": "win-02-compass",
+  "side": "lc",
+  "captured_at": "2026-11-06T14:11:21+0800",
+  "serial": "",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-A-compass-columns",
+  "build": {
+    "branch": "develop",
+    "commit": "e88ed0c2aa70272e36f6d03a0a6f12511d6bf532"
+  },
+  "apk": {
+    "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "8dd5bf13dbbd0763b961a42df8bb35706f743ae2338d3bbd336f748ed0ab1763",
+    "bytes": 7059509
+  },
+  "image": {
+    "file": "win-02-compass.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "66e765ff595e455449051ec11aa9ee7265db470f0e34eb9fd5c2f7689f2dcb5f"
+  },
+  "dump": {
+    "file": "win-02-compass.xml",
+    "sha256": "6926bc4f15344f5c83322a55c8447c70690bf553234303bbcefed2557e923970"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

@@ -1,21 +1,30 @@
 {
   "tool": "fidelity",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "state": "compass-main-01",
   "side": "lc",
-  "captured_at": "2026-11-06T13:49:01+0800",
+  "captured_at": "2026-11-06T14:10:30+0800",
   "serial": "",
   "package": "com.luopan.fengshui",
   "checksheet_id": "ST-01-compass-main",
+  "build": {
+    "branch": "develop",
+    "commit": "e88ed0c2aa70272e36f6d03a0a6f12511d6bf532"
+  },
+  "apk": {
+    "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "8dd5bf13dbbd0763b961a42df8bb35706f743ae2338d3bbd336f748ed0ab1763",
+    "bytes": 7059509
+  },
   "image": {
     "file": "compass-main-01.png",
     "width": 1228,
     "height": 2700,
-    "sha256": "964e59ee94583d4c2bbff68a77d5ffa7befd5915fee9adb3c723948c52a51632"
+    "sha256": "03b127efb1f3d3e20009c446dce6d0586270e4d5b1b5ac4062c0a306ab2988bc"
   },
   "dump": {
     "file": "compass-main-01.xml",
-    "sha256": "8cf51f799afa9d7a66952e565b943ae4467c3ce4128a211198fc2ad40d34a12d"
+    "sha256": "05ee6d29d76686b3878bedcb7e7ab28b6470463e61436ddb6157175a13dd0f4a"
   },
   "device": {
     "ro.product.model": "JAD-AL00",

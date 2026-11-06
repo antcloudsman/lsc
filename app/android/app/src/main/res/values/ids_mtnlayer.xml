@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  R2-030 山脉地图内图层（半屏面板）的稳定 id：AT 按 resource-id 定位，不依赖文案。
+  规范沿用 lc_<page>_<element>；单独成文件，避免与其它分支的 ids.xml 冲突。
+-->
+<resources>
+    <item name="lc_mtn_layer" type="id" />
+    <item name="lc_mtn_title" type="id" />
+    <item name="lc_mtn_close" type="id" />
+    <item name="lc_mtn_status" type="id" />
+    <item name="lc_mtn_list" type="id" />
+</resources>

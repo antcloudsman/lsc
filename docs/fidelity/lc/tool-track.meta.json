@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.3.0",
+  "state": "tool-track",
+  "side": "lc",
+  "captured_at": "2026-11-06T15:50:50+0800",
+  "serial": "L2E0222531014833",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-C-track",
+  "build": {
+    "branch": "develop",
+    "commit": "464ebb8c50b427fb42b0ea0cbafabb1f4f03d58a"
+  },
+  "apk": {
+    "path": "E:\\APPDetector\\wt\\lc-map-stage2\\app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "ccd5686f4c9b908d9c5c8a61fe7166d3f2bf01fcb165405e0a58e520ce7cbb7b",
+    "bytes": 7059457
+  },
+  "image": {
+    "file": "tool-track.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "59d6acb9aedca0169c833fe733715f6bcddbf9535e325c00fac15f6ab417bc1c"
+  },
+  "dump": {
+    "file": "tool-track.xml",
+    "sha256": "fb91acefbde4c05a72513b303a0ccbefb261d7e0baf705a30f68bc2fbd44106c"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

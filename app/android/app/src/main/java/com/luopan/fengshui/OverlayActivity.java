@@ -263,9 +263,89 @@ public class OverlayActivity extends LcFeatureActivity {
 
     private void renderTab() {
         listBox.removeAllViews();
+        if (tab == 0) listBox.addView(buildAdminFilterRow());
         for (Layer l : LAYERS) {
             if (l.tab != tab) continue;
             listBox.addView(buildRow(l));
+        }
+    }
+
+    /** R2-029：「行政区域筛选」入口——设定省码后，点位图层按该省检索；未设则跟随当前视野省份。 */
+    private View buildAdminFilterRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(0, dp(4), 0, dp(8));
+        TextView tv = new TextView(this);
+        tv.setId(R.id.lc_overlay_admin_filter);
+        tv.setTextSize(12f);
+        tv.setTextColor(getColor(R.color.lc_setting_text));
+        String code = prefs().getString("admin_code", "");
+        tv.setText(code == null || code.isEmpty()
+                ? "行政区域筛选：跟随当前视野省份"
+                : "行政区域筛选：省码 " + code);
+        row.addView(tv, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        Button set = new Button(this);
+        set.setId(R.id.lc_overlay_admin_filter_set);
+        set.setText("设置");
+        set.setAllCaps(false);
+        set.setTextSize(11f);
+        set.setOnClickListener(v -> showAdminFilterDialog());
+        row.addView(set);
+        return row;
+    }
+
+    private void showAdminFilterDialog() {
+        final android.widget.EditText et = new android.widget.EditText(this);
+        et.setHint("省份名（如 北京市）或 9 位省码");
+        String cur = prefs().getString("admin_code", "");
+        if (cur != null) et.setText(cur);
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("行政区域筛选")
+                .setView(et)
+                .setPositiveButton("确定", (d, w) -> {
+                    String v = et.getText().toString().trim();
+                    if (v.isEmpty()) {
+                        prefs().edit().remove("admin_code").apply();
+                        reloadPointLayers();
+                        return;
+                    }
+                    if (v.matches("\\d{9}")) {
+                        saveAdminCode(v);
+                        return;
+                    }
+                    new Thread(() -> {
+                        String code = MapPoints.resolveProvince9(v, startLat, startLng);
+                        runOnUiThread(() -> {
+                            if (code == null || code.isEmpty()) {
+                                Toast.makeText(this, "未解析出省码：" + v + "（未改动筛选）",
+                                        Toast.LENGTH_SHORT).show();
+                            } else {
+                                saveAdminCode(code);
+                            }
+                        });
+                    }).start();
+                })
+                .setNegativeButton("清除", (d, w) -> {
+                    prefs().edit().remove("admin_code").apply();
+                    reloadPointLayers();
+                })
+                .show();
+    }
+
+    private void saveAdminCode(String code) {
+        prefs().edit().putString("admin_code", code).apply();
+        Toast.makeText(this, "行政区域筛选：" + code, Toast.LENGTH_SHORT).show();
+        renderTab();
+        reloadPointLayers();
+    }
+
+    /** 已打开的点位图层按新省码重查；内置层（路网/等高线/山脊/地形）不受影响。 */
+    private void reloadPointLayers() {
+        renderTab();
+        for (Layer l : LAYERS) {
+            if (l.tab != tab || !l.available || l.cats == null) continue;
+            if (!prefs().getBoolean("on_" + l.id, false)) continue;
+            loadPoints(l);
         }
     }
 
@@ -290,10 +370,17 @@ public class OverlayActivity extends LcFeatureActivity {
             sw.setOnCheckedChangeListener((b, checked) -> apply(l, checked));
             top.addView(sw);
         } else {
+            // R2-029：无数据的行给一个显式禁用开关（enabled=false），不是「看起来能点」的空壳
+            Switch off = new Switch(this);
+            off.setId(l.switchId);
+            off.setChecked(false);
+            off.setEnabled(false);
+            top.addView(off);
             TextView no = new TextView(this);
             no.setText("无数据");
             no.setTextSize(12f);
             no.setTextColor(getColor(R.color.lc_label_gray));
+            no.setPadding(dp(6), 0, 0, 0);
             top.addView(no);
         }
         row.addView(top);
@@ -386,7 +473,11 @@ public class OverlayActivity extends LcFeatureActivity {
 
     private void loadPoints(Layer l) {
         POOL.execute(() -> {
-            String province = MapPoints.provinceCode(startLat, startLng);
+            // R2-029：行政区域筛选优先用用户设定的省码（prefs admin_code），未设则用当前中心点省份
+            String province = prefs().getString("admin_code", "");
+            if (province == null || province.isEmpty()) {
+                province = MapPoints.provinceCode(startLat, startLng);
+            }
             List<MapPoints.Point> pts = new ArrayList<>();
             if (province != null) {
                 for (int code : l.cats) {

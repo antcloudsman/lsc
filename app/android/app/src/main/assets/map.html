@@ -53,6 +53,18 @@
     background:#2a231b; color:#dcbe82; border:1px solid #4a3c28; border-radius:6px; font-size:13px; }
   .srcItem.off { color:#6b5f4d; border-color:#3a3126; }
   .srcItem.on { background:#5a4a30; color:#fff; }
+  /* R2-027：3 列 × 4 行缩略图网格（12 源 + 「+」），源名在卡片底部 */
+  #srcBox { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+  .srcCard { display:flex; flex-direction:column; padding:0; overflow:hidden;
+    background:#2a231b; color:#dcbe82; border:1px solid #4a3c28; border-radius:8px; }
+  .srcCard.off { color:#6b5f4d; border-color:#3a3126; }
+  .srcCard.on { border-color:#dcbe82; box-shadow:0 0 0 1px #dcbe82 inset; }
+  .srcThumb { height:74px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#3b3227,#241e17); color:#8a7660; font-size:11px; }
+  .srcCard.off .srcThumb { background:linear-gradient(135deg,#241f19,#1b1712); color:#5d5347; }
+  .srcName { padding:5px 6px 6px; font-size:11px; line-height:1.25; text-align:center;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .srcPlus .srcThumb { font-size:26px; color:#dcbe82; }
 </style>
 </head>
 <body>
@@ -1536,16 +1548,29 @@ function sourceOfBase(layer) {
 function openSources() {
   var box = document.getElementById("srcBox");
   var html = "";
+  var shown = 0;
   for (var i = 0; i < MAP_SOURCES.length; i++) {
     var s = MAP_SOURCES[i];
     if (s.hidden) continue;                 /* 来源表里的隐藏项（wayback）不进面板 */
-    var cls = (s.layer === null) ? "srcItem off" : ((i === srcIndex) ? "srcItem on" : "srcItem");
-    var tail = (s.layer === null) ? (" · " + s.note) : (" · 审图号 " + s.review);
+    var cls = (s.layer === null) ? "srcCard off" : ((i === srcIndex) ? "srcCard on" : "srcCard");
+    var tip = (s.layer === null) ? s.note : ("审图号 " + s.review);
     html += '<button class="' + cls + '"' + (s.layer === null ? " disabled" : "") +
-      ' onclick="selectSource(' + i + ')">' + (i + 1) + ". " + s.name + tail + "</button>";
+      ' title="' + (s.name + " · " + tip).replace(/"/g, "&quot;") + '"' +
+      ' onclick="selectSource(' + i + ')">' +
+      '<span class="srcThumb">' + (s.layer === null ? "需授权" : "可用") + "</span>" +
+      '<span class="srcName">' + s.name + "</span></button>";
+    shown++;
   }
+  /* R2-027：12 格之后补一个「+」（自定义源入口；未接入时明确告知，不装成可用） */
+  html += '<button class="srcCard srcPlus" onclick="addSourceStub()">' +
+    '<span class="srcThumb">+</span><span class="srcName">添加源</span></button>';
   box.innerHTML = html;
   document.getElementById("srcPanel").style.display = "block";
+  emit({ type: "src-panel", shown: shown, plus: true });
+}
+
+function addSourceStub() {
+  emit({ type: "src-plus", note: "自定义底图源待接入（D-006 授权口径）" });
 }
 
 function closeSources() { document.getElementById("srcPanel").style.display = "none"; }

@@ -40,4 +40,7 @@
     <item name="lc_overlay_opacity_scenic" type="id" />
     <item name="lc_overlay_opacity_port" type="id" />
     <item name="lc_overlay_opacity_airport" type="id" />
+    <!-- R2-029：行政区域筛选入口 -->
+    <item name="lc_overlay_admin_filter" type="id" />
+    <item name="lc_overlay_admin_filter_set" type="id" />
 </resources>

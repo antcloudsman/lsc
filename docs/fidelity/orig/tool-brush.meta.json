@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-brush",
+  "side": "orig",
+  "checksheet_id": "ST-C-brush",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "tool-brush.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "414dfb27653e0445e4814d07cf443a6933baa22d4119cdc526ab3b8d6419fe96"
+  },
+  "dump": {
+    "file": "tool-brush.xml",
+    "sha256": "330620e521e0c921632390f930079439e30c06bb5d8be1f46e425ba8560a77c2"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

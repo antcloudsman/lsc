@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "search-result-01",
+  "side": "orig",
+  "checksheet_id": "ST-A-search-empty",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "search-result-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "279a35faf75f51b6b131acec7da1fcfe12b47ec216ed7e9fa2eab593841a8ae6"
+  },
+  "dump": {
+    "file": "search-result-01.xml",
+    "sha256": "ab53aff9d8d2a3a8a68b7ca8ad571412574e69ac80f3d94cab2b64e8cfa32e4f"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

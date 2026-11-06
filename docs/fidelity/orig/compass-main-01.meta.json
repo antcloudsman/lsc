@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "compass-main-01",
+  "side": "orig",
+  "checksheet_id": "ST-01-compass-main",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "compass-main-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "cfb417b86e47f016ed0347260479b5089dedd0b9325ce461ada6793b6a18db76"
+  },
+  "dump": {
+    "file": "compass-main-01.xml",
+    "sha256": "402e4f96ffd68dea2adaccefcd3c9f0960bec96fe741e49c42ac67c9ff873060"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

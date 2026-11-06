@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-manage-01",
+  "side": "orig",
+  "checksheet_id": "ST-E-tool-manage",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "tool-manage-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "01c3096c515faa866a77073fd5329b44846f19bf0cc2a49093f6ebf3a5447cd1"
+  },
+  "dump": {
+    "file": "tool-manage-01.xml",
+    "sha256": "32c9cc716dbcef695ee4ccae034fb7f9807ebaf6aabf330f95443c443b15950f"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "map-layer-sheet",
+  "side": "orig",
+  "checksheet_id": "ST-C-layer",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "map-layer-sheet.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "aa79d16b5b153367de8bcc7babfc5d4c0d1de9e84c03a7528df7a35eae1abe14"
+  },
+  "dump": {
+    "file": "map-layer-sheet.xml",
+    "sha256": "3917a15a6b61eb5005a285c7aab26295f260c4d18d034e364eab1e5af4d826b1"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

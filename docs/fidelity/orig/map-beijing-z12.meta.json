@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "map-beijing-z12",
+  "side": "orig",
+  "checksheet_id": "ST-A-map-fixed",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "map-beijing-z12.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "7bda0b04700c85ef19bdb9cb48296ce0d09490dd212b523971054dbeb0f3136d"
+  },
+  "dump": {
+    "file": "map-beijing-z12.xml",
+    "sha256": "26de30fea0b287c1f10680fdc6d94de0aad754c7e9693c036f18dc6d53c1ed21"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

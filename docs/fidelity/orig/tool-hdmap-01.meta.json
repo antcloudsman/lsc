@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-hdmap-01",
+  "side": "orig",
+  "checksheet_id": "ST-A-hdmap",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "tool-hdmap-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "86facb04cd9f445147771c2da14c83fdfe296ff58ecd8f6880666a1e91bd09f9"
+  },
+  "dump": {
+    "file": "tool-hdmap-01.xml",
+    "sha256": "21a13541eb1215169d36f2edab2fabf3e2677a3f5d26f5e2cc84ad86fc9d8e3f"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

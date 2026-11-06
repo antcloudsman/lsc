@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "setting-map-01",
+  "side": "orig",
+  "checksheet_id": "ST-E-map-setting",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "setting-map-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "4f1e9dc42db3d1499c4ccb84414654a9083790f5c3961476ef971bb371a9cd86"
+  },
+  "dump": {
+    "file": "setting-map-01.xml",
+    "sha256": "95469bcb8ff82d981e1d4ab3891e4a01de59e2983da09b4d91551f2624e81956"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

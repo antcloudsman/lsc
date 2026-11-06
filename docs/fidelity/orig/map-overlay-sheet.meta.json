@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "map-overlay-sheet",
+  "side": "orig",
+  "checksheet_id": "ST-C-overlay",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "map-overlay-sheet.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "1901f94f8c2e4e334169356a57e28b65eba556ab8ebe94fe6db6c489d91c9c7e"
+  },
+  "dump": {
+    "file": "map-overlay-sheet.xml",
+    "sha256": "8c0224430d347dbba58bc3f67bce01f47209a96ef4e8c9445fd22903d8a0fb84"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

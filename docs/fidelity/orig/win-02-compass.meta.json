@@ -1,0 +1,17 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "win-02-compass",
+  "side": "orig",
+  "checksheet_id": "ST-A-compass-columns",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "win-02-compass.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "812c4b9b184af207e66c726eed84d77f1cb882d91b2c85dd93f73e61693b9435"
+  },
+  "dump": null,
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

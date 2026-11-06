@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "compass-overlay-hidden-map",
+  "side": "orig",
+  "checksheet_id": "ST-A-compass-hidden",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "compass-overlay-hidden-map.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "b8bb15c4a88eabeaddd367ded879489f24c235906dd384d23748470676040e58"
+  },
+  "dump": {
+    "file": "compass-overlay-hidden-map.xml",
+    "sha256": "211cbd6b06b2e88724509e27539053d9b20cebc9e0e2705e306d20bba91d8a58"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

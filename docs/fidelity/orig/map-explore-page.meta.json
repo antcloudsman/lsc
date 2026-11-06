@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "map-explore-page",
+  "side": "orig",
+  "checksheet_id": "ST-C-explore",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "map-explore-page.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "705628da6f583615dcc1d0c1d92277054df944c097cd11e591b7116a7723fc21"
+  },
+  "dump": {
+    "file": "map-explore-page.xml",
+    "sha256": "d2235355e9951e471e72d8b397ecb826fc56253e3f7003f7a4416a030e930867"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

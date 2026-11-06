@@ -867,6 +867,122 @@
       "use": "右列 定位",
       "evidence": "res/values/public.xml 资源名 + ui/compose/p1.1.smali:604；解码文件 sha256=6905bc68aee674ae…",
       "checksheet": "A-04 左 8 / 右 10 工具图标"
+    },
+    {
+      "entry": "0x7f08040c",
+      "target": "icons/drawer/svg_tool_folder.xml",
+      "kind": "icon-drawer",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_tool_folder",
+      "use": "全地图工具",
+      "evidence": "资源名 tool_folder 直配；smali 未见 R$drawable 引用",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "0x7f0803ba",
+      "target": "icons/drawer/svg_compass_reset.xml",
+      "kind": "icon-drawer",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_compass_reset",
+      "use": "罗盘复位",
+      "evidence": "CompassToolsKt.smali:9507 / 9620",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "0x7f0803b9",
+      "target": "icons/drawer/svg_compass_lock.xml",
+      "kind": "icon-drawer",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_compass_lock",
+      "use": "罗盘锁定",
+      "evidence": "资源名 compass_lock 直配；smali 未见引用",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "0x7f0803f3",
+      "target": "icons/drawer/svg_read_compass.xml",
+      "kind": "icon-drawer",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_read_compass",
+      "use": "读盘",
+      "evidence": "CompassToolsKt.smali:9707",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "0x7f080408",
+      "target": "icons/drawer/svg_tiedi.xml",
+      "kind": "icon-drawer",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_tiedi",
+      "use": "贴地",
+      "evidence": "CompassToolsKt.smali:9805",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "0x7f0803ff",
+      "target": "icons/drawer/svg_street.xml",
+      "kind": "icon-drawer",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_street",
+      "use": "实景（候选，待确认）",
+      "evidence": "资源名 street 直配；smali 未见引用",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "res/Ji.png",
+      "target": "tools/ic_3d_white.png",
+      "kind": "tool-icon",
+      "resource": "ic_3d_white",
+      "raster": "mipmap-xxxhdpi",
+      "use": "3D",
+      "evidence": "mipmap-xxxhdpi；白色立方线稿，与右列 3D 按钮一致",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "res/pf.png",
+      "target": "tools/ic_north_needle.png",
+      "kind": "tool-icon",
+      "resource": "ic_north_needle",
+      "raster": "mipmap-xxxhdpi",
+      "use": "指北针",
+      "evidence": "mipmap-xxxhdpi；红/灰针形，与右列指北针一致",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "0x7f080404",
+      "target": "icons/drawer/svg_surround.xml",
+      "kind": "icon-drawer",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_surround",
+      "use": "坐南朝北（候选：环绕/朝向）",
+      "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "0x7f0803be",
+      "target": "icons/drawer/svg_compass_switch.xml",
+      "kind": "icon-drawer",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_compass_switch",
+      "use": "指针开关（候选：罗盘切换）",
+      "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
+      "checksheet": "P1-33-A 罗盘/地图工具条图标"
     }
   ],
   "decode": {

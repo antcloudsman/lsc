@@ -3766,6 +3766,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onBackPressed() {
+        // R2-021（判词 P1-21-A）：收藏列表是收藏点地图态的子页，系统返回必须先关子页，
+        // 而不是直接把收藏点态一起退掉——否则「返回回地图态」这层会被跳过两层。
+        if (favoriteSubList != null && favoriteSubList.getVisibility() == View.VISIBLE) {
+            favoriteSubList.setVisibility(View.GONE);
+            android.util.Log.d("LCFAV", "sublist close by back-key");
+            return;
+        }
         // K-01：罗盘是浮层，返回键先退出浮层，再退页面（原版「返回/隐藏」同义）。
         if (favoriteMode) {
             setFavoriteMode(false);

@@ -58,6 +58,10 @@ public class M3PageActivity extends Activity {
      */
     private static final String HELP_URL = "https://xinzhispace.yuque.com/org-wiki-xinzhispace-zrccm1/mh7qvx?#";
     private static final String AGREEMENT_URL = "https://agreement.yuan9.cn/agreement/swssqjdt/yhxyb.html";
+    /** 隐私政策：原版 WebActivity.i.b(ctx, "privacy.html", "隐私政策") —— 与用户协议同一 base。 */
+    private static final String PRIVACY_URL = "https://agreement.yuan9.cn/agreement/swssqjdt/privacy.html";
+    /** 备案编号：原版 ACTION_VIEW 走**外部浏览器**（ApiHelper 常量 https://beian.miit.gov.cn/）。 */
+    private static final String BEIAN_URL = "https://beian.miit.gov.cn/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -408,25 +412,39 @@ public class M3PageActivity extends Activity {
      */
     private void buildAbout(LinearLayout list, List<String> lines) {
         for (int i = 1; i < lines.size(); i++) {
-            String text = lines.get(i);
+            final String text = lines.get(i);
             TextView tv = new TextView(this);
             tv.setText(text);
             tv.setTextSize(15f);
-            if (text.contains("《用户协议》") || text.contains("《隐私政策》")) {
-                tv.setTextColor(Color.rgb(120, 170, 240));   // 链接色
+            tv.setPadding(0, 12, 0, 12);
+            if (text.contains("《用户协议》")) {
+                tv.setTextColor(Color.rgb(120, 170, 240));
+                // 逆向：AboutActivity$b$a$c → WebActivity.i.b(ctx, "yhxyb.html", "用户协议")，应用内 WebView
+                tv.setOnClickListener(v -> showWeb("用户协议", AGREEMENT_URL));
+            } else if (text.contains("《隐私政策》")) {
+                tv.setTextColor(Color.rgb(120, 170, 240));
+                // 逆向：…$d → WebActivity.i.b(ctx, "privacy.html", "隐私政策")，同一载体；URL = 同一 base + privacy.html
+                tv.setOnClickListener(v -> showWeb("隐私政策", PRIVACY_URL));
+            } else if (text.startsWith("APP备案编号")) {
+                // 逆向：beian.miit.gov.cn 走 ACTION_VIEW → **外部浏览器**（不是应用内 WebView）
+                tv.setTextColor(Color.rgb(120, 170, 240));
                 tv.setOnClickListener(v -> {
-                    if (text.contains("《用户协议》")) {
-                        showWeb("三维山水全景地图用户协议", AGREEMENT_URL);
-                    } else {
-                        tv.setText("《隐私政策》：URL 待确认（SECRECY_POLICY 仅知 …/privacy.html）");
-                        tv.setTextColor(Color.rgb(200, 190, 170));
-                        android.util.Log.d("LCM3", "privacy url unconfirmed");
+                    try {
+                        startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(BEIAN_URL)));
+                    } catch (Throwable t) {
+                        android.util.Log.e("LCM3", "beian open failed", t);
                     }
+                });
+            } else if ("测绘资质".equals(text)) {
+                // 逆向：本项可点，行为待确认（他正在 dump 该页）——先标注，不臆造跳转
+                tv.setOnClickListener(v -> {
+                    tv.setText("测绘资质：行为待确认");
+                    tv.setTextColor(Color.rgb(200, 190, 170));
                 });
             } else {
                 tv.setTextColor(Color.rgb(235, 228, 215));
             }
-            tv.setPadding(0, 12, 0, 12);
             list.addView(tv);
         }
     }

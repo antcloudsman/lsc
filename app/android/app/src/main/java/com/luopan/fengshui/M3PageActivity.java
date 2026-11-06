@@ -117,6 +117,8 @@ public class M3PageActivity extends Activity {
             buildShare(list);
         } else if ("账户设置".equals(page)) {
             buildAccount(list);
+        } else if ("关于我们".equals(page)) {
+            buildAbout(list, lines);
         } else {
             // 第一行是标题（已在标题栏显示），正文从第二行起
             for (int i = 1; i < lines.size(); i++) {
@@ -359,6 +361,80 @@ public class M3PageActivity extends Activity {
         }
         if (clickable) row.setOnClickListener(onClick);
         list.addView(row);
+    }
+
+    /**
+     * 关于我们（M3-03）：原生页 + 正文内联两个链接。
+     * 链接 bounds 原版 `[0,0]`（未布局）——按裁定记「bounds 未确认，链接目标已确认」，
+     * 不做自定义排版凑位置：链接就是正文里的那两行文字，点击打开对应 WebView。
+     * `《用户协议》` 用已确认的 USER_AGREEMENT；`《隐私政策》` 的 SECRECY_POLICY 逆向只给了 `…/privacy.html`，
+     * **未给全 URL**，因此点它只显示「URL 待确认」，不去猜域名。
+     */
+    private void buildAbout(LinearLayout list, List<String> lines) {
+        for (int i = 1; i < lines.size(); i++) {
+            String text = lines.get(i);
+            TextView tv = new TextView(this);
+            tv.setText(text);
+            tv.setTextSize(15f);
+            if (text.contains("《用户协议》") || text.contains("《隐私政策》")) {
+                tv.setTextColor(Color.rgb(120, 170, 240));   // 链接色
+                tv.setOnClickListener(v -> {
+                    if (text.contains("《用户协议》")) {
+                        showWeb("三维山水全景地图用户协议", AGREEMENT_URL);
+                    } else {
+                        tv.setText("《隐私政策》：URL 待确认（SECRECY_POLICY 仅知 …/privacy.html）");
+                        tv.setTextColor(Color.rgb(200, 190, 170));
+                        android.util.Log.d("LCM3", "privacy url unconfirmed");
+                    }
+                });
+            } else {
+                tv.setTextColor(Color.rgb(235, 228, 215));
+            }
+            tv.setPadding(0, 12, 0, 12);
+            list.addView(tv);
+        }
+    }
+
+    /** 打开一个远端 WebView（标题 + 页面），失败时页码内可见提示，不白屏。 */
+    private void showWeb(String title, String url) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setBackgroundColor(Color.rgb(26, 22, 18));
+        TextView head = new TextView(this);
+        head.setText(title);
+        head.setTextSize(16f);
+        head.setTextColor(Color.rgb(235, 228, 215));
+        head.setPadding(24, 24, 24, 12);
+        box.addView(head);
+        TextView status = new TextView(this);
+        status.setText("加载中…");
+        status.setTextSize(12f);
+        status.setTextColor(Color.rgb(220, 190, 130));
+        status.setPadding(24, 0, 24, 8);
+        box.addView(status);
+        android.webkit.WebView web = new android.webkit.WebView(this);
+        web.setBackgroundColor(Color.WHITE);
+        android.webkit.WebSettings ws = web.getSettings();
+        ws.setJavaScriptEnabled(true);
+        ws.setDomStorageEnabled(true);
+        web.setWebViewClient(new android.webkit.WebViewClient() {
+            @Override
+            public void onPageFinished(android.webkit.WebView v, String u) {
+                status.setText("");
+            }
+
+            @Override
+            public void onReceivedError(android.webkit.WebView v, int c, String d, String u) {
+                status.setText("加载失败（D-023：原版依赖远端，离线时同样不可用）");
+            }
+        });
+        web.loadUrl(url);
+        box.addView(web, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        android.app.AlertDialog dlg = new android.app.AlertDialog.Builder(this)
+                .setView(box).setNegativeButton("关闭", null).create();
+        dlg.show();
+        android.util.Log.d("LCM3", "web " + title);
     }
 
     /** 帮助中心 / 用户协议的原版远端 URL（其余页返回 null）。 */    private static String webUrlOf(String page) {

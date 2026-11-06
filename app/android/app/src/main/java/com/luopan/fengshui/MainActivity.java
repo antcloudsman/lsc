@@ -1186,6 +1186,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             try {
                 double lat = Double.parseDouble(p[0].trim());
                 double lng = Double.parseDouble(p[1].trim());
+                // R2-025：顺手更新中心缓存，搜索不再为取中心点等一次 JS 往返
+                mapCenterLat = lat;
+                mapCenterLng = lng;
                 coordView.setText(String.format(java.util.Locale.US, "%.4f，%.4f", lng, lat));
             } catch (NumberFormatException ignored) {
             }
@@ -2343,7 +2346,58 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static final String PREFS_SEARCH = "lc_search";
     private static final String KEY_HISTORY = "history";
 
+    /**
+     * R2-025 看门狗：MapPoints 的 HttpURLConnection 没有设 connect/read 超时（默认 0 = 无限等），
+     * 请求一旦卡住，UI 会永远停在「检索中…」，而且 tab= 日志是在响应之后才打的，
+     * 现场表现就是「点了 tab 之后再也没有任何输出」。UI 侧必须兜住。
+     */
+    private static final long SEARCH_TIMEOUT_MS = 10000;
+
+    /** R2-025：地图中心缓存。点 tab 立即重跑，不等 WebView 的异步回调。 */
+    private double mapCenterLat = 39.9042, mapCenterLng = 116.4074;
+
+    /** R2-025：搜索弹层单实例。每次广播都新开一个会让 dialog 叠加（实测三个叠一起）。 */
+    private android.app.AlertDialog searchDlg;
+
+    /**
+     * R2-025：按 tab 分派检索（0 境内 / 1 境外 / 2 行政区域）。
+     * 行政区域解析不出省码时返回 unavailable 结果（不编省码、不假装有数据）。
+     */
+    private MapPoints.SearchResult runTabSearch(int tab, String kw, double lat, double lng) {
+        if (tab == 1) {
+            return MapPoints.searchGlobal(kw, 20);
+        }
+        if (tab == 2) {
+            String p9 = MapPoints.resolveProvince9(kw, lat, lng);
+            if (p9 == null || p9.isEmpty()) {
+                return new MapPoints.SearchResult(MapPoints.SearchResult.UNAVAILABLE,
+                        "province-code unresolved", new java.util.ArrayList<>(), 0);
+            }
+            return MapPoints.searchInProvince(kw, p9, 20);
+        }
+        return MapPoints.searchNear(kw, lat, lng, 12, 20);
+    }
+
+    /** R2-025：后台刷新地图中心缓存（fire-and-forget，不阻塞任何点击路径）。 */
+    private void refreshMapCenterCache() {
+        if (compassMapView == null) return;
+        compassMapView.evaluateJavascript("(function(){var s=getState();return s.lat+','+s.lng;})()", c -> {
+            String[] p = decodeJsString(c).split(",");
+            if (p.length != 2) return;
+            try {
+                mapCenterLat = Double.parseDouble(p[0].trim());
+                mapCenterLng = Double.parseDouble(p[1].trim());
+            } catch (NumberFormatException ignored) {
+            }
+        });
+    }
+
     private void showSearchDialog() {
+        // R2-025：单实例。重复广播曾叠出三个 dialog，点按落在哪一层不直观，必先关旧的。
+        if (searchDlg != null && searchDlg.isShowing()) {
+            android.util.Log.d("LCSEARCH", "dismiss previous dialog");
+            searchDlg.dismiss();
+        }
         final LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(12), dp(8), dp(12), dp(8));
@@ -2371,8 +2425,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     tabViews[k].setBackgroundColor(k == idx ? Color.rgb(60, 50, 38) : Color.TRANSPARENT);
                 }
                 // R2-025：切 tab 立即按该 tab 重跑（收藏点 tab 不依赖输入）
-                android.util.Log.d("LCSEARCH", "tab-click idx=" + idx + " active=" + active[0]);
-                if (searchRef[0] != null) searchRef[0].run();
+                android.util.Log.d("LCSEARCH", "tab-click idx=" + idx + " active=" + active[0]
+                        + " ref=" + (searchRef[0] != null));
+                try {
+                    if (searchRef[0] != null) searchRef[0].run();
+                    else android.util.Log.e("LCSEARCH", "tab-click ref null: 搜索未执行");
+                } catch (Throwable ex) {
+                    // 点击回调里抛异常会被 UI 线程吞成「点了没反应」，这里必须显性化
+                    android.util.Log.e("LCSEARCH", "tab rerun failed idx=" + idx, ex);
+                }
             });
             tabViews[i] = t;
             tabs.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -2458,6 +2519,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         final Runnable runSearch = () -> {
             String q = input.getText().toString().trim();
+            android.util.Log.d("LCSEARCH", "run kw=[" + q + "] active=" + active[0]
+                    + " mapView=" + (compassMapView != null));
             rows.clear();
             double[] ll = CoordConv.parsePair(q);
             if (ll != null) {
@@ -2479,88 +2542,82 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 } else {
                     for (InterestPoint ip : pts) {
                         rows.add(String.format(java.util.Locale.US, "%s  %.6f,%.6f",
-                                ip.name == null || ip.name.isEmpty() ? "收藏点" : ip.name, ip.lat, ip.lng));
+                                ip.name == null || ip.name.isEmpty() ? "收藏点" : ip.name, ip.lng, ip.lat));
                     }
                 }
                 adapter.notifyDataSetChanged();
             } else if (q.isEmpty()) {
+                android.util.Log.d("LCSEARCH", "run skip: 关键词为空 tab=" + active[0]);
                 rows.add("输入城市/地点，或直接粘贴经纬度");
             } else {
-                // R2-025 分支 A：接口可用 → 按 tab 走 MapPoints.searchNear，失败给可区分降级态
+                // R2-025：切 tab / 改关键词都必须**立即**重跑。
+                // 中心点走 Java 侧缓存（refreshMapCenterCache 维护），不把重跑门控在一次异步 JS 往返上：
+                // 旧实现在 getState() 回调里才发请求，回调不返回时现场就是「点了 tab 之后毫无动静」。
+                final String kw = q;
+                final int tab = active[0];
+                final double flat = mapCenterLat, flng = mapCenterLng;
                 rows.add("检索中…");
                 adapter.notifyDataSetChanged();
                 rememberSearch(q);
                 refreshChips.run();
-                if (compassMapView == null) return;
-                compassMapView.evaluateJavascript("(function(){var s=getState();return s.lat+','+s.lng;})()", c -> {
-                    String v = decodeJsString(c);
-                    android.util.Log.d("LCSEARCH", "getState=" + v);
-                    String[] p = v == null ? new String[0] : v.split(",");
-                    double lat = 39.9042, lng = 116.4074;
-                    if (p.length == 2) {
-                        try {
-                            lat = Double.parseDouble(p[0].trim());
-                            lng = Double.parseDouble(p[1].trim());
-                        } catch (NumberFormatException ignored) {
+                refreshMapCenterCache();
+                android.util.Log.d("LCSEARCH", "search start kw=[" + kw + "] tab=" + tab
+                        + " center=" + flat + "," + flng);
+                new Thread(() -> {
+                    java.util.List<String> out = new java.util.ArrayList<>();
+                    final MapPoints.SearchResult[] rb = new MapPoints.SearchResult[1];
+                    final Throwable[] eb = new Throwable[1];
+                    try {
+                        Thread w = new Thread(() -> {
+                            try {
+                                rb[0] = runTabSearch(tab, kw, flat, flng);
+                            } catch (Throwable t) {
+                                eb[0] = t;
+                            }
+                        }, "lc-search-" + tab);
+                        w.start();
+                        w.join(SEARCH_TIMEOUT_MS);
+                    } catch (InterruptedException ignored) {
+                    }
+                    MapPoints.SearchResult r = rb[0];
+                    Throwable err = eb[0];
+                    if (err != null) {
+                        android.util.Log.e("LCSEARCH", "search failed tab=" + tab, err);
+                        out.add("检索服务不可用（" + err.getClass().getSimpleName() + "）");
+                    } else if (r == null) {
+                        android.util.Log.d("LCSEARCH", "tab=" + tab + " code=timeout ms=" + SEARCH_TIMEOUT_MS);
+                        out.add("检索服务不可用（请求超时 " + (SEARCH_TIMEOUT_MS / 1000) + " 秒）");
+                    } else {
+                        android.util.Log.d("LCSEARCH", "tab=" + tab + " code=" + r.code + " total=" + r.total
+                                + " first=" + (r.points.isEmpty() ? "" : r.points.get(0).name));
+                        if (MapPoints.SearchResult.OK.equals(r.code) || MapPoints.SearchResult.EMPTY.equals(r.code)) {
+                            if (r.points.isEmpty()) {
+                                out.add("未找到相关地点（可试试城市名或坐标）");
+                            } else {
+                                for (MapPoints.Point pt : r.points) {
+                                    // 全站口径「经度,纬度」（与原版一致；parseCoordPair 两种都认）
+                                    out.add(pt.name + "  " + String.format(java.util.Locale.US, "%.6f,%.6f", pt.lng, pt.lat));
+                                }
+                            }
+                        } else if (MapPoints.SearchResult.RATE_LIMITED.equals(r.code)) {
+                            out.add("请求过快（HTTP 429），稍后再试");
+                        } else if (MapPoints.SearchResult.QUOTA.equals(r.code)) {
+                            out.add("配额不足（" + r.detail + "）");
+                        } else if (MapPoints.SearchResult.KEY_INVALID.equals(r.code)) {
+                            out.add("检索服务不可用（key 非法/未授权）");
+                        } else {
+                            out.add("检索服务不可用（" + r.detail + "）");
                         }
                     }
-                    final double flat = lat, flng = lng;
-                    final String kw = q;
-                    final int tab = active[0];
-                    new Thread(() -> {
-                        java.util.List<String> out = new java.util.ArrayList<>();
-                        try {
-                        {
-                            // R2-025：按 tab 真正分派（0 境内 / 1 境外 / 2 行政区域 / 3 收藏点本地）
-                            MapPoints.SearchResult r;
-                            if (tab == 1) {
-                                r = MapPoints.searchGlobal(kw, 20);
-                            } else if (tab == 2) {
-                                String p9 = MapPoints.resolveProvince9(kw, flat, flng);
-                                if (p9 == null || p9.isEmpty()) {
-                                    android.util.Log.d("LCSEARCH", "tab=" + tab + " code=unavailable province=null");
-                                    out.add("检索服务不可用（行政区域无法解析省码）");
-                                    final java.util.List<String> resNo = out;
-                                    runOnUiThread(() -> { rows.clear(); rows.addAll(resNo); adapter.notifyDataSetChanged(); });
-                                    return;
-                                }
-                                r = MapPoints.searchInProvince(kw, p9, 20);
-                            } else {
-                                r = MapPoints.searchNear(kw, flat, flng, 12, 20);
-                            }
-                            android.util.Log.d("LCSEARCH", "tab=" + tab + " code=" + r.code + " total=" + r.total
-                                    + " first=" + (r.points.isEmpty() ? "" : r.points.get(0).name));
-                            if (MapPoints.SearchResult.OK.equals(r.code) || MapPoints.SearchResult.EMPTY.equals(r.code)) {
-                                if (r.points.isEmpty()) {
-                                    out.add("未找到相关地点（可试试城市名或坐标）");
-                                } else {
-                                    for (MapPoints.Point pt : r.points) {
-                                        out.add(pt.name + "  " + String.format(java.util.Locale.US, "%.6f,%.6f", pt.lat, pt.lng));
-                                    }
-                                }
-                            } else if (MapPoints.SearchResult.RATE_LIMITED.equals(r.code)) {
-                                out.add("请求过快（HTTP 429），稍后再试");
-                            } else if (MapPoints.SearchResult.QUOTA.equals(r.code)) {
-                                out.add("配额不足（" + r.detail + "）");
-                            } else {
-                                out.add("检索服务不可用（" + r.detail + "）");
-                            }
-                        }
-                        } catch (Throwable t) {
-                            android.util.Log.e("LCSEARCH", "search failed", t);
-                            out.clear();
-                            out.add("检索服务不可用（" + t.getClass().getSimpleName() + "）");
-                        }
-                        final java.util.List<String> res = out;
-                        runOnUiThread(() -> {
-                            rows.clear();
-                            rows.addAll(res);
-                            adapter.notifyDataSetChanged();
-                            android.util.Log.d("LCSEARCH", "ui rows=" + rows.size() + " first="
-                                    + (rows.isEmpty() ? "" : rows.get(0)));
-                        });
-                    }).start();
-                });
+                    final java.util.List<String> res = out;
+                    runOnUiThread(() -> {
+                        rows.clear();
+                        rows.addAll(res);
+                        adapter.notifyDataSetChanged();
+                        android.util.Log.d("LCSEARCH", "ui rows=" + rows.size() + " first="
+                                + (rows.isEmpty() ? "" : rows.get(0)));
+                    });
+                }).start();
             }
             adapter.notifyDataSetChanged();
         };
@@ -2595,6 +2652,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 .setNegativeButton("关闭", null)
                 .create();
         dlg[0].show();
+        // R2-025：搜索弹层不许被误触外部关掉。键盘弹起时弹层会上移，点 tab 很容易落到外面，
+        // 现场表现同样是「点了 tab 就没了」。关闭只留「关闭」按钮与 BACK。
+        dlg[0].setCanceledOnTouchOutside(false);
+        searchDlg = dlg[0];
         android.util.Log.d("LCSEARCH", "tabs=" + SEARCH_TABS.length);
     }
 

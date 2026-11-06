@@ -125,7 +125,15 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
 - `summary.json` / `summary.md`：机读/人读汇总
 - `<state>/metrics.json`、`side_by_side.png`、`diff.png` 等
 
-缺一侧、尺寸不一致、解析失败都会在表里标 `missing-lc` / `missing-orig` / `error` 并列在控制台；`--strict` 时任一未比成返回 exit 1（用于 CI/门禁），默认 exit 0 只做报告。
+缺一侧、尺寸不一致、解析失败都会在表里标 `missing-lc` / `missing-orig` / `error` 并列在控制台。**退出码**：任一未比较、完整性失败、或 `--require-checksheet-id` 下的覆盖/冲突失败 → exit 1；确需在已知红状态下出报告时显式加 `--allow-known-red`（控制台会打印该提示），否则默认红就是红。`--strict` 保留兼容但已无作用（默认就是严格）。
+
+**checksheet_id 覆盖与缺图**：报告自动汇总每个「有原版证据的 state」的 `meta.json.checksheet_id`，写进 `summary.json.checksheet`（`required/with_id/missing/conflicts`）、`summary.md` 与 `index.html` 的「checksheet_id 覆盖」小节；orig/lc 两侧 id 不一致记 conflict。D3 的 38/38 校验命令：
+
+```powershell
+python tools\fidelity\fidelity.py report --root docs\fidelity --require-checksheet-id
+```
+
+退出码 0 = 覆盖齐全且无缺图/无完整性失败；缺 `checksheet_id`、orig/lc 冲突、缺图、重复图、0 字节图都会非 0。缺图清单同时列在 `summary.md` 的 state 表（`missing-orig`/`missing-lc`）。
 
 **证据完整性硬检查**（不看 `--strict`，命中即 exit 1）：
 

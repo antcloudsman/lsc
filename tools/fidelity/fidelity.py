@@ -44,7 +44,7 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.7.0"
+VERSION = "1.8.0"
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
 DEFAULT_THRESHOLD = 8
@@ -732,7 +732,45 @@ def _allow_duplicate(states: list[str], allow: list[dict]) -> dict | None:
     }
 
 
-def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, integrity: dict) -> None:
+def _meta_checksheet_id(meta_path: Path) -> str:
+    if not meta_path.exists():
+        return ""
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    value = meta.get("checksheet_id", "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _collect_checksheet(orig_dir: Path, lc_dir: Path, states: set[str], lc_only: set[str]) -> dict:
+    """Coverage of meta.checksheet_id over original-backed states (LC-only states excluded)."""
+    missing, conflicts = [], []
+    required = 0
+    with_id = 0
+    for state in sorted(states):
+        if state in lc_only:
+            continue
+        if not ((orig_dir / f"{state}.png").exists() or (orig_dir / f"{state}.xml").exists()):
+            continue
+        required += 1
+        ids = {
+            "orig": _meta_checksheet_id(orig_dir / f"{state}.meta.json"),
+            "lc": _meta_checksheet_id(lc_dir / f"{state}.meta.json"),
+        }
+        nonempty = [value for value in ids.values() if value]
+        if not nonempty:
+            missing.append(state)
+            continue
+        if len(set(nonempty)) > 1:
+            conflicts.append({"state": state, **ids})
+            continue
+        with_id += 1
+    return {"required": required, "with_id": with_id, "missing": missing, "conflicts": conflicts}
+
+
+def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, integrity: dict,
+                 checksheet: dict) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     total = len(rows)
     compared = sum(1 for row in rows if row["status"] == "compared")
@@ -754,6 +792,7 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
             "not_compared": len(failed_rows),
         },
         "integrity": integrity,
+        "checksheet": checksheet,
         "states": rows,
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -765,7 +804,7 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
         f"<style>{REPORT_CSS}</style></head><body><main>",
         "<h1>LC fidelity report</h1>",
         f"<div class=\"meta\">root <code>{_esc(root)}</code> | states {compared} compared + {dump_only} dump-only "
-        f"+ {lc_only} lc-only / {total} | "
+        f"+ {lc_only} lc-only / {total} | checksheet_id {checksheet.get('with_id', 0)}/{checksheet.get('required', 0)} | "
         f"threshold {threshold} | generated {time.strftime('%Y-%m-%d %H:%M:%S')}</div>",
         "<table><tr><th>state</th><th>status</th><th>diff px</th><th>ratio</th><th>bbox (x1,y1,x2,y2)</th>"
         "<th>mean dE2000</th><th>controls (matched/only orig/only lc)</th></tr>",
@@ -816,6 +855,23 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
             html.append(f"<p class=\"fail\">empty screenshot (0 bytes): {_esc(side)}/{_esc(name)}</p>")
     if integrity_rows == 0:
         html.append("<p class=\"pass\">no duplicate or empty screenshots</p>")
+
+    # checksheet_id coverage: every original-backed state must map to a checklist row.
+    html.append("<h2>checksheet_id 覆盖</h2>")
+    if checksheet.get("required", 0) == 0:
+        html.append("<p class=\"small\">no original-backed states</p>")
+    else:
+        with_id = checksheet.get("with_id", 0)
+        required = checksheet.get("required", 0)
+        coverage_class = "pass" if with_id == required else "fail"
+        html.append(f"<p class=\"{coverage_class}\">checksheet_id {with_id}/{required}</p>")
+        if checksheet.get("missing"):
+            html.append(f"<p class=\"fail\">missing checksheet_id: {_esc(', '.join(checksheet['missing']))}</p>")
+        for conflict in checksheet.get("conflicts", []):
+            html.append(
+                f"<p class=\"fail\">checksheet_id conflict {_esc(conflict['state'])}: "
+                f"orig={_esc(conflict.get('orig', ''))} lc={_esc(conflict.get('lc', ''))}</p>"
+            )
 
     for row in rows:
         state = row["state"]
@@ -910,6 +966,17 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
                     )
             for name in integrity.get(side, {}).get("empty", []):
                 md.append(f"- EMPTY {side}/{name} (0 bytes)")
+    md.extend(["", "## checksheet_id 覆盖", ""])
+    if checksheet.get("required", 0) == 0:
+        md.append("- no original-backed states")
+    else:
+        md.append(f"- {checksheet.get('with_id', 0)}/{checksheet.get('required', 0)}")
+        if checksheet.get("missing"):
+            md.append(f"- MISSING checksheet_id: {', '.join(checksheet['missing'])}")
+        for conflict in checksheet.get("conflicts", []):
+            md.append(
+                f"- CONFLICT {conflict['state']}: orig={conflict.get('orig', '')} lc={conflict.get('lc', '')}"
+            )
     md.extend([
         "",
         "| state | status | diff px | ratio | bbox | mean dE2000 | controls (m/only orig/only lc) |",
@@ -1145,15 +1212,31 @@ def cmd_report(args: argparse.Namespace) -> int:
             failed(f"{state}: {row['status']} - {row['error']}")
         rows.append(row)
 
-    write_report(rows, out_dir, root, args.threshold, integrity)
-    compared = sum(1 for row in rows if row["status"] == "compared")
-    dump_only_count = sum(1 for row in rows if row["status"] == "dump-only")
-    lc_only_count = sum(1 for row in rows if row["status"] == "lc-only")
-    if integrity_failed:
+    checksheet = _collect_checksheet(orig_dir, lc_dir, states, set(lc_only))
+    info(
+        f"checksheet_id coverage: {checksheet['with_id']}/{checksheet['required']}"
+        + (f", missing={','.join(checksheet['missing'])}" if checksheet["missing"] else "")
+        + (f", conflicts={len(checksheet['conflicts'])}" if checksheet["conflicts"] else "")
+    )
+    not_compared = [row for row in rows if row["status"] not in ("compared", "dump-only", "lc-only")]
+    checksheet_failed = bool(args.require_checksheet_id and (checksheet["missing"] or checksheet["conflicts"]))
+    if args.require_checksheet_id:
+        for state in checksheet["missing"]:
+            failed(f"missing checksheet_id: {state}")
+        for conflict in checksheet["conflicts"]:
+            failed(
+                f"checksheet_id conflict {conflict['state']}: "
+                f"orig={conflict.get('orig', '')} lc={conflict.get('lc', '')}"
+            )
+    failed_run = integrity_failed or bool(not_compared) or checksheet_failed
+
+    write_report(rows, out_dir, root, args.threshold, integrity, checksheet)
+    if failed_run:
+        if args.allow_known_red:
+            info("known-red run: failures reported above but exit code forced to 0 (--allow-known-red)")
+            return 0
         return 1
-    if compared + dump_only_count + lc_only_count == len(rows):
-        return 0
-    return 0 if not args.strict else 1
+    return 0
 
 
 def _run(command: list[str], capture: bool = False) -> subprocess.CompletedProcess:
@@ -1374,7 +1457,12 @@ def build_parser() -> argparse.ArgumentParser:
                         help="dump-only allowlist JSON (default: <root>/dump-only-allow.json)")
     report.add_argument("--lc-only-file",
                         help="lc-only allowlist JSON for LC incremental states (default: <root>/lc-only-allow.json)")
-    report.add_argument("--strict", action="store_true", help="exit 1 when any pair is not compared")
+    report.add_argument("--require-checksheet-id", action="store_true",
+                        help="fail when an original-backed state has no meta.checksheet_id or orig/lc ids conflict")
+    report.add_argument("--allow-known-red", action="store_true",
+                        help="exit 0 even when missing pairs/integrity/checksheet checks fail (explicit override)")
+    report.add_argument("--strict", action="store_true",
+                        help="deprecated: report now exits non-zero on any failure by default")
     report.set_defaults(func=cmd_report)
 
     collect = sub.add_parser("collect", help="capture screenshot + dump + meta from a device")

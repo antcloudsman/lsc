@@ -2430,11 +2430,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         final Runnable runSearch = () -> {
             String q = input.getText().toString().trim();
             rows.clear();
-            double[] ll = parseCoordPair(q);
+            double[] ll = CoordConv.parsePair(q);
             if (ll != null) {
                 // R2-025：坐标输入给 GCJ02 / WGS84 / BD09 / CGCS2000 四行（本地换算，不依赖配额）
-                double[] gcj = wgs2gcj(ll[0], ll[1]);
-                double[] bd = gcj2bd(gcj[0], gcj[1]);
+                // R2-025：坐标换算走数据层 CoordConv（单一实现），UI 只排版
+                double[] gcj = CoordConv.wgs84ToGcj02(ll[0], ll[1]);
+                double[] bd = CoordConv.gcj02ToBd09(gcj[0], gcj[1]);
                 rows.add(String.format(java.util.Locale.US, "GCJ02     %.6f,%.6f", gcj[1], gcj[0]));
                 rows.add(String.format(java.util.Locale.US, "WGS84     %.6f,%.6f", ll[1], ll[0]));
                 rows.add(String.format(java.util.Locale.US, "BD09      %.6f,%.6f", bd[1], bd[0]));
@@ -2444,10 +2445,64 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             } else if (q.isEmpty()) {
                 rows.add("输入城市/地点，或直接粘贴经纬度");
             } else {
-                // POI/逆地理走 DEP-3（数据源结论由地图侧给），本地只保留坐标检索
-                rows.add("「" + q + "」：POI/逆地理按 DEP-3 登记（数据源未定），本页保留坐标检索");
+                // R2-025 分支 A：接口可用 → 按 tab 走 MapPoints.searchNear，失败给可区分降级态
+                rows.add("检索中…");
+                adapter.notifyDataSetChanged();
                 rememberSearch(q);
                 refreshChips.run();
+                if (compassMapView == null) return;
+                compassMapView.evaluateJavascript("(function(){var s=getState();return s.lat+','+s.lng;})()", c -> {
+                    String v = decodeJsString(c);
+                    String[] p = v == null ? new String[0] : v.split(",");
+                    double lat = 39.9042, lng = 116.4074;
+                    if (p.length == 2) {
+                        try {
+                            lat = Double.parseDouble(p[0].trim());
+                            lng = Double.parseDouble(p[1].trim());
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                    final double flat = lat, flng = lng;
+                    final String kw = q;
+                    final int tab = active[0];
+                    new Thread(() -> {
+                        java.util.List<String> out = new java.util.ArrayList<>();
+                        if (tab == 3) {
+                            java.util.List<InterestPoint> pts = new GapDb(this).listInterest();
+                            if (pts.isEmpty()) {
+                                out.add("收藏点：暂无（可在地图收藏点态「添加点」）");
+                            } else {
+                                for (InterestPoint ip : pts) {
+                                    out.add(String.format(java.util.Locale.US, "%s  %.6f,%.6f",
+                                            ip.name == null || ip.name.isEmpty() ? "收藏点" : ip.name, ip.lat, ip.lng));
+                                }
+                            }
+                        } else {
+                            MapPoints.SearchResult r = MapPoints.searchNear(kw, flat, flng, 12, 20);
+                            if (MapPoints.SearchResult.OK.equals(r.code) || MapPoints.SearchResult.EMPTY.equals(r.code)) {
+                                if (r.points.isEmpty()) {
+                                    out.add("「" + kw + "」无结果（" + kw + "）");
+                                } else {
+                                    for (MapPoints.Point pt : r.points) {
+                                        out.add(pt.name + "  " + String.format(java.util.Locale.US, "%.6f,%.6f", pt.lat, pt.lng));
+                                    }
+                                }
+                            } else if (MapPoints.SearchResult.RATE_LIMITED.equals(r.code)) {
+                                out.add("请求过快（HTTP 429），稍后再试");
+                            } else if (MapPoints.SearchResult.QUOTA.equals(r.code)) {
+                                out.add("配额不足（" + r.detail + "）");
+                            } else {
+                                out.add("检索服务不可用（" + r.detail + "）");
+                            }
+                        }
+                        final java.util.List<String> res = out;
+                        runOnUiThread(() -> {
+                            rows.clear();
+                            rows.addAll(res);
+                            adapter.notifyDataSetChanged();
+                        });
+                    }).start();
+                });
             }
             adapter.notifyDataSetChanged();
         };

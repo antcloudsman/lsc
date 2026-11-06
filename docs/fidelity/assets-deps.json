@@ -7,46 +7,108 @@
     {
       "id": "A-01",
       "name": "pointer.png（位图 46×188）",
-      "requires": { "targets": ["compass/pointer.png"], "image": "46x188" }
+      "requires": {
+        "targets": [
+          "compass/pointer.png"
+        ],
+        "image": "46x188"
+      }
     },
     {
       "id": "A-02",
       "name": "抽屉 8 项图标（开具发票已取消，DI）",
-      "requires": { "kinds": ["icon-drawer"], "prefixes": ["icons/drawer/"], "checksheet": "A-02", "exclude": ["svg_bill_apply"], "count": 8 },
+      "requires": {
+        "kinds": [
+          "icon-drawer"
+        ],
+        "prefixes": [
+          "icons/drawer/"
+        ],
+        "checksheet": "A-02",
+        "exclude": [
+          "svg_bill_apply"
+        ],
+        "count": 8
+      },
       "note": "抽屉按 M3 用户决定改 8 项：开具发票取消（DI，图标 svg_bill_apply 留档但不计数）；24 个矢量同属 kind=icon-drawer（8 抽屉 + 1 取消 + 15 左右列），用 meta.checksheet 前缀 A-02 精确归属"
     },
     {
       "id": "A-03",
       "name": "更多面板 16 格图标",
-      "requires": { "kinds": ["tool-icon"], "prefixes": ["tools/"], "count": 16 },
+      "requires": {
+        "kinds": [
+          "tool-icon"
+        ],
+        "prefixes": [
+          "tools/"
+        ],
+        "count": 16
+      },
       "note": "已入库 18 张（tools/），其中 16 张进「更多」16 格；另 2 张（VR/STREET）在 ToolsEnum 里但面板未展示，见 docs/fidelity/assets-TOOL-ICONS.md"
     },
     {
       "id": "A-04",
       "name": "左 8 / 右 10 工具图标",
-      "requires": { "kinds": ["tool-icon"], "prefixes": ["tools/"], "count": 18 },
+      "requires": {
+        "kinds": [
+          "tool-icon"
+        ],
+        "prefixes": [
+          "tools/"
+        ],
+        "count": 18
+      },
       "note": "与 A-03 共用同一套 18 个工具图标（左 8 + 右 10 从这里取）；另有 15 个白线矢量标 meta.checksheet=A-04（kind 同为 icon-drawer，见 A-02 注），左右列取舍由 P1-14 判据决定"
     },
     {
       "id": "A-05",
       "name": "读盘 sheet 图/样式",
-      "requires": { "kinds": ["plate"], "prefixes": ["compass/plate"], "count": 1 }
+      "requires": {
+        "kinds": [
+          "plate"
+        ],
+        "prefixes": [
+          "compass/plate"
+        ],
+        "count": 1
+      }
     },
     {
       "id": "A-06",
       "name": "compassIntroduce 14 篇 HTML",
-      "requires": { "prefixes": ["compass-introduce/"], "count": 14 }
+      "requires": {
+        "prefixes": [
+          "compass-introduce/"
+        ],
+        "count": 14
+      }
     },
     {
       "id": "A-07",
       "name": "底图源 12 卡片缩略图/源名样式",
-      "requires": { "kinds": ["source-thumb"], "prefixes": ["map/source-thumb"], "count": 1 },
+      "requires": {
+        "kinds": [
+          "source-thumb"
+        ],
+        "prefixes": [
+          "map/source-thumb"
+        ],
+        "count": 1
+      },
       "note": "12 源若为单张雪碧图或一份样式，1 个文件即可；「缩略图↔源名」逐字对应由 LC审核验 判"
     },
     {
       "id": "A-08",
       "name": "启动页品牌三行/logo",
-      "requires": { "kinds": ["brand"], "prefixes": ["brand/"], "count": 1 }
+      "requires": {
+        "kinds": [
+          "brand"
+        ],
+        "prefixes": [
+          "brand/"
+        ],
+        "count": 1
+      }
     },
     {
       "id": "A-09",
@@ -76,6 +138,111 @@
       "id": "A-12",
       "name": "坐标顺序结论（lonlat vs 列表显示）",
       "manual": "取证结论落文档，不在素材门禁内"
+    },
+    {
+      "id": "S-账户设置",
+      "name": "账户设置页素材（标题栏/页内图标）",
+      "requires": {
+        "kinds": [
+          "page-icon"
+        ],
+        "prefixes": [
+          "pages/account/"
+        ],
+        "checksheet": "S-账户设置",
+        "count": 1
+      },
+      "note": "原生页（当前已登录态）；正文与 bounds 由 dump 取证、不进 assets；服务端依赖强（登录/注销，D-022 须页内可见标注）"
+    },
+    {
+      "id": "S-投诉反馈",
+      "name": "投诉反馈页素材（标题栏/Tab 图标）",
+      "requires": {
+        "kinds": [
+          "page-icon"
+        ],
+        "prefixes": [
+          "pages/feedback/"
+        ],
+        "checksheet": "S-投诉反馈",
+        "count": 1
+      },
+      "note": "原生页，Tab 问题反馈/订单投诉 + 右上「我的」；提交链路服务端依赖强（D-022 须页内可见标注）"
+    },
+    {
+      "id": "S-关于我们",
+      "name": "关于我们页素材（标题栏/logo）",
+      "requires": {
+        "kinds": [
+          "page-icon"
+        ],
+        "prefixes": [
+          "pages/about/"
+        ],
+        "checksheet": "S-关于我们",
+        "count": 1
+      },
+      "note": "原生页；版本号与备案号由 dump 取证；《用户协议》《隐私政策》两个链接节点 bounds 待复核"
+    },
+    {
+      "id": "S-联系我们",
+      "name": "联系我们页素材（标题栏/QQ/复制）",
+      "requires": {
+        "kinds": [
+          "page-icon"
+        ],
+        "prefixes": [
+          "pages/contact/"
+        ],
+        "checksheet": "S-联系我们",
+        "count": 1
+      },
+      "note": "原生页；邮箱 account@xinzhi.space 与「复制邮箱」由 dump 取证；图标走 APK 资源（res/qq.* 等）"
+    },
+    {
+      "id": "S-推荐给好友",
+      "name": "推荐给好友面板素材（平台图标）",
+      "requires": {
+        "kinds": [
+          "page-icon"
+        ],
+        "prefixes": [
+          "pages/share/"
+        ],
+        "checksheet": "S-推荐给好友",
+        "count": 1
+      },
+      "note": "底部分享面板：选择要分享到的平台 + 微信/微信朋友圈/取消分享；图标须原版导出，行为=分享 Intent"
+    },
+    {
+      "id": "S-帮助中心",
+      "name": "帮助中心标题栏素材",
+      "requires": {
+        "kinds": [
+          "page-icon"
+        ],
+        "prefixes": [
+          "pages/help/"
+        ],
+        "checksheet": "S-帮助中心",
+        "count": 1
+      },
+      "note": "正文是 WebView 远端 URL（ApiHelper HELP_CENTER = https://xinzhispace.yuque.com/…），无本地正文素材；本条只判标题栏/页内图标"
+    },
+    {
+      "id": "S-用户协议",
+      "name": "用户协议标题栏素材",
+      "requires": {
+        "kinds": [
+          "page-icon"
+        ],
+        "prefixes": [
+          "pages/agreement/"
+        ],
+        "checksheet": "S-用户协议",
+        "count": 1
+      },
+      "note": "原生长文本页（178 节点）；正文来源待逆向确认（DEX 常量 vs 接口），无本地 HTML；本条只判标题栏/页内图标"
     }
   ]
 }

@@ -128,6 +128,8 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 
 采集口径：`--build-commit 464ebb8c50b427fb42b0ea0cbafabb1f4f03d58a`（`develop` `464ebb8`）、APK sha256 `CCD5686F…`（7,059,457 B）、heading 冻结 0°、地图 `setView(39.9042,116.4074,12)`；脚本 `tools/map/collect_map_lc.ps1`（`7253788`）。`map-home-01` 复用 §1 第 03 行（同 commit）。
 
+**「同态 ≠ 同 sha」**（D1 实测）：同一 UI 状态 17:45 与 19:49 的节点树完全一致，PNG 却从 `68469C5C…` 变成 `AC06F0B5…`（瓦片/渲染时序）；因此本索引的 sha256 **只标识文件**，不用于推断状态，跨批次也不比哈希。状态判据一律用页面 `getState()`、`mResumedActivity`、或持久化开关——`map-roadnet-on` 已改为读 `MapManager.showRoad`（`MainActivity.toggleRoadNet()` 写入，默认 true），不再拿「png 与固定态不同」当开态证据。
+
 | 行 | checksheet_id | stem | 状态 | 证据 | 实测要点 |
 |---|---|---|---|---|---|
 | 04 | `ST-A-map-fixed` | `map-beijing-z12` | 实采 | png+xml+meta | 固定态北京 z12；左列 8、右列 10、底部角注条 `[0,2544][1228,2578]` |

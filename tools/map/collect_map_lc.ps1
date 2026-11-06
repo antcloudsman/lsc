@@ -133,8 +133,14 @@ function Assert-LcForeground() {
     Fail "前台不是 $Pkg，实际=$cur（被别的应用劫持，拒绝拍照；先 force-stop 该应用再重跑）"
   }
 }
-function Get-PngSha([string]$state) {
-  $p = Join-Path $root "docs\fidelity\lc\$state.png"
+# 路网开/关的真实状态：MainActivity.toggleRoadNet() 写 MapManager prefs 的 showRoad（默认 true）。
+# 用 run-as 读内存盘上的 prefs，避免拿 png 差异当状态判据（D1：同态 ≠ 同 sha）。
+function Get-RoadNetPref() {
+  $raw = Adb @('shell', "run-as $Pkg cat shared_prefs/MapManager.xml")
+  if ($raw -match 'name="showRoad"\s+value="(true|false)"') { return ($Matches[1] -eq 'true') }
+  return $null
+}
+function Get-PngSha([string]$state) {  $p = Join-Path $root "docs\fidelity\lc\$state.png"
   if (-not (Test-Path $p)) { return '' }
   return (Get-FileHash -Algorithm SHA256 -Path $p).Hash.ToLower()
 }
@@ -470,21 +476,31 @@ if (Want 'tool-track') {
   Collect 'tool-track' 'ST-C-track'
 }
 
-# 10) 路网（22）：开关是持久化状态，点一次可能是「关」——与固定态同图就再点一次重采
+# 10) 路网（22）：判据用应用内真实开关 MapManager.showRoad，不看 png 差异
+#    D1 实测「同态 ≠ 同 sha」（17:45 vs 19:49 节点树一致、PNG 却从 68469C5C 变 AC06F0B5），
+#    瓦片/渲染时序会让同态截图不同、也可能让异态偶然相同；状态只能读持久化开关或 getState。
 if (Want 'map-roadnet-on') {
   Reset-ToMap | Out-Null
+  $before = Get-RoadNetPref
+  Info "路网开关(pre)=$before"
   Tap $RoadX $RoadY
   Start-Sleep -Seconds 2
-  Collect 'map-roadnet-on' 'ST-C-roadnet'
-  $ha = Get-PngSha 'map-roadnet-on'; $hb = Get-PngSha 'map-beijing-z12'
-  if ($ha -and $hb -and $ha -eq $hb) {
-    Info "路网这次被点成「关」（与固定态同图），再点一次重采"
+  $after = Get-RoadNetPref
+  if ($after -ne $true) {
+    Info "路网点成了「关」（showRoad=$after），再点一次"
     Tap $RoadX $RoadY
     Start-Sleep -Seconds 2
-    Collect 'map-roadnet-on' 'ST-C-roadnet'
-    Assert-PngDistinct 'map-roadnet-on' 'map-beijing-z12'
-  } else {
-    Info "路网开态 ok（png 与固定态不同）"
+    $after = Get-RoadNetPref
+  }
+  if ($after -ne $true) { Fail "路网断言失败：MapManager.showRoad=$after（期望 true）" }
+  Info "路网开关 ok: showRoad=true"
+  Collect 'map-roadnet-on' 'ST-C-roadnet'
+  if ((Get-RoadNetPref) -ne $true) { Fail "采集后 showRoad 不再是 true，状态在拍摄期间变了" }
+  # png 差异只作参考，不作状态判据
+  $ha = Get-PngSha 'map-roadnet-on'; $hb = Get-PngSha 'map-beijing-z12'
+  if ($ha -and $hb) {
+    if ($ha -eq $hb) { Info "提示：路网开态 png 与固定态相同（$ha）——按 D1 口径这不代表状态未变，以 showRoad 为准" }
+    else { Info "路网开态 png 与固定态不同（参考值）" }
   }
 }
 

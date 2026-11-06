@@ -73,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** R2-007: 海拔查询在地图内浮层（不跳 Activity）。 */
     private LinearLayout elevPanel;
     private boolean elevationMode;
+    /** R2-025：调试广播注入的搜索词（仅 debug 包，供中文关键词验证）。 */
+    private String pendingSearch;
     private MapMarker elevPoint;
     private LinearLayout drawerPanel;
     private Button menuButton;
@@ -365,6 +367,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 updateReading();
                 android.util.Log.d("LCDEBUG", "declination=" + declination);
+                break;
+            }
+            case "search": {
+                pendingSearch = it.getStringExtra("value");
+                android.util.Log.d("LCSEARCH", "debug search=" + pendingSearch);
+                runOnUiThread(this::showSearchDialog);
                 break;
             }
             case "reset":
@@ -2426,6 +2434,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         };
         refreshChips.run();
+        if (pendingSearch != null) {
+            input.setText(pendingSearch);
+            input.setSelection(input.getText().length());
+            pendingSearch = null;
+        }
 
         final Runnable runSearch = () -> {
             String q = input.getText().toString().trim();
@@ -2453,6 +2466,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (compassMapView == null) return;
                 compassMapView.evaluateJavascript("(function(){var s=getState();return s.lat+','+s.lng;})()", c -> {
                     String v = decodeJsString(c);
+                    android.util.Log.d("LCSEARCH", "getState=" + v);
                     String[] p = v == null ? new String[0] : v.split(",");
                     double lat = 39.9042, lng = 116.4074;
                     if (p.length == 2) {
@@ -2479,9 +2493,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             }
                         } else {
                             MapPoints.SearchResult r = MapPoints.searchNear(kw, flat, flng, 12, 20);
+                            android.util.Log.d("LCSEARCH", "code=" + r.code + " total=" + r.total + " points=" + r.points.size());
                             if (MapPoints.SearchResult.OK.equals(r.code) || MapPoints.SearchResult.EMPTY.equals(r.code)) {
                                 if (r.points.isEmpty()) {
-                                    out.add("「" + kw + "」无结果（" + kw + "）");
+                                    out.add("未找到相关地点（可试试城市名或坐标）");
                                 } else {
                                     for (MapPoints.Point pt : r.points) {
                                         out.add(pt.name + "  " + String.format(java.util.Locale.US, "%.6f,%.6f", pt.lat, pt.lng));

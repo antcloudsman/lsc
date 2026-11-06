@@ -19,13 +19,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import re
+import shutil
 import struct
+import subprocess
 import sys
 import tempfile
 import zipfile
 from pathlib import Path
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 MANIFEST_NAME = "MANIFEST.sha256"
 PROVENANCE_NAME = "PROVENANCE.json"
 INDEX_NAME = "INDEX.md"
@@ -61,8 +65,31 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def image_size(data: bytes) -> tuple[int, int] | None:
+    """PNG IHDR or WebP header: sizes for the manifest without PIL."""
+    if data.startswith(PNG_MAGIC) and len(data) >= 24 and data[12:16] == b"IHDR":
+        width, height = struct.unpack(">II", data[16:24])
+        return int(width), int(height)
+    if len(data) >= 30 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        chunk = data[12:16]
+        if chunk == b"VP8X" and len(data) >= 30:
+            width = int.from_bytes(data[24:27], "little") + 1
+            height = int.from_bytes(data[27:30], "little") + 1
+            return width, height
+        if chunk == b"VP8 " and len(data) >= 30 and data[23:26] == b"\x9d\x01\x2a":
+            width = int.from_bytes(data[26:28], "little") & 0x3FFF
+            height = int.from_bytes(data[28:30], "little") & 0x3FFF
+            return width, height
+        if chunk == b"VP8L" and len(data) >= 25 and data[20] == 0x2F:
+            bits = int.from_bytes(data[21:25], "little")
+            width = (bits & 0x3FFF) + 1
+            height = ((bits >> 14) & 0x3FFF) + 1
+            return width, height
+    return None
+
+
 def png_size(data: bytes) -> tuple[int, int] | None:
-    """Read width/height straight from IHDR: no PIL dependency for the manifest."""
+    """PNG-only size (kept for callers that must reject non-PNG payloads)."""
     if len(data) < 24 or not data.startswith(PNG_MAGIC) or data[12:16] != b"IHDR":
         return None
     width, height = struct.unpack(">II", data[16:24])
@@ -204,7 +231,7 @@ def _dep_matches(requirement: dict, actual: dict[str, bytes], provenance: dict[s
         wanted = str(image).lower()
         kept = []
         for relative in matched:
-            dimensions = png_size(actual[relative])
+            dimensions = image_size(actual[relative])
             actual_size = f"{dimensions[0]}x{dimensions[1]}" if dimensions else None
             if actual_size == wanted:
                 kept.append(relative)
@@ -297,6 +324,59 @@ def apk_entries(path: Path) -> dict[str, zipfile.ZipInfo]:
         raise AssetError(f"cannot read APK {path}: {error}") from error
 
 
+def find_aapt2() -> str | None:
+    """aapt2 resolves a resource id to the (possibly obfuscated) APK entry path."""
+    found = shutil.which("aapt2")
+    if found:
+        return found
+    candidates: list[Path] = []
+    for root in (
+        os.environ.get("ANDROID_HOME"),
+        os.environ.get("ANDROID_SDK_ROOT"),
+        os.environ.get("LOCALAPPDATA", "") and str(Path(os.environ["LOCALAPPDATA"]) / "Android" / "Sdk"),
+    ):
+        if not root:
+            continue
+        build_tools = Path(root) / "build-tools"
+        if build_tools.is_dir():
+            candidates.extend(sorted(build_tools.glob("*/aapt2.exe"), reverse=True))
+            candidates.extend(sorted(build_tools.glob("*/aapt2"), reverse=True))
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
+def resource_entry_map(apk: Path, aapt2: str | None = None) -> dict[str, dict]:
+    """Map '0x7f0803da' -> {name, entry} via `aapt2 dump resources` (read-only)."""
+    tool = aapt2 or find_aapt2()
+    if not tool:
+        return {}
+    try:
+        result = subprocess.run(
+            [tool, "dump", "resources", str(apk)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if result.returncode != 0:
+        return {}
+    mapping: dict[str, dict] = {}
+    current: str | None = None
+    for line in result.stdout.splitlines():
+        match = re.match(r"\s*resource\s+(0x[0-9a-fA-F]{8})\s+(\S+)", line)
+        if match:
+            current = match.group(1).lower()
+            mapping[current] = {"name": match.group(2), "entry": None}
+            continue
+        if current:
+            file_match = re.search(r"\(file\)\s+(\S+)\s+type=", line)
+            if file_match:
+                mapping[current]["entry"] = file_match.group(1)
+                current = None
+    return {key: value for key, value in mapping.items() if value.get("entry")}
+
+
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
@@ -318,16 +398,16 @@ def cmd_list_apk(args: argparse.Namespace) -> int:
             if args.ext and not name.lower().endswith(f".{args.ext.lower().lstrip('.')}"):
                 continue
             if size is not None:
-                if not name.lower().endswith(".png"):
+                if not name.lower().endswith((".png", ".webp", ".jpg", ".jpeg")):
                     continue
-                measured = png_size(archive.read(entry))
+                measured = image_size(archive.read(entry))
                 if measured != size:
                     continue
             rows.append((name, entry, archive.read(entry)))
     if not rows:
         raise AssetError("no APK entry matches the given filters")
     for name, entry, data in rows[: args.limit]:
-        dimensions = png_size(data)
+        dimensions = image_size(data)
         shape = f"{dimensions[0]}x{dimensions[1]}" if dimensions else "-"
         digest = sha256_bytes(data) if args.sha else sha256_bytes(data)[:12]
         print(f"{digest}  {entry.file_size:>9}  {shape:>10}  {name}")
@@ -363,6 +443,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
     entries = apk_entries(apk)
     wanted: list[tuple[str, zipfile.ZipInfo]] = []
     missing: list[str] = []
+    decoded_skipped: list[str] = []
     targets: dict[str, str] = {}
     for item in items:
         name = str(item.get("entry", ""))
@@ -372,6 +453,11 @@ def cmd_extract(args: argparse.Namespace) -> int:
         if target in targets:
             raise AssetError(f"duplicate target {target!r} (also from {targets[target]})")
         targets[target] = name
+        if item.get("decoded") or item.get("decode"):
+            # Compiled resources (vector drawables, binary XML) cannot be copied byte-for-byte:
+            # they go through a decoder first and are registered by the stamp command.
+            decoded_skipped.append(target)
+            continue
         if name not in entries:
             missing.append(name)
         else:
@@ -380,6 +466,8 @@ def cmd_extract(args: argparse.Namespace) -> int:
         for name in missing:
             failed(f"entry not in APK: {name}")
         raise AssetError(f"{len(missing)} source entry(ies) missing from {apk}")
+    for target in decoded_skipped:
+        info(f"decoded item skipped (decode it, then run stamp): {target}")
 
     provenance = load_provenance(out) if (out / PROVENANCE_NAME).exists() else {}
     by_target = by_target_map(items)
@@ -405,16 +493,11 @@ def cmd_extract(args: argparse.Namespace) -> int:
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     destination.write_bytes(data)
                     written += 1
-            dimensions = png_size(data)
+            dimensions = image_size(data)
             source_item = by_target.get(target) or {}
-            # Extra source fields (resource/raster/size/use/enum/evidence/checksheet …) are the
-            # reviewer's traceability anchors; keep them so provenance does not lose them.
-            meta = {
-                key: value for key, value in source_item.items()
-                if key not in ("entry", "target", "kind", "note") and value not in (None, "")
-            }
             provenance[target] = {
                 "target": target,
+                "mode": "verbatim",
                 "entry": entry_name(entry),
                 "apk_sha256": apk_sha,
                 "entry_sha256": digest,
@@ -422,7 +505,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 "image": {"width": dimensions[0], "height": dimensions[1]} if dimensions else None,
                 "kind": str(source_item.get("kind") or ""),
                 "note": str(source_item.get("note") or ""),
-                "meta": meta or None,
+                "meta": item_meta(source_item),
             }
             shape = f", {dimensions[0]}x{dimensions[1]}" if dimensions else ""
             passed(f"extract {target} <- {entry_name(entry)} ({len(data)} B{shape}, sha256 {digest[:12]}…)")
@@ -443,6 +526,132 @@ def by_target_map(items: list[dict]) -> dict[str, dict]:
         except AssetError:
             continue
     return mapping
+
+
+def item_meta(item: dict) -> dict | None:
+    """Reviewer anchors from sources (resource/raster/size/use/enum/evidence/checksheet …)."""
+    meta = {
+        key: value for key, value in item.items()
+        if key not in ("entry", "target", "kind", "note", "decoded", "decode") and value not in (None, "")
+    }
+    return meta or None
+
+
+def cmd_stamp(args: argparse.Namespace) -> int:
+    """Register decoded resources (vector drawables / binary XML) that cannot be copied verbatim.
+
+    Contract (director, M2 Stage 1): provenance records three anchors — the sha256 of the
+    original APK entry, the sha256 of the decoded file, and the resource id — plus the
+    decoder name and version, because different apktool versions produce different XML.
+    """
+    apk = Path(args.apk)
+    out = Path(args.out)
+    sources_path = Path(args.sources)
+    if not sources_path.exists():
+        raise AssetError(f"sources file not found: {sources_path}")
+    try:
+        sources = json.loads(sources_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise AssetError(f"cannot parse {sources_path}: {error}") from error
+    items = sources.get("items") or []
+    decode = sources.get("decode") or {}
+    apk_sha = sha256_file(apk)
+    pinned = (sources.get("apk_sha256") or "").strip().lower()
+    if pinned and pinned != apk_sha:
+        raise AssetError(
+            f"APK sha256 mismatch: sources pin {pinned[:12]}…, file is {apk_sha[:12]}…; "
+            "use the pinned original APK (space.xinzhi.globe 1.6.1)"
+        )
+    entries = apk_entries(apk)
+    provenance = load_provenance(out) if (out / PROVENANCE_NAME).exists() else {}
+    stamped = problems = 0
+    id_map: dict[str, dict] | None = None
+    aapt2 = find_aapt2()
+    with zipfile.ZipFile(apk) as archive:
+        for item in items:
+            if not (item.get("decoded") or item.get("decode")):
+                continue
+            target = safe_target(str(item.get("target", "")))
+            raw_entry = str(item.get("entry", "")).strip()
+            decoder = str(item.get("decoder") or decode.get("name") or decode.get("tool") or "").strip()
+            decoder_version = str(item.get("decoder_version") or decode.get("version") or "").strip()
+            resource_id = ""
+            entry = None
+            if re.fullmatch(r"0[xX][0-9a-fA-F]{8}", raw_entry):
+                resource_id = raw_entry.lower()
+                if id_map is None:
+                    id_map = resource_entry_map(apk, aapt2)
+                resolved = id_map.get(resource_id) or {}
+                entry_path = resolved.get("entry") or str(item.get("apk_entry") or "").strip()
+                entry = entries.get(entry_path) if entry_path else None
+                if entry is None:
+                    failed(
+                        f"cannot resolve {resource_id} to an APK entry (for {target}); "
+                        "pass apk_entry (e.g. res/Uy.xml) or make aapt2 available"
+                    )
+                    problems += 1
+                    continue
+            else:
+                entry = entries.get(raw_entry)
+                if entry is None:
+                    failed(f"entry not in APK: {raw_entry!r} (for {target}); use a res entry or a 0x id")
+                    problems += 1
+                    continue
+                entry_path = raw_entry
+            if not decoder or not decoder_version:
+                failed(
+                    f"decoder name/version missing for {target}; "
+                    "write decoder + decoder_version (top-level decode block or per item)"
+                )
+                problems += 1
+                continue
+            pinned_tool = str(decode.get("name") or decode.get("tool") or "").strip()
+            pinned_version = str(decode.get("version") or "").strip()
+            if pinned_tool and decoder != pinned_tool:
+                failed(f"decoder mismatch for {target}: item {decoder!r} != pin {pinned_tool!r}")
+                problems += 1
+                continue
+            if pinned_version and decoder_version != pinned_version:
+                failed(
+                    f"decoder version mismatch for {target}: item {decoder_version!r} "
+                    f"!= pin {pinned_version!r}"
+                )
+                problems += 1
+                continue
+            destination = out / target
+            if not destination.exists():
+                failed(f"decoded file missing: {target}; decode it into that path first")
+                problems += 1
+                continue
+            data = destination.read_bytes()
+            if not data:
+                failed(f"decoded file is empty (0 bytes): {target}")
+                problems += 1
+                continue
+            dimensions = image_size(data)
+            provenance[target] = {
+                "target": target,
+                "mode": "decoded",
+                "entry": entry_path,
+                "resource_id": resource_id or None,
+                "apk_sha256": apk_sha,
+                "entry_sha256": sha256_bytes(archive.read(entry)),
+                "file_sha256": sha256_bytes(data),
+                "bytes": len(data),
+                "image": {"width": dimensions[0], "height": dimensions[1]} if dimensions else None,
+                "kind": str(item.get("kind") or ""),
+                "note": str(item.get("note") or ""),
+                "meta": item_meta(item),
+                "decoder": decoder,
+                "decoder_version": decoder_version,
+            }
+            stamped += 1
+            bound = f"{resource_id} -> {entry_path}" if resource_id else entry_path
+            passed(f"stamp {target} <- {bound} ({decoder} {decoder_version}, {len(data)} B, sha256 {sha256_bytes(data)[:12]}…)")
+    out.mkdir(parents=True, exist_ok=True)
+    write_provenance(out, provenance, apk if not args.no_apk_record else None)
+    info(f"stamp: {stamped} decoded item(s) recorded, {problems} problem(s)")
+    return 1 if problems else 0
 
 
 def cmd_manifest(args: argparse.Namespace) -> int:
@@ -466,7 +675,7 @@ def cmd_manifest(args: argparse.Namespace) -> int:
             empty.append(relative)
         digest = sha256_bytes(data)
         lines.append(f"{digest}  {relative}")
-        dimensions = png_size(data)
+        dimensions = image_size(data)
         record = provenance.get(relative)
         if record is None:
             missing_provenance.append(relative)
@@ -479,6 +688,10 @@ def cmd_manifest(args: argparse.Namespace) -> int:
             "kind": (record or {}).get("kind", "-"),
             "resource": ((record or {}).get("meta") or {}).get("resource", "-"),
             "use": ((record or {}).get("meta") or {}).get("use", "-"),
+            "carrier": (
+                "矢量/解码" if str((record or {}).get("mode") or "") == "decoded"
+                else ("位图" if image_size(data) else "文件")
+            ),
         })
     (directory / MANIFEST_NAME).write_text("\n".join(lines) + "\n", encoding="utf-8")
     md = [
@@ -488,12 +701,12 @@ def cmd_manifest(args: argparse.Namespace) -> int:
         f"- 文件数：**{len(files)}**，合计 **{total}** 字节",
         f"- 校验：`python tools\\fidelity\\assets.py verify --dir docs\\fidelity\\assets`",
         "",
-        "| # | 文件（`docs/fidelity/assets/` 下） | 字节 | 尺寸 | sha256 | APK 内条目 | 资源名 | 用途 | 类别 |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| # | 文件（`docs/fidelity/assets/` 下） | 载体 | 字节 | 尺寸 | sha256 | APK 内条目 | 资源名 | 用途 | 类别 |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for number, row in enumerate(rows, 1):
         md.append(
-            f"| {number} | `{row['target']}` | {row['bytes']} | {row['image']} | "
+            f"| {number} | `{row['target']}` | {row['carrier']} | {row['bytes']} | {row['image']} | "
             f"`{row['sha256'][:16]}…` | `{row['entry']}` | {row['resource']} | {row['use']} | {row['kind']} |"
         )
     (directory / INDEX_NAME).write_text("\n".join(md) + "\n", encoding="utf-8")
@@ -567,12 +780,19 @@ def cmd_verify(args: argparse.Namespace) -> int:
                 problems.append(f"no provenance for: {relative}")
                 continue
             digest = sha256_bytes(data)
-            if record.get("entry_sha256") and record["entry_sha256"] != digest:
+            mode = str(record.get("mode") or "verbatim")
+            if mode == "decoded":
+                if record.get("file_sha256") and record["file_sha256"] != digest:
+                    problems.append(
+                        f"decoded file sha256 != recorded file_sha256: {relative} "
+                        f"({str(record['file_sha256'])[:12]}… vs {digest[:12]}…)"
+                    )
+            elif record.get("entry_sha256") and record["entry_sha256"] != digest:
                 problems.append(
                     f"provenance entry_sha256 != file sha256: {relative} "
                     f"({str(record['entry_sha256'])[:12]}… vs {digest[:12]}…)"
                 )
-            dimensions = png_size(data)
+            dimensions = image_size(data)
             recorded = record.get("image") or {}
             if dimensions and recorded:
                 if (recorded.get("width"), recorded.get("height")) != dimensions:
@@ -582,6 +802,14 @@ def cmd_verify(args: argparse.Namespace) -> int:
                     )
             if record.get("bytes") is not None and record["bytes"] != len(data):
                 problems.append(f"recorded bytes {record['bytes']} != {len(data)}: {relative}")
+            if mode == "decoded":
+                if not record.get("decoder") or not record.get("decoder_version"):
+                    problems.append(f"decoded asset missing decoder name/version: {relative}")
+                if not record.get("entry") or not record.get("entry_sha256"):
+                    problems.append(f"decoded asset missing original entry sha256: {relative}")
+                resource_id = str(record.get("resource_id") or "")
+                if resource_id and not re.fullmatch(r"0x[0-9a-f]{8}", resource_id):
+                    problems.append(f"invalid resource id {resource_id!r}: {relative}")
             if archive is not None:
                 name = record.get("entry")
                 if not name:
@@ -592,8 +820,12 @@ def cmd_verify(args: argparse.Namespace) -> int:
                     problems.append(f"APK entry not found: {name} (for {relative})")
                     continue
                 source = archive.read(entry)
-                if sha256_bytes(source) != digest:
-                    problems.append(f"file does not match its APK entry: {relative} <- {name}")
+                source_digest = sha256_bytes(source)
+                if mode == "verbatim":
+                    if source_digest != digest:
+                        problems.append(f"file does not match its APK entry: {relative} <- {name}")
+                elif record.get("entry_sha256") and source_digest != record["entry_sha256"]:
+                    problems.append(f"APK entry changed since stamp (sha256 differs): {relative} <- {name}")
                 if record.get("apk_sha256") and record["apk_sha256"] != apk_sha:
                     problems.append(
                         f"provenance apk_sha256 is for a different APK: {relative} "
@@ -602,6 +834,10 @@ def cmd_verify(args: argparse.Namespace) -> int:
     finally:
         if archive is not None:
             archive.close()
+    if archive is None and any(
+        str((record or {}).get("mode") or "") == "decoded" for record in provenance.values()
+    ):
+        info("decoded entries: original-entry sha256 not re-checked (pass --apk to re-check it)")
 
     deps_missing: list[str] = []
     deps_path = Path(args.deps) if getattr(args, "deps", None) else directory.parent / "assets-deps.json"
@@ -643,6 +879,8 @@ def cmd_selftest(args: argparse.Namespace) -> int:
             archive.writestr(html, "<html>卦位</html>")
             archive.writestr("res/a1.png", png)
             archive.writestr("assets/plain.txt", "plain")
+            # Compiled vector drawable: binary AXML magic; decoded output can never match these bytes.
+            archive.writestr("res/drawable/svg_layer.xml", b"\x03\x00\x08\x00" + b"\x00" * 16)
         sources = temp / "sources.json"
         sources.write_text(json.dumps({
             "apk_sha256": sha256_file(apk),
@@ -781,6 +1019,66 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         code = cmd_list_apk(argparse.Namespace(apk=str(apk), grep="a1", ext="png", size="46x188", limit=5, sha=True))
         check(code == 0, "list-apk: size filter finds the pointer bitmap")
 
+        decoded_sources = temp / "sources-decoded.json"
+        decoded_sources.write_text(json.dumps({
+            "apk_sha256": sha256_file(apk),
+            "decode": {"tool": "apktool", "version": "selftest", "command": "apktool d -f"},
+            "items": [{
+                "entry": "res/drawable/svg_layer.xml", "target": "drawer/svg_layer.xml",
+                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer", "use": "图层",
+            }],
+        }, ensure_ascii=False), encoding="utf-8")
+        (out / "drawer").mkdir(parents=True, exist_ok=True)
+        code = cmd_stamp(argparse.Namespace(apk=str(apk), sources=str(decoded_sources), out=str(out),
+                                            no_apk_record=False))
+        check(code == 1, "stamp: decoded file must exist before stamping")
+        (out / "drawer/svg_layer.xml").write_text("<vector/>\n", encoding="utf-8")
+        code = cmd_stamp(argparse.Namespace(apk=str(apk), sources=str(decoded_sources), out=str(out),
+                                            no_apk_record=False))
+        check(code == 0, "stamp: decoded resource registered")
+        record = load_provenance(out)["drawer/svg_layer.xml"]
+        check(record.get("mode") == "decoded" and record.get("entry") == "res/drawable/svg_layer.xml",
+              "stamp: decoded mode + APK entry recorded")
+        check((record.get("meta") or {}).get("resource") == "svg_layer", "stamp: source anchors kept in meta")
+        code = cmd_manifest(argparse.Namespace(dir=str(out)))
+        check(code == 0, "manifest: decoded resource included")
+        code, text = verify_text(deps=str(complete_deps))
+        check(code == 0, "verify: decoded resource passes with APK source check")
+        (out / "drawer/svg_layer2.xml").write_text("<vector/>\n", encoding="utf-8")
+        id_sources = temp / "sources-resid.json"
+        id_sources.write_text(json.dumps({
+            "apk_sha256": sha256_file(apk),
+            "decode": {"tool": "apktool", "version": "selftest"},
+            "items": [{
+                "entry": "0x7f0803da", "apk_entry": "res/drawable/svg_layer.xml",
+                "target": "drawer/svg_layer2.xml",
+                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer",
+            }],
+        }, ensure_ascii=False), encoding="utf-8")
+        code = cmd_stamp(argparse.Namespace(apk=str(apk), sources=str(id_sources), out=str(out),
+                                            no_apk_record=False))
+        check(code == 0, "stamp: resource-id binding accepted for decoded resources")
+        code = cmd_manifest(argparse.Namespace(dir=str(out)))
+        code, text = verify_text(deps=str(complete_deps))
+        check(code == 0, "verify: resource-id decoded asset passes")
+
+        mismatch = temp / "sources-mismatch.json"
+        mismatch.write_text(json.dumps({
+            "apk_sha256": sha256_file(apk),
+            "decode": {"tool": "apktool", "version": "2.9.3"},
+            "items": [{
+                "entry": "res/drawable/svg_layer.xml", "target": "drawer/svg_layer.xml",
+                "kind": "icon-drawer", "decoded": True, "decoder": "apktool",
+                "decoder_version": "2.8.0",
+            }],
+        }, ensure_ascii=False), encoding="utf-8")
+        code = cmd_stamp(argparse.Namespace(apk=str(apk), sources=str(mismatch), out=str(out),
+                                            no_apk_record=False))
+        check(code == 1, "stamp: decoder version mismatch is rejected")
+        (out / "drawer/svg_layer.xml").write_text("<vector><path/></vector>\n", encoding="utf-8")
+        code, text = verify_text(deps=str(complete_deps))
+        check(code == 1 and "decoded file sha256" in text, "verify: tampered decoded file fails")
+
     failures = [message for ok, message in checks if not ok]
     print()
     if failures:
@@ -837,6 +1135,15 @@ def build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--force", action="store_true", help="overwrite files whose sha256 differs")
     extract.add_argument("--no-apk-record", action="store_true", help="do not record the APK path (CI)")
     extract.set_defaults(func=cmd_extract)
+
+    stamp = commands.add_parser(
+        "stamp", help="register decoded resources (vector drawables / binary XML) already decoded into --out"
+    )
+    stamp.add_argument("--apk", required=True)
+    stamp.add_argument("--sources", required=True)
+    stamp.add_argument("--out", default="docs/fidelity/assets")
+    stamp.add_argument("--no-apk-record", action="store_true")
+    stamp.set_defaults(func=cmd_stamp)
 
     manifest = commands.add_parser("manifest", help="write MANIFEST.sha256 + INDEX.md from the asset tree")
     manifest.add_argument("--dir", default="docs/fidelity/assets")

@@ -14,7 +14,7 @@ python tools\fidelity\selftest.py
 python tools\fidelity\assets.py selftest
 ```
 
-合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (25 checks)`），同样不需要设备与原版 APK。
+合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (35 checks)`），同样不需要设备与原版 APK。
 
 ## 1. 一键采集（`collect`）
 
@@ -299,9 +299,45 @@ python tools\fidelity\assets.py verify --dir docs\fidelity\assets --apk E:\APPDe
 }
 ```
 
+### 7.1 解码素材（vector drawable / 二进制 XML）
+
+APK 里 **`.svg` = 0**，`res/` 下 xml 全是编译后的二进制 AXML（魔数 `03000800`），客户端读不了；可读形态必须经 apktool 等解码，**解码产物不可能与原条目逐字节相等**。这类条目在 `sources` 里标 `"decoded": true`（等价写法 `"decode": "apktool"`），走 `stamp` 登记而不是 `extract` 复制。
+
+**溯源三样 + 解码器版本**（总监 M2 Stage 1 定）：`PROVENANCE.json` 必须同时记「原条目 sha256 + 解码文件 sha256 + 资源 id」，外加 **解码工具名与版本**——不同 apktool 版本解出的 XML 不一样，不写死版本复核就失去意义。
+
+```powershell
+# 1) 先解码：产物放到 sources 的 target 路径（如 assets/icons/drawer/svg_layer.xml）
+# 2) 登记：资源 id 会经 aapt2 dump resources 解析成 APK 内（混淆）条目再算 hash
+python tools\fidelity\assets.py stamp --apk E:\APPDetector\input\swss.apk --sources docs\fidelity\assets-sources.json
+# [PASS] stamp icons/drawer/svg_layer.xml <- 0x7f0803da -> res/Uy.xml (apktool 2.9.3, 1348 B, sha256 3fc8a1eda0fc…)
+```
+
+```json
+{
+  "apk_sha256": "2fd1fc15…",
+  "decode": { "name": "apktool", "version": "2.9.3",
+              "command": "apktool d -f -o <dir> E:\\APPDetector\\input\\swss.apk" },
+  "items": [
+    { "entry": "0x7f0803da",              // 资源 id（推荐）；也接受 "res/Uy.xml" 直写条目
+      "apk_entry": "res/Uy.xml",          // 可选：没有 aapt2 时用它把 id 落到条目
+      "target": "icons/drawer/svg_layer.xml",
+      "kind": "icon-drawer", "decoded": true,
+      "decoder": "apktool", "decoder_version": "2.9.3",   // 可省，省略则继承 decode 段
+      "resource": "svg_layer", "use": "右列 图层", "evidence": "MainActivity.smali:15130…15527" }
+  ]
+}
+```
+
+- `extract` 遇到 `decoded` 条目会跳过并提示（`decoded item skipped ... run stamp`），其余条目照常复制；
+- `stamp` 解析顺序：`entry` 是 `0x..` 资源 id → `aapt2 dump resources` 查 `res/*.xml` 条目（找不到再退回 `apk_entry`）；`entry` 直接是 `res/...` → 直接用。**解析不到条目就 FAIL**（没有原条目 sha 就无法复核）；
+- **解码器版本不符直接拒绝**：item 的 `decoder`/`decoder_version` 与 `decode` 段 pin 住的名字/版本不一致 → `stamp` FAIL（selftest 覆盖）；两处都没写 → FAIL；
+- `PROVENANCE.json` 里解码文件 `mode = "decoded"`：`entry` = 解析后的 APK 条目路径、`resource_id` = `0x…`、`entry_sha256` = **原条目** sha256、`file_sha256` = **解码文件** sha256、`decoder`/`decoder_version`、`meta.resource` = 资源名；
+- `verify --apk` 对解码条目**两样都重算**：条目 sha256 变了（换了包/条目被改）→ FAIL；解码文件 sha256 与登记不一致 → FAIL；缺 `entry_sha256` 或缺 decoder 字段 → FAIL；`verify` 不带 `--apk` 时会提示「原条目不重算」；
+- `INDEX.md` 的「载体」列区分 `位图` / `矢量/解码` / `文件`，WebP 尺寸也能读出（底图源缩略图就是 webp）。
+
 产物与判定：
 
-- `MANIFEST.sha256`（`sha256sum` 兼容，`<hash>  <相对路径>`）、`INDEX.md`（文件/字节/尺寸/sha256/APK 条目/类别）、`PROVENANCE.json`（每条：`entry`、`entry_sha256`、`apk_sha256`、字节、宽高、kind/note）**全部由工具生成，手改无效**；
+- `MANIFEST.sha256`（`sha256sum` 兼容，`<hash>  <相对路径>`）、`INDEX.md`（文件/载体/字节/尺寸/sha256/APK 条目/资源名/用途/类别）、`PROVENANCE.json`（每条：`mode`、`entry`、`entry_sha256`/`file_sha256`、`apk_sha256`、字节、宽高、kind/note/meta）**全部由工具生成，手改无效**；
 - `extract` 幂等：同 hash 跳过；已有文件 hash 不同则拒绝，`--force` 才覆盖；`apk_sha256` 与 sources 不符直接拒绝；APK 里找不到的条目整次失败、一条不写；
 - `manifest` 对 **0 字节文件**、**没有 provenance 的文件** exit 1；`verify` 对缺文件、清单外文件、hash 不符、尺寸/字节数不符、provenance 无 APK 条目、文件与 APK 条目不一致、`--strict` 下内容重复 exit 1；干净树打印 `sha256 + provenance + APK source all match`；
 - 中文条目名会被 APK zip 按 cp437 误解码，`extract`/`list-apk` 已自动按 UTF-8 还原，**不要手工改名**；

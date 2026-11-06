@@ -108,7 +108,7 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | 20 | `tool-fishing` | 实采 | png+xml+meta | 钓点 |
 | 21 | `tool-track` | 实采 | png+xml+meta | 历史轨迹（无登录墙；空态「暂无历史轨迹记录」） |
 | 22 | `map-roadnet-on` | 实采（LC 侧同态） | png+xml+meta | 路网叠加开启；原版该行无独立 stem（对照物为 `map-home-01.xml`） |
-| 23 | `tool-contour-01` | 缺失（固定态不可得） | 补充证据 `map-contour-relief` | 固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希完全相同（`13567:1033006902` 三次一致）；同一引擎在 40.35/116.00 z12 开启后哈希变化（`12547:4200479435`→`12575:898838800`），故能力存在、固定态不可见。原 `tool-contour-01.*` 与 3D 态逐字节相同，已删除，不再冒充两态 |
+| 23 | `tool-contour-01` | 缺失（固定态不可得，待原版补采） | 补充证据 `map-contour-relief` | 固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希完全相同（`13567:1033006902` 三次一致）；同一引擎在 40.35/116.00 z12 开启后哈希变化（`12547:4200479435`→`12575:898838800`），故能力存在、固定态不可见。原 `tool-contour-01.*` 与 3D 态逐字节相同，已删除，不再冒充两态。**原版同态对照尚未取得**（原版 App 启动阶段 ANR，见 §4.2），R2-036 维持「未确认」 |
 | 24 | `map-mountains-entry` | 实采 | png+xml+meta | 「看山脉」页：视野内山名 120 个、山脊/刷新视野 |
 | 25 | `map-water-entry` | 实采 | png+xml+meta | 「看水系」页（D0 重采：`mResumedActivity=.WaterActivity`、dump 含 `看水系`、不含 `看山脉`） |
 | 26 | `map-overlay-sheet` | 实采 | png+xml+meta | 「数据叠加」页：4 Tab + 公路(路网) + 全部开启/关闭 |
@@ -133,6 +133,21 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 - 3D 重复图已消：`map-3d-mode`(`9cf8b080…`) ≠ 任何其它 state；`tool-contour-01.*` 已删除。
 - 采集期间 USB 瞬断一次（`adb: device not found`），重连后重跑补齐，所有 meta `build.commit` = `464ebb8c50b427fb42b0ea0cbafabb1f4f03d58a`、`apk.sha256` = `ccd5686f…`（7,059,457 B）。
 - 等高线「固定态不可见」判定依据不是肉眼：`canvas.toDataURL` 缩略图哈希在 contour off/on/off 三次均为 `13567:1033006902`；同一引擎在山区同参数下 off=`12547:4200479435`、on=`12575:898838800`。
+
+### 4.2 原版同态对照补采受阻（2026-11-06 17:24–17:32）
+
+为给第 23 行取「原版固定态 3D + 等高线」对照，按 `orig-inventory.md` 第 04 行口径启动原版 App（`space.xinzhi.globe`），**未进入地图页**：
+
+| 尝试 | 观察 | 结果 |
+|---|---|---|
+| `am start -n space.xinzhi.globe/.ui.pages.SplashActivity`，静置 60 s | 停在启动图；`mResumedActivity` 始终 `SplashActivity`、`mCurrentFocus=null`；截图 sha `ff4b1aee4469afb1…`（2,714,248 B）不变 | 未进入地图 |
+| 点击 `(614,1350)` / `(1100,200)` / `BACK` | 弹出系统 ANR：「三维山水全景地图 无响应。是否将其关闭？」截图 sha `ddd0ff2558a3e415…` | ANR |
+| ANR 选「关闭应用」后重拉（`monkey -c LAUNCHER`） | 回到桌面（`com.huawei.android.launcher`），再次启动仍停在同上启动图 | 不可用 |
+
+排查：`MemAvailable` = 3,415,784 kB（约 3.4 GB，非内存不足）；`logcat` 无 `FATAL EXCEPTION`、无 `ANR in space.xinzhi.globe`；进程存活（`MyWrapperProxyApplication`，vmInterpret 保护包）。采集纪律要求原版「只作对照、不改数据」，故**未清数据重试**。
+
+结论：第 23 行与 R2-036 的「等价/缺陷」判定仍缺原版对照，等原版可正常启动后补拍；LC 侧 `map-contour-relief` 只证明我方能力，不用于判定原版行为。
+
 
 
 **采集过程（可复现）**：`uiautomator dump` 在传感器活跃时报 `could not get idle state`，先 `am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value 0` 冻结航向即稳定；装包后立即广播可能被忽略（应用未完成 onResume），需等 4 s。3D 按钮真实 bounds `[1027,2366]-[1222,2494]`、中心 `(1124,2430)`（点 `(1126,2187)` 落在 `−` 与 `定位` 之间的缝里）。

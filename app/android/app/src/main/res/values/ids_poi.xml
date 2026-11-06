@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- R2-004 / R2-014 / R2-018 新增控件 id -->
+    <item name="lc_poi_panel" type="id" />
+    <item name="lc_poi_name" type="id" />
+    <item name="lc_poi_meta" type="id" />
+    <item name="lc_poi_wgs" type="id" />
+    <item name="lc_poi_copy" type="id" />
+    <item name="lc_poi_fav" type="id" />
+    <item name="lc_poi_nav" type="id" />
+    <item name="lc_poi_clear" type="id" />
+    <item name="lc_menu_button" type="id" />
+    <item name="lc_drawer_panel" type="id" />
+    <item name="lc_drawer_version" type="id" />
+    <item name="lc_fav_column" type="id" />
+    <item name="lc_fav_list" type="id" />
+    <item name="lc_fav_contour" type="id" />
+    <item name="lc_fav_bottom" type="id" />
+    <item name="lc_fav_add" type="id" />
+    <item name="lc_coord_text" type="id" />
+    <item name="lc_scale_text" type="id" />
+    <item name="lc_info_back" type="id" />
+    <item name="lc_info_title" type="id" />
+    <item name="lc_info_content" type="id" />
+    <item name="lc_info_body" type="id" />
+</resources>
+
+
+

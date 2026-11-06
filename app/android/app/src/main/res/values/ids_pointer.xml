@@ -33,4 +33,18 @@
     <item name="lc_m3_body" type="id" />
     <item name="lc_m3_empty" type="id" />
     <item name="lc_m3_web" type="id" />
+    <!-- M3：三页专属结构控件 -->
+    <item name="lc_m3_add_image" type="id" />
+    <item name="lc_m3_tip" type="id" />
+    <item name="lc_m3_submit" type="id" />
+    <item name="lc_m3_share_cancel" type="id" />
+    <item name="lc_m3_avatar" type="id" />
+    <item name="lc_m3_login" type="id" />
+    <item name="lc_m3_copy_mail" type="id" />
+    <!-- M3：WebView 整页载体 -->
+    <item name="lc_web_root" type="id" />
+    <item name="lc_web_back" type="id" />
+    <item name="lc_web_title" type="id" />
+    <item name="lc_web_status" type="id" />
+    <item name="lc_web_view" type="id" />
 </resources>

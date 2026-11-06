@@ -39,6 +39,12 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan.Light" />
 
+        <!-- M3：远端 WebView 整页载体（原版 WebActivity 形态） -->
+        <activity
+            android:name=".M3WebActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Luopan.Light" />
+
         <activity
             android:name=".SettingActivity"
             android:exported="false"

@@ -95,11 +95,22 @@ adb -s L2E0222531014833 pull /sdcard/a.xml .
 # 抽屉：tap 97 202；逐项中心点按；每次点后取 mResumedActivity
 adb -s L2E0222531014833 shell dumpsys activity activities | Select-String 'mResumedActivity'
 ```
-### 4.4 真机核验必做：保唤醒（本轮踩到）
+### 4.4 真机核验必做两条（本轮各踩过一次，写入证据纪律）
+
+**A. 保唤醒**
 
 - 首轮 R2-007 判据复核失败不是实现问题：装置灭屏后第一次点击唤醒了锁屏，前台变成 `com.huawei.coauthservice/...UnifiedAuthenticationDialogActivity`，dump 全空、logcat 0 条。
 - 正确做法（本轮改用后一次通过）：`adb shell svc power stayon true`（USB 保持唤醒）→ 每次点按前 `input keyevent 224` → 结束 `svc power stayon false` 并回桌面。
-- 纪律里「唤醒解锁」要落到「**每次 dump 前都确认亮屏且前台是我方包**」，否则会拿锁屏界面当证据。
+- 「唤醒解锁」要落到「**每次 dump 前都确认亮屏且前台是我方包**」，否则会拿锁屏界面当证据。
+
+**B. 防应用市场截胡（证据纪律，不是个人习惯）**
+
+- 现象：联想应用市场会在核验中途弹到前台、把点击吃掉。R2-025 首轮 `d-tab3` 就变成了商店「安装」页（`install_button_group` / `hwprogressbutton` / `继续安装`），被误当成「收藏点 tab 空白」；清理后重测才拿到真结果。
+- 强制前置：核验/采集开始前 `adb shell am force-stop com.lenovo.leos.appstore`；每个关键 dump 前后校验：
+  1. `mResumedActivity` 属于 `com.luopan.fengshui`（否则作废重跑）；
+  2. dump 不得出现 `install_button_group`/`hwprogressbutton`/`继续安装` 等商店特征节点；
+  3. 本态**应有**的关键节点存在（`lc_search_*`/`lc_elev_*`/`lc_mtn_*` 等），缺失先怀疑劫持或没进对页面。
+- 实现侧要同步：`collect_lc_client.ps1`、`collect_map_lc.ps1` 前置加同一条 force-stop + 前台断言。
 
 ### 4.5 R2-025 复判协议（设备，实施后跑一次）
 

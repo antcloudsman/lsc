@@ -256,6 +256,45 @@ def main() -> int:
         check("empty screenshot (0 bytes)" in output, "report: dump-only exemption does not skip 0-byte PNG check")
         (report_root / "orig" / "05-dump-only.png").unlink()
 
+        lc_only_states = ["07-lc-only-a", "08-lc-only-b", "09-lc-only-c", "10-lc-only-d"]
+        for index, name in enumerate(lc_only_states):
+            Image.new("RGB", (320, 600), (10 + index * 40, 50, 200)).save(report_root / "lc" / f"{name}.png")
+        run(["report", "--root", str(report_root)])
+        before_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        missing_before = sum(1 for row in before_summary["states"] if row["status"] == "missing-orig")
+        check(missing_before == 4, f"report: lc-only states are missing-orig before exemption (got {missing_before})")
+
+        lc_only_allow_path = report_root / "lc-only-allow.json"
+        valid_lc_only = {
+            "allow": [
+                {"state": state, "reason": "selftest: LC incremental, no original state", "by": "LC测试"}
+                for state in lc_only_states
+            ]
+        }
+        lc_only_allow_path.write_text(json.dumps(valid_lc_only, ensure_ascii=False), encoding="utf-8")
+        run(["report", "--root", str(report_root)])
+        after_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        missing_after = sum(1 for row in after_summary["states"] if row["status"] == "missing-orig")
+        check(missing_after == 0, f"report: lc-only exemption removes 4 missing-orig rows (got {missing_after})")
+        check(after_summary["counts"]["lc_only"] == 4, "report: summary counts lc-only")
+        check(
+            all(row["status"] == "lc-only" for row in after_summary["states"] if row["state"] in lc_only_states),
+            "report: lc-only status applied",
+        )
+
+        lc_only_allow_path.write_text(
+            json.dumps({"allow": [{"state": "11-ghost-lc", "reason": "x", "by": "LC测试"}]}), encoding="utf-8"
+        )
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("no png/xml" in output, "report: lc-only entry without lc files is an error")
+
+        lc_only_allow_path.write_text(
+            json.dumps({"allow": [{"state": lc_only_states[0], "by": "LC测试"}]}), encoding="utf-8"
+        )
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("reason" in output, "report: lc-only allowlist missing reason is an error")
+        lc_only_allow_path.write_text(json.dumps(valid_lc_only, ensure_ascii=False), encoding="utf-8")
+
         (report_root / "orig" / "04-empty.png").write_bytes(b"")
         output = run(["report", "--root", str(report_root)], expect=1)
         check("empty screenshot (0 bytes)" in output, "report: empty screenshot is a hard error")

@@ -44,7 +44,7 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.6.0"
+VERSION = "1.7.0"
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
 DEFAULT_THRESHOLD = 8
@@ -661,6 +661,51 @@ def _load_dump_only(root: Path, override: str | None) -> dict:
     return cleaned
 
 
+def _load_lc_only(root: Path, override: str | None, lc_dir: Path) -> dict:
+    """Load docs/fidelity/lc-only-allow.json: LC-only incremental states with no original counterpart."""
+    path = Path(override) if override else root / "lc-only-allow.json"
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise FidelityError(f"cannot read lc-only allowlist {path}: {error}") from error
+    if isinstance(data, dict) and "state" in data:
+        entries = [data]
+    elif isinstance(data, dict):
+        entries = data.get("allow", [])
+    elif isinstance(data, list):
+        entries = data
+    else:
+        raise FidelityError(f"lc-only allowlist {path} must be an object or an array")
+    if not isinstance(entries, list):
+        raise FidelityError(f"lc-only allowlist {path}: 'allow' must be an array")
+    cleaned = {}
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            raise FidelityError(f"lc-only allowlist {path}: allow[{index}] must be an object")
+        state = entry.get("state")
+        if not isinstance(state, str) or not state.strip():
+            raise FidelityError(f"lc-only allowlist {path}: allow[{index}].state must be a non-empty state id")
+        reason = entry.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            raise FidelityError(f"lc-only allowlist {path}: allow[{index}] is missing a non-empty reason")
+        by = entry.get("by")
+        if not isinstance(by, str) or not by.strip():
+            raise FidelityError(f"lc-only allowlist {path}: allow[{index}] is missing a non-empty by")
+        state = state.strip()
+        if state in cleaned:
+            info(f"warning: lc-only allowlist has a duplicate state entry: {state}")
+            continue
+        if not ((lc_dir / f"{state}.png").exists() or (lc_dir / f"{state}.xml").exists()):
+            raise FidelityError(
+                f"lc-only allowlist entry '{state}' has no png/xml in {lc_dir}; "
+                "the exemption cannot mask a missing capture"
+            )
+        cleaned[state] = {"reason": reason.strip(), "by": by.strip()}
+    return cleaned
+
+
 def _allow_duplicate(states: list[str], allow: list[dict]) -> dict | None:
     """A duplicate group is allowed only when allowlist pairs connect every state in it."""
     if len(states) < 2 or not allow:
@@ -689,21 +734,29 @@ def _allow_duplicate(states: list[str], allow: list[dict]) -> dict | None:
 
 def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, integrity: dict) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
+    total = len(rows)
+    compared = sum(1 for row in rows if row["status"] == "compared")
+    dump_only = sum(1 for row in rows if row["status"] == "dump-only")
+    lc_only = sum(1 for row in rows if row["status"] == "lc-only")
+    failed_rows = [row for row in rows if row["status"] not in ("compared", "dump-only", "lc-only")]
+
     summary = {
         "tool": "fidelity",
         "version": VERSION,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "root": str(root),
         "threshold": threshold,
+        "counts": {
+            "total": total,
+            "compared": compared,
+            "dump_only": dump_only,
+            "lc_only": lc_only,
+            "not_compared": len(failed_rows),
+        },
         "integrity": integrity,
         "states": rows,
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    total = len(rows)
-    compared = sum(1 for row in rows if row["status"] == "compared")
-    dump_only = sum(1 for row in rows if row["status"] == "dump-only")
-    failed_rows = [row for row in rows if row["status"] not in ("compared", "dump-only")]
 
     html = [
         "<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\">",
@@ -711,14 +764,15 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
         "<title>LC fidelity report</title>",
         f"<style>{REPORT_CSS}</style></head><body><main>",
         "<h1>LC fidelity report</h1>",
-        f"<div class=\"meta\">root <code>{_esc(root)}</code> | states {compared} compared + {dump_only} dump-only / {total} | "
+        f"<div class=\"meta\">root <code>{_esc(root)}</code> | states {compared} compared + {dump_only} dump-only "
+        f"+ {lc_only} lc-only / {total} | "
         f"threshold {threshold} | generated {time.strftime('%Y-%m-%d %H:%M:%S')}</div>",
         "<table><tr><th>state</th><th>status</th><th>diff px</th><th>ratio</th><th>bbox (x1,y1,x2,y2)</th>"
         "<th>mean dE2000</th><th>controls (matched/only orig/only lc)</th></tr>",
     ]
     for row in rows:
         status = row["status"]
-        css = "pass" if status in ("compared", "dump-only") else "fail"
+        css = "pass" if status in ("compared", "dump-only", "lc-only") else "fail"
         metrics = row.get("metrics") or {}
         diff = metrics.get("diff") or {}
         controls = row.get("controls") or {}
@@ -766,6 +820,13 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
     for row in rows:
         state = row["state"]
         html.append(f"<h2 id=\"{_esc(state)}\">{_esc(state)}</h2>")
+        if row["status"] == "lc-only":
+            exempt = row.get("lc_only") or {}
+            html.append(
+                "<p class=\"pass\">lc-only exemption (incremental, no original state): "
+                f"{_esc(exempt.get('reason', ''))} ({_esc(exempt.get('by', ''))})</p>"
+            )
+            continue
         if row["status"] == "dump-only":
             exempt = row.get("dump_only") or {}
             html.append(
@@ -825,7 +886,7 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
         "# LC fidelity summary",
         "",
         f"- root: `{root}`",
-        f"- states compared: {compared}, dump-only: {dump_only}, total: {total}",
+        f"- states compared: {compared}, dump-only: {dump_only}, lc-only: {lc_only}, total: {total}",
         f"- threshold: {threshold}",
         "",
         "## 证据完整性",
@@ -1006,11 +1067,19 @@ def cmd_report(args: argparse.Namespace) -> int:
                 f"dump-only allowlist entry '{state}' has no dump in orig/ or lc/; "
                 "the exemption cannot mask a missing capture"
             )
+    lc_only = _load_lc_only(root, getattr(args, "lc_only_file", None), lc_dir)
+    overlap = set(lc_only) & set(dump_only)
+    if overlap:
+        raise FidelityError(
+            f"state(s) listed in both dump-only and lc-only allowlists: {', '.join(sorted(overlap))}"
+        )
+    for state in lc_only:
+        states.add(state)
     if args.state:
         wanted = set(args.state)
         states = {state for state in states if state in wanted}
     if not states:
-        raise FidelityError(f"no *.png pairs or dump-only states found under {root}")
+        raise FidelityError(f"no *.png pairs, dump-only or lc-only states found under {root}")
     known_states = set()
     for directory in (orig_dir, lc_dir):
         if directory.exists():
@@ -1046,7 +1115,9 @@ def cmd_report(args: argparse.Namespace) -> int:
         orig_xml, lc_xml = orig_dir / f"{state}.xml", lc_dir / f"{state}.xml"
         row: dict = {"state": state}
         exempt = state in dump_only
-        if exempt and not (orig_png.exists() and lc_png.exists()):
+        if state in lc_only:
+            row.update({"status": "lc-only", "lc_only": lc_only[state]})
+        elif exempt and not (orig_png.exists() and lc_png.exists()):
             row.update({"status": "dump-only", "dump_only": dump_only[state]})
             if orig_xml.exists() and lc_xml.exists():
                 row["controls"] = measure_pair(orig_xml, lc_xml, out_dir / state, state)
@@ -1077,9 +1148,10 @@ def cmd_report(args: argparse.Namespace) -> int:
     write_report(rows, out_dir, root, args.threshold, integrity)
     compared = sum(1 for row in rows if row["status"] == "compared")
     dump_only_count = sum(1 for row in rows if row["status"] == "dump-only")
+    lc_only_count = sum(1 for row in rows if row["status"] == "lc-only")
     if integrity_failed:
         return 1
-    if compared + dump_only_count == len(rows):
+    if compared + dump_only_count + lc_only_count == len(rows):
         return 0
     return 0 if not args.strict else 1
 
@@ -1300,6 +1372,8 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--allow-file", help="duplicates allowlist JSON (default: <root>/duplicates-allow.json)")
     report.add_argument("--dump-only-file",
                         help="dump-only allowlist JSON (default: <root>/dump-only-allow.json)")
+    report.add_argument("--lc-only-file",
+                        help="lc-only allowlist JSON for LC incremental states (default: <root>/lc-only-allow.json)")
     report.add_argument("--strict", action="store_true", help="exit 1 when any pair is not compared")
     report.set_defaults(func=cmd_report)
 

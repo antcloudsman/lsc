@@ -1,0 +1,4 @@
+{
+  "note": "LC 增量/探针态豁免：原版没有对应状态，不参与 missing-orig/missing-lc 统计。每条 {\"state\":\"...\",\"reason\":\"...\",\"by\":\"...\"}；缺 reason/by 会报错。state 必须在 lc/ 有 png 或 xml，否则报错；不得用来掩盖漏采。",
+  "allow": []
+}

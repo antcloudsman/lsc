@@ -187,6 +187,30 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
 - 若豁免态两侧 PNG 都存在，`report` 会忽略豁免、按正常配对比较并提示，避免拿豁免藏掉已有截图；
 - `state`/`reason`/`by` 缺一即报错；允许列表条目引用不存在的目录会在启动校验时失败。
 
+### 5.3 lc-only 豁免（LC 增量/探针态，原版无对应）
+
+`docs/fidelity/lc-only-allow.json`（或 `--lc-only-file`）登记只有 LC 侧存在、原版没有对应状态的页面/探针：
+
+```json
+{
+  "allow": [
+    {
+      "state": "lc-knowledge-sheet",
+      "reason": "LC 增量知识库面板，原版无对应态",
+      "by": "LC测试"
+    }
+  ]
+}
+```
+
+规则：
+
+- `report` 对列入状态记 `lc-only·增量不计配对`：**不参与** `missing-orig`/`missing-lc` 统计，也不进 compared 分母；`summary.counts.lc_only` 单列计数；
+- `state` 必须在 `lc/` 有至少一份 png 或 xml，否则 `report` 直接报错——**不能拿它盖漏采**；
+- 与 dump-only 名单互斥，同一 state 两边都列直接报错；
+- `state`/`reason`/`by` 缺一即报错；
+- 只该收录 LC 增量页面、探针态；原版存在但没采到的状态仍应记 missing，不得迁移到这里。
+
 ## 6. 写发现时的硬要求
 
 每条“差异”至少带：`state id` + 复现命令（或入口路径 + 坐标）+ 量化值（px / hex / sp / 文案逐字）。工具输出只是证据，结论里不要出现“差不多/基本一致/类似”；无法复现的不写进报告。

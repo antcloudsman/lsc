@@ -211,6 +211,7 @@ tools/fidelity/   对齐/差图/取色/HTML 对照页（LC服务端 提供）
 
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
+| v1.7 | 2026-11-07 | **S- 行定稿**（服务端 `a50ce64`）：7 条按实际文件定目标（账户设置 1 候选 / 投诉 1 / 关于我们复用 brand 1 / 联系·帮助·协议只认 `_shared` 共用返回 1 / 推荐给好友 2）；写死两条前提——共用返回**全仓只存一份**、合并顺序**先 `4e8a10c` 再 `a50ce64`**（develop 上显示 `0/1` 是文件没合、不是判据变化），合并后应 **15/16、7 条全绿**；补服务端新增 provenance 残留检查 + `prune`（selftest 40） | LC产品 |
 | v1.6 | 2026-11-07 | **总监定案**：①关于我们 bounds 重拍**上限一轮**，失败按已知 URL 做可点文本、标「bounds 未确认，链接目标已确认」，不许自排版；②**离线/失败态定案「未确认」、不列关账条件**，但实现须有加载中/失败可见态（不白屏）；③P1-18-B2 认「216±2px、不判 sp」；④§9.6 门禁行改 102/102/102；三处转写旧写法作废 | LC产品 |
 | v1.5 | 2026-11-07 | 按逆向 `4e8a10c` 更正逐字：投诉反馈 `申请原因`/`问题截图`/hint 全句/`订单投诉`/`问题反馈`/`未选择任何订单`/静态提示行 `[111,1883][1189,2001]`（静态提示非校验）；`SECRECY_POLICY` 更正（原误写 `PRIVACY`）+ DEX 行号 `:67/:97/:82`；URL 常量禁进 `app/`；离线态证据「未取到、待取证」不充数；素材门禁改 **102/102/102** | LC产品 |
 | v1.4 | 2026-11-07 | **Stage 1 判后补记**：M3-01/02/03 三条「不可得/待重拍」入判据（未登录态不授权登出、空提交不授权请求、关于我们链接 bounds 待重拍及方法）；用户协议 URL（`USER_AGREEMENT`）+ 隐私（`PRIVACY`）落 §9.3；**新增 P1-18-B2「文字宽 216±2px」**（`23.4` 字号作废）；投诉反馈改**两级页面**；§9.5.2 按逆向 `e40ffaa` 写实（共用返回 1 份、推荐 2 枚、关于我们复用 brand、联系/帮助/协议无页内图标）+ 门禁残留 103 vs 101 | LC产品 |
@@ -334,20 +335,19 @@ tools/fidelity/   对齐/差图/取色/HTML 对照页（LC服务端 提供）
 
 #### 9.5.2 S- 子页素材依赖项（到货登记）
 
-| 编号 | 页 | 已落库素材（逆向 `e40ffaa`） | 门禁要求 |
+| 编号 | 页 | 已落库素材（**定稿**，服务端 `a50ce64`） | 门禁要求 |
 |---|---|---|---|
-| `S-共用` | 全 7 页 | `pages/_shared/icons/svg_title_back.xml`（`svg_title_back` / `0x7f08040a`，矢量 decoded） | **只落一份**，7 页引用；重复即判重复 |
-| `S-账户设置` | M3-01 | `pages/account/icons/ic_default_avatar.png`（`ic_default_avatar` / `0x7f0f0048`，**候选**：头像行 `[39,502][1084,581]`） | 1 枚；候选待复核 |
-| `S-投诉反馈` | M3-02 | `pages/feedback/icons/ic_add_image.png`（`ic_add_image` / `0x7f0f0028`，对应「添加图片 `[39,1333][243,1412]`」） | 1 枚 |
-| `S-关于我们` | M3-03 | **复用** `brand/ic_launcher.png`（`0x7f0f0076`） | **不拷副本**（同资源双目标会被判重复）；按引用记 |
-| `S-联系我们` | M3-04 | **无页内图标**（只有共用返回；`contact.xml` 无 widget id） | 只引 `pages/_shared/`，**不臆造** |
+| `S-共用` | 全 7 页 | `pages/_shared/icons/svg_title_back.xml`（`svg_title_back` / `0x7f08040a`，矢量 decoded） | **全仓只存一份**；7 个页目录不许各拷一份（`verify --strict` 判重复） |
+| `S-账户设置` | M3-01 | `pages/account/icons/ic_default_avatar.png`（`ic_default_avatar` / `0x7f0f0048`） | **1 枚**；候选，身份由 **LC审核验** 判 |
+| `S-投诉反馈` | M3-02 | `pages/feedback/icons/ic_add_image.png`（`ic_add_image` / `0x7f0f0028`） | **1 枚** |
+| `S-关于我们` | M3-03 | **复用** `brand/ic_launcher.png`（`0x7f0f0076`） | **1 枚，不落副本**（同资源双目标会被判重复） |
+| `S-联系我们` | M3-04 | `pages/_shared/icons/svg_title_back.xml` | **1 枚**，只引共享件 |
 | `S-推荐给好友` | M3-05 | `pages/share/icons/icon_share_wx.png`（`0x7f0f018d`）、`icon_share_circle.png`（`0x7f0f0185`） | **2 枚**（对应 2 个 `socialize_image_view`） |
-| `S-帮助中心` | M3-06 | **无页内图标**（只有共用返回） | 只引 `pages/_shared/` |
-| `S-用户协议` | M3-07 | **无页内图标**（只有共用返回） | 只引 `pages/_shared/` |
+| `S-帮助中心` | M3-06 | `pages/_shared/icons/svg_title_back.xml` | **1 枚**，只引共享件 |
+| `S-用户协议` | M3-07 | `pages/_shared/icons/svg_title_back.xml` | **1 枚**，只引共享件 |
 
-- 三条**没有页内图标**的页（联系/帮助/协议）按实记 manual 或引用共享件，**不许按「每页至少 1 个图标」判红、也不许补一个近似图标**。
-- 逆向 `verify --strict --no-deps` → PASS **102 文件 / 102 manifest / 102 provenance**（`4e8a10c` 补回共用返回矢量、清掉 `pages/about/ic_launcher.png` 残留）；先前服务端报的「103 vs 101」已修。服务端从 develop 取回被误删的 3 条依赖测试后需再跑真实门禁，**以最终绿色输出为准**，绿之前子页不进关账。
-- 共用「返回」图标只落一份（`pages/_shared/icons/`），**不许 7 个目录各拷一份**（`verify --strict` 会把同内容不同名判重复）。
+- **两条前提（写死在判据里）**：①三条 `_shared/` 行（联系/帮助/协议）**依赖同一份共用返回矢量，全仓只存一份**，页目录各拷一份即判重复失败；②服务端 `a50ce64` 基于 `develop 77920af`，逆向的共用返回修复 `4e8a10c` **尚未合并** → 在 `develop` 上这三行会显示 `0/1`，那是**文件没合进来，不是判据变化**；合并顺序 **先 `4e8a10c` 再 `a50ce64`**，之后应为 **15/16（只差 A-09）、7 条 S- 全绿**。
+- 逆向 `verify --strict --no-deps` → PASS **102 文件 / 102 manifest / 102 provenance**（`4e8a10c` 补回共用返回矢量、清掉 `pages/about/ic_launcher.png` 残留）；服务端新增「provenance 登记但盘上没有」检查 + `prune`（selftest 40 项 PASS），正是之前「103 vs 101 被 PASS 掩盖」的缺口。
 
 - 登记格式按服务端 `README.md` §7.2：`{"entry": "<APK 路径>", "target": "pages/<page>/…", "kind": "…", "checksheet": "S-<页名>", "resource": "…", "use": "…"}`。
 - 素材到货后由 LC服务端 `extract`/`stamp`/`manifest`/`verify --strict` 过门禁；**未过门禁的素材不得进实现**。

@@ -432,45 +432,12 @@ public class M3PageActivity extends Activity {
     }
 
     /** 打开一个远端 WebView（标题 + 页面），失败时页码内可见提示，不白屏。 */
+    /** 打开整页 WebView 载体（原版 WebActivity 形态）。 */
     private void showWeb(String title, String url) {
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setBackgroundColor(Color.rgb(26, 22, 18));
-        TextView head = new TextView(this);
-        head.setText(title);
-        head.setTextSize(16f);
-        head.setTextColor(Color.rgb(235, 228, 215));
-        head.setPadding(24, 24, 24, 12);
-        box.addView(head);
-        TextView status = new TextView(this);
-        status.setText("加载中…");
-        status.setTextSize(12f);
-        status.setTextColor(Color.rgb(220, 190, 130));
-        status.setPadding(24, 0, 24, 8);
-        box.addView(status);
-        android.webkit.WebView web = new android.webkit.WebView(this);
-        web.setBackgroundColor(Color.WHITE);
-        android.webkit.WebSettings ws = web.getSettings();
-        ws.setJavaScriptEnabled(true);
-        ws.setDomStorageEnabled(true);
-        web.setWebViewClient(new android.webkit.WebViewClient() {
-            @Override
-            public void onPageFinished(android.webkit.WebView v, String u) {
-                status.setText("");
-            }
-
-            @Override
-            public void onReceivedError(android.webkit.WebView v, int c, String d, String u) {
-                status.setText("加载失败（D-023：原版依赖远端，离线时同样不可用）");
-            }
-        });
-        web.loadUrl(url);
-        box.addView(web, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
-        android.app.AlertDialog dlg = new android.app.AlertDialog.Builder(this)
-                .setView(box).setNegativeButton("关闭", null).create();
-        dlg.show();
-        android.util.Log.d("LCM3", "web " + title);
+        android.content.Intent wi = new android.content.Intent(this, M3WebActivity.class);
+        wi.putExtra(M3WebActivity.EXTRA_TITLE, title);
+        wi.putExtra(M3WebActivity.EXTRA_URL, url);
+        startActivity(wi);
     }
 
     /** 帮助中心 / 用户协议的原版远端 URL（其余页返回 null）。 */    private static String webUrlOf(String page) {

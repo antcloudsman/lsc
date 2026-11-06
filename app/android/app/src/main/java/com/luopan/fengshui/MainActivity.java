@@ -1886,8 +1886,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "地图设置":
                 startActivity(new android.content.Intent(this, SettingActivity.class));
                 break;
+            case "帮助中心":
+            case "用户协议":
+                // M3-06/07：原版从抽屉直接进**整页 WebActivity**（一层），中间不隔一个页面
+                M3PageActivity.openWebPage(this, label);
+                break;
             case "推荐给好友":
-                shareApp();
+                // M3-05：原版是**页内分享面板**（选择要分享到的平台 + 2 枚图标 + 取消分享），
+                // 不再直接用系统 chooser（R2-018 的旧口径已被 M3 取代）。
+                android.content.Intent sharePage = new android.content.Intent(this, M3PageActivity.class);
+                sharePage.putExtra(M3PageActivity.EXTRA_PAGE, label);
+                startActivity(sharePage);
                 break;
             default: {
                 android.content.Intent page = new android.content.Intent(this, M3PageActivity.class);

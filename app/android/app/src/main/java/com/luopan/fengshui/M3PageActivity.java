@@ -31,6 +31,16 @@ public class M3PageActivity extends Activity {
 
     public static final String EXTRA_PAGE = "m3_page";
 
+
+    /** 帮助中心 / 用户协议：直接从调用方跳到整页 WebView（原版就是一层 WebActivity）。 */
+    public static void openWebPage(android.app.Activity a, String page) {
+        String url = webUrlOf(page);
+        if (url == null) return;
+        android.content.Intent wi = new android.content.Intent(a, M3WebActivity.class);
+        wi.putExtra(M3WebActivity.EXTRA_TITLE, page);
+        wi.putExtra(M3WebActivity.EXTRA_URL, url);
+        a.startActivity(wi);
+    }
     /** 页名 → assets 文件名。 */
     private static final String[][] PAGES = {
             {"关于我们", "about"},
@@ -154,25 +164,15 @@ public class M3PageActivity extends Activity {
         root.addView(scroll, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        // 帮助中心 / 用户协议：原版就是远端 WebView，直接加载同一 URL；加载失败/离线时页面内已有 D-023 标注。
+        // 帮助中心 / 用户协议：原版就是远端 WebView，且是**整页 WebActivity**（逆向 smali $b$a$c/$d），
+        // 整页打开，不在对话框里塞 WebView。
         String webUrl = webUrlOf(page);
         if (webUrl != null) {
-            android.webkit.WebView web = new android.webkit.WebView(this);
-            web.setId(R.id.lc_m3_web);
-            web.setBackgroundColor(Color.WHITE);
-            android.webkit.WebSettings ws = web.getSettings();
-            ws.setJavaScriptEnabled(true);
-            ws.setDomStorageEnabled(true);
-            web.setWebViewClient(new android.webkit.WebViewClient() {
-                @Override
-                public void onReceivedError(android.webkit.WebView v, int errorCode, String desc, String failingUrl) {
-                    android.util.Log.d("LCM3", "web error " + errorCode + " " + desc);
-                }
-            });
-            web.loadUrl(webUrl);
-            root.addView(web, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
-            android.util.Log.d("LCM3", "web url=" + webUrl);
+            android.content.Intent wi = new android.content.Intent(this, M3WebActivity.class);
+            wi.putExtra(M3WebActivity.EXTRA_TITLE, page);
+            wi.putExtra(M3WebActivity.EXTRA_URL, webUrl);
+            startActivity(wi);
+            android.util.Log.d("LCM3", "open web activity " + page + " url=" + webUrl);
         }
 
         setContentView(root);
@@ -489,7 +489,7 @@ public class M3PageActivity extends Activity {
                 getAssets().open("m3/" + file + ".txt"), "UTF-8"))) {
             String line;
             while ((line = r.readLine()) != null) {
-                if (!line.trim().isEmpty()) out.add(line.trim());
+                if (!line.trim().isEmpty()) out.add(line);   // R2/M3：保留原样（关于我们两个链接 dump 原文前后各一个空格）
             }
         } catch (Throwable t) {
             android.util.Log.e("LCM3", "read " + file + " failed", t);

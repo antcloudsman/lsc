@@ -88,6 +88,21 @@ Start-Sleep -Seconds 2   # 预期无变化：面板不可滚动，输入行 32 �
 Back
 Tap 103 2453 2
 
+# --- 工具管理（行 36；左列「全地图工具」= ToolsManagerActivity，F-01 默认开） ---
+Tap 103 496 3
+Capture 'tool-manage-01' 'ST-E-tool-manage'
+Tap 88 210 2
+
+# --- 收藏保存（行 38；更多 → 钓点 → 加钓点 → 点自建标记 → 收藏地点 → SaveInterestActivity） ---
+Tap 103 2453 2
+Tap 994 1453 6                                    # 「钓点」（需联网取天地图公开水域）
+Tap 1052 406 3                                    # 「加钓点」：写入 1 条自建钓点（采集副作用）
+Tap 614 1456 3                                    # 点自建标记「塘」
+Tap 302 1537 3                                    # 详情对话框「收藏地点」
+Capture 'favorite-addpoint-01' 'ST-E-favorite-save'
+Tap 53 206 2
+Tap 88 210 2
+
 # --- 设置 ---
 Tap 673 963 3                                     # 「设置」
 Capture 'setting-map-01' 'ST-E-map-setting'

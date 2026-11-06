@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.11.0",
+  "state": "compass-overlay-hidden-map",
+  "side": "lc",
+  "captured_at": "2026-11-06T21:46:23+0800",
+  "serial": "",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-A-compass-hidden",
+  "build": {
+    "branch": "develop",
+    "commit": "c3745d5071cd96106856abe28905b027ab164577"
+  },
+  "apk": {
+    "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "45e7ddcf915f09d8f4e572aa2e5d0995186360dabf72e46c3b49c75905fe5292",
+    "bytes": 7069365
+  },
+  "image": {
+    "file": "compass-overlay-hidden-map.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "0fd738c9fd68b2a57cbae6b0b91983298781b516faff8e66143253a832b5aaae"
+  },
+  "dump": {
+    "file": "compass-overlay-hidden-map.xml",
+    "sha256": "cda0c4cce12a1f84530ff76d61422a3d1391f9ac1eb883435f5a82eade6ef8c9"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

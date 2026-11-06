@@ -30,6 +30,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private String lastAttribution = "";
     private CompassView compassView;
     private TextView readingView;
+    /** R2-026：地图态左上「当前地名」（原版 青海湖/哀牢山）。 */
+    private TextView placeView;
     private WebView compassMapView;
     /** K-01: 罗盘浮层是否展开——同一页面两种表现，不是两个页面。 */
     private boolean compassMode = false;
@@ -378,6 +380,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 runOnUiThread(this::showSearchDialog);
                 break;
             }
+            case "place":
+                // R2-026：量取用确定性入口（地图移动后刷新一次左上地名）
+                refreshPlaceName();
+                break;
             case "reset":
                 injectedHeading = null;
                 injectedPitch = null;
@@ -463,6 +469,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         rvp.leftMargin = dp(4);
         rvp.topMargin = dp(26);
         frame.addView(readingView, rvp);
+        // R2-003：读数面板**只在罗盘态**出现（默认地图态，故建好即隐）。
+        readingView.setVisibility(View.GONE);
+
+        // R2-026：地图态左上「当前地名」。原版 orig/map-beijing-z12.xml 该 TextView = [327,194][468,273]
+        // （青海湖，141×79，14sp 量级），在 ≡ 之后、搜索之前，而不是读数块。
+        placeView = new TextView(this);
+        placeView.setId(R.id.lc_g1_place);
+        placeView.setTextColor(Color.rgb(235, 228, 215));
+        placeView.setTextSize(14f);
+        placeView.setGravity(android.view.Gravity.CENTER);
+        placeView.setBackgroundColor(Color.TRANSPARENT);
+        placeView.setMaxLines(1);
+        placeView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        FrameLayout.LayoutParams pvp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, 79);
+        pvp.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
+        pvp.leftMargin = 327;
+        pvp.topMargin = 194;
+        frame.addView(placeView, pvp);
 
         // R2-006：坐标条（罗盘态与隐藏态都保留；原版 hidden 态 116.4074，39.9042）
         coordView = new TextView(this);
@@ -510,45 +535,57 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         frame.addView(statusView, svp);
 
         // 左列 8（README §4 顺序）。K-01 布局对齐：原版是**两段锚定**——上组 2 个（全地图工具/截屏，
-        // 间距 280）与下组 6 个（超清优化…更多，间距 186），不是单列竖直居中。中心 y 取自
-        // orig-main.xml 实测（内容帧 [0,0][1228,2578]），比例换算见 REF_CONTENT_H。
+        // 间距 280）与下组 6 个（超清优化…更多，间距 186），不是单列竖直居中。
+        // 锚点 = 原版**框顶**（内容帧 2578）；上组两项原版 dump 无框，按其标签中心反推（474−117.5 / 754−117.5）。
         leftColumn = buildAnchoredColumn(new String[]{
                 "全地图工具", "截屏", "超清优化", "海拔查询", "罗盘", "路网", "等高线", "更多"},
-                new int[]{474, 754, 1412, 1598, 1784, 1970, 2156, 2342});
+                new float[]{356.5f, 636.5f, 1294f, 1480f, 1666f, 1852f, 2038f, 2224f},
+                new int[]{R.id.lc_g1_mleft1, R.id.lc_g1_mleft2, R.id.lc_g1_mleft3, R.id.lc_g1_mleft4,
+                        R.id.lc_g1_mleft5, R.id.lc_g1_mleft6, R.id.lc_g1_mleft7, R.id.lc_g1_mleft8}, 26);
         FrameLayout.LayoutParams lcp = new FrameLayout.LayoutParams(
-                dp(58), FrameLayout.LayoutParams.MATCH_PARENT);
+                COL_BTN_W, FrameLayout.LayoutParams.MATCH_PARENT);
         lcp.gravity = android.view.Gravity.START | android.view.Gravity.TOP;
-        lcp.leftMargin = dp(2);
+        lcp.leftMargin = COL_MARGIN_M_LEFT;
         frame.addView(leftColumn, lcp);
 
-        // 罗盘模式左列 6（README §5）
-        leftCompassColumn = buildColumn(new String[]{
-                "截屏", "等高线", "罗盘复位", "罗盘锁定", "读盘", "贴地"});
+        // 罗盘模式左列 6（R2-010）：原版标签中心 y=1408.5 起、步距 186 → 框顶 1291 起、步距 186。
+        // 证据 docs/fidelity/orig/tool-compass-page.xml：框 [27,1291][185,1449]、[27,1477][185,1635]…
+        leftCompassColumn = buildAnchoredColumn(new String[]{
+                "截屏", "等高线", "罗盘复位", "罗盘锁定", "读盘", "贴地"},
+                new float[]{1291f, 1477f, 1663f, 1849f, 2035f, 2221f},
+                new int[]{R.id.lc_g1_cleft1, R.id.lc_g1_cleft2, R.id.lc_g1_cleft3,
+                        R.id.lc_g1_cleft4, R.id.lc_g1_cleft5, R.id.lc_g1_cleft6}, 26);
         leftCompassColumn.setVisibility(View.GONE);
         FrameLayout.LayoutParams lccp = new FrameLayout.LayoutParams(
-                dp(58), FrameLayout.LayoutParams.WRAP_CONTENT);
-        lccp.gravity = android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL;
-        lccp.leftMargin = dp(2);
+                COL_BTN_W, FrameLayout.LayoutParams.MATCH_PARENT);
+        lccp.gravity = android.view.Gravity.START | android.view.Gravity.TOP;
+        lccp.leftMargin = COL_MARGIN_C_LEFT;
         frame.addView(leftCompassColumn, lccp);
 
-        // 右列 10（README §4）。同样是两段：上组 5 个文字钮（图层…探索，间距 186）、
-        // 下组 5 个原版大图标位（157×153，间距 153）。中心 y 同上取自 orig-main.xml。
+        // 右列 10（README §4）。同样是两段：上组 5 个文字钮（图层…探索，间距 186，框顶 534 起）、
+        // 下组 5 个原版大图标位（157×153，框顶 1631/1784/1937/2090/2242）。
         rightColumn = buildAnchoredColumn(new String[]{
                 "图层", "叠加", "山脉", "水系", "探索", "指北针", "+", "−", "定位", "3D"},
-                new int[]{652, 838, 1024, 1210, 1396, 1708, 1860, 2014, 2168, 2320});
+                new float[]{534f, 720f, 906f, 1092f, 1278f, 1631f, 1784f, 1937f, 2090f, 2242f},
+                new int[]{R.id.lc_g1_mright1, R.id.lc_g1_mright2, R.id.lc_g1_mright3, R.id.lc_g1_mright4,
+                        R.id.lc_g1_mright5, R.id.lc_g1_mright6, R.id.lc_g1_mright7, R.id.lc_g1_mright8,
+                        R.id.lc_g1_mright9, R.id.lc_g1_mright10}, 26);
         FrameLayout.LayoutParams rcp = new FrameLayout.LayoutParams(
-                dp(58), FrameLayout.LayoutParams.MATCH_PARENT);
+                COL_BTN_W, FrameLayout.LayoutParams.MATCH_PARENT);
         rcp.gravity = android.view.Gravity.END | android.view.Gravity.TOP;
-        rcp.rightMargin = dp(2);
+        rcp.rightMargin = COL_MARGIN_M_RIGHT;
         frame.addView(rightColumn, rcp);
 
-        // 罗盘模式右列 4（README §5）
-        rightCompassColumn = buildColumn(new String[]{"地图", "实景", "坐南朝北", "指针开关"});
+        // 罗盘模式右列 4（R2-011）：原版框 [1044,367][1202,525] 起、步距 184，
+        // 其标签在框内偏高 9px（标签中心 475.5 距框顶 108.5），故图标顶距取 17 而不是 26。
+        rightCompassColumn = buildAnchoredColumn(new String[]{"地图", "实景", "坐南朝北", "指针开关"},
+                new float[]{367f, 551f, 735f, 919f},
+                new int[]{R.id.lc_g1_cright1, R.id.lc_g1_cright2, R.id.lc_g1_cright3, R.id.lc_g1_cright4}, 17);
         rightCompassColumn.setVisibility(View.GONE);
         FrameLayout.LayoutParams rccp = new FrameLayout.LayoutParams(
-                dp(58), FrameLayout.LayoutParams.WRAP_CONTENT);
-        rccp.gravity = android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL;
-        rccp.rightMargin = dp(2);
+                COL_BTN_W, FrameLayout.LayoutParams.MATCH_PARENT);
+        rccp.gravity = android.view.Gravity.END | android.view.Gravity.TOP;
+        rccp.rightMargin = COL_MARGIN_C_RIGHT;
         frame.addView(rightCompassColumn, rccp);
 
         // 顶部栏（K-02）：原版罗盘态是 返回 / 搜索 / 图层 / 隐藏 四项（`docs/qa/bugs.md:264` 的原版
@@ -657,6 +694,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     private static final float REF_CONTENT_H = 2578f;
 
+    // ---- G1：工具钮体量取自原版框（R2-033） ----
+    // 原版左列可点框 [27,1291][185,1449] = **158×158**（docs/fidelity/orig/tool-compass-page.xml），
+    // 标签 [71,1389][142,1428] = 71×39、框顶到标签顶 98px、标签底到框底 21px。
+    // 台账里写的「195×128」是**我方**旧体量 dp(58)×dp(38) @540dpi = 195.75×128.25；
+    // 把 docs/fidelity/orig/*.xml 全扫一遍没有任何 195×128 节点，所以按原版 158×158 做。
+    private static final int COL_BTN_W = 158;
+    private static final int COL_BTN_H = 158;
+    private static final int COL_ICON = 72;          // 原版图标位 ~79×72
+    private static final int COL_ICON_TOP = 26;      // 框顶→图标顶
+    private static final int COL_LABEL_H = 39;       // 标签文字行高（原版 39px）
+    private static final int COL_LABEL_BOTTOM = 21;  // 标签底→框底
+    // 左/右列的横向边距按各自页面的原版框取：罗盘态 27/26（框 [27..185] / [1044..1202]），
+    // 地图态 33/33（框 [33..191] / [1037..1195]）。
+    private static final int COL_MARGIN_C_LEFT = 27;
+    private static final int COL_MARGIN_C_RIGHT = 26;
+    private static final int COL_MARGIN_M_LEFT = 33;
+    private static final int COL_MARGIN_M_RIGHT = 33;
+
     private Button newToolButton(String label) {
         Button b = new Button(this);
         b.setText(label);
@@ -670,42 +725,86 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return b;
     }
 
-    /** 一列工具按钮（罗盘态两列仍用它：原版罗盘态坐标未取证，保持原状不臆造）。 */
-    private LinearLayout buildColumn(String[] labels) {
-        LinearLayout col = new LinearLayout(this);
-        col.setOrientation(LinearLayout.VERTICAL);
-        for (String label : labels) {
-            Button b = newToolButton(label);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, dp(38));
-            lp.setMargins(0, dp(2), 0, dp(2));
-            b.setLayoutParams(lp);
+    /**
+     * 按原版**框顶**锚定的一列（单位 = REF_CONTENT_H 帧像素）。
+     * 用框顶而不是标签中心：左列标签据框顶 117.5px、右列 108.5px（原版两列不同），
+     * 用中心锚会把标签整体推掉 38.5px（(158−39)/2−… 的差），这正是「锚点看起来对、标签还偏」的来源。
+     */
+    private View buildAnchoredColumn(String[] labels, float[] refTop, int[] ids, int iconTop) {
+        RatioColumn col = new RatioColumn(this, refTop, COL_BTN_H);
+        for (int i = 0; i < labels.length; i++) {
+            View b = newColumnButton(labels[i], iconTop);
+            if (ids != null && i < ids.length) b.setId(ids[i]);
             col.addView(b);
         }
         return col;
     }
 
-    /** 按原版中心坐标锚定的一列（地图态左/右列）；refCenterY 单位为 REF_CONTENT_H 帧的像素。 */
-    private View buildAnchoredColumn(String[] labels, int[] refCenterY) {
-        float[] anchors = new float[labels.length];
-        for (int i = 0; i < labels.length; i++) {
-            anchors[i] = refCenterY[i] / REF_CONTENT_H;
+    /**
+     * G1/R2-033：原版形态的工具钮 = 图标 + 小字、158×158 透明底（去掉整块半透明背景）。
+     * 图标位固定 72×72，图标顶距取 26（左列/地图列，标签中心距框顶 117.5）或 17（罗盘右列，108.5）；
+     * 没有图标的项留同尺寸占位，保证标签几何一致——缺图标自画图形等于造假，宁可留空并列明缺口。
+     */
+    private View newColumnButton(String label, int iconTop) {
+        LinearLayout b = new LinearLayout(this);
+        b.setOrientation(LinearLayout.VERTICAL);
+        b.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        b.setBackgroundColor(Color.TRANSPARENT);
+        b.setClickable(true);
+        b.setFocusable(true);
+        b.setContentDescription(label);
+        int iconRes = toolIcon(label);
+        View icon;
+        if (iconRes != 0) {
+            android.widget.ImageView iv = new android.widget.ImageView(this);
+            iv.setImageResource(iconRes);
+            iv.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            icon = iv;
+        } else {
+            icon = new View(this);   // 占位，不画假图标
         }
-        RatioColumn col = new RatioColumn(this, anchors, dp(38));
-        for (String label : labels) {
-            col.addView(newToolButton(label));
-        }
-        return col;
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(COL_ICON, COL_ICON);
+        ip.topMargin = iconTop;
+        b.addView(icon, ip);
+        TextView t = new TextView(this);
+        t.setText(label);
+        t.setTextSize(11f);
+        t.setTextColor(Color.rgb(235, 228, 215));
+        t.setGravity(android.view.Gravity.CENTER);
+        t.setMaxLines(1);
+        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, COL_LABEL_H);
+        tp.bottomMargin = COL_BTN_H - iconTop - COL_ICON - COL_LABEL_H;
+        b.addView(t, tp);
+        b.setOnClickListener(v -> onToolClick(label));
+        return b;
     }
 
-    /** 竖直方向按「按钮中心比例」摆放子 View 的容器；宽高由父布局给定（MATCH_PARENT）。 */
+    /** 原版 mipmap 里的工具图标（只收语义确定、资源确实存在的项；缺的留占位，不臆造）。 */
+    private int toolIcon(String label) {
+        switch (label) {
+            case "超清优化": return R.mipmap.ic_tool_super_map;
+            case "海拔查询": return R.mipmap.ic_tool_altitude;
+            case "罗盘":
+            case "罗盘复位":
+            case "罗盘锁定": return R.mipmap.ic_tool_compass;
+            case "路网": return R.mipmap.ic_tools_road;
+            case "等高线": return R.mipmap.ic_tool_isoline;
+            case "山脉": return R.mipmap.ic_tool_mountain;
+            case "水系": return R.mipmap.ic_tool_water;
+            case "收藏": return R.mipmap.ic_tool_collect;
+            default: return 0;
+        }
+    }
+
+    /** 按「框顶在原版内容帧里的像素位置」摆放子 View 的容器；宽高由父布局给定（MATCH_PARENT）。 */
     private static final class RatioColumn extends android.view.ViewGroup {
-        private final float[] anchors;
+        private final float[] refTop;
         private final int itemH;
 
-        RatioColumn(android.content.Context c, float[] anchors, int itemH) {
+        RatioColumn(android.content.Context c, float[] refTop, int itemH) {
             super(c);
-            this.anchors = anchors;
+            this.refTop = refTop;
             this.itemH = itemH;
         }
 
@@ -725,46 +824,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         @Override
         protected void onLayout(boolean changed, int l, int t, int r, int b) {
             int h = b - t;
-            // 关键：本 Activity 现在拿到的是**整窗 2700**（内容画到导航栏下方），而锚点的分母
-            // REF_CONTENT_H=2578 是**内容帧**（原版 dump 根节点 [0,0][1228,2578]）。两者混乘就是
-            // 2700/2578=1.0473 倍的系统性放大（smoke 实测：474→496、2342→2453，18 个吻合 ≤0.6px）。
-            // 因此还原时必须用内容帧高，不能用列高。
-            int frameH = contentFrameHeight(h);
+            // G1/R2-003：锚点一律按**内容帧 2578** 换算。本 Activity 拿的是整窗 2700（沉浸式，
+            // 内容画到导航栏下方），若按 2700 换算就是 2700/2578 = 1.0473 的整列系统性放大
+            // （实测 474→496、2342→2453）。我方窗口原点与原版内容帧原点同为屏幕 (0,0)，
+            // 所以窗口高于内容帧时应当**直接取 2578** 做绝对锚定，而不是按窗口高缩放。
+            int frameH = Math.min(h, (int) REF_CONTENT_H);
+
             int w = Math.max(0, r - l - getPaddingLeft() - getPaddingRight());
             for (int i = 0; i < getChildCount(); i++) {
                 View ch = getChildAt(i);
                 int chH = ch.getMeasuredHeight();
-                float ratio = i < anchors.length ? anchors[i] : 0.5f;
-                int top = Math.round(ratio * frameH) - chH / 2;
+                float ref = i < refTop.length ? refTop[i] : 0f;
+                int top = Math.round(ref * frameH / REF_CONTENT_H);
                 top = Math.max(0, Math.min(top, h - chH));
                 ch.layout(getPaddingLeft(), top, getPaddingLeft() + w, top + chH);
             }
-        }
-
-        /** 内容帧高 = 列高 − 系统栏占位（本机 2700−122=2578）；取不到时退回可见显示帧。 */
-        private int contentFrameHeight(int h) {
-            int insetBottom = 0;
-            if (android.os.Build.VERSION.SDK_INT >= 23) {
-                android.view.WindowInsets wi = getRootWindowInsets();
-                if (wi != null) {
-                    if (android.os.Build.VERSION.SDK_INT >= 30) {
-                        insetBottom = wi.getInsets(
-                                android.view.WindowInsets.Type.navigationBars()).bottom;
-                    } else {
-                        insetBottom = wi.getStableInsetBottom();
-                    }
-                }
-            }
-            if (insetBottom > 0 && h - insetBottom > 0) {
-                return h - insetBottom;
-            }
-            android.graphics.Rect vis = new android.graphics.Rect();
-            getWindowVisibleDisplayFrame(vis);
-            int vh = vis.height();
-            if (vh > 0 && vh <= h) {
-                return vh;
-            }
-            return h;
         }
     }
 
@@ -1169,12 +1243,68 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (hideButton != null) hideButton.setVisibility(on ? View.VISIBLE : View.GONE);
         if (topBackButton != null) topBackButton.setVisibility(on ? View.VISIBLE : View.GONE);
         if (topLayerButton != null) topLayerButton.setVisibility(on ? View.VISIBLE : View.GONE);
+        // R2-003：读数面板只在罗盘态出现（含隐藏子态）；R2-026：地图态左上改显当前地名。
+        if (readingView != null) readingView.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (placeView != null) placeView.setVisibility(on ? View.GONE : View.VISIBLE);
+        if (!on) refreshPlaceName();
         applyMapUiMode(on ? "compass" : "map");
         applyCompassHiddenVisuals();
         updateReading();
     }
 
     // ---------------- R2-006：隐藏只隐盘面 ----------------
+
+    /**
+     * R2-026：刷新地图态左上地名。原版该处的「青海湖 / 哀牢山」是短地名，
+     * 不是长地址；天地图逆地理的 `addressComponent.poi`（青海湖实测 = "青海湖"）正好是这一形态，
+     * 所以优先 poi、其次 address，都空才退回 formatted_address。
+     */
+    private void refreshPlaceName() {
+        if (compassMapView == null || placeView == null) return;
+        compassMapView.evaluateJavascript("(function(){var s=getState();return s.lat+','+s.lng;})()", c -> {
+            String[] p = decodeJsString(c).split(",");
+            if (p.length != 2) return;
+            final double lat, lng;
+            try {
+                lat = Double.parseDouble(p[0].trim());
+                lng = Double.parseDouble(p[1].trim());
+            } catch (NumberFormatException e) {
+                return;
+            }
+            new Thread(() -> {
+                final String name = reversePlaceName(lat, lng);
+                runOnUiThread(() -> {
+                    if (placeView == null || name.isEmpty()) return;
+                    placeView.setText(name);
+                    android.util.Log.d("LCPLACE", "place=" + name
+                            + " center=" + lat + "," + lng);
+                });
+            }, "lc-place").start();
+        });
+    }
+
+    /** R2-026：逆地理取短地名（poi → address → formatted_address）。失败返回空串，不编造。 */
+    private static String reversePlaceName(double lat, double lng) {
+        try {
+            String post = "{\"lon\":" + lng + ",\"lat\":" + lat + ",\"ver\":1}";
+            String url = "https://api.tianditu.gov.cn/geocoder?postStr="
+                    + java.net.URLEncoder.encode(post, "UTF-8") + "&type=geocode&tk=" + MapKeys.TDT;
+            org.json.JSONObject root = new org.json.JSONObject(LcHttp.get(url));
+            org.json.JSONObject result = root.optJSONObject("result");
+            if (result == null) return "";
+            org.json.JSONObject ac = result.optJSONObject("addressComponent");
+            if (ac != null) {
+                String poi = ac.optString("poi", "");
+                if (!poi.isEmpty()) return poi;
+                String addr = ac.optString("address", "");
+                if (!addr.isEmpty()) return addr;
+            }
+            return result.optString("formatted_address", "");
+        } catch (Throwable t) {
+            android.util.Log.e("LCPLACE", "reverse failed", t);
+            return "";
+        }
+    }
 
     /** 坐标条：取地图中心 getState()，格式与原版 hidden 态一致（全角逗号）。 */
     private void updateCoordText() {
@@ -2805,6 +2935,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     applyPendingMapView();
                     // F-04：页面重载后按持久化状态重放路网开关。
                     view.evaluateJavascript("try{setRoadNet(" + roadNetOn + ")}catch(e){}", null);
+                    // R2-026：地图就绪后补一次左上地名（罗盘态不显示，不必取）。
+                    if (!compassMode) refreshPlaceName();
                 }
             }
         });

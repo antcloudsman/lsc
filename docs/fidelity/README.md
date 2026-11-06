@@ -1,0 +1,60 @@
+# docs/fidelity — 第二轮还原度复审证据目录
+
+以原版 `space.xinzhi.globe` 1.6.1 为唯一对照，存原版/我方同状态截图、uiautomator dump 与比对产物。工具见 [`tools/fidelity/README.md`](../../tools/fidelity/README.md)。
+
+## 目录
+
+```
+docs/fidelity/
+  orig/                          # 原版采集（只读对照，不改原版数据）
+    <state>.png                  # 1228×2700 截图
+    <state>.xml                  # uiautomator dump（原生控件；WebView 内部不可见）
+    <state>.meta.json            # 采集时间、设备、包名、checksheet_id、sha256、分辨率
+    _captures.tsv                # 采集流水（页面/时间/Activity/dump 状态），由采集人维护
+  lc/                            # 我方采集，文件名与 orig 一一对应
+    <state>.png / .xml / .meta.json
+  checksheet.md                  # LC产品维护：字段定义 + 严重度 + 覆盖面
+  orig-inventory.md              # LC逆向维护：≥30 页面/状态清单（入口路径/状态机）
+  findings/                      # 工具生成，勿手改
+    report/index.html            # 批量对照页
+    report/summary.json|summary.md
+    report/<state>/              # side_by_side.png / diff.png / diff_mask.png / metrics.json
+```
+
+## state 命名与两套编号
+
+- **证据 stem（文件名）**：`<page-or-state>-<nn>`，小写短横线，如 `compass-main-01`、`map-beijing-z12`、`more-sheet-01`；两侧必须同名。已有 `docs/fidelity/orig/` 的 stem 是准绳，新采集沿用，不另起风格。
+- **checksheet 行 id**：`PG-xx`（页面）/ `ST-xx-<状态>`（状态），由 [`checksheet.md`](checksheet.md) 定义、全局唯一不复用；采集时用 `collect --checksheet-id` 记进 `meta.json`，用于证据 ↔ 清单双向追溯。
+- 一页多状态用同一 stem + 不同后缀区分：`settings-default-01`、`settings-dark-02`；不要用 `-final`、`-new` 这类不可排序命名。
+- 每个 state 的截图、dump、meta 三件套齐全才算采集完成；缺 dump 的要在清单里标「截图-only」并说明原因（如纯 WebGL 页面）。
+
+## 固定采集口径
+
+| 项 | 值 |
+|---|---|
+| 分辨率 | 1228×2700（`collect` 会警告其它尺寸） |
+| 系统动画 | window/transition/animator 三项 = 0（`collect` 默认写入） |
+| 罗盘 | heading 冻结 0° |
+| 地图 | 固定 `39.9042,116.4074`，`z=12` |
+| 亮度/滤镜 | 默认，不额外调色 |
+| 设备 | 单台真机，按项目群窗口串行使用 |
+
+原版只作对照：不修改其数据、收藏、设置；采集结束按纪律释放设备。日志与 dump 不含 key/token；如需提交日志，先按项目 LogRedact 脱敏。
+
+## 比对产物
+
+`findings/` 由 `python tools/fidelity/fidelity.py report --root docs/fidelity` 生成，是可再生成的派生证据，不手工编辑；需要留档的结论写进审阅文档并引用 `state id` 与 metrics 数值。
+
+## 快速命令
+
+```powershell
+# 采一侧（另一侧换 --side/--state 同名）
+python tools\fidelity\fidelity.py collect --side orig --state compass-main-01 --pkg space.xinzhi.globe --checksheet-id ST-01-compass-main
+python tools\fidelity\fidelity.py collect --side lc   --state compass-main-01 --pkg com.luopan.fengshui --checksheet-id ST-01-compass-main
+
+# 批量对照页
+python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
+
+# 无设备自检
+python tools\fidelity\selftest.py
+```

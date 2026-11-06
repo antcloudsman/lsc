@@ -61,6 +61,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean favoriteMode;
     private LinearLayout rightFavoriteColumn;
     private LinearLayout favoriteBottomBar;
+    /** R2-006: 罗盘态坐标条（隐藏态也要保留，原版 116.4074，39.9042）。 */
+    private TextView coordView;
     /** R2-018: 左上抽屉（9 项 + 版本号）。 */
     private LinearLayout drawerPanel;
     private Button menuButton;
@@ -440,6 +442,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         rvp.leftMargin = dp(4);
         rvp.topMargin = dp(26);
         frame.addView(readingView, rvp);
+
+        // R2-006：坐标条（罗盘态与隐藏态都保留；原版 hidden 态 116.4074，39.9042）
+        coordView = new TextView(this);
+        coordView.setId(R.id.lc_coord_text);
+        coordView.setText("");
+        coordView.setTextColor(Color.rgb(235, 228, 215));
+        coordView.setTextSize(10f);
+        coordView.setPadding(dp(8), dp(2), dp(8), dp(2));
+        coordView.setBackgroundColor(Color.argb(140, 24, 20, 16));
+        coordView.setVisibility(View.GONE);
+        FrameLayout.LayoutParams cvp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        cvp.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
+        cvp.topMargin = 300;
+        cvp.leftMargin = 8;
+        frame.addView(coordView, cvp);
 
         statusView = new TextView(this);
         statusView.setId(R.id.sensor_status);
@@ -1121,6 +1139,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     // ---------------- R2-006：隐藏只隐盘面 ----------------
 
+    /** 坐标条：取地图中心 getState()，格式与原版 hidden 态一致（全角逗号）。 */
+    private void updateCoordText() {
+        if (compassMapView == null || coordView == null) return;
+        compassMapView.evaluateJavascript("(function(){var s=getState();return s.lat+','+s.lng;})()", c -> {
+            String v = decodeJsString(c);
+            String[] p = v == null ? new String[0] : v.split(",");
+            if (p.length != 2) return;
+            try {
+                double lat = Double.parseDouble(p[0].trim());
+                double lng = Double.parseDouble(p[1].trim());
+                coordView.setText(String.format(java.util.Locale.US, "%.4f，%.4f", lng, lat));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+    }
+
     private void toggleCompassHidden() {
         if (!compassMode) return;
         compassHidden = !compassHidden;
@@ -1146,6 +1180,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (topBackButton != null) topBackButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
         if (topLayerButton != null) topLayerButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
         if (menuButton != null) menuButton.setVisibility(compassMode ? View.GONE : View.VISIBLE);
+        if (coordView != null) coordView.setVisibility(compassMode ? View.VISIBLE : View.GONE);
+        if (compassMode) updateCoordText();
     }
 
     // ---------------- R2-014：收藏点地图态 ----------------
@@ -2465,6 +2501,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onBackPressed() {
         // K-01：罗盘是浮层，返回键先退出浮层，再退页面（原版「返回/隐藏」同义）。
+        if (favoriteMode) {
+            setFavoriteMode(false);
+            return;
+        }
         if (compassMode) {
             setCompassMode(false);
             return;

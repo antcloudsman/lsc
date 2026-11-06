@@ -841,11 +841,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "贴地": return R.drawable.lc_ic_tiedi;
             case "3D": return R.mipmap.lc_ic_3d;
             case "指北针": return R.mipmap.lc_ic_north;
-            // 以下三项为候选（名字直配，smali 无 R$drawable 引用），待截图确认
-            case "实景": return R.drawable.lc_ic_street;
-            case "坐南朝北": return R.drawable.lc_ic_surround;
-            case "指针开关": return R.drawable.lc_ic_compass_switch;
-            default: return 0;   // 「地图」：原版内联绘制，无 drawable（不可得）
+            // 以下三项：**已撤回**（审核验 86a027e 对照图证实语义不符）。
+            // 原版右列这四枚不是图标，而是**有开/关两态的开关控件**（蓝=开、灰=关 + 文字）：
+            // 地图=蓝(开)、实景=灰(关)、坐南朝北=灰(关)、指针开关=蓝(开)。
+            // 早期我按「名字直配」接过 svg_street/svg_surround/svg_compass_switch，
+            // 渲染出来是人形/立方体箭头/左右箭头，与原版开关图形不符，已撤掉，留占位等形态口径。
+            case "实景":
+            case "坐南朝北":
+            case "指针开关":
+            case "地图": return 0;
+            default: return 0;
         }
     }
 

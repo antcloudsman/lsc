@@ -1,0 +1,17 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "w3-sheet",
+  "side": "orig",
+  "checksheet_id": "ST-A-read-sheet",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "w3-sheet.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "2f47122e0ae6827a0e09878317de5638af4751424167e914fa02ca4f0b71c130"
+  },
+  "dump": null,
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-favorite-01",
+  "side": "orig",
+  "checksheet_id": "ST-A-favorite-mode",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "tool-favorite-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "b8f1eff43f86bf2ac0fdf53ab357e6540168be6b7540464d346925ca70cefb29"
+  },
+  "dump": {
+    "file": "tool-favorite-01.xml",
+    "sha256": "b09d042af14324de8e1db00f25dfccb2229cddb726281b2df722deb52c101380"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "map-mountains-entry",
+  "side": "orig",
+  "checksheet_id": "ST-C-mountains",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "map-mountains-entry.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "c624900f511643acd730f154b10444804cba044035f5f5419a4aa74f23fb9715"
+  },
+  "dump": {
+    "file": "map-mountains-entry.xml",
+    "sha256": "02801aaf1b08cde6aad9df30efaf120695a156a620cca016ef7a527aa8a3415f"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

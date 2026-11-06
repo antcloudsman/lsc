@@ -1,0 +1,15 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "map-water-entry",
+  "side": "orig",
+  "checksheet_id": "ST-C-water",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": null,
+  "dump": {
+    "file": "map-water-entry.xml",
+    "sha256": "f558d8aa34acb3874c3fea638875ed0bcdee54e7440f0ad5321feeb265242cbe"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "search-result-02",
+  "side": "orig",
+  "checksheet_id": "ST-A-search-coords",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "search-result-02.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "8e8b30d2b1c7b1aa3bdbb88189255c7887929ef3d3d98fbcdc4f30444f511d0a"
+  },
+  "dump": {
+    "file": "search-result-02.xml",
+    "sha256": "1c8e32fda33d5645b9435f693ff0e69a2fd1d205b6be1a1b35399a2b48b45837"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

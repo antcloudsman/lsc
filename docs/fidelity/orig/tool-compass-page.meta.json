@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "tool-compass-page",
+  "side": "orig",
+  "checksheet_id": "ST-A-compass-page",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "tool-compass-page.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "797b4e9c5450234954631d1f2ef0f4d9147ada9d798bd4de2007a7057ea27e51"
+  },
+  "dump": {
+    "file": "tool-compass-page.xml",
+    "sha256": "22005f595dc4c15e79b9700eb2c8509f55e2c6fc1c9bbdc28f8704dd4a4719d0"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

@@ -1,0 +1,20 @@
+{
+  "tool": "fidelity",
+  "version": "1.9.0",
+  "state": "more-sheet-03-fresh",
+  "side": "orig",
+  "checksheet_id": "ST-D-more-default",
+  "backfilled": true,
+  "generated_at": "2026-11-06T20:00:48+0800",
+  "image": {
+    "file": "more-sheet-03-fresh.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "077eff94289c98857e8aa4835153754b9231be46c5c251748382f502dc305206"
+  },
+  "dump": {
+    "file": "more-sheet-03-fresh.xml",
+    "sha256": "aec8b9fca7b35c5006093267f97f1c4298c7ab271050657edc25cce98bc283b1"
+  },
+  "notes": "backfilled from the fidelity index; sha256/width/height computed from files"
+}

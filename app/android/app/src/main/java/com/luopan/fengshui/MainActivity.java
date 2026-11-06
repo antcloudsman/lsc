@@ -1469,7 +1469,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (head != null) {
             head.setText(Double.isNaN(elev)
                     ? String.format(java.util.Locale.US, "海拔 —    纬度:%.6f 经度:%.6f", m.lat, m.lng)
-                    : String.format(java.util.Locale.US, "海拔 %.1f m    纬度:%.6f 经度:%.6f", elev, m.lat, m.lng));
+                    : String.format(java.util.Locale.US, "海拔 %.1f m（本地 DEM）    纬度:%.6f 经度:%.6f", elev, m.lat, m.lng));
         }
         if (oxy != null) {
             oxy.setText(Double.isNaN(elev) ? "含氧量 —"
@@ -1478,7 +1478,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (baro != null) {
             double hPa = 1013.25 * Math.pow(1 - 2.25577e-5 * (Double.isNaN(elev) ? 0 : elev), 5.25588);
             baro.setText(Double.isNaN(elev) ? "气压 —"
-                    : String.format(java.util.Locale.US, "气压 %.1f 千帕（估算）", hPa / 10.0));
+                    : String.format(java.util.Locale.US, "气压 %.2f 千帕（本地估算·数据源差异 DI）", hPa / 10.0));
         }
     }
 

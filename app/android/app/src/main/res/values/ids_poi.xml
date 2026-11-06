@@ -18,5 +18,7 @@
     <item name="lc_fav_bottom" type="id" />
     <item name="lc_fav_add" type="id" />
     <item name="lc_coord_text" type="id" />
+    <item name="lc_scale_text" type="id" />
 </resources>
+
 

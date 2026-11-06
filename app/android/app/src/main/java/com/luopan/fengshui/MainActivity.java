@@ -63,6 +63,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private LinearLayout favoriteBottomBar;
     /** R2-006: 罗盘态坐标条（隐藏态也要保留，原版 116.4074，39.9042）。 */
     private TextView coordView;
+    /** R2-014：收藏点地图态的比例尺（原版 [79,2510][150,2550] 4km）。 */
+    private TextView scaleView;
     /** R2-018: 左上抽屉（9 项 + 版本号）。 */
     private LinearLayout drawerPanel;
     private Button menuButton;
@@ -458,6 +460,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         cvp.topMargin = 300;
         cvp.leftMargin = 8;
         frame.addView(coordView, cvp);
+
+        scaleView = new TextView(this);
+        scaleView.setId(R.id.lc_scale_text);
+        scaleView.setText("");
+        scaleView.setTextColor(Color.rgb(235, 228, 215));
+        scaleView.setTextSize(10f);
+        scaleView.setPadding(dp(8), dp(2), dp(8), dp(2));
+        scaleView.setBackgroundColor(Color.argb(140, 24, 20, 16));
+        scaleView.setVisibility(View.GONE);
+        FrameLayout.LayoutParams scvp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        scvp.gravity = android.view.Gravity.TOP | android.view.Gravity.START;
+        scvp.topMargin = 360;
+        scvp.leftMargin = 8;
+        frame.addView(scaleView, scvp);
 
         statusView = new TextView(this);
         statusView.setId(R.id.sensor_status);
@@ -1155,6 +1172,38 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
     }
 
+    /**
+     * 比例尺：按地图 zoom/纬度算 150px 对应的实际距离，取整档显示（原版固定态是 4km）。
+     * 参考 156543.03392 m/px @ zoom0/equator，256px 瓦片。
+     */
+    private void updateScaleText() {
+        if (compassMapView == null || scaleView == null) return;
+        compassMapView.evaluateJavascript(
+                "(function(){var s=getState();return s.lat+','+s.zoom;})()", c -> {
+                    String v = decodeJsString(c);
+                    String[] p = v == null ? new String[0] : v.split(",");
+                    if (p.length != 2) return;
+                    try {
+                        double lat = Double.parseDouble(p[0].trim());
+                        double zoom = Double.parseDouble(p[1].trim());
+                        double mpp = 156543.03392 * Math.cos(Math.toRadians(lat)) / Math.pow(2, zoom);
+                        double meters = mpp * 150.0;
+                        String label;
+                        if (meters >= 1000) {
+                            double km = meters / 1000.0;
+                            double nice = km >= 8 ? Math.round(km / 5.0) * 5.0
+                                    : km >= 4 ? Math.round(km / 2.0) * 2.0 : Math.max(1, Math.round(km));
+                            label = String.format(java.util.Locale.US, "%.0fkm", nice);
+                        } else {
+                            label = String.format(java.util.Locale.US, "%.0fm",
+                                    Math.max(10, Math.round(meters / 10.0) * 10.0));
+                        }
+                        scaleView.setText(label);
+                    } catch (NumberFormatException ignored) {
+                    }
+                });
+    }
+
     private void toggleCompassHidden() {
         if (!compassMode) return;
         compassHidden = !compassHidden;
@@ -1180,7 +1229,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (topBackButton != null) topBackButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
         if (topLayerButton != null) topLayerButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
         if (menuButton != null) menuButton.setVisibility(compassMode ? View.GONE : View.VISIBLE);
-        if (coordView != null) coordView.setVisibility(compassMode ? View.VISIBLE : View.GONE);
+        if (coordView != null) coordView.setVisibility(compassMode || favoriteMode ? View.VISIBLE : View.GONE);
         if (compassMode) updateCoordText();
     }
 
@@ -1196,6 +1245,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         favoriteMode = on;
         if (rightFavoriteColumn != null) rightFavoriteColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (favoriteBottomBar != null) favoriteBottomBar.setVisibility(on ? View.VISIBLE : View.GONE);
+        // R2-014：收藏点地图态补比例尺与坐标条（原版 [79,2510][150,2550] 4km + 116.4074，39.9042）。
+        if (coordView != null) coordView.setVisibility(on || compassMode ? View.VISIBLE : View.GONE);
+        if (scaleView != null) scaleView.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (on) {
+            updateCoordText();
+            updateScaleText();
+        }
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : (compassMode ? View.GONE : View.VISIBLE));
         if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : (compassMode ? View.GONE : View.VISIBLE));
         android.util.Log.d("LCFAV", "favoriteMode=" + on);
@@ -1307,7 +1363,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             item.setOnClickListener(v -> {
                 hideDrawer();
                 if ("地图设置".equals(label)) {
-                    showMoreSheet();
+                    // R2-018：直接连现成的 SettingActivity（不再借「更多」面板）。
+                    startActivity(new android.content.Intent(this, SettingActivity.class));
                 } else {
                     toast(label + "：原版为抽屉子页，本步未实现");
                 }

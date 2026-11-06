@@ -73,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** R2-007: 海拔查询在地图内浮层（不跳 Activity）。 */
     private LinearLayout elevPanel;
     private boolean elevationMode;
+    /** R2-025：调试广播注入的搜索词（仅 debug 包，供中文关键词验证）。 */
+    private String pendingSearch;
     private MapMarker elevPoint;
     private LinearLayout drawerPanel;
     private Button menuButton;
@@ -365,6 +367,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 updateReading();
                 android.util.Log.d("LCDEBUG", "declination=" + declination);
+                break;
+            }
+            case "search": {
+                pendingSearch = it.getStringExtra("value");
+                android.util.Log.d("LCSEARCH", "debug search=" + pendingSearch);
+                runOnUiThread(this::showSearchDialog);
                 break;
             }
             case "reset":
@@ -2342,6 +2350,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         tabs.setOrientation(LinearLayout.HORIZONTAL);
         final TextView[] tabViews = new TextView[SEARCH_TABS.length];
         final int[] active = {0};
+        final Runnable[] searchRef = new Runnable[1];
         for (int i = 0; i < SEARCH_TABS.length; i++) {
             final int idx = i;
             TextView t = new TextView(this);
@@ -2357,6 +2366,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             : Color.rgb(150, 130, 100));
                     tabViews[k].setBackgroundColor(k == idx ? Color.rgb(60, 50, 38) : Color.TRANSPARENT);
                 }
+                // R2-025：切 tab 立即按该 tab 重跑（收藏点 tab 不依赖输入）
+                if (searchRef[0] != null) searchRef[0].run();
             });
             tabViews[i] = t;
             tabs.addView(t, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -2426,6 +2437,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         };
         refreshChips.run();
+        if (pendingSearch != null) {
+            input.setText(pendingSearch);
+            input.setSelection(input.getText().length());
+            pendingSearch = null;
+        }
 
         final Runnable runSearch = () -> {
             String q = input.getText().toString().trim();
@@ -2442,6 +2458,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 rows.add(String.format(java.util.Locale.US, "CGCS2000  %.6f,%.6f（与 WGS84 等价）", ll[1], ll[0]));
                 if (!q.isEmpty()) rememberSearch(q);
                 refreshChips.run();
+            } else if (active[0] == 3) {
+                // 收藏点 tab：本机数据，不需要关键词、不需要网络
+                java.util.List<InterestPoint> pts = new GapDb(this).listInterest();
+                if (pts.isEmpty()) {
+                    rows.add("暂无收藏点（可在地图收藏点态「添加点」）");
+                } else {
+                    for (InterestPoint ip : pts) {
+                        rows.add(String.format(java.util.Locale.US, "%s  %.6f,%.6f",
+                                ip.name == null || ip.name.isEmpty() ? "收藏点" : ip.name, ip.lat, ip.lng));
+                    }
+                }
+                adapter.notifyDataSetChanged();
             } else if (q.isEmpty()) {
                 rows.add("输入城市/地点，或直接粘贴经纬度");
             } else {
@@ -2453,6 +2481,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (compassMapView == null) return;
                 compassMapView.evaluateJavascript("(function(){var s=getState();return s.lat+','+s.lng;})()", c -> {
                     String v = decodeJsString(c);
+                    android.util.Log.d("LCSEARCH", "getState=" + v);
                     String[] p = v == null ? new String[0] : v.split(",");
                     double lat = 39.9042, lng = 116.4074;
                     if (p.length == 2) {
@@ -2467,21 +2496,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     final int tab = active[0];
                     new Thread(() -> {
                         java.util.List<String> out = new java.util.ArrayList<>();
-                        if (tab == 3) {
-                            java.util.List<InterestPoint> pts = new GapDb(this).listInterest();
-                            if (pts.isEmpty()) {
-                                out.add("收藏点：暂无（可在地图收藏点态「添加点」）");
-                            } else {
-                                for (InterestPoint ip : pts) {
-                                    out.add(String.format(java.util.Locale.US, "%s  %.6f,%.6f",
-                                            ip.name == null || ip.name.isEmpty() ? "收藏点" : ip.name, ip.lat, ip.lng));
-                                }
-                            }
-                        } else {
+                        try {
+                        {
                             MapPoints.SearchResult r = MapPoints.searchNear(kw, flat, flng, 12, 20);
+                            android.util.Log.d("LCSEARCH", "code=" + r.code + " total=" + r.total + " points=" + r.points.size());
                             if (MapPoints.SearchResult.OK.equals(r.code) || MapPoints.SearchResult.EMPTY.equals(r.code)) {
                                 if (r.points.isEmpty()) {
-                                    out.add("「" + kw + "」无结果（" + kw + "）");
+                                    out.add("未找到相关地点（可试试城市名或坐标）");
                                 } else {
                                     for (MapPoints.Point pt : r.points) {
                                         out.add(pt.name + "  " + String.format(java.util.Locale.US, "%.6f,%.6f", pt.lat, pt.lng));
@@ -2495,11 +2516,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                 out.add("检索服务不可用（" + r.detail + "）");
                             }
                         }
+                        } catch (Throwable t) {
+                            android.util.Log.e("LCSEARCH", "search failed", t);
+                            out.clear();
+                            out.add("检索服务不可用（" + t.getClass().getSimpleName() + "）");
+                        }
                         final java.util.List<String> res = out;
                         runOnUiThread(() -> {
                             rows.clear();
                             rows.addAll(res);
                             adapter.notifyDataSetChanged();
+                            android.util.Log.d("LCSEARCH", "ui rows=" + rows.size() + " first="
+                                    + (rows.isEmpty() ? "" : rows.get(0)));
                         });
                     }).start();
                 });
@@ -2528,6 +2556,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
             }
         });
+        searchRef[0] = runSearch;
         runSearch.run();
 
         dlg[0] = new android.app.AlertDialog.Builder(this)

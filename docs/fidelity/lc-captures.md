@@ -48,7 +48,7 @@
 | 14 | 右列（`win-02-compass`） | 有 | `win-02-compass.*` | 地图/实景/坐南朝北/指针开关 |
 | 15 | 底栏（`win-02-compass`） | 有 | `win-02-compass.*` | 切换/旋转/缩放/透明度/天支线 |
 | 16 | 智能读盘弹层（`w3-sheet`） | 有 | `w3-sheet.png/.xml/.meta.json` | 14 行「类型名 向：X 坐：Y」逐行完整（含先天卦位/洛书数/三盘/分金/七十二龙/六十龙） |
-| 17 | 收藏点模式（`tool-favorite-01`） | 有 | `tool-favorite-01.png/.xml/.meta.json` | 空态页：标题「收藏点」+「暂无收藏点」（3 个节点） |
+| 17 | 收藏点模式（`tool-favorite-01`） | 有 | `tool-favorite-01.png/.xml/.meta.json` | LC 打开的是独立列表页 `InterestListActivity`（`MainActivity.java:1417-1419`，F-11 默认开），空态文案 `lc_interest_empty`「暂无收藏点」，dump 仅 3 节点；不是原版「地图内收藏点模式 + 右列收藏列表」形态，形态差异见 findings-client P1-17 |
 | 18 | 测量模式（`tool-measure-01`） | 地图章节 | — | 入口在 `more-sheet-03-fresh.xml`「测量」[359,1372]-[613,1534] |
 | 19 | 画笔模式（`tool-brush`） | 地图章节 | — | 入口「画笔」[613,1372]-[867,1534] |
 | 20 | 钓点（`tool-fishing`） | 地图章节 | — | 入口「钓点」[867,1372]-[1121,1534] |
@@ -63,15 +63,20 @@
 | 29 | 3D 模式（`map-3d-mode`） | 地图章节 | — | 右列「3D」[1027,2366]-[1222,2494] |
 | 30 | 相机权限弹窗（`right-layer-sheet.png`） | 地图章节 | — | 相机相关入口在相机/AR 路径，归地图章节 |
 | 31 | 地图工具面板（默认态，`more-sheet-03-fresh`） | 有 | `more-sheet-03-fresh.png/.xml/.meta.json` | 标题「地图工具」；16 项：罗盘/超清地图/看山脉/看水系/海拔查询/天气/历史影像/等高线/收藏点/测量/画笔/钓点/轨迹记录/路网/地理影像/超清优化，另有「设置」「功能开关（调试）」 |
-| 32 | 地图工具面板（滚动后，`more-sheet-02-scrolled`） | 有 | `more-sheet-02-scrolled.png/.xml/.meta.json` | **实测不可滚动**：`input swipe 614 2300 614 1500 300` 后 dump 与 31 的 SHA256 完全相同（`EC23C862…5DC7`），面板一屏装下 16 项 |
+| 32 | 地图工具面板（滚动后，`more-sheet-02-scrolled`） | 有 | **与 31 共用** `more-sheet-03-fresh.png/.xml/.meta.json` | **实测不可滚动**：`input swipe 614 2300 614 1500 300` 后 dump 与 31 的 SHA256 完全相同（`EC23C862…5DC7`），面板一屏装下 16 项；同态共用一份证据，不另存第二张同图 |
 | 33 | 天气页（`tool-weather-01`） | 有 | `tool-weather-01.png/.xml/.meta.json` | LC 有真实数据：城市 北京、14°、晴、西风 2 级、湿度 16 %、空气质量 19、7 日预报、数据源「中国天气网 · 更新 13:45」；原版为 VIP 门禁（U1） |
 | 34 | 抽屉菜单（`drawer-menu-03`） | 缺失 | — | LC 无汉堡抽屉/侧栏；证据：`map-home-01.xml` 顶栏只有 搜索[1040,192]-[1215,306]，无左上汉堡点击区（原版 [35,140]-[160,265] 处为地图控件） |
 | 35 | 地图设置（`setting-map-01`） | 有 | `setting-map-01.png/.xml/.meta.json` | 地图滤镜/模式四 chip 常规[39,584]-[284,681]、自然[340,584]、高亮[641,584]、自定义[942,584]、地图效果预览、显示路网、允许地图旋转、回到上次浏览位置、屏幕常亮、3D 操作按钮、中心十字架、坐标系 WGS84 |
-| 36 | 工具管理（`tool-manage-01`） | 缺失 | — | LC 无工具管理页；证据：`more-sheet-03-fresh.xml` 节点表只有「设置」[606,916]-[740,1010] 与「功能开关（调试）」[740,916]-[1114,1010]，无原版的首页展示/全部功能/编辑入口 |
-| 37 | 收藏列表入口（`favorite-list-02`） | 有 | `favorite-list-02.png/.xml/.meta.json` | 同 17 的空态页（LC 收藏点未实现列表/添加） |
-| 38 | 收藏保存 → 登录墙（`favorite-addpoint-01`） | 缺失 | — | LC 无登录体系，收藏页也无「添加点」按钮（`favorite-list-02.xml` 仅 3 节点：返回/标题/「暂无收藏点」），故无登录墙可拍 |
+| 36 | 工具管理（`tool-manage-01`） | 待补采 | — | **入口存在，证据未采**：`MainActivity.java:901-903`（注释「F-01：默认开 → 工具管理页」）`startActivity(new Intent(this, ToolsManagerActivity.class))`；本次采集未进入该页，设备窗口补齐截图+dump |
+| 37 | 收藏列表入口（`favorite-list-02`） | 有 | **与 17 共用** `tool-favorite-01.png/.xml/.meta.json` | LC 收藏点页只有空态「暂无收藏点」，**无独立收藏列表入口**（dump 仅 3 节点：返回/标题/空态文案）；原版行 37 的「收藏列表点击区 [1043,506]-[1201,664]」在 LC 不存在，同态共用一份证据 |
+| 38 | 收藏保存 → 登录墙（`favorite-addpoint-01`） | 待补采 | — | **入口存在，证据未采**：收藏保存在钓点页 `FishingActivity.java:417-425`（保存对话框「保存」→ `SaveInterestActivity`，带 `EXTRA_SITTING/FACING`），不在收藏点页、也不走「添加点」；LC 无登录墙。待补采 `SaveInterestActivity` 截图+dump |
 
-统计（按 §1 表逐行数）：**有 15 + 等价 1 + 地图章节 16 + 缺失 6 = 38**。缺失项均给证据位置，未用估计值填充。
+统计（按 §1 表逐行数）：**有 15 + 等价 1 + 地图章节 16 + 缺失 4 + 待补采 2 = 38**。缺失项均给证据位置；
+待补采项（36/38）给入口坐标与代码锚点，等设备窗口补图，复现不了的才退回「缺失」。
+
+**同态共用**：行 32↔31（更多面板不可滚动）、行 37↔17（收藏点只有空态、无收藏列表入口）各共用一份证据，
+重复文件已删除（`more-sheet-02-scrolled.*`、`favorite-list-02.*`），因此 `report` 的「不同 state 同图」硬检查
+不会命中这两行，**不需要进 `duplicates-allow.json`**。客户端章节现有 **14 PNG + 13 XML + 14 meta**。
 
 ## 2. LC 增量证据（原版清单外，我方自创新增）
 

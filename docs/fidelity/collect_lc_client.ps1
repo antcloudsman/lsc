@@ -80,12 +80,11 @@ Capture 'w3-sheet' 'ST-A-read-sheet'
 Back
 Tap 114 249 2                                     # 罗盘顶栏「返回」
 
-# --- 地图工具面板（默认/滚动） ---
+# --- 地图工具面板（默认态；滚动后为同态，共用这一份证据，不另拍） ---
 Tap 103 2453 3                                    # 左列「更多」
 Capture 'more-sheet-03-fresh' 'ST-D-more-default'
 & adb -s $Serial shell input swipe 614 2300 614 1500 300 | Out-Null
-Start-Sleep -Seconds 2
-Capture 'more-sheet-02-scrolled' 'ST-D-more-scrolled'
+Start-Sleep -Seconds 2   # 预期无变化：面板不可滚动，输入行 32 引用同一份证据
 Back
 Tap 103 2453 2
 
@@ -100,11 +99,10 @@ Tap 486 1285 4                                    # 「天气」
 Capture 'tool-weather-01' 'ST-F-weather'
 Tap 88 210 2
 
-# --- 收藏点 ---
+# --- 收藏点（空态页；行 37 收藏列表入口在 LC 不存在，共用这一份证据） ---
 Tap 103 2453 2
 Tap 232 1453 4                                    # 「收藏点」
 Capture 'tool-favorite-01' 'ST-A-favorite-mode'
-Capture 'favorite-list-02' 'ST-E-favorite-list'
 Tap 53 206 2
 
 # --- 超清地图 ---

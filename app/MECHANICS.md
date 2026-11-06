@@ -579,3 +579,48 @@ COMPASS_3 compass3/三元罗盘(金)/`compass3_min`/true；COMPASS_4 compass4/�
 
 **取证脚本**：`E:\APPDetector\lc-gap-evidence\probe\ring-profile.py`（径向暗线检测）、`dial-analyze.py`（尺寸/主色/圆盘外缘）。
 **证据来源**：`mem_smali`（方法体真实）＋ `decoded/res`、`decoded/assets/webapp/assets/imgs/compass`（APK 内原始资源）。
+
+## 补证 R10（海拔工具面板：含氧量公式与气压数据源，2026-11-06）
+
+### R10.1 原版实测（固定态 116.4074,39.9042，证据 `docs/fidelity/orig/compass-main-01.xml`）
+
+| 项 | dump 原文 | bounds |
+|---|---|---|
+| 海拔高度 | `56` + `海拔高度` `(m)` | `56` [158,2215][233,2284] |
+| 含氧量 | `含氧量：` + `20.86%` | [351,2443][505,2489] / [505,2387][663,2545] |
+| 气压 | `气压：` + `102.4千帕` | [718,2443][841,2489] / [841,2387][1029,2491] |
+| 打点 | `打点` | [974,2540][1069,2578] |
+
+### R10.2 含氧量：本地计算，公式已证实
+
+```
+含氧量% = 20.95 − 0.0016 × 海拔(m)
+```
+
+出处：`mem_smali/space/xinzhi/globe/ui/controller/d.smali`（`AltitudeToolsController.kt`），静态方法
+`r(Lspace/xinzhi/globe/ui/controller/d;Ljava/lang/Integer;)Lkotlin/Unit;`，行 263–314：
+
+- `Integer.intValue()` → `int-to-double`，再 `/ 10.0`（`const-wide/high16 0x4024000000000000`，行 282）
+- `× 0.016`（`const-wide 0x3f90624dd2f1a9fc`，行 288）
+- `20.95 − x`（`const-wide 0x4034f33333333333`，行 294）
+- 结果写入 `n(Ljava/lang/Double;)V`（行 606–621）→ Compose 状态
+
+校验：56 m → `20.95 − 0.0896 = 20.8604`，展示两位小数 **20.86%**，与 dump 逐字一致（同式在 53 m 给 20.87%，说明 LC 旧实现的 20.88% 用的是另一套系数）。
+
+### R10.3 气压：不是公式，是原版服务端的实时值
+
+- `net/ApiService.smali:926-951`：`GET api/weather/getPressure?longitude=&latitude=` → `ApiResult<Double>`
+- `net/ApiHelper.smali`：`BASE_URL = "https://globe.xinzhi.space"`（原版厂商后端）
+- `model/smart/SmartLngLat.smali:1086-1164`：结果直接存 `pressure: Double`
+- UI：`ui/tools/o.1.smali`（`AltitudeToolsKt`）行 4930–4986，取 `controller.j()` → `DoubleKt.getToTwoDecimal` → 拼字符串 `"千帕"`（行 4983）
+- **代码里没有任何本地气压换算或标准大气公式**；`102.4千帕` 就是当时该接口的返回值（≈1024 hPa 量级，随天气变化）
+
+### R10.4 海拔也来自服务端
+
+`net/ApiService.smali:530+`：`POST api/map/batchGet`（body `List<JsonObject>`）→ `ApiResult<List<Integer>>`；「56 m」不是本地 DEM 或公式算出来的。
+
+### R10.5 对 LC 与判据的落点
+
+- **含氧量**：可 1:1 复刻，系数照抄 `20.95 / 0.0016`，输入用海拔整数米，输出两位小数加 `%`。
+- **气压**：本地无法复刻。要么接第三方天气源（返回同口径 kPa），要么按 DEP-3 记「数据源差异·DI」；**不要用标准大气凑 102.4**——56 m 处标准大气约 100.7 kPa，差 1.7 kPa，明显不是原版口径。
+- **海拔**：同样依赖服务端；LC 现值 53 m 与原版 56 m 差 3 m，属数据源差异，`±2 m` 判据只在同源时才可比。

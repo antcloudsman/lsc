@@ -109,14 +109,13 @@ and adds the 64卦 layer at **5.625°** (= 360/64).
 - `CompassToolsKt.B1(D)D` (7 insns) = degree normalization:
   `v %= 360.0; if (v < 0) v += 360.0; return v` (const `0x4076800000000000` = 360.0).
   This is byte-for-byte the same rule as the rebuild's `normalize_deg`.
-- The ring drawing lives in `DrawScope` lambdas (obfuscated `A..Z`/`a..b1` methods taking
-  `androidx.compose.ui.graphics.drawscope.DrawScope`, plus `A1`/`D`/`b0` Compose
-  composables). Extracting exact per-ring radii/colors needs reading those Compose lambdas;
-  the rebuild reproduces the same rings with Canvas but not the exact Compose radii.
-  (Concretely, `A1(Z,F,F,F,String,…,Composer,I)` is only a recompose wrapper that forwards to
-  `z1(...)`; the actual arc/text drawing and its `const` radii live deeper in that obfuscated
-  Compose chain + the `CompassToolsKt$…` lambdas, so the exact per-ring pixel radii/colors are
-  UI-only and not recovered.)
+- **更正（2026-11-06，见 §R5）**：这一段原先记「per-ring radii/colors 未解出」。实际是
+  **原版根本没有这些常量**——`CompassToolsKt` 里没有任何 `drawArc`/`drawCircle` 逐圈矢量绘制
+  （全 smali 树里 `drawArc` 只出现在第三方库 `ENDownloadView`/`ENPlayView`），盘面是整张位图
+  `ImageKt.Image(...)`（`:4281`/`:14282`）+ `GraphicsLayerScope.rotationZ`（`:4584`/`:4800`/`:17593`）。
+  全文件 `const-wide` 仅 9 条（180×2、360×2、白×4、`0xcc000000`）。半径/配色改由**位图实测**给出：
+  见 **§补证 R5.4 / R5.5**（默认盘面 `compass.png`：外缘 476 px = 半画布 0.8815；三环带
+  0–0.786 / 0.786–0.948 / 0.948–1.0 R；配色黑 `#000000` + 白 `#FFFFFF`）。
 - `CompassToolsKt.E0(...)` (44 insns) reveals the app architecture: the map is a
   **WebView** (`space.xinzhi.globe.map.MapWebController`) driven by a JS bridge
   (`space.xinzhi.globe.map.MapWebApiKt`), and the compass is a Compose `GraphicsLayer`
@@ -503,3 +502,80 @@ COMPASS_3 compass3/三元罗盘(金)/`compass3_min`/true；COMPASS_4 compass4/�
 `SensorManager.getOrientation` 出参改写（v1 不报错但改写无效，需查 UI 侧 heading 状态）
 或直接改 `CompassToolsKt` 的 heading 状态变量。**三方位截图仍未完成（第 2 次尝试）**，
 但「第二证据」的目的已由 h=0 的弹层实测达成。
+
+## 补证 R5（盘面几何与配色：代码里没有这些常量；实测值，2026-11-06）
+
+### R5.1 结论先行：原版没有「圈层半径 / 盘面配色」常量可抄
+
+- `ui/tools/CompassToolsKt.smali`（451 KB、133 方法）全文件 `const-wide` **只有 9 条**：
+  `180.0`×2、`360.0`×2、`0xffffffff`（白）×4、`0xcc000000`（黑 80%）。**没有任何半径/角度步进/调色板常量**。
+- 盘面是**整张位图**：`ImageKt.Image(painter, …)`（`:4281`、`:14282`）绘制，
+  外层 `GraphicsLayerScope{ setScaleX/setScaleY/setRotationZ }`（`:4522`/`:4540`/`:4584`/`:4800`/`:17593`）旋转。
+  即「半径 = 容器尺寸、角度 = rotationZ」，**没有逐圈矢量绘制**。
+- 因此要 1:1 只能按位图实测（R5.4/R5.5 即实测值）。
+  > 更正本文件 §CompassToolsKt 里「the exact per-ring pixel radii/colors are … not recovered」：
+  > 不是没解出来，而是**本来就不存在**。
+
+### R5.2 5 个内置盘面（`common.CommonCompassEnum`，构造签名 `(String name, int ordinal, String code, String text, int resId, boolean isVip)`）
+
+| 枚举 | code | 文案 | mipmap | isVip |
+|---|---|---|---|---|
+| COMPASS_0 | `compass` | 二十四山(阴) | `R.mipmap.compass`（xxxhdpi，1080×1080） | false |
+| COMPASS_1 | `compass1` | 常用罗盘 | `R.mipmap.compass1_min`（xhdpi，160×160） | false |
+| COMPASS_2 | `compass2` | 三合罗盘(白) | `R.mipmap.compass2_min`（160×160） | **true** |
+| COMPASS_3 | `compass3` | 三元罗盘(金) | `R.mipmap.compass3_min`（160×160） | **true** |
+| COMPASS_4 | `compass4` | 综合罗盘(白) | `R.mipmap.compass4_min`（160×160） | **true** |
+
+- `default` = **COMPASS_0**（`<clinit>` @#@55–#@69，v0 仍指向 COMPASS_0）。
+- 注意：**只有默认盘面有全分辨率资源**，其余 4 个原生绘制用的是 160×160 缩略图（`getResId()` 取自枚举，`CompassToolsKt:3716`）——这是原版自身的精度限制，不是我们取不到。
+
+### R5.3 盘面资产实测（`assets/webapp/assets/imgs/compass/`，14 张）
+
+| 文件 | 分辨率 | 真实格式 |
+|---|---|---|
+| compass.png | 1080×1080 | PNG |
+| compass1.png | 2048×2048 | PNG |
+| compass2.png | 2048×2048 | PNG |
+| compass3.png | 2045×2045 | PNG |
+| compass4.png | 2048×2048 | PNG |
+| compass5.png | 1080×1080 | **WebP** |
+| compass6.png | 620×620 | **WebP** |
+| compass7.png | 2251×2251 | **WebP** |
+| compass8.png | 1684×1684 | PNG |
+| compass9.png | 1500×1500 | **WebP** |
+| compass10.png | 2040×2040 | **WebP** |
+| compass11.png | 2040×2040 | **WebP** |
+| compass12.png | 2042×2040 | **WebP** |
+| compass13.png | 2042×2040 | **WebP** |
+| pointer.png | 46×188 | PNG(RGBA) |
+
+> 8 个 `.png` 后缀文件实际是 WebP（`RIFF…WEBP` 头）——按后缀当 PNG 解码会失败，客户端按真实格式处理。
+
+### R5.4 默认盘面 `compass.png`（二十四山(阴)）实测几何
+
+- 画布 1080×1080；圆盘外缘 **r = 476 px**（= 0.8815 × 半画布 540），有效直径 952 px = 画布 **88.15%**。
+- 三道整圆（白底合成后按「该半径上黑像素占比 >55%」径向扫描 1px 步进）：**374 / 451 / 476 px**，
+  折算到圆盘外缘 = **0.7857 / 0.9479 / 1.0000**。
+
+| 环带 | 半径 px | 占外缘 R | 内容 |
+|---|---|---|---|
+| 空白芯 | 0–374 | 0–0.786 | 空（透明/白） |
+| 二十四山环 | 374–451 | 0.786–0.948 | 24 等分 × 15° |
+| 刻度带 | 451–476 | 0.948–1.000 | 1° 细刻度；每 10° 度数数字画在**外缘之外** |
+| 度数数字 | 476–≈530 | 1.0–≈1.11 | 0/10/…/350，位于圆盘外 |
+
+### R5.5 配色实测
+
+- `compass.png` 可见像素 top：`#FFFFFF` **41.5%**、`#000000` **28.95%**，其余为抗锯齿灰（`#101010`/`#EFEFEF`/`#BFBFBF` 各 ≈1%）
+  → 默认盘面就是**黑白两色**（「阴」= 黑字白底）。
+- 其余 4 个内置盘面只有 160×160 缩略图，取色仅作参考、**不作正式配色表**：
+  compass1 主金 `#F4C330`；compass3 主金 `#BEA149`；compass2 / compass4 近白（白盘）。
+- 指针 `pointer.png`：`#656565`(灰) 20%、`#E71818`/`#A81414`(红) 29%、`#052750`/`#073470`(深蓝) 22%。
+
+### R5.6 对 LC 的落点
+
+- 客户端 Canvas 画圈按 R5.4 的归一化值即可（空白芯 0.786R / 24山环 0.786–0.948R / 刻度带 0.948–1.0R / 度数数字在 1.0–1.11R），**不要再去猜「原版半径常量」——它不存在**。
+- 配色：免费层用「黑白（阴）」，白/金盘按 R5.5 给的主色做近似；4 个盘面的正式配色记为**未确认**，需真机放大截图后取色。
+
+**取证脚本**：`E:\APPDetector\lc-gap-evidence\probe\ring-profile.py`（径向暗线检测）、`dial-analyze.py`（尺寸/主色/圆盘外缘）。
+**证据来源**：`mem_smali`（方法体真实）＋ `decoded/res`、`decoded/assets/webapp/assets/imgs/compass`（APK 内原始资源）。

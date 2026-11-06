@@ -148,19 +148,22 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 - 采集期间 USB 瞬断一次（`adb: device not found`），重连后重跑补齐，所有 meta `build.commit` = `464ebb8c50b427fb42b0ea0cbafabb1f4f03d58a`、`apk.sha256` = `ccd5686f…`（7,059,457 B）。
 - 等高线「固定态不可见」判定依据不是肉眼：`canvas.toDataURL` 缩略图哈希在 contour off/on/off 三次均为 `13567:1033006902`；同一引擎在山区同参数下 off=`12547:4200479435`、on=`12575:898838800`。
 
-### 4.2 原版同态对照补采受阻（2026-11-06 17:24–17:32）
+### 4.2 原版同态对照补采受阻（2026-11-06 17:24–17:32 / 19:44–19:52 两轮）
 
-为给第 23 行取「原版固定态 3D + 等高线」对照，按 `orig-inventory.md` 第 04 行口径启动原版 App（`space.xinzhi.globe`），**未进入地图页**：
+为给第 23 行取「原版固定态 3D + 等高线」对照，按 `orig-inventory.md` 第 04 行口径启动原版 App（`space.xinzhi.globe`），**两轮均未进入地图页**：
 
 | 尝试 | 观察 | 结果 |
 |---|---|---|
-| `am start -n space.xinzhi.globe/.ui.pages.SplashActivity`，静置 60 s | 停在启动图；`mResumedActivity` 始终 `SplashActivity`、`mCurrentFocus=null`；截图 sha `ff4b1aee4469afb1…`（2,714,248 B）不变 | 未进入地图 |
-| 点击 `(614,1350)` / `(1100,200)` / `BACK` | 弹出系统 ANR：「三维山水全景地图 无响应。是否将其关闭？」截图 sha `ddd0ff2558a3e415…` | ANR |
-| ANR 选「关闭应用」后重拉（`monkey -c LAUNCHER`） | 回到桌面（`com.huawei.android.launcher`），再次启动仍停在同上启动图 | 不可用 |
+| 17:24 轮：`am start -n space.xinzhi.globe/.ui.pages.SplashActivity`，静置 60 s | 停在启动图；`mResumedActivity` 始终 `SplashActivity`、`mCurrentFocus=null`；截图 sha `ff4b1aee4469afb1…`（2,714,248 B）不变 | 未进入地图 |
+| 17:24 轮：点击 `(614,1350)` / `(1100,200)` / `BACK` | 弹出系统 ANR：「三维山水全景地图 无响应。是否将其关闭？」截图 sha `ddd0ff2558a3e415…` | ANR |
+| 19:44 轮：**重启手机**后（解锁完成、`boot_completed=1`，未改原版任何数据/配置）再启动，静置 90 s | 仍停在同一启动图（sha 同上 `ff4b1aee…`）；`mCurrentFocus=null`；进程 `0.0% CPU`、`State: S`、18 线程；`logcat --pid` 最后一条是 `LoadedApk: createSharedLibrariesLoaders::sharedLibraries is null`，此后无 Activity/WebView 初始化日志 | 未进入地图 |
+| 19:52 轮：`am start -W -n …SplashActivity` | `Status: timeout`、`LaunchState: UNKNOWN (-1)`、`WaitTime: 10064 ms`；随即系统窗口 `Application Not Responding: space.xinzhi.globe` 获焦 | ANR |
 
-排查：`MemAvailable` = 3,415,784 kB（约 3.4 GB，非内存不足）；`logcat` 无 `FATAL EXCEPTION`、无 `ANR in space.xinzhi.globe`；进程存活（`MyWrapperProxyApplication`，vmInterpret 保护包）。采集纪律要求原版「只作对照、不改数据」，故**未清数据重试**。
+排查：`MemAvailable` = 3,415,784 kB（约 3.4 GB，非内存不足）；没有任何权限弹窗窗口（`dumpsys window windows` 无 `GrantPermissions` 行），`ACCESS_FINE_LOCATION`/`COARSE` 为 `granted=false` 但应用在弹窗之前就已阻塞；`logcat` 无 `FATAL EXCEPTION`。进程存活于 `MyWrapperProxyApplication`（vmInterpret 保护壳），主线程 0% CPU 等待。采集纪律要求原版「只作对照、不改数据」，故**未清数据**；按总监给的选项执行了「重启手机」，仍不通。
 
-结论：第 23 行与 R2-036 的「等价/缺陷」判定仍缺原版对照，等原版可正常启动后补拍；LC 侧 `map-contour-relief` 只证明我方能力，不用于判定原版行为。
+结论：原版启动阻塞在保护壳初始化，早于任何可交互界面，因此**原版「固定态 3D + 等高线开/关」对照在本环境无法取得**；第 23 行保持「缺失（固定态不可得，待原版补采）」，R2-036 维持 **NC/未确认**，不外推为「等价」或「缺陷」。LC 侧 `map-contour-relief` 只证明我方能力，不用于判定原版行为。
+
+附：本目录 `orig-inventory.md` 第 80 行把原版 3D 入口记为 `(1125,1985)`，与 `orig/map-home-01.xml` 实测不符——原版右列 3D 的真实 bounds 是 `[1055,2242]-[1212,2399]`、中心 `(1134,2320)`（同列依次 `图层 613`、`叠加 799`、`山脉 985`、`水系 1171`、`探索 1357`、指北针 `1708`、`+ 1860`、`− 2014`、`定位 2168`）。后续复现请按 `(1134,2320)` 点。
 
 
 

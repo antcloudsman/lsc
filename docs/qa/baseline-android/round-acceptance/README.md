@@ -1,6 +1,6 @@
 # Android 基线冻结 · round-acceptance
 
-状态：**待设备回补**（本目录先落结构/命令/口径，读数与截图由 `freeze_android_baseline.ps1` 补）。
+状态：**已冻结（2026-11-06）**——读数/截图/门禁结果均为本目录实测，见 `manifest.md` 与 `SHA256SUMS.txt`。
 
 ## 1 口径
 
@@ -79,4 +79,6 @@ pwsh -File tests\numeric\tools\freeze_android_baseline.ps1 `
 截图 `k01-map.png` / `k01-more.png` / `k01-compass.png` / `k01-compass-needle-on.png` /
 `k01-compass-needle-off.png` / `k01-map-after-hide.png`。
 
-> 当前状态：设备 USB 断连（`adb devices` 为空，Windows 侧无 ADB Interface），等物理接回后补跑。
+本目录共 **18 个文件**：6 张截图 + 5 份 UI dump + 7 份记录（`manifest.md`、`nodes-k01.csv`、
+`numeric-gate.txt`、`am-start-w.txt`、`logcat.txt`、`SHA256SUMS.txt`、`README.md`）。
+`SHA256SUMS.txt` 只列 16 项——**不含 `README.md` 与本清单自身**（清单无法自证），属算法约定，不是缺文件。

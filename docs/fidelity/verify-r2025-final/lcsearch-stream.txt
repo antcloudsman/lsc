@@ -1,0 +1,26 @@
+--------- beginning of main
+11-07 00:29:36.196 D/LCSEARCH(18762): debug search=故宫 tab=1
+11-07 00:29:36.229 D/LCSEARCH(18762): run kw=[故宫] active=1 mapView=true
+11-07 00:29:36.232 D/LCSEARCH(18762): search start kw=[故宫] tab=1 center=39.9042,116.4074
+11-07 00:29:36.271 D/LCSEARCH(18762): tabs=4
+11-07 00:29:36.911 D/LCSEARCH(18762): tab=1 code=ok total=1283 first=故宫博物院
+11-07 00:29:36.913 D/LCSEARCH(18762): ui rows=20 first=故宫博物院  116.390865,39.914896
+11-07 00:29:46.412 D/LCSEARCH(18762): debug search=故宫 tab=0
+11-07 00:29:46.412 D/LCSEARCH(18762): dismiss previous dialog
+11-07 00:29:46.442 D/LCSEARCH(18762): run kw=[故宫] active=0 mapView=true
+11-07 00:29:46.445 D/LCSEARCH(18762): search start kw=[故宫] tab=0 center=39.9042,116.4074
+11-07 00:29:46.470 D/LCSEARCH(18762): tabs=4
+11-07 00:29:46.644 D/LCSEARCH(18762): tab=0 code=ok total=446 first=故宫博物院
+11-07 00:29:46.645 D/LCSEARCH(18762): ui rows=20 first=故宫博物院  116.390865,39.914896
+11-07 00:29:56.544 D/LCSEARCH(18762): debug search=故宫 tab=0
+11-07 00:29:56.544 D/LCSEARCH(18762): dismiss previous dialog
+11-07 00:29:56.563 D/LCSEARCH(18762): run kw=[故宫] active=0 mapView=true
+11-07 00:29:56.564 D/LCSEARCH(18762): search start kw=[故宫] tab=0 center=39.9042,116.4074
+11-07 00:29:56.583 D/LCSEARCH(18762): tabs=4
+11-07 00:29:56.793 D/LCSEARCH(18762): tab=0 code=ok total=446 first=故宫博物院
+11-07 00:29:56.794 D/LCSEARCH(18762): ui rows=20 first=故宫博物院  116.390865,39.914896
+11-07 00:30:06.972 D/LCSEARCH(18762): tab-click idx=1 active=1 ref=true
+11-07 00:30:06.972 D/LCSEARCH(18762): run kw=[故宫] active=1 mapView=true
+11-07 00:30:06.975 D/LCSEARCH(18762): search start kw=[故宫] tab=1 center=39.9042,116.4074
+11-07 00:30:07.125 D/LCSEARCH(18762): tab=1 code=ok total=1283 first=故宫博物院
+11-07 00:30:07.126 D/LCSEARCH(18762): ui rows=20 first=故宫博物院  116.390865,39.914896

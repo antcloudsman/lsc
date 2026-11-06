@@ -19,6 +19,7 @@ docs/fidelity/
   dump-only-allow.json           # dump-only 豁免（reason/by 必填；只跳过 PNG 配对）
   lc-only-allow.json             # LC 增量/探针态豁免（不参与配对统计；reason/by 必填）
   assets-sources.json            # 原版素材 ↔ APK 条目清单（assets.py 的输入，含 APK sha256 pin）
+  assets-deps.json               # 计划 §6.1 的 A-01…A-12 素材依赖表（机器镜像，verify 逐条判缺）
   assets/                        # 原版素材（M2 Stage 1）：图标/pointer/14 篇 HTML
     MANIFEST.sha256              # sha256sum 兼容清单（工具生成，勿手改）
     INDEX.md                     # 人读索引：文件/字节/尺寸/sha256/APK 条目/类别

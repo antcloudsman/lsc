@@ -219,6 +219,31 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --require-checkshe
 - `state`/`reason`/`by` 缺一即报错；
 - 只该收录 LC 增量页面、探针态；原版存在但没采到的状态仍应记 missing，不得迁移到这里。
 
-## 6. 写发现时的硬要求
+## 6. 批量补 meta（`meta-backfill`）
+
+`docs/fidelity/orig/` 里有些状态只有 png/xml、没有 `meta.json`，导致 `checksheet_id` 覆盖统计偏低。用工具从索引里的 `checksheet_id` 映射**生成** meta，禁止手写：
+
+```powershell
+# 先看会写哪些、跳过哪些
+python tools\fidelity\fidelity.py meta-backfill --root docs\fidelity --side orig --dry-run
+
+# 真写（只写缺失的 meta；已有 meta 默认跳过）
+python tools\fidelity\fidelity.py meta-backfill --root docs\fidelity --side orig
+
+# 复核覆盖
+python tools\fidelity\fidelity.py report --root docs\fidelity --require-checksheet-id
+```
+
+规则写死：
+
+- 输入只能来自「已有 png/xml」+「`<root>/lc-captures.md` 表格里的 `checksheet_id`」（`--index` 可另指）；`state` 取自文件名；
+- `image.sha256`/`dump.sha256` 现算，`width/height` 从 PNG 读，**不提供任何手填 hash/尺寸的参数**；
+- 映射冲突（同一 state 两个不同 id）直接报错，整次不写；映射找不到的 state 跳过并打印原因；
+- 一行索引里出现多个候选 state（如 `ST-C-3d` 行同时含 `map-3d-mode`/`map-3d-img`）时，工具**跳过并 warning**，不猜归属；先把索引改成一行一 state 再跑；
+- 任一待写状态证据缺失/PNG 读不出 → **整次中止、不写半份 meta**；
+- 已有 `meta.json` 默认跳过，`--force` 才覆盖；只写工具与 meta，不替你提交证据目录；
+- 写完重跑 `report --require-checksheet-id`，`with_id` 应从当前值上升，38/38 时才 exit 0。
+
+## 7. 写发现时的硬要求
 
 每条“差异”至少带：`state id` + 复现命令（或入口路径 + 坐标）+ 量化值（px / hex / sp / 文案逐字）。工具输出只是证据，结论里不要出现“差不多/基本一致/类似”；无法复现的不写进报告。

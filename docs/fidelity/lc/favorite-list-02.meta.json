@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.11.0",
+  "state": "favorite-list-02",
+  "side": "lc",
+  "captured_at": "2026-11-06T21:46:03+0800",
+  "serial": "",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-A-favorite-mode",
+  "build": {
+    "branch": "develop",
+    "commit": "c3745d5071cd96106856abe28905b027ab164577"
+  },
+  "apk": {
+    "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "45e7ddcf915f09d8f4e572aa2e5d0995186360dabf72e46c3b49c75905fe5292",
+    "bytes": 7069365
+  },
+  "image": {
+    "file": "favorite-list-02.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "7f24f38469f21cc665f4ab0d070d0174a33e376aa454e6029f38390697f5b9e4"
+  },
+  "dump": {
+    "file": "favorite-list-02.xml",
+    "sha256": "438a13329d85ce66dd2cd768bbb446a9f10a90ec2137205277e879f4e8eb64f8"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

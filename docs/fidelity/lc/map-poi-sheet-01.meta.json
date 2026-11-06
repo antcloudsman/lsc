@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.11.0",
+  "state": "map-poi-sheet-01",
+  "side": "lc",
+  "captured_at": "2026-11-06T21:45:37+0800",
+  "serial": "",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-A-poi",
+  "build": {
+    "branch": "develop",
+    "commit": "c3745d5071cd96106856abe28905b027ab164577"
+  },
+  "apk": {
+    "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "45e7ddcf915f09d8f4e572aa2e5d0995186360dabf72e46c3b49c75905fe5292",
+    "bytes": 7069365
+  },
+  "image": {
+    "file": "map-poi-sheet-01.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "264e2906516a893d2565da8867fdd9626b972172dc192a373efcdd87967f8e3e"
+  },
+  "dump": {
+    "file": "map-poi-sheet-01.xml",
+    "sha256": "b16e3545d89d8231cb0920b98e870b625c7c1485b44399e0968d59833bedec92"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

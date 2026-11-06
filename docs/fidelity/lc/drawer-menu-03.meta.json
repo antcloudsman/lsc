@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.11.0",
+  "state": "drawer-menu-03",
+  "side": "lc",
+  "captured_at": "2026-11-06T21:46:11+0800",
+  "serial": "",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-E-drawer",
+  "build": {
+    "branch": "develop",
+    "commit": "c3745d5071cd96106856abe28905b027ab164577"
+  },
+  "apk": {
+    "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "45e7ddcf915f09d8f4e572aa2e5d0995186360dabf72e46c3b49c75905fe5292",
+    "bytes": 7069365
+  },
+  "image": {
+    "file": "drawer-menu-03.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "df8cdf9a8c8b4e9b8061cc73e5eec16d6c2395c2a3d22e68c8de97f7c2f34f4b"
+  },
+  "dump": {
+    "file": "drawer-menu-03.xml",
+    "sha256": "51e433768aef36ce8e2ffc4ea1f8b198310efbb5e3de3ad9de5026b813ab3ecc"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

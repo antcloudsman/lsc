@@ -1,30 +1,30 @@
 {
   "tool": "fidelity",
-  "version": "1.3.0",
+  "version": "1.11.0",
   "state": "compass-overlay-hidden-map",
   "side": "lc",
-  "captured_at": "2026-11-06T14:11:28+0800",
+  "captured_at": "2026-11-06T21:46:23+0800",
   "serial": "",
   "package": "com.luopan.fengshui",
   "checksheet_id": "ST-A-compass-hidden",
   "build": {
     "branch": "develop",
-    "commit": "e88ed0c2aa70272e36f6d03a0a6f12511d6bf532"
+    "commit": "c3745d5071cd96106856abe28905b027ab164577"
   },
   "apk": {
     "path": "app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
-    "sha256": "8dd5bf13dbbd0763b961a42df8bb35706f743ae2338d3bbd336f748ed0ab1763",
-    "bytes": 7059509
+    "sha256": "45e7ddcf915f09d8f4e572aa2e5d0995186360dabf72e46c3b49c75905fe5292",
+    "bytes": 7069365
   },
   "image": {
     "file": "compass-overlay-hidden-map.png",
     "width": 1228,
     "height": 2700,
-    "sha256": "f548f94493bcf5584a3d3d9f66add3e28647779e0922162d9ced33face6f37a8"
+    "sha256": "0fd738c9fd68b2a57cbae6b0b91983298781b516faff8e66143253a832b5aaae"
   },
   "dump": {
     "file": "compass-overlay-hidden-map.xml",
-    "sha256": "dd0579ed294968eca9b8be66eaaf277cb03f26b2b5a403d79d5efd8f08ebe844"
+    "sha256": "cda0c4cce12a1f84530ff76d61422a3d1391f9ac1eb883435f5a82eade6ef8c9"
   },
   "device": {
     "ro.product.model": "JAD-AL00",

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- R2-005：罗盘中心指针（原版 pointer 节点 [573,1188][654,1512] = 81×324，位图 46×188） -->
+    <item name="lc_pointer" type="id" />
+</resources>

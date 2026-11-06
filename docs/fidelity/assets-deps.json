@@ -1,0 +1,80 @@
+{
+  "plan": "docs/fidelity/round2-plan.md §6.1（v1.11）",
+  "updated": "2026-11-07",
+  "by": "LC服务端（计划的机器镜像；口径以 LC产品 的计划为准，计划改动时同步本文件）",
+  "note": "requires 命中口径：targets 精确路径 ∪ prefixes 路径前缀 ∪ kinds（PROVENANCE.json 的 kind）∪ globs（仓库根相对，A-09 录屏）；count 为最少文件数。带 manual 的是取证/真机项，不进素材门禁，判据归 LC审核验。",
+  "items": [
+    {
+      "id": "A-01",
+      "name": "pointer.png（位图 46×188）",
+      "requires": { "targets": ["compass/pointer.png"], "image": "46x188" }
+    },
+    {
+      "id": "A-02",
+      "name": "抽屉 9 项图标",
+      "requires": { "kinds": ["icon-drawer"], "prefixes": ["icons/drawer/"], "count": 9 }
+    },
+    {
+      "id": "A-03",
+      "name": "更多面板 16 格图标",
+      "requires": { "kinds": ["tool-icon"], "prefixes": ["tools/"], "count": 16 },
+      "note": "已入库 18 张（tools/），其中 16 张进「更多」16 格；另 2 张（VR/STREET）在 ToolsEnum 里但面板未展示，见 docs/fidelity/assets-TOOL-ICONS.md"
+    },
+    {
+      "id": "A-04",
+      "name": "左 8 / 右 10 工具图标",
+      "requires": { "kinds": ["tool-icon"], "prefixes": ["tools/"], "count": 18 },
+      "note": "与 A-03 共用同一套 18 个工具图标（左 8 + 右 10 从这里取）；左右列取舍由 P1-14 判据决定，不另导出文件"
+    },
+    {
+      "id": "A-05",
+      "name": "读盘 sheet 图/样式",
+      "requires": { "kinds": ["plate"], "prefixes": ["compass/plate"], "count": 1 }
+    },
+    {
+      "id": "A-06",
+      "name": "compassIntroduce 14 篇 HTML",
+      "requires": { "prefixes": ["compass-introduce/"], "count": 14 }
+    },
+    {
+      "id": "A-07",
+      "name": "底图源 12 卡片缩略图/源名样式",
+      "requires": { "kinds": ["source-thumb"], "prefixes": ["map/source-thumb"], "count": 1 },
+      "note": "12 源若为单张雪碧图或一份样式，1 个文件即可；「缩略图↔源名」逐字对应由 LC审核验 判"
+    },
+    {
+      "id": "A-08",
+      "name": "启动页品牌三行/logo",
+      "requires": { "kinds": ["brand"], "prefixes": ["brand/"], "count": 1 }
+    },
+    {
+      "id": "A-09",
+      "name": "动效录屏：sheet 弹出/关闭、按钮按下、页面过渡",
+      "requires": {
+        "globs": [
+          "docs/fidelity/motion/**/*.mp4",
+          "docs/fidelity/recordings/**/*.mp4",
+          "docs/fidelity/assets/motion/**/*.mp4",
+          "docs/fidelity/assets/recordings/**/*.mp4"
+        ],
+        "count": 3
+      },
+      "note": "三类各一；关键帧与时长（±100ms）口径由 LC审核验 核"
+    },
+    {
+      "id": "A-10",
+      "name": "R2-035 画笔/钓点入口形态重采（双图 + dump）",
+      "manual": "双图 + dump 落 docs/fidelity/{orig,lc}/，由 report 覆盖；state 由逆向登记，判据归 LC审核验"
+    },
+    {
+      "id": "A-11",
+      "name": "128m 读数出处（DEX/可观测行为）",
+      "manual": "取证结论落文档（DEX 锚点或可观测行为），不在素材门禁内"
+    },
+    {
+      "id": "A-12",
+      "name": "坐标顺序结论（lonlat vs 列表显示）",
+      "manual": "取证结论落文档，不在素材门禁内"
+    }
+  ]
+}

@@ -14,7 +14,7 @@ python tools\fidelity\selftest.py
 python tools\fidelity\assets.py selftest
 ```
 
-合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测（`SELFTEST: PASS (18 checks)`），同样不需要设备与原版 APK。
+合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测/A-xx 依赖门禁（`SELFTEST: PASS (25 checks)`），同样不需要设备与原版 APK。
 
 ## 1. 一键采集（`collect`）
 
@@ -264,9 +264,26 @@ python tools\fidelity\assets.py extract --apk E:\APPDetector\input\swss.apk --so
 # 3) 生成 sha256 清单 + 人读索引
 python tools\fidelity\assets.py manifest --dir docs\fidelity\assets
 
-# 4) 校验：清单 / 元数据 / 与 APK 源逐条重算 sha256
+# 4) 校验：清单 / 元数据 / 与 APK 源逐条重算 sha256（+ A-01…A-12 依赖覆盖）
 python tools\fidelity\assets.py verify --dir docs\fidelity\assets --apk E:\APPDetector\input\swss.apk --strict
 ```
+
+`verify` 默认读 `<dir>/../assets-deps.json` 并按计划 §6.1 的 **A-01…A-12** 逐条打印覆盖情况，直接看「缺哪条」就能判 Stage 1 是否齐：
+
+```
+[ -- ] deps: docs/fidelity/round2-plan.md §6.1（v1.11）（12 项）
+[PASS] deps A-01 pointer.png（位图 46×188）: 1/1：compass/pointer.png
+[PASS] deps A-03 更多面板 16 格图标: 18/16：tools/ic_tool_altitude.png, …
+[FAIL] deps A-02 抽屉 9 项图标: 0/9（kind icon-drawer | prefix icons/drawer/）；树里现有 kind: bitmap, knowledge-html, tool-icon
+[ -- ] deps A-11 128m 读数出处（DEX/可观测行为）: 手工判据 — 取证结论落文档，不在素材门禁内
+[FAIL] deps: 素材 4/9 齐；缺 A-02, A-05, A-07, A-08, A-09；手工判据 3 项（A-10, A-11, A-12）
+```
+
+- 命中口径：`targets` 精确路径 ∪ `prefixes` 路径前缀 ∪ `kinds`（`PROVENANCE.json` 的 `kind`）∪ `globs`（仓库根相对，给 A-09 录屏用），`count` 是最少文件数；**缺项行会打出树里现有的 kind**，命名对不上时一眼能看出该改哪边；
+- 带 `manual` 的 A-10/A-11/A-12 是取证/真机项，不进素材门禁（挂起规则见计划 §6.1），只打印提示；
+- 依赖未齐 → `verify` exit 1（Stage 1 素材门禁）；只想查完整性时加 `--no-deps`；`--deps <file>` 可换清单；
+- `docs/fidelity/assets-deps.json` 是计划 §6.1 的机器镜像（口径以 LC产品 的计划为准，计划改动时同步）；
+- `sources` 里除 `entry/target/kind/note` 外的字段（`resource`/`raster`/`size`/`use`/`enum`/`evidence`/`checksheet` …）会原样存进 `PROVENANCE.json` 的 `meta`，并出现在 `INDEX.md` 的「资源名 / 用途」列——**复核锚点不在工具里丢**；
 
 `sources` 格式（`docs/fidelity/assets-sources.json` 已含 14 篇 HTML + pointer 的确定性部分，图标按逆向定位的 `res/*.png` 条目追加即可）：
 

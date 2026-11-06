@@ -115,7 +115,7 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
 
 一条命令：`pwsh -File tests\at\run-final.ps1 -Apk <app-debug.apk>`（18 项，exit 0/1/2/4）。
 
-本轮踩到并已写进脚本的五个坑：
+本轮踩到并已写进脚本/文档的坑（持续累加）：
 
 1. **不注入航向就 dump 一定超时**：真机传感器在跑 → `CompassView` 每帧重绘 →
    `uiautomator dump` 报 `ERROR: could not get idle state.`（约 11 秒后失败，且**不产出文件**）。
@@ -145,6 +145,13 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
    退一步至少 `$env:PYTHONIOENCODING='utf-8'`。
    逆向那边的同类表现是 `git show` 进管道再让 Python 按 cp936 读 → 假「MISSING」。
    **结论：判据只用原生判断**（`git diff --quiet` / `git grep` / 直接读文件），中文不要走管道。
+8. **`powershell`(5.1) ≠ `pwsh`(7)：无 BOM 的 UTF-8 脚本会把中文串读断，点源直接失败（2026-11-06 实测）**：
+   `tests/lib/LogRedact.ps1` 是无 BOM 的 UTF-8。用 Windows PowerShell 5.1 执行
+   `scripts\smoke.ps1 -SkipDevice` 时，点源该文件报
+   `At ...LogRedact.ps1:169 char:60 ... The string is missing the terminator: "."`（中文串被按 cp936 解码读断），
+   于是 `build-android.ps1` 报 `Get-TdtKeyValues 不是 cmdlet`，android 门假 FAIL（其余五门 PASS）。
+   换 `pwsh` 7 同一命令 → `BUILD SUCCESSFUL`、`ANDROID: PASS (build only; device leg skipped)`。
+   **结论：冒烟/构建一律用 `pwsh -File scripts\smoke.ps1 ...`，不要用 `powershell`；**给 `.ps1` 存 UTF-8 时带 BOM 也可解。
 
 ## 附D：证据脱敏（LC测试，2026-11-06）—— logcat 会整条打出天地图 web key
 
@@ -181,3 +188,4 @@ pwsh -File tests\lib\test-logredact.ps1
 
 2026-11-06 实测：样本脱敏前 `key-hits=4 tk-params=2` → 脱敏后 `key-hits=0 tk-params=0`（4 处 `***REDACTED***`）；
 即使 `Keys` 为空（通用规则单独成立）`tk-params` 也归 0。`python tests\secrets\secret_gate.py` → `SECRET: PASS`。
+

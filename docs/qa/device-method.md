@@ -145,3 +145,37 @@ adb -s L2E0222531014833 exec-out screencap -p > shot.png   # pwsh 7 字节安全
    退一步至少 `$env:PYTHONIOENCODING='utf-8'`。
    逆向那边的同类表现是 `git show` 进管道再让 Python 按 cp936 读 → 假「MISSING」。
    **结论：判据只用原生判断**（`git diff --quiet` / `git grep` / 直接读文件），中文不要走管道。
+
+## 附D：证据脱敏（LC测试，2026-11-06）—— logcat 会整条打出天地图 web key
+
+docs/qa/baseline-android/round-acceptance/logcat.txt 里出现过一行华为 WebView 内部日志：
+
+```
+D hwbr_engine_ContentUriUtils: final url after convert is file:///android_asset/map.html?tk=<32 位 web key>
+```
+
+同一份文件里 10 处 key（`tests/secrets/secret_gate.py` 因此 FAIL；仓库是 PUBLIC）。另外两条实际存在的
+泄漏写法：`GET https://t{s}.tianditu.gov.cn/...?...&tk=<key>`、`MapKeys: TDT_WEB_KEY=<key>`。
+
+规则（已固化进 `tests/lib/LogRedact.ps1`，采集脚本统一调用，不要各自实现）：
+
+1. 从 `E:\APPDetector\secrets\tdt.properties`（或 `DSH_SECRET_TDT_SERVER_KEY` / `DSH_SECRET_TDT_WEB_KEY`，
+   或 `TDT_KEYS_FILE`）读 key，出现处替换成 `***REDACTED***`；
+2. 通用规则 `tk=[A-Za-z0-9]+` → `tk=***`（覆盖「换 key 但 secrets 文件没同步」），
+   外加 `TDT_SERVER_KEY=…` / `TDT_WEB_KEY=…` 显式赋值；
+3. **落盘自检**：脱敏后若仍能匹配到任一 key（或 `tk=` 后还有内容、或残留等于 key 的 32 位十六进制串），
+   打印 `LOGCAT_REDACT_FAIL` 并**不写文件**，本轮采集判失败；
+4. **命名纪律**：`SUMMARY.txt` / `logcat.txt` / `ui*.xml` / 截图文件名都不许出现 key 片段（连前 8 位 hex 都不许），
+   `Assert-NoKeyInNames` 会扫证据目录并拦下。
+
+已接入的采集点：`freeze_android_baseline.ps1`（logcat + 全部文本产物 + manifest）、`smoke-android.ps1`、
+`at_p0_0_check.ps1`、`run-final.ps1`、`scripts/build-android.ps1`、`tools/map/run_td015_device.ps1`。
+
+自测（可重复执行，不打印 key 值）：
+
+```
+pwsh -File tests\lib\test-logredact.ps1
+```
+
+2026-11-06 实测：样本脱敏前 `key-hits=4 tk-params=2` → 脱敏后 `key-hits=0 tk-params=0`（4 处 `***REDACTED***`）；
+即使 `Keys` 为空（通用规则单独成立）`tk-params` 也归 0。`python tests\secrets\secret_gate.py` → `SECRET: PASS`。

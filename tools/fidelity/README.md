@@ -11,9 +11,10 @@
 
 ```powershell
 python tools\fidelity\selftest.py
+python tools\fidelity\assets.py selftest
 ```
 
-合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。
+合成 320×600 两张图（矩形右移 5 px）+ 两份 uiautomator dump，跑通 `pair / sample / measure / report / collect --dry-run`，末行 `SELFTEST: PASS (81 checks)`，exit 0。`assets.py selftest` 在临时目录造一个假 APK，跑通提取/清单/校验/篡改检测（`SELFTEST: PASS (18 checks)`），同样不需要设备与原版 APK。
 
 ## 1. 一键采集（`collect`）
 
@@ -247,6 +248,48 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --require-checkshe
 - 已有 `meta.json` 默认跳过，`--force` 才覆盖；只写工具与 meta，不替你提交证据目录；
 - 写完重跑 `report --require-checksheet-id`，`with_id` 应从当前值上升，38/38 时才 exit 0。
 
-## 7. 写发现时的硬要求
+## 7. 原版素材入库与 sha256 清单（`assets.py`，无需设备）
+
+原版素材（抽屉/更多/工具栏图标、罗盘 `pointer.png`、`assets/compassIntroduce/` 14 篇 HTML）必须**从原版 APK 直接取出**，每个文件可追溯到 APK 内一条 entry，并带 sha256，任何人拿到同一份 `swss.apk` 都能复跑复核。工具只用标准库，不依赖 aapt2/apktool/PIL，不碰设备。
+
+```powershell
+# 1) 找条目：按名字 / 扩展名 / 像素尺寸（pointer 就是 46x188）
+python tools\fidelity\assets.py list-apk --apk E:\APPDetector\input\swss.apk --size 46x188
+# e123222c3ba4      5329      46x188  assets/webapp/assets/imgs/compass/pointer.png
+
+# 2) 按 sources 清单提取（默认落 docs/fidelity/assets/；--dry-run 先看）
+python tools\fidelity\assets.py extract --apk E:\APPDetector\input\swss.apk --sources docs\fidelity\assets-sources.json --dry-run
+python tools\fidelity\assets.py extract --apk E:\APPDetector\input\swss.apk --sources docs\fidelity\assets-sources.json
+
+# 3) 生成 sha256 清单 + 人读索引
+python tools\fidelity\assets.py manifest --dir docs\fidelity\assets
+
+# 4) 校验：清单 / 元数据 / 与 APK 源逐条重算 sha256
+python tools\fidelity\assets.py verify --dir docs\fidelity\assets --apk E:\APPDetector\input\swss.apk --strict
+```
+
+`sources` 格式（`docs/fidelity/assets-sources.json` 已含 14 篇 HTML + pointer 的确定性部分，图标按逆向定位的 `res/*.png` 条目追加即可）：
+
+```json
+{
+  "apk_sha256": "2fd1fc15…（原版 swss.apk 的 sha256，pin 住防换包）",
+  "items": [
+    { "entry": "assets/compassIntroduce/先天八卦_卦位.html",
+      "target": "compass-introduce/先天八卦_卦位.html", "kind": "knowledge-html" },
+    { "entry": "assets/webapp/assets/imgs/compass/pointer.png",
+      "target": "compass/pointer.png", "kind": "bitmap", "note": "罗盘中心指针 46x188" }
+  ]
+}
+```
+
+产物与判定：
+
+- `MANIFEST.sha256`（`sha256sum` 兼容，`<hash>  <相对路径>`）、`INDEX.md`（文件/字节/尺寸/sha256/APK 条目/类别）、`PROVENANCE.json`（每条：`entry`、`entry_sha256`、`apk_sha256`、字节、宽高、kind/note）**全部由工具生成，手改无效**；
+- `extract` 幂等：同 hash 跳过；已有文件 hash 不同则拒绝，`--force` 才覆盖；`apk_sha256` 与 sources 不符直接拒绝；APK 里找不到的条目整次失败、一条不写；
+- `manifest` 对 **0 字节文件**、**没有 provenance 的文件** exit 1；`verify` 对缺文件、清单外文件、hash 不符、尺寸/字节数不符、provenance 无 APK 条目、文件与 APK 条目不一致、`--strict` 下内容重复 exit 1；干净树打印 `sha256 + provenance + APK source all match`；
+- 中文条目名会被 APK zip 按 cp437 误解码，`extract`/`list-apk` 已自动按 UTF-8 还原，**不要手工改名**；
+- 仓库**不提交 APK**：`swss.apk` 只在 `E:\APPDetector\input\`，清单只记路径与 sha256。
+
+## 8. 写发现时的硬要求
 
 每条“差异”至少带：`state id` + 复现命令（或入口路径 + 坐标）+ 量化值（px / hex / sp / 文案逐字）。工具输出只是证据，结论里不要出现“差不多/基本一致/类似”；无法复现的不写进报告。

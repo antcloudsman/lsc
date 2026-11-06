@@ -1,0 +1,82 @@
+{
+  "apk": "E:\\APPDetector\\input\\swss.apk",
+  "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+  "items": [
+    {
+      "entry": "assets/compassIntroduce/人盘中针二十四山.html",
+      "target": "compass-introduce/人盘中针二十四山.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/先天八卦_卦位.html",
+      "target": "compass-introduce/先天八卦_卦位.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/先天八卦洛书数.html",
+      "target": "compass-introduce/先天八卦洛书数.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/先天圆图六十四卦外卦.html",
+      "target": "compass-introduce/先天圆图六十四卦外卦.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/先天方图六十四卦内卦.html",
+      "target": "compass-introduce/先天方图六十四卦内卦.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/六十甲配六十四卦五行.html",
+      "target": "compass-introduce/六十甲配六十四卦五行.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/后天八卦_卦位.html",
+      "target": "compass-introduce/后天八卦_卦位.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/地盘正针二十四山.html",
+      "target": "compass-introduce/地盘正针二十四山.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/地盘正针百二十分金.html",
+      "target": "compass-introduce/地盘正针百二十分金.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/天盘缝针二十四山.html",
+      "target": "compass-introduce/天盘缝针二十四山.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/天盘缝针百二十分金.html",
+      "target": "compass-introduce/天盘缝针百二十分金.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/正兼向度数指标.html",
+      "target": "compass-introduce/正兼向度数指标.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/穿山七十二龙.html",
+      "target": "compass-introduce/穿山七十二龙.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/compassIntroduce/透地平分六十龙.html",
+      "target": "compass-introduce/透地平分六十龙.html",
+      "kind": "knowledge-html"
+    },
+    {
+      "entry": "assets/webapp/assets/imgs/compass/pointer.png",
+      "target": "compass/pointer.png",
+      "kind": "bitmap",
+      "note": "罗盘中心指针，46x188"
+    }
+  ]
+}

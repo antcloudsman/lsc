@@ -350,6 +350,52 @@ def main() -> int:
         check("40-char" in bad_build, "collect: lc capture rejects a non-40-hex build commit")
         check(not (report_root / "lc" / "03-collect-dry.meta.json").exists(), "collect: dry-run writes nothing")
 
+        index_path = report_root / "lc-captures.md"
+        (report_root / "orig" / "04-empty.png").unlink(missing_ok=True)
+        index_path.write_text(
+            "| # | checksheet_id | 我方文件 |\n"
+            "|---|---|---|\n"
+            "| 1 | ST-01-compass-main | `01-compass-main.png` |\n"
+            "| 2 | ST-05-dump-only | `05-dump-only.xml` |\n",
+            encoding="utf-8",
+        )
+        run([
+            "meta-backfill", "--root", str(report_root), "--side", "orig",
+            "--index", str(index_path), "--dry-run",
+        ])
+        check(
+            not (report_root / "orig" / "01-compass-main.meta.json").exists(),
+            "meta-backfill: dry-run writes nothing",
+        )
+        run(["meta-backfill", "--root", str(report_root), "--side", "orig", "--index", str(index_path)])
+        meta01 = json.loads((report_root / "orig" / "01-compass-main.meta.json").read_text(encoding="utf-8"))
+        check(meta01["checksheet_id"] == "ST-01-compass-main", "meta-backfill: checksheet_id from index")
+        check(
+            meta01["image"]["sha256"] == fidelity.sha256_file(report_root / "orig" / "01-compass-main.png"),
+            "meta-backfill: image sha256 recomputed from file",
+        )
+        check(meta01["image"]["width"] == 320 and meta01["image"]["height"] == 600,
+              "meta-backfill: width/height read from PNG")
+        meta05 = json.loads((report_root / "orig" / "05-dump-only.meta.json").read_text(encoding="utf-8"))
+        check(meta05["image"] is None and meta05["dump"] is not None,
+              "meta-backfill: dump-only state gets dump hash and no image")
+        output = run(["report", "--root", str(report_root), "--state", "01-compass-main", "--require-checksheet-id"])
+        check("1/1" in output, "report: backfilled checksheet_id satisfies coverage gate")
+
+        index_path.write_text(
+            index_path.read_text(encoding="utf-8") + "| 3 | ST-12-ghost | `12-ghost.png` |\n",
+            encoding="utf-8",
+        )
+        output = run([
+            "meta-backfill", "--root", str(report_root), "--side", "orig",
+            "--index", str(index_path), "--force",
+        ], expect=1)
+        check("no png or xml evidence" in output, "meta-backfill: state without any evidence is rejected")
+        check(
+            not (report_root / "orig" / "12-ghost.meta.json").exists(),
+            "meta-backfill: no partial meta for rejected state",
+        )
+
         print("")
         print(f"SELFTEST: PASS ({PASSED} checks)")
         return 0

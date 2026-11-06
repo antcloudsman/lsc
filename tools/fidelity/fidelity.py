@@ -44,7 +44,7 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
 DEFAULT_THRESHOLD = 8
@@ -1409,6 +1409,163 @@ def cmd_collect(args: argparse.Namespace) -> int:
 # CLI
 # ---------------------------------------------------------------------------
 
+def _parse_index_checksheet_map(index_path: Path, root: Path) -> tuple[dict, list, list]:
+    """Extract state -> checksheet_id from markdown tables in the fidelity index."""
+    if not index_path.exists():
+        raise FidelityError(f"index not found: {index_path}")
+    known = set()
+    for entry_side in ("orig", "lc"):
+        directory = root / entry_side
+        if directory.exists():
+            known.update(path.stem for path in directory.glob("*.png"))
+            known.update(path.stem for path in directory.glob("*.xml"))
+    lines = index_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    mapping: dict[str, str] = {}
+    conflicts: list[dict] = []
+    unresolved: list[str] = []
+    position = 0
+    while position < len(lines):
+        if not lines[position].strip().startswith("|"):
+            position += 1
+            continue
+        table_lines = []
+        while position < len(lines) and lines[position].strip().startswith("|"):
+            table_lines.append(lines[position])
+            position += 1
+        rows = [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in table_lines]
+        if len(rows) < 2:
+            continue
+        header = [cell.lower() for cell in rows[0]]
+        id_columns = [index for index, cell in enumerate(header) if "checksheet" in cell]
+        if not id_columns:
+            continue
+        id_col = id_columns[0]
+        for row in rows[1:]:
+            if not row or all(set(cell) <= set("-: ") for cell in row):
+                continue
+            if id_col >= len(row):
+                continue
+            value = row[id_col].strip().strip("`").strip("*").strip()
+            if not re.fullmatch(r"(PG|ST)-[A-Za-z0-9_-]+", value):
+                continue
+            stems = set()
+            for cell in row:
+                for token in re.findall(r"[A-Za-z0-9][A-Za-z0-9-]*", cell):
+                    if token in known:
+                        stems.add(token)
+                for filename in re.findall(r"([A-Za-z0-9][A-Za-z0-9._-]*)\.(?:png|xml)\b", cell):
+                    stems.add(filename)
+            if len(stems) == 1:
+                state = next(iter(stems))
+                if state in mapping and mapping[state] != value:
+                    conflicts.append({"state": state, "existing": mapping[state], "new": value})
+                else:
+                    mapping[state] = value
+            elif len(stems) > 1:
+                unresolved.append(f"{value}: ambiguous states {', '.join(sorted(stems))}")
+    return mapping, conflicts, unresolved
+
+
+def cmd_meta_backfill(args: argparse.Namespace) -> int:
+    """Generate missing meta.json for existing evidence, deriving checksheet_id from the index."""
+    root = Path(args.root)
+    side_dir = root / args.side
+    if not side_dir.exists():
+        raise FidelityError(f"side directory not found: {side_dir}")
+    index_path = Path(args.index) if args.index else root / "lc-captures.md"
+    mapping, conflicts, unresolved = _parse_index_checksheet_map(index_path, root)
+    if conflicts:
+        for conflict in conflicts:
+            failed(
+                f"checksheet_id conflict for {conflict['state']}: "
+                f"index has both {conflict['existing']} and {conflict['new']}"
+            )
+        raise FidelityError("refusing to backfill while the index contains checksheet_id conflicts")
+    for message in unresolved:
+        info(f"warning: unresolved index mapping: {message}")
+
+    stems = set()
+    for pattern in ("*.png", "*.xml"):
+        stems.update(path.stem for path in side_dir.glob(pattern))
+    other_dir = root / ("lc" if args.side == "orig" else "orig")
+    other_stems = set()
+    if other_dir.exists():
+        for pattern in ("*.png", "*.xml"):
+            other_stems.update(path.stem for path in other_dir.glob(pattern))
+
+    writes = []
+    skips = []
+    errors = []
+    for state in sorted(mapping):
+        if state not in stems and state not in other_stems:
+            errors.append(f"{state}: no png or xml evidence on either side")
+    for state in sorted(stems):
+        meta_path = side_dir / f"{state}.meta.json"
+        if meta_path.exists() and not args.force:
+            skips.append((state, "meta already exists (use --force to overwrite)"))
+            continue
+        if state not in mapping:
+            skips.append((state, "no checksheet_id mapping in the index"))
+            continue
+        png_path = side_dir / f"{state}.png"
+        xml_path = side_dir / f"{state}.xml"
+        if not png_path.exists() and not xml_path.exists():
+            errors.append(f"{state}: no png or xml evidence")
+            continue
+        image = None
+        if png_path.exists():
+            try:
+                with Image.open(png_path) as image_obj:
+                    width, height = image_obj.size
+            except OSError as error:
+                errors.append(f"{state}: cannot read {png_path.name} ({error})")
+                continue
+            image = {
+                "file": png_path.name,
+                "width": width,
+                "height": height,
+                "sha256": sha256_file(png_path),
+            }
+        dump = None
+        if xml_path.exists():
+            dump = {"file": xml_path.name, "sha256": sha256_file(xml_path)}
+        writes.append(
+            (
+                state,
+                {
+                    "tool": "fidelity",
+                    "version": VERSION,
+                    "state": state,
+                    "side": args.side,
+                    "checksheet_id": mapping[state],
+                    "backfilled": True,
+                    "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                    "image": image,
+                    "dump": dump,
+                    "notes": "backfilled from the fidelity index; sha256/width/height computed from files",
+                },
+            )
+        )
+
+    info(f"meta-backfill: side={args.side} index={index_path}")
+    info(f"meta-backfill: will write {len(writes)}, skip {len(skips)}, errors {len(errors)}")
+    for state, reason in skips:
+        info(f"skip {state}: {reason}")
+    if errors:
+        for error in errors:
+            failed(error)
+        raise FidelityError("aborted before writing any meta (missing evidence or unreadable image)")
+    if args.dry_run:
+        for state, _ in writes:
+            info(f"would write {side_dir / f'{state}.meta.json'}")
+        return 0
+    for _, meta in writes:
+        meta_path = side_dir / f"{meta['state']}.meta.json"
+        meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    passed(f"meta-backfill: wrote {len(writes)} meta files -> {side_dir}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="fidelity.py",
@@ -1481,6 +1638,14 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--force", action="store_true", help="overwrite an existing capture")
     collect.add_argument("--dry-run", action="store_true", help="print adb commands without executing")
     collect.set_defaults(func=cmd_collect)
+
+    backfill = sub.add_parser("meta-backfill", help="generate missing meta.json from existing evidence + index mapping")
+    backfill.add_argument("--root", default="docs/fidelity")
+    backfill.add_argument("--side", choices=["orig", "lc"], default="orig")
+    backfill.add_argument("--index", help="index markdown (default: <root>/lc-captures.md)")
+    backfill.add_argument("--dry-run", action="store_true", help="print planned writes without writing")
+    backfill.add_argument("--force", action="store_true", help="overwrite existing meta.json")
+    backfill.set_defaults(func=cmd_meta_backfill)
     return parser
 
 

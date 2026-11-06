@@ -1226,6 +1226,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         compassHidden = !compassHidden;
         if (hideButton != null) hideButton.setText(compassHidden ? "显示" : "隐藏");
         applyCompassHiddenVisuals();
+        updateReading();   // R2-006：隐藏态读数条切单行「坐X.X° 向Y.Y°」
         android.util.Log.d("LCCOMPASS", "hidden=" + compassHidden);
     }
 
@@ -2978,6 +2979,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateReading() {
         if (compassView == null || readingView == null) return;
         CompassData.Reading r = CompassData.read(compassView.getHeading());
+        if (compassHidden && compassMode) {
+            // R2-006 内容判据：隐藏态读数条只显示单行「坐X.X° 向Y.Y°」（原版 [105,397][350,436] 的内容）；
+            // 位置随 R2-003，不在这里强对。向/坐取当前盘面坐向。
+            readingView.setText(String.format(java.util.Locale.US, "坐%.1f° 向%.1f°",
+                    (double) bearingSitting, (double) bearingFacing));
+            if (statusView != null) statusView.setText("");
+            return;
+        }
         readingView.setText(
                 String.format("度数 %.2f°  %s  %s\n地盘 %s山  人盘 %s山  天盘 %s山  坐 %s山\n分金 %s  七十二龙 %s\n六十龙 %s  后天卦 %s  先天卦 %s",
                         r.heading, r.jianText, CompassData.MOUNTAINS[r.mountain],

@@ -125,7 +125,7 @@ tools/fidelity/   对齐/差图/取色/HTML 对照页（LC服务端 提供）
 2. **命令可复现**：`repro` 给出 adb/uiautomator 命令或点击序列，第三人可原样执行。
 3. **证据有指纹**：截图/dump 有路径 + sha256，且属于声明的包与状态。
 4. **量化有单位**：px/hex/ΔE/sp/ms/逐字，任一差异必须带单位与算法。
-5. **构建来源可核**：LC 侧 `meta.build.branch=develop`、`build.commit` 为 40 位提交号、`apk.sha256` 已记录；三者缺一，整批证据作废。
+5. **构建来源可核（schema 已定死，2026-11-06）**：LC 侧 `meta.build.branch="develop"`（默认）、`build.commit=<40 hex>`、`apk.sha256=<hex>`、`apk.bytes=<int>`。**缺 `build.commit` 时工具必须报错退出**，不得静默写空；缺任一字段 → 整批证据作废（`待定级`）。
 
 > 不满足 1–5 的发现：写入「待补」区或标 `待定级`，**不得**进 `findings` 正式表，也不得进 Stage 5 计划。
 
@@ -160,7 +160,7 @@ tools/fidelity/   对齐/差图/取色/HTML 对照页（LC服务端 提供）
 | 有截图+dump | 每条 `orig_evidence` 两件齐全 | 齐全率 ≥90% | 待校核 |
 | 有交互/动效记录 | `interaction` 不得为空 | 完整率 ≥90% | 待校核 |
 | 证据指纹 | 抽查 5 份文件 `sha256` 与清单一致 | 5/5 | 待校核 |
-| 构建来源 | LC 证据 `meta.build.branch/commit/apk.sha256` 齐全且 branch=develop | 100% | 待校核 |
+| 构建来源 | LC 证据 `meta.build.branch/commit` + `apk.sha256/bytes` 齐全且 branch=develop；缺 commit 工具已报错 | 100% | 待校核 |
 | **清单取自提交** | 校核对象必须是 `git show <commit>:docs/fidelity/orig-inventory.md`，并在结论写明提交号 | 提交口径 | ✅ 强制 |
 
 ### 6.3 校核流程（清单落盘后 10 分钟）

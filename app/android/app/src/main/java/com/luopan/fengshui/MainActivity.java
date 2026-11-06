@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** R2-018: 左上抽屉（9 项 + 版本号）。 */
     /** R2-007: 海拔查询在地图内浮层（不跳 Activity）。 */
     private LinearLayout elevPanel;
+    private boolean elevationMode;
     private MapMarker elevPoint;
     private LinearLayout drawerPanel;
     private Button menuButton;
@@ -1427,7 +1428,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void enterElevationMode() {
         setFavoriteMode(false);
         hidePoiPanel();
-        js("try{elevQuery.on=true}catch(e){}");
+        elevationMode = true;
+        js("setBase('img');lc_elev_query(true);");
         toast("点地图任意位置查询海拔");
         android.util.Log.d("LCELEV", "mode on");
     }
@@ -1445,12 +1447,28 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         elevPanel.setVisibility(View.VISIBLE);
         refreshElevationText();
+        if (m.elevM == null && compassMapView != null) {
+            // 2D 点选事件不带高程：回查 map.html 的 elevAt(lat,lng)（与 ElevationActivity 同一 DEM 源）。
+            compassMapView.evaluateJavascript(String.format(java.util.Locale.US,
+                    "(function(){try{var e=elevAt(%.6f,%.6f);return e===null?null:e;}catch(err){return null;}})()",
+                    m.lat, m.lng), c -> {
+                String v = decodeJsString(c);
+                if (v == null || v.isEmpty() || "null".equals(v)) return;
+                try {
+                    double e = Double.parseDouble(v.trim());
+                    elevPoint = new MapMarker(m.lng, m.lat, e, m.headingAtPick, "dem");
+                    refreshElevationText();
+                } catch (NumberFormatException ignored) {
+                }
+            });
+        }
         android.util.Log.d("LCELEV", "show " + m);
     }
 
     private void hideElevationPanel() {
         if (elevPanel != null) elevPanel.setVisibility(View.GONE);
-        js("try{elevQuery.on=false}catch(e){}");
+        elevationMode = false;
+        js("lc_elev_query(false)");
     }
 
     /**
@@ -2422,7 +2440,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if ("pick".equals(type) || "marker".equals(type)) {
                 // R2-004：3D pick 与 2D 点图都保留立向点，并把 POI 面板挂上去。
                 mapMarker = marker;
-                runOnUiThread(() -> showPoiPanel(marker));
+                // 海拔模式下的点图/3D 点选一律走海拔浮层（不弹 POI 面板）。
+                runOnUiThread(() -> {
+                    if (elevationMode) showElevationPanel(marker); else showPoiPanel(marker);
+                });
             } else {
                 mapMarker = null;
                 runOnUiThread(this::hidePoiPanel);

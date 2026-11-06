@@ -1779,7 +1779,9 @@ function placeMarker(x, y) {
   var ll3 = latLngOfScreen(x - rect.left, y - rect.top);
   if (ll3) {
     var hd = (typeof lastHeading === "number") ? lastHeading : 0;
-    emit({ type: "marker", lat: ll3.lat, lng: ll3.lng, heading: hd });
+    var e3 = null;
+    try { e3 = elevAt(ll3.lat, ll3.lng); } catch (e) { e3 = null; }
+    emit({ type: "marker", lat: ll3.lat, lng: ll3.lng, heading: hd, elev: e3 });
   }
 }
 

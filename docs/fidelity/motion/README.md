@@ -17,6 +17,27 @@
 | 屏幕 | 当前显示的是**我方** `com.luopan.fengshui`（罗盘浮层态），不是原版 |
 | 收尾 | 已 `am force-stop space.xinzhi.globe`，未改原版任何数据/配置 |
 
+## 2026-11-07T02:19–02:46 换装尝试记录（授权后执行，未完成）
+
+技术总监授权换装 `input/swss.apk`（同版本 1.6.1、sha `2fd1fc15…`）后按纪律执行，遇两处阻断：
+
+1. **`pm install -r` 不可能保留数据**：商店构建签名与输入 APK 不一致 →
+   `Failure [INSTALL_FAILED_ABORTED: User rejected permissions]`，随后系统页明确
+   「新版本签名与已安装版本不一致，需先卸载旧版本」。
+2. **卸载后被华为应用市场劫持**：卸载 `space.xinzhi.globe` 后，市场页自动装上它自己的
+   **1.6.3**（`installerPackageName=com.huawei.appmarket`，装机 sha `3001836d…`）；已卸载该包。
+   之后重装我们那份 1.6.1 时，`pm install` / `pm install-create+write+commit` 都在
+   系统「风险提示 → 继续安装」页卡住，命令侧拿到的是
+   `INSTALL_FAILED_ABORTED: User rejected permissions`；点掉「继续安装」后会话仍不 commit。
+
+**设备当前状态（已清理）**：`space.xinzhi.globe` **未安装**；`com.luopan.fengshui` 未动；
+三项动画已置 `0/0/0`；`verifier_verify_adb_installs`/`package_verifier_enable` 已恢复 `1`；
+`com.huawei.appmarket` 已 `force-stop`；已退回桌面。
+
+**恢复方案（建议）**：用会话式安装并让 `pm install-commit` 与确认点击在同一 shell 存活周期内完成，
+或由人工在设备上点一次「继续安装」；恢复目标是**商店构建** `64af145d…`（`evidence/original-apk/installed-base.apk`，
+110,781,555 B）或输入 APK `2fd1fc15…`，两者都是 1.6.1 / versionCode 161。
+
 ## 已知可行路径（需授权）
 
 `E:\APPDetector\evidence\original-apk\README.md` 记录：卸载商店构建、安装**输入 APK**

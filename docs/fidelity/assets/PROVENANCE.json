@@ -1565,27 +1565,6 @@
       "decoder_version": "2.9.3"
     },
     {
-      "target": "pages/about/icons/ic_launcher.png",
-      "mode": "verbatim",
-      "entry": "res/o-.png",
-      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
-      "entry_sha256": "3da3b70380fe766db3d1e2ddee1f7de5f39d5293d2267ef5985f5e9ea21e4196",
-      "bytes": 57571,
-      "image": {
-        "width": 192,
-        "height": 192
-      },
-      "kind": "page-icon",
-      "note": "",
-      "meta": {
-        "resource": "ic_launcher",
-        "raster": "mipmap-xxxhdpi",
-        "use": "关于我们-品牌 logo（候选）",
-        "evidence": "页面顶部 logo 区 [399,995][829,1074] 附近",
-        "checksheet": "S-关于我们"
-      }
-    },
-    {
       "target": "pages/account/icons/ic_default_avatar.png",
       "mode": "verbatim",
       "entry": "res/Qc.webp",

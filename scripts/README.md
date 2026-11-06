@@ -64,11 +64,12 @@ powershell -File scripts\smoke.ps1 -DeviceId L2E0222531014833
 
 ```powershell
 # 只看暂存了哪些东西、当前分支对不对
-powershell -File scripts\check-staged-paths.ps1 -Branch feature/lc-server-smoke-gates
+powershell -File scripts\check-staged-paths.ps1 -Branch fix/p0-review-findings
 
-# 服务端提交示例：只允许 scripts/ 与 backend/，并校验提交信息以 [成员名] 结尾
-powershell -File scripts\check-staged-paths.ps1 -Branch feature/lc-server-smoke-gates `
-  -OwnedPaths 'scripts/*','backend/*','.gitignore' `
+# 服务端提交示例：只允许 scripts/ 与 backend/，并校验提交信息以 [成员名] 结尾。
+# 注意：经 powershell -File 传数组时用「逗号分隔的单引号字符串」，不要写成多个参数。
+powershell -File scripts\check-staged-paths.ps1 -Branch fix/p0-review-findings `
+  -OwnedPaths 'scripts/*,backend/*,.gitignore' `
   -CommitMessage 'feat(infra): ... [LC服务端]'
 ```
 

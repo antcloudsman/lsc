@@ -176,7 +176,13 @@ if ($denied.Count -gt 0) {
 }
 
 if ($OwnedPaths -and $OwnedPaths.Count -gt 0) {
-    $owned = @($OwnedPaths | ForEach-Object { $_.Replace('\', '/') })
+    # powershell -File binds "a/*,b/*" as one string (no array splitting), so accept
+    # comma-separated patterns as well as a real PowerShell array.
+    $owned = @($OwnedPaths |
+        ForEach-Object { $_ -split ',' } |
+        ForEach-Object { $_.Trim().Trim("'").Trim('"') } |
+        Where-Object { $_ } |
+        ForEach-Object { $_.Replace('\', '/') })
     $unowned = New-Object System.Collections.Generic.List[string]
     foreach ($path in $staged) {
         $matched = $false

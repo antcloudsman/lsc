@@ -35,8 +35,25 @@
 | 客户端章节 D2 | `bd0323b`（`bd0323b0e64a71f660ff322f33b31de42c36f432`） | 7,059,481 B / `381D163E…` | `tool-manage-01`、`favorite-addpoint-01` |
 | 地图章节 | `464ebb8` + `bd0323b`（新采 `map-3d-img` 等） | 见 §4 口径行 | 见 §4 |
 
-D2 采集注意：钓点页「加钓点」会在本机 DB 写入 1 条自建钓点（`GapDb`，采集副作用，
-复跑时「本机自建」计数 +1）；这是打开「保存收藏点」页的唯一入口，不是伪造数据。
+D2 采集注意：钓点页「加钓点」会写入 1 条自建钓点（`FishingActivity` 的 `SharedPreferences lc_fish/points`），
+复跑时「本机自建」计数 +1；这是打开「保存收藏点」页的唯一入口，不是伪造数据。**该点只在钓点页渲染，
+主地图不读它**（`map.html` 的标记只来自点图 `placeMarker`），因此不影响地图固定态截图。
+
+### 0.2 基线纪律（跨批次对照与干净基线）
+
+1. **不比图哈希，只比结构**：同一 UI 状态在不同时间点截图 SHA256 会变（瓦片/渲染时序），实测同一节点树
+   `68469C5C…`（17:45）vs `AC06F0B5…`（19:49）。**跨批次只比控件 bounds / 文案 / 颜色**；orig↔lc 双图对照
+   只在同一批次内做。`report` 的「不同 state 同图」判重是**同批次内**的检查，不受此影响。
+2. **固定态基线会被「立向点」累积污染**：每次点地图都会新增一个 `立向点 向X 坐Y` 标记
+   （`map.html:1730` `mk.title = "立向点 …"`），点 N 次就是 N 个，**隐藏态/固定态截图随之变化**。
+   这也是 `client09` 在 D1 被判 FAIL 的真因（判据写死了旧 sha），不是行为改变，也不是钓点。
+3. **干净基线做法**（采集前执行，已验证可用）：
+   ```powershell
+   adb -s L2E0222531014833 shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value 'clearMarkers()'"
+   ```
+   （`map.html:1734` `clearMarkers()`，会连带发 `pick-clear`）；或 `am force-stop` 后冷启动。
+4. **D2 副作用边界**：`加钓点` 写的是 `lc_fish/points`（仅钓点页），**不写收藏点库、不画主地图**；
+   要恢复干净钓点列表可用 `pm clear com.luopan.fengshui`（会一并清掉 heading/偏角等 prefs，需重设前置）。
 
 ## 1. 客户端章节：清单 38 条 → 我方证据
 

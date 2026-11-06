@@ -51,6 +51,99 @@ final class MapPoints {
         }
     }
 
+    /**
+     * R2-025：带降级态的地名/POI 检索结果。
+     * 天地图实测（2026-11-06）：正常 = HTTP 200 + status.infocode=1000；连续紧连请求会出 HTTP 429；
+     * 业务错误码（键值/权限/配额）以 3 开头（301xxx）。UI 必须能区分「无结果」与「不可用」，
+     * 不许把失败画成空白。
+     */
+    static final class SearchResult {
+        static final String OK = "ok";
+        static final String EMPTY = "empty";
+        static final String RATE_LIMITED = "rate-limited";   // HTTP 429
+        static final String QUOTA = "quota";                 // 业务错误码 3xxxxx
+        static final String UNAVAILABLE = "unavailable";     // 其它 HTTP/超时/解析失败
+
+        final String code;
+        final String detail;
+        final List<Point> points;
+        final int total;
+
+        SearchResult(String code, String detail, List<Point> points, int total) {
+            this.code = code;
+            this.detail = detail == null ? "" : detail;
+            this.points = points == null ? new ArrayList<>() : points;
+            this.total = total;
+        }
+
+        boolean ok() {
+            return OK.equals(code) || EMPTY.equals(code);
+        }
+    }
+
+    /** R2-025 境内/境外/行政区域：视野内关键词检索，返回带降级态的结果。 */
+    static SearchResult searchNear(String keyword, double lat, double lng, int level, int count) {
+        double d = 0.6;
+        String bound = (lng - d) + "," + (lat - d) + "," + (lng + d) + "," + (lat + d);
+        String post = "{\"keyWord\":\"" + esc(keyword) + "\",\"level\":" + level
+                + ",\"mapBound\":\"" + bound + "\",\"queryType\":2,\"start\":0,\"count\":"
+                + Math.min(300, Math.max(1, count)) + "}";
+        return execute(post);
+    }
+
+    /** R2-025 通用检索：queryType 由调用方给（1 普通 / 2 视野 / 3 周边 …），见天地图 v2/search。 */
+    static SearchResult searchByQuery(String post) {
+        return execute(post);
+    }
+
+    static SearchResult execute(String post) {
+        try {
+            String url = "https://api.tianditu.gov.cn/v2/search?postStr="
+                    + URLEncoder.encode(post, "UTF-8") + "&type=query&tk=" + MapKeys.TDT;
+            JSONObject root = new JSONObject(LcHttp.get(url));
+            JSONObject st = root.optJSONObject("status");
+            String info = st == null ? "" : st.optString("infocode", "");
+            String desc = st == null ? "" : st.optString("cndesc", "");
+            if (!info.isEmpty() && !"1000".equals(info)) {
+                String code = info.startsWith("3") ? SearchResult.QUOTA : SearchResult.UNAVAILABLE;
+                return new SearchResult(code, "infocode=" + info + " " + desc, new ArrayList<>(), 0);
+            }
+            List<Point> pts = parsePois(root);
+            int total = root.optInt("count", pts.size());
+            return new SearchResult(pts.isEmpty() ? SearchResult.EMPTY : SearchResult.OK,
+                    "infocode=" + (info.isEmpty() ? "1000" : info), pts, total);
+        } catch (Throwable t) {
+            String m = t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage();
+            String code = m.contains("HTTP 429") ? SearchResult.RATE_LIMITED : SearchResult.UNAVAILABLE;
+            return new SearchResult(code, m, new ArrayList<>(), 0);
+        }
+    }
+
+    private static String esc(String s) {
+        return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private static List<Point> parsePois(JSONObject root) {
+        List<Point> out = new ArrayList<>();
+        JSONArray pois = root.optJSONArray("pois");
+        if (pois == null) return out;
+        for (int i = 0; i < pois.length(); i++) {
+            JSONObject o = pois.optJSONObject(i);
+            if (o == null) continue;
+            String ll = o.optString("lonlat", "");
+            int comma = ll.indexOf(',');
+            if (comma <= 0) continue;
+            try {
+                double lng = Double.parseDouble(ll.substring(0, comma).trim());
+                double lat = Double.parseDouble(ll.substring(comma + 1).trim());
+                out.add(new Point(o.optString("name", ""), o.optString("address", ""), lat, lng));
+            } catch (NumberFormatException ignored) {
+                // 单条坏数据跳过
+            }
+        }
+        return out;
+    }
+
     /** 分类搜索（queryType=13）。多分类用英文逗号。 */
     static List<Point> category(String dataTypes, String specify, int count) {
         try {

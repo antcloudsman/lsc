@@ -12,7 +12,8 @@
     {
       "id": "A-02",
       "name": "抽屉 9 项图标",
-      "requires": { "kinds": ["icon-drawer"], "prefixes": ["icons/drawer/"], "count": 9 }
+      "requires": { "kinds": ["icon-drawer"], "prefixes": ["icons/drawer/"], "checksheet": "A-02", "count": 9 },
+      "note": "24 个矢量同属 kind=icon-drawer（9 抽屉 + 15 左右列），用 meta.checksheet 前缀 A-02 精确归属；左右列 15 个标 A-04，见 A-04 注"
     },
     {
       "id": "A-03",
@@ -24,7 +25,7 @@
       "id": "A-04",
       "name": "左 8 / 右 10 工具图标",
       "requires": { "kinds": ["tool-icon"], "prefixes": ["tools/"], "count": 18 },
-      "note": "与 A-03 共用同一套 18 个工具图标（左 8 + 右 10 从这里取）；左右列取舍由 P1-14 判据决定，不另导出文件"
+      "note": "与 A-03 共用同一套 18 个工具图标（左 8 + 右 10 从这里取）；另有 15 个白线矢量标 meta.checksheet=A-04（kind 同为 icon-drawer，见 A-02 注），左右列取舍由 P1-14 判据决定"
     },
     {
       "id": "A-05",

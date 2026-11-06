@@ -204,14 +204,25 @@ def load_deps(path: Path) -> dict:
 
 def _dep_matches(requirement: dict, actual: dict[str, bytes], provenance: dict[str, dict],
                  root: Path) -> tuple[list[str], list[str]]:
-    """Return (matched relative paths, notes) for one dependency requirement."""
+    """Return (matched relative paths, notes) for one dependency requirement.
+
+    A requirement may combine matchers: targets / prefixes / kinds / checksheet prefix /
+    globs (repo-root relative). When `checksheet` is set, only files whose provenance
+    meta.checksheet starts with it count — that keeps two A-items that share one kind
+    (e.g. A-02 drawer icons and A-04 column vectors both `icon-drawer`) apart.
+    """
     matched: list[str] = []
     notes: list[str] = []
     targets = [safe_target(str(value)) for value in requirement.get("targets") or []]
     prefixes = [str(value).replace("\\", "/") for value in requirement.get("prefixes") or []]
     kinds = [str(value) for value in requirement.get("kinds") or []]
+    checksheet = str(requirement.get("checksheet") or "").strip()
     for relative in sorted(actual):
         record = provenance.get(relative) or {}
+        if checksheet:
+            tag = str((record.get("meta") or {}).get("checksheet") or "")
+            if not tag.startswith(checksheet):
+                continue
         if relative in targets:
             matched.append(relative)
             continue
@@ -219,6 +230,10 @@ def _dep_matches(requirement: dict, actual: dict[str, bytes], provenance: dict[s
             matched.append(relative)
             continue
         if str(record.get("kind") or "") in kinds:
+            matched.append(relative)
+            continue
+        if checksheet and not targets and not prefixes and not kinds:
+            # The checksheet tag alone identifies the A-item (e.g. one kind shared by two items).
             matched.append(relative)
     for pattern in requirement.get("globs") or []:
         for path in sorted(root.glob(str(pattern))):
@@ -265,6 +280,8 @@ def check_deps(deps: dict, directory: Path, actual: dict[str, bytes],
             hint.append("target " + "/".join(str(value) for value in requirement["targets"]))
         if requirement.get("globs"):
             hint.append("glob " + "/".join(str(value) for value in requirement["globs"]))
+        if requirement.get("checksheet"):
+            hint.append("checksheet " + str(requirement["checksheet"]))
         if requirement.get("image"):
             hint.append(f"尺寸 {requirement['image']}")
         rows.append({
@@ -1025,7 +1042,7 @@ def cmd_selftest(args: argparse.Namespace) -> int:
             "decode": {"tool": "apktool", "version": "selftest", "command": "apktool d -f"},
             "items": [{
                 "entry": "res/drawable/svg_layer.xml", "target": "drawer/svg_layer.xml",
-                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer", "use": "图层",
+                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer", "use": "图层", "checksheet": "A-02 selftest",
             }],
         }, ensure_ascii=False), encoding="utf-8")
         (out / "drawer").mkdir(parents=True, exist_ok=True)
@@ -1052,7 +1069,7 @@ def cmd_selftest(args: argparse.Namespace) -> int:
             "items": [{
                 "entry": "0x7f0803da", "apk_entry": "res/drawable/svg_layer.xml",
                 "target": "drawer/svg_layer2.xml",
-                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer",
+                "kind": "icon-drawer", "decoded": True, "resource": "svg_layer", "checksheet": "A-02 selftest",
             }],
         }, ensure_ascii=False), encoding="utf-8")
         code = cmd_stamp(argparse.Namespace(apk=str(apk), sources=str(id_sources), out=str(out),
@@ -1061,6 +1078,19 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         code = cmd_manifest(argparse.Namespace(dir=str(out)))
         code, text = verify_text(deps=str(complete_deps))
         check(code == 0, "verify: resource-id decoded asset passes")
+
+        sheet_deps = temp / "deps-checksheet.json"
+        sheet_deps.write_text(json.dumps({"items": [
+            {"id": "A-02", "name": "drawer", "requires": {"checksheet": "A-02", "count": 1}},
+        ]}, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(sheet_deps))
+        check(code == 0 and "素材 1/1 齐" in text, "verify --deps: checksheet tag selects the right item")
+        other_sheet = temp / "deps-checksheet-other.json"
+        other_sheet.write_text(json.dumps({"items": [
+            {"id": "A-02", "name": "drawer", "requires": {"checksheet": "A-99", "count": 1}},
+        ]}, ensure_ascii=False), encoding="utf-8")
+        code, text = verify_text(deps=str(other_sheet))
+        check(code == 1, "verify --deps: non-matching checksheet tag reports a gap")
 
         mismatch = temp / "sources-mismatch.json"
         mismatch.write_text(json.dumps({

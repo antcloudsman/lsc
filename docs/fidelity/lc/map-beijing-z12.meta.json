@@ -1,0 +1,36 @@
+{
+  "tool": "fidelity",
+  "version": "1.3.0",
+  "state": "map-beijing-z12",
+  "side": "lc",
+  "captured_at": "2026-11-06T14:23:20+0800",
+  "serial": "L2E0222531014833",
+  "package": "com.luopan.fengshui",
+  "checksheet_id": "ST-A-map-fixed",
+  "build": {
+    "branch": "develop",
+    "commit": "e88ed0c2aa70272e36f6d03a0a6f12511d6bf532"
+  },
+  "apk": {
+    "path": "E:\\APPDetector\\wt\\lc-map-stage2\\app\\android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+    "sha256": "ccd5686f4c9b908d9c5c8a61fe7166d3f2bf01fcb165405e0a58e520ce7cbb7b",
+    "bytes": 7059457
+  },
+  "image": {
+    "file": "map-beijing-z12.png",
+    "width": 1228,
+    "height": 2700,
+    "sha256": "68469c5ca9c7ddea8bdb9835158974300b6a5c2702aad05e61111c04ed5548ff"
+  },
+  "dump": {
+    "file": "map-beijing-z12.xml",
+    "sha256": "1c708f2ca45a0e2a3d88962ea194bdcfb7e07c26802a0fbba2e2d95c1d911008"
+  },
+  "device": {
+    "ro.product.model": "JAD-AL00",
+    "ro.product.brand": "HUAWEI",
+    "ro.build.version.release": "12",
+    "ro.build.version.sdk": "31"
+  },
+  "notes": "raw capture only; states/animations are set by the operator before this command"
+}

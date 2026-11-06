@@ -91,4 +91,33 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 
 ## 4. 地图侧章节（LC地图）
 
-（由 LC地图 填写：`map-home-01` 复用本文件 §1 第 03 行；其余 B/C/D 段状态按同 stem 落 `docs/fidelity/lc/`。）
+采集口径：`--build-commit e88ed0c2aa70272e36f6d03a0a6f12511d6bf532`、APK sha256 `CCD5686F…`（7,059,457 B）、heading 冻结 0°、地图 `setView(39.9042,116.4074,12)`；脚本 `tools/map/collect_map_lc.ps1`（`7253788`）。`map-home-01` 复用 §1 第 03 行（同一构建同一 commit）。
+
+**已实采（4，PNG+XML+meta 齐全）**
+
+| 行 | stem | 文件 | 实测要点 |
+|---|---|---|---|
+| 04 | `map-beijing-z12` | `.png/.xml/.meta.json` | 固定态北京 z12；左列 8 项、右列 10 项、底部角注条 `[0,2544][1228,2578]` |
+| 26 | `map-overlay-sheet` | `.png/.xml/.meta.json` | 「数据叠加」页：4 Tab（行政区域/地形地貌/水文水系/自然保护）+ 公路(路网)开关 + 全部开启/关闭 |
+| 28 | `map-layer-sheet` | `.png/.xml/.meta.json` | 右列「图层」→「底图源」12 源面板（3 可用 / 9 置灰），关闭按钮 `[67,2058]-[1161,2180]` |
+| 29 | `map-3d-mode` | `.png/.xml/.meta.json` | 右列「3D」→ 自研 WebGL 3D 地形（等价替代原版 `libterrain.so`），工具列保留 |
+
+**待采（11，目标暂停，恢复后补；入口坐标取自 `map-home-01.xml` 实测 bounds）**
+
+| 行 | stem | 入口 |
+|---|---|---|
+| 06 | `search-result-01` | 顶栏「搜索」`[1040,192]-[1215,306]` |
+| 07 | `search-result-02` | 同上（四坐标系） |
+| 18 | `tool-measure-01` | 更多面板「测量」 |
+| 19 | `tool-brush` | 更多面板「画笔」 |
+| 20 | `tool-fishing` | 更多面板「钓点」 |
+| 21 | `tool-track` | 更多面板「轨迹记录」（LC 无登录墙） |
+| 22 | `map-home-01.xml` 路网 | 左列「路网」`[6,1999]-[201,2127]` |
+| 23 | `tool-contour-01` | 左列「等高线」`[6,2194]-[201,2322]` |
+| 24 | `map-mountains-entry` | 右列「山脉」`[1027,1008]-[1222,1136]` |
+| 25 | `map-water-entry` | 右列「水系」`[1027,1203]-[1222,1331]` |
+| 27 | `map-explore-page` | 右列「探索」`[1027,1398]-[1222,1526]` |
+
+**缺失（1）**：行 30 相机权限弹窗——LC 地图无相机/AR 入口，`map-home-01.xml` 全节点无相机相关控件，不产生权限弹窗。
+
+**采集过程（可复现）**：`uiautomator dump` 在传感器活跃时报 `could not get idle state`；先 `am broadcast -a com.luopan.fengshui.DEBUG --es cmd heading --ef value 0` 冻结航向，dump 即稳定（本次 4 态均如此）。「底图源」面板关闭按钮在 `(614,2119)`，点偏 6px 会导致后续点击全落在面板上。

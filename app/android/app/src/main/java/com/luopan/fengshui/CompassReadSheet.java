@@ -39,6 +39,11 @@ public final class CompassReadSheet {
     private CompassReadSheet() {}
 
     public static void show(Activity activity, float heading) {
+        show(activity, heading, null);
+    }
+
+    /** @param plateLine 三盘行（人盘/天盘），由 MainActivity 计算后传入；null 则不显示。 */
+    public static void show(Activity activity, float heading, String plateLine) {
         float h = SensorMath.normalize(heading);
         float back = SensorMath.normalize(heading + 180f);
         CompassData.Reading r = CompassData.read(h);
@@ -87,6 +92,11 @@ public final class CompassReadSheet {
         addRow(activity, list, String.format(java.util.Locale.US, "坐南 %.1f°", back),
                 String.format(java.util.Locale.US, "坐%s山 向%s山",
                         CompassData.MOUNTAINS[r.sitting], CompassData.MOUNTAINS[r.mountain]), false, null);
+        // 三盘行（R4b 口径）：人盘 = 地盘+15°、天盘 = 地盘。数据由 MainActivity.plateLine 传入，
+        // 那边是 plate() 的在役调用点（numeric PlatesRegressionTest 解析）。
+        if (plateLine != null && !plateLine.isEmpty()) {
+            addRow(activity, list, "三盘", plateLine, false, null);
+        }
 
         // 第 3–16 行：14 个圈层，每行「点击查看 ›」（原版逐字）
         for (int t = 1; t <= 14; t++) {

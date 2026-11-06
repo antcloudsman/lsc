@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView readingView;
     /** R2-005：罗盘中心指针（原版 pointer 节点 81×324）。 */
     private android.widget.ImageView pointerView;
+    /** R2-005/R4b：三盘读数行（人盘/天盘），读盘 sheet 用，同时是 plate() 的在役调用点。 */
+    private String plateLine = "";
     /** R2-026：地图态左上「当前地名」（原版 青海湖/哀牢山）。 */
     private TextView placeView;
     private WebView compassMapView;
@@ -1411,7 +1413,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             case "读盘":
-                if (compassView != null) CompassReadSheet.show(this, compassView.getHeading());
+                if (compassView != null) CompassReadSheet.show(this, compassView.getHeading(), plateLine);
                 break;
             case "知识": showKnowledgeSheet(); break;
             case "更多": showMoreSheet(); break;
@@ -3602,6 +3604,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateReading() {
         if (compassView == null || readingView == null) return;
         CompassData.Reading r = CompassData.read(compassView.getHeading());
+        // 三盘（人盘 = 地盘 +15°、天盘 = 地盘，R4b 口径）：这是 Java 侧 plate() 的**在役调用点**，
+        // numeric 的 PlatesRegressionTest 会解析下面这两处 plate() 调用；
+        // 之前删多行读数时连它们一起删了，numeric 直接 errors=1（已复现），所以保留在此处。
+        plateLine = String.format(java.util.Locale.US, "人盘 %s山　天盘 %s山",
+                CompassData.MOUNTAINS[plate(r.heading + 15f)],
+                CompassData.MOUNTAINS[plate(r.heading)]);
         // R2-005：读数条按原版只显示**单行**，两态文案格式在原版里本来就不同（各自 dump 逐字）：
         //   正常态 `坐180° 向0°`   整数度  —— orig/tool-compass-page.xml:14，[105,397][290,436]
         //   隐藏态 `坐180.0° 向0.0°` 一位小数 —— orig/compass-overlay-hidden-map.xml:14，[105,397][350,436]（R2-006）

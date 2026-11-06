@@ -983,6 +983,58 @@
       "use": "指针开关（候选：罗盘切换）",
       "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
       "checksheet": "P1-33-A 罗盘/地图工具条图标"
+    },
+    {
+      "entry": "0x7f08040a",
+      "target": "pages/_shared/icons/svg_title_back.xml",
+      "kind": "page-icon",
+      "decoded": true,
+      "decoder": "apktool",
+      "decoder_version": "2.9.3",
+      "resource": "svg_title_back",
+      "use": "共用返回箭头（9 页 dump 均有「返回」节点）",
+      "evidence": "res/values/public.xml 资源名 + 9 页 dump 的「返回」节点",
+      "checksheet": "S-共用"
+    },
+    {
+      "entry": "res/A0.png",
+      "target": "pages/feedback/icons/ic_add_image.png",
+      "kind": "page-icon",
+      "resource": "ic_add_image",
+      "raster": "mipmap-xxxhdpi",
+      "use": "投诉反馈-添加图片",
+      "evidence": "页面文案「添加图片 [39,1333][243,1412]」",
+      "checksheet": "S-投诉反馈"
+    },
+    {
+      "entry": "res/Qc.webp",
+      "target": "pages/account/icons/ic_default_avatar.png",
+      "kind": "page-icon",
+      "resource": "ic_default_avatar",
+      "raster": "mipmap-xxxhdpi",
+      "use": "账户设置-默认头像（候选）",
+      "evidence": "页面「头像」行 [39,502][1084,581]；未证明占位图即此资源",
+      "checksheet": "S-账户设置"
+    },
+    {
+      "entry": "res/PV.png",
+      "target": "pages/share/icons/icon_share_wx.png",
+      "kind": "page-icon",
+      "resource": "icon_share_wx",
+      "raster": "mipmap-xxxhdpi",
+      "use": "推荐给好友-微信（候选）",
+      "evidence": "2 个 ImageButton：[241,2140][405,2304]",
+      "checksheet": "S-推荐给好友"
+    },
+    {
+      "entry": "res/mv.png",
+      "target": "pages/share/icons/icon_share_circle.png",
+      "kind": "page-icon",
+      "resource": "icon_share_circle",
+      "raster": "mipmap-xxxhdpi",
+      "use": "推荐给好友-微信朋友圈（候选）",
+      "evidence": "2 个 ImageButton：[822,2140][986,2304]",
+      "checksheet": "S-推荐给好友"
     }
   ],
   "decode": {

@@ -75,6 +75,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean elevationMode;
     /** R2-025：调试广播注入的搜索词（仅 debug 包，供中文关键词验证）。 */
     private String pendingSearch;
+    /** R2-025：调试广播可指定 tab（0 境内/1 境外/2 行政区域/3 收藏点），供复验确定性入口。 */
+    private int pendingSearchTab = 0;
     private MapMarker elevPoint;
     private LinearLayout drawerPanel;
     private Button menuButton;
@@ -371,7 +373,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             case "search": {
                 pendingSearch = it.getStringExtra("value");
-                android.util.Log.d("LCSEARCH", "debug search=" + pendingSearch);
+                pendingSearchTab = it.getIntExtra("tab", 0);
+                android.util.Log.d("LCSEARCH", "debug search=" + pendingSearch + " tab=" + pendingSearchTab);
                 runOnUiThread(this::showSearchDialog);
                 break;
             }
@@ -2439,9 +2442,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         };
         refreshChips.run();
         if (pendingSearch != null) {
+            // 先切到广播指定的 tab，再注入关键词（顺序决定按哪个 tab 检索）
+            int t0 = Math.max(0, Math.min(3, pendingSearchTab));
+            active[0] = t0;
+            for (int k = 0; k < tabViews.length; k++) {
+                tabViews[k].setTextColor(k == t0 ? Color.rgb(235, 228, 215) : Color.rgb(150, 130, 100));
+                tabViews[k].setBackgroundColor(k == t0 ? Color.rgb(60, 50, 38) : Color.TRANSPARENT);
+            }
             input.setText(pendingSearch);
             input.setSelection(input.getText().length());
             pendingSearch = null;
+            pendingSearchTab = 0;
         }
 
         final Runnable runSearch = () -> {

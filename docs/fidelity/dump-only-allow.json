@@ -1,0 +1,4 @@
+{
+  "note": "dump-only 豁免：截图确实不可得、但 dump 存在的状态。每条 {\"state\":\"...\",\"reason\":\"...\",\"by\":\"...\"}；缺 reason/by 会让 report 报错。豁免只跳过 PNG 配对，0 字节 PNG 仍失败，引用不存在的 state 或没有任何 dump 直接报错，不得用来掩盖漏采。",
+  "allow": []
+}

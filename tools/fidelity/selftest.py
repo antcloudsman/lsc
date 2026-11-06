@@ -224,6 +224,38 @@ def main() -> int:
         check("reason" in output, "report: allowlist missing reason is an error")
         allow_path.write_text(json.dumps(valid_allow, ensure_ascii=False), encoding="utf-8")
 
+        dump_allow_path = report_root / "dump-only-allow.json"
+        valid_dump_allow = {
+            "allow": [{"state": "05-dump-only", "reason": "selftest: FLAG_SECURE, dump only", "by": "LC服务端"}]
+        }
+        shutil.copyfile(orig_xml, report_root / "orig" / "05-dump-only.xml")
+        dump_allow_path.write_text(json.dumps(valid_dump_allow, ensure_ascii=False), encoding="utf-8")
+        run(["report", "--root", str(report_root)])  # 02-missing only fails under --strict
+        dump_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        dump_row = next((row for row in dump_summary["states"] if row["state"] == "05-dump-only"), None)
+        check(dump_row is not None and dump_row["status"] == "dump-only",
+              "report: dump-only exemption skips PNG pairing")
+        check(dump_row is not None and "error" not in dump_row, "report: dump-only state is not a missing pair")
+
+        dump_allow_path.write_text(
+            json.dumps({"allow": [{"state": "05-dump-only", "by": "LC服务端"}]}), encoding="utf-8"
+        )
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("reason" in output, "report: dump-only allowlist missing reason is an error")
+
+        dump_allow_path.write_text(
+            json.dumps({"allow": [{"state": "06-no-dump", "reason": "mask attempt", "by": "LC服务端"}]}),
+            encoding="utf-8",
+        )
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("no dump" in output, "report: dump-only exemption cannot mask a missing capture")
+        dump_allow_path.write_text(json.dumps(valid_dump_allow, ensure_ascii=False), encoding="utf-8")
+
+        (report_root / "orig" / "05-dump-only.png").write_bytes(b"")
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("empty screenshot (0 bytes)" in output, "report: dump-only exemption does not skip 0-byte PNG check")
+        (report_root / "orig" / "05-dump-only.png").unlink()
+
         (report_root / "orig" / "04-empty.png").write_bytes(b"")
         output = run(["report", "--root", str(report_root)], expect=1)
         check("empty screenshot (0 bytes)" in output, "report: empty screenshot is a hard error")

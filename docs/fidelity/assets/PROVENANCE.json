@@ -8,6 +8,7 @@
   "items": [
     {
       "target": "brand/ic_launcher.png",
+      "mode": "verbatim",
       "entry": "res/o-.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "3da3b70380fe766db3d1e2ddee1f7de5f39d5293d2267ef5985f5e9ea21e4196",
@@ -28,11 +29,15 @@
     },
     {
       "target": "brand/ic_splash_bg.webp",
+      "mode": "verbatim",
       "entry": "res/TE.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "03b5719c707aee7726d3c1f78c0bf3ac3f9bd380e4789193e9ddd4b58730057f",
       "bytes": 245750,
-      "image": null,
+      "image": {
+        "width": 1500,
+        "height": 3248
+      },
       "kind": "brand",
       "note": "",
       "meta": {
@@ -45,11 +50,15 @@
     },
     {
       "target": "brand/ic_splash_bg2.webp",
+      "mode": "verbatim",
       "entry": "res/ec.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "dfb2e9c14c328161d00d0b5647a77f7ca6385730c02251ed597e3335d6af3341",
       "bytes": 9884,
-      "image": null,
+      "image": {
+        "width": 1500,
+        "height": 3248
+      },
       "kind": "brand",
       "note": "",
       "meta": {
@@ -62,11 +71,15 @@
     },
     {
       "target": "brand/ic_splash_logo.webp",
+      "mode": "verbatim",
       "entry": "res/uO.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "a96bf89f123ed96af68cfe53406ec083ba001ff76873471304155193c0f4fd39",
       "bytes": 22352,
-      "image": null,
+      "image": {
+        "width": 780,
+        "height": 476
+      },
       "kind": "brand",
       "note": "",
       "meta": {
@@ -79,6 +92,7 @@
     },
     {
       "target": "compass-introduce/人盘中针二十四山.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/人盘中针二十四山.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "b313e44ba9a88fcd5629bc0b1bcb76f0c09949f9870546a44cedd4b281f7a218",
@@ -90,6 +104,7 @@
     },
     {
       "target": "compass-introduce/先天八卦_卦位.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/先天八卦_卦位.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "9401f6a2800c0a8e0d7d917d895b653506fe4446e7acc83d0e5059bedde4d1d4",
@@ -101,6 +116,7 @@
     },
     {
       "target": "compass-introduce/先天八卦洛书数.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/先天八卦洛书数.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "7c947688f0610f7fa74267aea9918800b148ac470ae555f8379f9543b2f86eda",
@@ -112,6 +128,7 @@
     },
     {
       "target": "compass-introduce/先天圆图六十四卦外卦.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/先天圆图六十四卦外卦.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "7669e5d9ec00bca14e9ff07fb8692ee2c1390449aa06af63a7f0b5e3b750fa6a",
@@ -123,6 +140,7 @@
     },
     {
       "target": "compass-introduce/先天方图六十四卦内卦.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/先天方图六十四卦内卦.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "8585d2e2153d23c0eda447462f4c5993a9013c5c9723b660ed88ed28f8a69cb5",
@@ -134,6 +152,7 @@
     },
     {
       "target": "compass-introduce/六十甲配六十四卦五行.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/六十甲配六十四卦五行.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "c88f4f67266b32b86e7ea7e26b191ceec48eb2ddc43b480a68ec392e81c87f7a",
@@ -145,6 +164,7 @@
     },
     {
       "target": "compass-introduce/后天八卦_卦位.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/后天八卦_卦位.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "a2544bf16278251a44fe9995db96a13b7dd6e3c833c24cfde42d189a95276d08",
@@ -156,6 +176,7 @@
     },
     {
       "target": "compass-introduce/地盘正针二十四山.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/地盘正针二十四山.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "4aa6cc206589091cf982c72fa116fbdf273976fcd0bb574bab6f373c35ca0365",
@@ -167,6 +188,7 @@
     },
     {
       "target": "compass-introduce/地盘正针百二十分金.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/地盘正针百二十分金.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "3071d491a07fd22d3f4d84ef658a510f1daed28d426f5faf4b59c742f105163a",
@@ -178,6 +200,7 @@
     },
     {
       "target": "compass-introduce/天盘缝针二十四山.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/天盘缝针二十四山.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "c234a95f7ef526075a9119b7003c0ac017bd718630e8a5a67197fdecca70fbd6",
@@ -189,6 +212,7 @@
     },
     {
       "target": "compass-introduce/天盘缝针百二十分金.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/天盘缝针百二十分金.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "caa0d9ad8c6eca9952eb2cdccaa0d4ccea94f3948d2c69a9fabb9e4e69d8cff3",
@@ -200,6 +224,7 @@
     },
     {
       "target": "compass-introduce/正兼向度数指标.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/正兼向度数指标.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "a14f9e5018f3ab1c46ea4c7a366533d2aa55d40157275f47616dafe1dff6c67e",
@@ -211,6 +236,7 @@
     },
     {
       "target": "compass-introduce/穿山七十二龙.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/穿山七十二龙.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "bc2ca644751fc4063102e552b98ffe521df4600bfd74d5d3a91e2ab39133fe61",
@@ -222,6 +248,7 @@
     },
     {
       "target": "compass-introduce/透地平分六十龙.html",
+      "mode": "verbatim",
       "entry": "assets/compassIntroduce/透地平分六十龙.html",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "1adbb60ed43ada148197d4d895aab53efef83e8c4638c795bf2748ad2ffe4b5a",
@@ -233,6 +260,7 @@
     },
     {
       "target": "compass/plate/compass.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "0721754d5595c065c98f4280f8e5aae45e14be135b1cd3099c7575ed76c47408",
@@ -252,6 +280,7 @@
     },
     {
       "target": "compass/plate/compass1.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass1.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "06b975768a81eabb17596d1995c7a1f04fe81c0d8e8eda0fde948b761685adba",
@@ -271,11 +300,15 @@
     },
     {
       "target": "compass/plate/compass10.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass10.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "df232aa879f6a609c2cb0b11aaf6127716529e67e650b785936758b3363185d8",
       "bytes": 804750,
-      "image": null,
+      "image": {
+        "width": 2040,
+        "height": 2040
+      },
       "kind": "plate",
       "note": "",
       "meta": {
@@ -287,11 +320,15 @@
     },
     {
       "target": "compass/plate/compass11.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass11.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "2f10266bd88872760d0440655d596f0a45ddf9da5aaf12cfbfd8ec98dda29e93",
       "bytes": 587188,
-      "image": null,
+      "image": {
+        "width": 2040,
+        "height": 2040
+      },
       "kind": "plate",
       "note": "",
       "meta": {
@@ -303,11 +340,15 @@
     },
     {
       "target": "compass/plate/compass12.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass12.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "0da88946c781a6a692704942b00424418589e8c79701b0efb6fa0721a0dd59ae",
       "bytes": 851668,
-      "image": null,
+      "image": {
+        "width": 2042,
+        "height": 2040
+      },
       "kind": "plate",
       "note": "",
       "meta": {
@@ -319,11 +360,15 @@
     },
     {
       "target": "compass/plate/compass13.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass13.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "e1df77f8faf6f88525d821382ceb590794b60e61e34a435e56fc26b1f1de98ed",
       "bytes": 785988,
-      "image": null,
+      "image": {
+        "width": 2042,
+        "height": 2040
+      },
       "kind": "plate",
       "note": "",
       "meta": {
@@ -335,6 +380,7 @@
     },
     {
       "target": "compass/plate/compass2.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass2.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "5edc358f12d84945fa26480d2c94a590591d0e2fa9471d3b86c42a0a49d30700",
@@ -354,6 +400,7 @@
     },
     {
       "target": "compass/plate/compass3.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass3.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "e05b78e36c37a3f1b09824320a6d972f3935815e48b436ecbb3387c0fa08923f",
@@ -373,6 +420,7 @@
     },
     {
       "target": "compass/plate/compass4.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass4.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "a8334e0573b244047ce49d38ab6bcbb22589db2697506a517eb88b6b7ce5c907",
@@ -392,11 +440,15 @@
     },
     {
       "target": "compass/plate/compass5.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass5.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "d01ae4ea5d15147472db4c9e567621d54514df2fd1b2e352f5353d7469814769",
       "bytes": 401842,
-      "image": null,
+      "image": {
+        "width": 1080,
+        "height": 1080
+      },
       "kind": "plate",
       "note": "",
       "meta": {
@@ -408,11 +460,15 @@
     },
     {
       "target": "compass/plate/compass6.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass6.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "678f9169bd9f417037a58127187fa9364327ebd3dd74823bf68241b92022cc43",
       "bytes": 208706,
-      "image": null,
+      "image": {
+        "width": 620,
+        "height": 620
+      },
       "kind": "plate",
       "note": "",
       "meta": {
@@ -424,11 +480,15 @@
     },
     {
       "target": "compass/plate/compass7.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass7.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "e18effc2975d333827bb21f373ea786efc0a72eeba8184d454aa76f5e3a2bc32",
       "bytes": 246172,
-      "image": null,
+      "image": {
+        "width": 2251,
+        "height": 2251
+      },
       "kind": "plate",
       "note": "",
       "meta": {
@@ -440,6 +500,7 @@
     },
     {
       "target": "compass/plate/compass8.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass8.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "e6f9466540d9a9ec7f4616dda88ec9787617f5add7470fb3074f7bcf254b780e",
@@ -459,11 +520,15 @@
     },
     {
       "target": "compass/plate/compass9.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass9.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "b2ca34d5d72606b880bbe77bca8e40ecfd732bbb254bc8a79150290cf1c33c5e",
       "bytes": 716688,
-      "image": null,
+      "image": {
+        "width": 1500,
+        "height": 1500
+      },
       "kind": "plate",
       "note": "",
       "meta": {
@@ -475,6 +540,7 @@
     },
     {
       "target": "compass/pointer.png",
+      "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/pointer.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "e123222c3ba492e0461e1741f0dc9ae33e95aedbc7bace48aef1a93cfe23dd9f",
@@ -598,6 +664,75 @@
         "use": "左列 罗盘",
         "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:158；解码文件 sha256=23316aa139fb59f8…",
         "checksheet": "A-04 左 8 / 右 10 工具图标"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
+      "target": "icons/drawer/svg_compass_lock.xml",
+      "mode": "decoded",
+      "entry": "res/Am.xml",
+      "resource_id": "0x7f0803b9",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "c4453ec3fb29fd0f51a7cf66adfd121aaf455f1993ac7021545c8ad2a966eaff",
+      "file_sha256": "e609f51f6aa172e3ef436d4f7a5dbf20b07402f58574544927bd21dd14982937",
+      "bytes": 1718,
+      "image": null,
+      "kind": "icon-drawer",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_compass_lock",
+        "use": "罗盘锁定",
+        "evidence": "资源名 compass_lock 直配；smali 未见引用",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
+      "target": "icons/drawer/svg_compass_reset.xml",
+      "mode": "decoded",
+      "entry": "res/ux.xml",
+      "resource_id": "0x7f0803ba",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "9446951fc372d86080aed78dabbc4384680408ba5035504e9df52f66859eda2f",
+      "file_sha256": "576a8e3e9ee9ce05662dec1ae4f07406e5f91107c2f5161dc00852845b68dafc",
+      "bytes": 1726,
+      "image": null,
+      "kind": "icon-drawer",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_compass_reset",
+        "use": "罗盘复位",
+        "evidence": "CompassToolsKt.smali:9507 / 9620",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
+      "target": "icons/drawer/svg_compass_switch.xml",
+      "mode": "decoded",
+      "entry": "res/Bl.xml",
+      "resource_id": "0x7f0803be",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "7d864223271feaca702cea8e5f1090a79f41789d7084a122c59edd3372524472",
+      "file_sha256": "298c461b26d7ca97767134271162e6fa7c3a1b8d981909455280ea126ea58421",
+      "bytes": 2020,
+      "image": null,
+      "kind": "icon-drawer",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_compass_switch",
+        "use": "指针开关（候选：罗盘切换）",
+        "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
       },
       "decoder": "apktool",
       "decoder_version": "2.9.3"
@@ -833,6 +968,29 @@
       "decoder_version": "2.9.3"
     },
     {
+      "target": "icons/drawer/svg_read_compass.xml",
+      "mode": "decoded",
+      "entry": "res/ME.xml",
+      "resource_id": "0x7f0803f3",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "12e364440a982d1f247dc8c8637853f7e095c1c2f7e30400998b1f5dc1ae4c80",
+      "file_sha256": "151bce43085aee7191349125e42475fa18b895bad321014d32ad55b871722b59",
+      "bytes": 3566,
+      "image": null,
+      "kind": "icon-drawer",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_read_compass",
+        "use": "读盘",
+        "evidence": "CompassToolsKt.smali:9707",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
       "target": "icons/drawer/svg_road.xml",
       "mode": "decoded",
       "entry": "res/F5.xml",
@@ -902,6 +1060,29 @@
       "decoder_version": "2.9.3"
     },
     {
+      "target": "icons/drawer/svg_street.xml",
+      "mode": "decoded",
+      "entry": "res/mw.xml",
+      "resource_id": "0x7f0803ff",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "aac208e46c67ce4d949d7a9655547d8c5e3154f58b3aae4ff4f24c21493ac998",
+      "file_sha256": "42e504ebe48a40dacec26cf0fa3a947885d1bdc289898ea83054570f8f270844",
+      "bytes": 2024,
+      "image": null,
+      "kind": "icon-drawer",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_street",
+        "use": "实景（候选，待确认）",
+        "evidence": "资源名 street 直配；smali 未见引用",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
       "target": "icons/drawer/svg_super_map_old.xml",
       "mode": "decoded",
       "entry": "res/Eh.xml",
@@ -920,6 +1101,75 @@
         "use": "左列 超清优化",
         "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:566；解码文件 sha256=77c821b3a7a0a866…",
         "checksheet": "A-04 左 8 / 右 10 工具图标"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
+      "target": "icons/drawer/svg_surround.xml",
+      "mode": "decoded",
+      "entry": "res/z0.xml",
+      "resource_id": "0x7f080404",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "e73dd637d82d09de454356caf268780ce8ea881ebe51eafa19e2d11f70d83112",
+      "file_sha256": "3c34f913f44d0585972ccd7ff6837bc28b1d6b4fe3971db173fa95e0d1f52ad9",
+      "bytes": 2504,
+      "image": null,
+      "kind": "icon-drawer",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_surround",
+        "use": "坐南朝北（候选：环绕/朝向）",
+        "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
+      "target": "icons/drawer/svg_tiedi.xml",
+      "mode": "decoded",
+      "entry": "res/Hv.xml",
+      "resource_id": "0x7f080408",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "e5393b7a92aa22d1a66fb31b62294992c3ccb557ecdab23be7034f06a53dc71c",
+      "file_sha256": "7f8118a8dd14c631cf0fecf53eca33a3763fdc1380d51db2889c94f8c884a6ca",
+      "bytes": 1281,
+      "image": null,
+      "kind": "icon-drawer",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_tiedi",
+        "use": "贴地",
+        "evidence": "CompassToolsKt.smali:9805",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
+      "target": "icons/drawer/svg_tool_folder.xml",
+      "mode": "decoded",
+      "entry": "res/7Q.xml",
+      "resource_id": "0x7f08040c",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "61894a406144ec019172a4ef54f03e9257b0fe77556ff889984b29443d664f84",
+      "file_sha256": "fdda8bf5547523f2d332360def43f5529b023a5e06fb2561b95e1cb856853461",
+      "bytes": 1284,
+      "image": null,
+      "kind": "icon-drawer",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_tool_folder",
+        "use": "全地图工具",
+        "evidence": "资源名 tool_folder 直配；smali 未见 R$drawable 引用",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
       },
       "decoder": "apktool",
       "decoder_version": "2.9.3"
@@ -1041,11 +1291,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_amap_normal.png",
+      "mode": "verbatim",
       "entry": "res/58.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "0efc767015d6fba03a9cf54ace1034ded371bde8c9ba93d1dda32ba4a49d79cb",
       "bytes": 9138,
-      "image": null,
+      "image": {
+        "width": 300,
+        "height": 186
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1058,11 +1312,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_amap_satellite.png",
+      "mode": "verbatim",
       "entry": "res/BG.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "0654df2b4d3eb4589a7088bd0a2b6b6a3e286d8298c72cdd9068afa9b35198d0",
       "bytes": 8332,
-      "image": null,
+      "image": {
+        "width": 300,
+        "height": 186
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1075,11 +1333,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_custome.png",
+      "mode": "verbatim",
       "entry": "res/nc1.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "bef274b31d92fe089203ea20a6cf761835d7dfeb5f401b5428fe0a402c351df7",
       "bytes": 30358,
-      "image": null,
+      "image": {
+        "width": 448,
+        "height": 360
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1092,6 +1354,7 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_jilin1_satellite_2023.png",
+      "mode": "verbatim",
       "entry": "res/UE.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "941e28e51848100b37e15c36faf23169525486893abe6091d4f0a28271f0df43",
@@ -1112,6 +1375,7 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_jilin1_satellite_globe.png",
+      "mode": "verbatim",
       "entry": "res/b0.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "3764722d3716ad04879905b0a74f57ec5bccd21b662be92546338e10be45049a",
@@ -1132,11 +1396,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_tdt_normal.png",
+      "mode": "verbatim",
       "entry": "res/AY.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "ca343bb0221a6f20ed8ba249c5b61ab3b33b95d794215ac7574f6ad5c98983fb",
       "bytes": 7438,
-      "image": null,
+      "image": {
+        "width": 300,
+        "height": 186
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1149,11 +1417,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_tdt_satellite.png",
+      "mode": "verbatim",
       "entry": "res/eV.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "be0b9c303d5fccb6311644acd64630f877fd910d9c21842fc2aa08557b9595fd",
       "bytes": 10124,
-      "image": null,
+      "image": {
+        "width": 300,
+        "height": 186
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1166,11 +1438,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_tdt_terrain.png",
+      "mode": "verbatim",
       "entry": "res/aw.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "4c77cbbff2968d2a736da36468e51cb904370133c7855d70f52b9e9295014e6d",
       "bytes": 5168,
-      "image": null,
+      "image": {
+        "width": 300,
+        "height": 186
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1183,11 +1459,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_tecent_normal.png",
+      "mode": "verbatim",
       "entry": "res/Nv.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "f5ec1b87febb79f5a6841b61ed833374a6c437ed28963dca2eecb8ba806907e6",
       "bytes": 16582,
-      "image": null,
+      "image": {
+        "width": 300,
+        "height": 186
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1200,11 +1480,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_tencent_satellite.png",
+      "mode": "verbatim",
       "entry": "res/UL.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "1f7496ab8b7c1478281660b2b4978a88f4eb75c72fe4e20e5efb860b2b01e989",
       "bytes": 11260,
-      "image": null,
+      "image": {
+        "width": 300,
+        "height": 186
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1217,11 +1501,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_tencent_terrain.png",
+      "mode": "verbatim",
       "entry": "res/5z.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "0f4eff35dfcb09276ad6c66eee2e96801beb739a21e93568e8aaf583ab1a2e4c",
       "bytes": 6938,
-      "image": null,
+      "image": {
+        "width": 300,
+        "height": 186
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1234,11 +1522,15 @@
     },
     {
       "target": "map/source-thumb/ic_base_map_xintu_satellite.png",
+      "mode": "verbatim",
       "entry": "res/Eo.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "626d04b3f90551b5877880a5631af008984457e3dea8cdd7b7fb4f3b419f7fa2",
       "bytes": 104638,
-      "image": null,
+      "image": {
+        "width": 874,
+        "height": 536
+      },
       "kind": "source-thumb",
       "note": "",
       "meta": {
@@ -1250,7 +1542,50 @@
       }
     },
     {
+      "target": "tools/ic_3d_white.png",
+      "mode": "verbatim",
+      "entry": "res/Ji.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "f45d85fe092ab5d5aa01076806f18ef59b50e3c08d8ee939609c8c99aed36e36",
+      "bytes": 1118,
+      "image": {
+        "width": 96,
+        "height": 96
+      },
+      "kind": "tool-icon",
+      "note": "",
+      "meta": {
+        "resource": "ic_3d_white",
+        "raster": "mipmap-xxxhdpi",
+        "use": "3D",
+        "evidence": "mipmap-xxxhdpi；白色立方线稿，与右列 3D 按钮一致",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
+      }
+    },
+    {
+      "target": "tools/ic_north_needle.png",
+      "mode": "verbatim",
+      "entry": "res/pf.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "8ccb3b5aefc41cab4bcd96b5daf7d738a48f27782f17ba193428157e7bffadb5",
+      "bytes": 5117,
+      "image": {
+        "width": 152,
+        "height": 156
+      },
+      "kind": "tool-icon",
+      "note": "",
+      "meta": {
+        "resource": "ic_north_needle",
+        "raster": "mipmap-xxxhdpi",
+        "use": "指北针",
+        "evidence": "mipmap-xxxhdpi；红/灰针形，与右列指北针一致",
+        "checksheet": "P1-33-A 罗盘/地图工具条图标"
+      }
+    },
+    {
       "target": "tools/ic_tool_altitude.png",
+      "mode": "verbatim",
       "entry": "res/KL.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "516c110b85dded69c926700aa1a9c3aae227c54a51e9a5a49f6eb5af27274da0",
@@ -1273,6 +1608,7 @@
     },
     {
       "target": "tools/ic_tool_collect.png",
+      "mode": "verbatim",
       "entry": "res/dd.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "e36a7c2da513eab0c370ad99953b1b6dfc34bcd5539e837c96cded924bb9d963",
@@ -1295,6 +1631,7 @@
     },
     {
       "target": "tools/ic_tool_compass.png",
+      "mode": "verbatim",
       "entry": "res/6g.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "6fb11483d2eead88bcdab6683e832acd385492185c5fe2b0756c49ffe33fb00b",
@@ -1317,6 +1654,7 @@
     },
     {
       "target": "tools/ic_tool_fish.png",
+      "mode": "verbatim",
       "entry": "res/uU.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "9f304273d8e338b1825e7fcfd7be26c1f4d029a516111bb276d8128303effdf1",
@@ -1339,6 +1677,7 @@
     },
     {
       "target": "tools/ic_tool_history.png",
+      "mode": "verbatim",
       "entry": "res/Fe.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "f3b5c01b53be6ff042cbd30c8b80f944090c47167dd650c332e2354022f7380b",
@@ -1361,6 +1700,7 @@
     },
     {
       "target": "tools/ic_tool_isoline.png",
+      "mode": "verbatim",
       "entry": "res/pM.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "783f3b992a9234b75bbc3711165f11c820809b54d87728e3c6874f6e8baaf5cb",
@@ -1383,6 +1723,7 @@
     },
     {
       "target": "tools/ic_tool_measure.png",
+      "mode": "verbatim",
       "entry": "res/zv.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "395455901ecc393a7f624ba499656f3b2d71c710f7ed176df4f009aaa4a2ffbe",
@@ -1405,6 +1746,7 @@
     },
     {
       "target": "tools/ic_tool_mountain.png",
+      "mode": "verbatim",
       "entry": "res/QJ.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "fba48827d465e74fe228ee0950e87c736ff6b13f9a69480b84236636563d4288",
@@ -1427,6 +1769,7 @@
     },
     {
       "target": "tools/ic_tool_paint.png",
+      "mode": "verbatim",
       "entry": "res/B2.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "952cb7a95a75e997e7ae9172498723ff97f4c5fc7cc11207478d0357b2539634",
@@ -1449,6 +1792,7 @@
     },
     {
       "target": "tools/ic_tool_super_map.png",
+      "mode": "verbatim",
       "entry": "res/SH.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "127acded4f58ceefc2ef259e8ba6c4d3f75555972003fab80541e6fffe3c82c0",
@@ -1471,6 +1815,7 @@
     },
     {
       "target": "tools/ic_tool_super_map_old.png",
+      "mode": "verbatim",
       "entry": "res/-d.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "803762a72f1d24b28dae11f05635085c1dc1d26aee19e8a28ae9f38a03e2c41b",
@@ -1493,6 +1838,7 @@
     },
     {
       "target": "tools/ic_tool_vr.png",
+      "mode": "verbatim",
       "entry": "res/JE.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "e178f3e642edbbc77b89f6f77cb5b4c5c8b9c69279a7fb7a67f40e07f3e54fde",
@@ -1515,6 +1861,7 @@
     },
     {
       "target": "tools/ic_tool_water.png",
+      "mode": "verbatim",
       "entry": "res/vY.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "84cf3ead69a53f43bf87c31900212d004cb5cf95a71c902241289cf0d02a5b22",
@@ -1537,6 +1884,7 @@
     },
     {
       "target": "tools/ic_tool_weather.png",
+      "mode": "verbatim",
       "entry": "res/vd.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "eeeef55545f2d7248d1e9faadafbd831ee823392ddc1402f89f6a02d6a7c63a6",
@@ -1559,6 +1907,7 @@
     },
     {
       "target": "tools/ic_tools_geographic_imagery.png",
+      "mode": "verbatim",
       "entry": "res/eS.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "26ddea2dab371a0db57682839411b578e88979de6fc44c12d6a7c8ef2bebdc1e",
@@ -1581,6 +1930,7 @@
     },
     {
       "target": "tools/ic_tools_road.png",
+      "mode": "verbatim",
       "entry": "res/TP.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "c8e2267973995fdc68d9982193249bcddfa0053610850030ef1dc70372c62f1b",
@@ -1603,6 +1953,7 @@
     },
     {
       "target": "tools/ic_tools_street.png",
+      "mode": "verbatim",
       "entry": "res/5g.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "a161d5d86570a3a94ffbdab249f44cf0ccb76e502b6b9973f2a413ba6992d506",
@@ -1625,6 +1976,7 @@
     },
     {
       "target": "tools/ic_tools_track.png",
+      "mode": "verbatim",
       "entry": "res/fh.png",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "cab2f268cffc35690c6ca78d9a4f6a44310cc34bc1f399038f794e4aa4ed47f8",

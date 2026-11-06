@@ -111,6 +111,12 @@ adb -s L2E0222531014833 shell dumpsys activity activities | Select-String 'mResu
   3. 本态**应有**的关键节点存在（`lc_search_*`/`lc_elev_*`/`lc_mtn_*` 等），缺失先怀疑劫持或没进对页面。
 - 实现侧要同步：`collect_lc_client.ps1`、`collect_map_lc.ps1` 前置加同一条 force-stop + 前台断言。
 
+**C. 日志断言纪律（2026-11-07 00:32 增补，来源：本轮抓到自己的判据过滤器缺陷）**
+
+- logcat 行格式是 `D/LCSEARCH(18762): tab=1 code=ok …`，**tag 与消息之间有 `(pid): `**。断言写成 `-match 'LCSEARCH tab='` 永远不命中，只会在同一串里恰好含 `tab-click` 的行上假命中。
+- 因此「日志里没有 `tab=`」这类否定证据**必须**用流式抓取核对：`adb logcat -v time -s LCSEARCH` 重定向到文件（PowerShell `Start-Process -RedirectStandardOutput`），断言模式只写消息体（`tab=\d+ code=`），不写 tag。
+- 反面案例：我在 `82bc38b` 据此过滤器判「点 tab 不重跑」，属测量缺陷，已在本表 §4.6 撤回。
+
 ### 4.5 R2-025 复判协议（设备，实施后跑一次）
 
 前置：`svc power stayon true`、动画三项 0、`heading` 0、`setView(39.9042,116.4074,12)`；每步 dump 前确认亮屏且前台是 `com.luopan.fengshui`（§4.4）。
@@ -132,9 +138,51 @@ adb -s L2E0222531014833 shell input text "116.4074,39.9042"
 # 取四行 center y：bounds 解析后 (y1+y2)/2，相邻差应 186±2
 ```
 
+### 4.6 R2-025 终验（develop `2c9a203`，2026-11-07 00:27–00:32）
+
+**被测包**：`develop` `2c9a203` 本机构建（`gradle assembleDebug --no-daemon` → `BUILD SUCCESSFUL in 40s`）；APK 7,165,085 B，sha256 `760926FC8FA29B5965F80EE04A7E1FDBABC3CC2C28B1AEC7F1A150A6B97905E7`，`lastUpdateTime=2026-11-07 00:27:41`；`adb push` + `pm install -r -t` → `Success`。全程前台 `com.luopan.fengshui/.MainActivity`。
+
+**判据 ①（确定性入口 `--ei tab 1`）** — 逐字日志：
+
+```
+11-07 00:29:36.196 D/LCSEARCH(18762): debug search=故宫 tab=1
+11-07 00:29:36.232 D/LCSEARCH(18762): search start kw=[故宫] tab=1 center=39.9042,116.4074
+11-07 00:29:36.911 D/LCSEARCH(18762): tab=1 code=ok total=1283 first=故宫博物院
+11-07 00:29:36.913 D/LCSEARCH(18762): ui rows=20 first=故宫博物院  116.390865,39.914896
+```
+
+同法 `--ei tab 0`：`00:29:46.644 tab=0 code=ok total=446 first=故宫博物院`。→ 1283 / 446 与地图侧 `searchGlobal` / `searchNear` 的结果量级一致，**同关键词不同 tab 结果确实不同**。
+
+**判据 ②（真实点按）** — 广播「故宫」（默认 tab0）→ 当次 dump 取 `lc_search_tab1` bounds `[369,803][613,916]`、中心 `491,860`（输入框 `text=故宫`）→ `input tap 491 860`：
+
+```
+11-07 00:30:06.972 D/LCSEARCH(18762): tab-click idx=1 active=1 ref=true
+11-07 00:30:06.975 D/LCSEARCH(18762): search start kw=[故宫] tab=1 center=39.9042,116.4074
+11-07 00:30:07.125 D/LCSEARCH(18762): tab=1 code=ok total=1283 first=故宫博物院
+11-07 00:30:07.126 D/LCSEARCH(18762): ui rows=20 first=故宫博物院  116.390865,39.914896
+```
+
+`tab-click → tab=1 code=ok total=1283` 间隔 **153ms**（判据上限 12s）。截图 `s6/v2-after-tap.png`（sha256 `9f897701…d5f`）：弹层内「境外」高亮、列表首行 `故宫博物院 116.390865,39.914896`（经度,纬度）；dump `s6/v2-before-tap.xml`。
+
+**冷启动复跑（按总监那条时序：冷启动 5s → 广播 → 4s 后 dump → 点 tab1）**：
+
+```
+11-07 00:31:01.871 D/LCSEARCH(19569): tab-click idx=1 active=1 ref=true
+11-07 00:31:01.875 D/LCSEARCH(19569): search start kw=[故宫] tab=1 center=39.9042,116.4074
+11-07 00:31:02.109 D/LCSEARCH(19569): tab=1 code=ok total=1283 first=故宫博物院
+```
+
+238ms。三次点按（热态 1 次 + 冷启动 2 次窗口内）3/3 命中，无一空窗。
+
+**撤回与订正（依据 §4.4 C）**：`82bc38b` 里「`tab-click idx=1` 后 12s 无 `tab=` 重跑日志 → 不重跑」这条**证据不成立**——两次抓取都用 `-match 'LCSEARCH tab='`，而实际日志是 `D/LCSEARCH(pid): tab=…`，任何 `tab=` 行都不会命中；只有同串含 `tab-click` 的行假命中。00:28:19 那次「13s 无输出」同理作废，不是应用缺陷。**但**「切 tab 后可能毫无动静」在改前代码里确有路径，可用代码证明：`git show 05c9eef:app/android/app/src/main/java/com/luopan/fengshui/MainActivity.java` 第 2494–2507 行 `if (compassMapView == null) return;`，请求体整体嵌在 `evaluateJavascript(…getState()…)` 回调内，回调不返回则无请求无日志；且 `tab=` 在响应之后才打。客户端 `5e09250` 的根因判断与修法（Java 侧中心点缓存 + 看门狗 + 单弹层）成立，机制与本轮日志一致（`tab-click → search start` 仅 3ms）。
+
+**判词**：R2-025 **关账**（UI 段 + 三 tab 数据段 + 真实点按三条全过）。遗留：`quota`（301xxx）本轮仍未观测 → 记「未确认」，不计入通过项；行政 tab 语义仍建议写「按省码限定全境」，不写「收窄」。
 
 
-## 5. M1 关账汇总（Stage 5，2026-11-06 23:27–23:49 复核）
+
+## 5. M1 关账汇总（Stage 5，2026-11-06 23:27–23:49 复核；R2-025 终验补于 2026-11-07 00:32，develop `2c9a203`）
+
+**结论：七条 P0 = 7/7 关账**（R2-025 由「不关账」于 00:32 改判关账，理由与证据见 §4.6；其余六条判词不变）。
 
 | 编号 | 结论 | 关键证据（本轮亲测/亲核） | 遗留 |
 |---|---|---|---|
@@ -143,10 +191,10 @@ adb -s L2E0222531014833 shell input text "116.4074,39.9042"
 | R2-007 | **关账** | 海拔 53.0 m（本地 DEM）/含氧 20.87%（公式自洽）/气压 100.69 千帕（来源标注、≠102.4）/打点→立向点同坐标 | 气压数值本身不可复刻（DI） |
 | R2-014 | **关账** | 收藏列表+等高线+添加点+坐标条+4km 同屏；添加点→SaveInterestActivity 往返仍在 | 无 |
 | R2-018 | **关账** | 9 项逐字+版本号逐字；9/9 落点（Setting / Chooser / InfoPage）；DI D-012…D-018 已登记 | 7 项 DI 内容待原版取证 |
-| R2-025 | **不关账**（UI 段通过；debug 入口三 tab 差异成立，真实点 tab 不重跑=缺陷） | UI 五条全过；debug 入口亲测 446/1283/446、北京市 879771/914578、东京塔 空/1；**真实路径 `tab-click idx=1` 后 12s 无 `tab=` 重跑日志** | 客户端修「切 tab 立即按当前关键词重跑」后复验真实路径；quota 未确认；行政语义建议改「按省码限定」 |
+| R2-025 | **关账**（UI 段 + 三 tab 数据段 + 真实点按，§4.6） | UI 五条全过；`--ei tab` 入口 446/1283/446（`tab=1 code=ok total=1283 first=故宫博物院`）；**真实点按** `tab-click idx=1 active=1 ref=true` → `tab=1 code=ok total=1283` **153ms**，冷启动复跑 238ms；3/3 命中；截图「境外」高亮、列表「经度,纬度」（APK `760926FC…`，develop `2c9a203`） | quota（301xxx）未确认；行政 tab 语义建议写「按省码限定全境」 |
 | R2-030 | **关账** | 三态：开 lc_mtn=5 → 关 0 → 重开 5；MainActivity 全程；半屏 1237px | 无 |
 
-**误判与纠正记录**：① R2-025 首判（22:59）我按「渲染三态 + tab 存在」判通过，漏验「同关键词在三 tab 结果不同」→ Stage 5 按代码与审地图发现纠正为**不关账**；② 更早轮 R2-004「无可见反馈」已按 R9 纠正为「落立向点、无 POI 面板」。
+**误判与纠正记录**：① R2-025 首判（22:59）我按「渲染三态 + tab 存在」判通过，漏验「同关键词在三 tab 结果不同」→ Stage 5 按代码与审地图发现纠正为**不关账**；② 更早轮 R2-004「无可见反馈」已按 R9 纠正为「落立向点、无 POI 面板」；③ `82bc38b` 的「点 tab 不重跑」判词撤回——那是判据过滤器缺陷（`LCSEARCH tab=` 永不可能匹配 `D/LCSEARCH(pid): tab=…`，§4.4 C），不是应用缺陷证据；改前缺陷的真实依据是代码路径（`05c9eef` 第 2494–2507 行），修后 153/238ms 两次实测见 §4.6。
 
 **口径**：quota（301xxx）未观测到 → 「未确认」，不计入任何通过项。
 

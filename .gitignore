@@ -37,3 +37,8 @@ Thumbs.db
 /backend/data/
 /backend/node_modules/
 
+# ---- Python 工具缓存与临时截图（生成物，不入库） ----
+__pycache__/
+*.pyc
+/checks-*.png
+

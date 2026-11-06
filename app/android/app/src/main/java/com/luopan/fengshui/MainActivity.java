@@ -576,11 +576,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         rcp.rightMargin = COL_MARGIN_M_RIGHT;
         frame.addView(rightColumn, rcp);
 
-        // 罗盘模式右列 4（R2-011）：原版框 [1044,367][1202,525] 起、步距 184，
-        // 其标签在框内偏高 9px（标签中心 475.5 距框顶 108.5），故图标顶距取 17 而不是 26。
-        rightCompassColumn = buildAnchoredColumn(new String[]{"地图", "实景", "坐南朝北", "指针开关"},
+        // 罗盘模式右列 4（R2-011 + P1-33-C）：原版框 [1044,367][1202,525] 起、步距 184。
+        // P1-33-C：这四枚在原版里是**开关控件**（药丸 + 状态底色），不是图标——
+        // 几何实测（orig/tool-compass-page.png，逐枚取 bbox）：
+        //   轨道 107×54 居中、距框顶 33；旋钮 48×45；开态蓝底 144×144（四边内缩 7）；
+        //   开=白轨 + 蓝钮靠右，关=灰轨(142,142,142) + 白钮靠左；默认 地图=开、指针开关=开、其余关。
+        // 标签中心仍在框顶 +108.5（33+54 之后再留 2px），与 G1 判词一致。
+        rightCompassColumn = buildAnchoredSwitchColumn(new String[]{"地图", "实景", "坐南朝北", "指针开关"},
                 new float[]{367f, 551f, 735f, 919f},
-                new int[]{R.id.lc_g1_cright1, R.id.lc_g1_cright2, R.id.lc_g1_cright3, R.id.lc_g1_cright4}, 17);
+                new int[]{R.id.lc_g1_cright1, R.id.lc_g1_cright2, R.id.lc_g1_cright3, R.id.lc_g1_cright4});
         rightCompassColumn.setVisibility(View.GONE);
         FrameLayout.LayoutParams rccp = new FrameLayout.LayoutParams(
                 COL_BTN_W, FrameLayout.LayoutParams.MATCH_PARENT);
@@ -738,6 +742,155 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             col.addView(b);
         }
         return col;
+    }
+
+    // ---------------- P1-33-C：罗盘右列 4 枚开关控件 ----------------
+    // 语义取证：docs/fidelity/P1-33C-switch-semantics.md（逆向 dac2954/d9d4ec9）
+    //   - 都是「切换型」，checked 来自 controller 状态；
+    //   - 地图/实景 是**三态互斥**（地图模式 / 实景模式 / 无地图模式），开一个要关另一个；
+    //   - 坐南朝北、指针开关 各一个布尔；
+    //   - 不持久化（代码里没有 SharedPreferences/MMKV）：**内存态，重启回默认**。
+    // 默认值按原版截图像素（审核验 §11.1 4 倍放大）：地图=开、指针开关=开、实景=关、坐南朝北=关。
+    private static final int MAP_MODE_MAP = 0;
+    private static final int MAP_MODE_REALITY = 1;
+    private static final int MAP_MODE_NONE = 2;
+    private int compassMapMode = MAP_MODE_MAP;   // 内存态
+    private boolean southNorthOn = false;        // 内存态
+    private boolean pointerOn = true;            // 内存态
+    private final java.util.Map<String, SwitchGlyph> switchGlyphs = new java.util.HashMap<>();
+
+    /** 开关初始状态（与截图默认一致）。 */
+    private boolean switchStateOf(String label) {
+        switch (label) {
+            case "地图": return compassMapMode == MAP_MODE_MAP;
+            case "实景": return compassMapMode == MAP_MODE_REALITY;
+            case "坐南朝北": return southNorthOn;
+            case "指针开关": return pointerOn;
+            default: return false;
+        }
+    }
+
+    /** 点一下 = 切换状态（取证结论），随后仍走原有动作，不改 K-01 行为。 */
+    private void toggleSwitchState(String label) {
+        switch (label) {
+            case "地图":
+                compassMapMode = compassMapMode == MAP_MODE_MAP ? MAP_MODE_NONE : MAP_MODE_MAP;
+                break;
+            case "实景":
+                compassMapMode = compassMapMode == MAP_MODE_REALITY ? MAP_MODE_NONE : MAP_MODE_REALITY;
+                break;
+            case "坐南朝北":
+                southNorthOn = !southNorthOn;
+                break;
+            case "指针开关":
+                pointerOn = !pointerOn;
+                break;
+            default:
+                break;
+        }
+        // 三态互斥：一次点击后刷新全部四枚的开态
+        for (java.util.Map.Entry<String, SwitchGlyph> e : switchGlyphs.entrySet()) {
+            boolean on = switchStateOf(e.getKey());
+            e.getValue().setOn(on);
+            if (e.getValue().getParent() instanceof LinearLayout) {
+                ((LinearLayout) e.getValue().getParent()).setBackground(
+                        on ? switchBackgroundOn() : chipBackground());
+            }
+        }
+        android.util.Log.d("LCSWITCH", "toggle " + label + " mapMode=" + compassMapMode
+                + " southNorth=" + southNorthOn + " pointer=" + pointerOn);
+    }
+
+    /** 开态按钮底：原版蓝 (50,90,182)、bbox 144×144（四边内缩 7）、圆角 15。 */
+    private android.graphics.drawable.Drawable switchBackgroundOn() {
+        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+        g.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        g.setColor(Color.rgb(50, 90, 182));
+        g.setCornerRadius(15f);
+        return new android.graphics.drawable.InsetDrawable(g, 7, 7, 7, 7);
+    }
+
+    /** 按原版框顶锚定的一列**开关**按钮（罗盘右列 4 枚）。 */
+    private View buildAnchoredSwitchColumn(String[] labels, float[] refTop, int[] ids) {
+        RatioColumn col = new RatioColumn(this, refTop, COL_BTN_H);
+        for (int i = 0; i < labels.length; i++) {
+            View b = newSwitchButton(labels[i]);
+            if (ids != null && i < ids.length) b.setId(ids[i]);
+            col.addView(b);
+        }
+        return col;
+    }
+
+    /**
+     * P1-33-C 开关按钮：158×158 框 + 药丸轨道（107×54，居中，距框顶 33）+ 小字（中心距框顶 108.5）。
+     * 开=蓝底 + 白轨 + 蓝钮靠右；关=深色底 + 灰轨(142,142,142) + 白钮靠左。
+     */
+    private View newSwitchButton(String label) {
+        boolean on = switchStateOf(label);
+        LinearLayout b = new LinearLayout(this);
+        b.setOrientation(LinearLayout.VERTICAL);
+        b.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        b.setBackground(on ? switchBackgroundOn() : chipBackground());
+        b.setPadding(0, 0, 0, 0);
+        b.setClickable(true);
+        b.setFocusable(true);
+        b.setContentDescription(label);
+        SwitchGlyph glyph = new SwitchGlyph(this, on);
+        switchGlyphs.put(label, glyph);
+        LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(107, 54);
+        gp.topMargin = 33;
+        b.addView(glyph, gp);
+        TextView t = new TextView(this);
+        t.setText(label);
+        t.setTextSize(11f);
+        t.setTextColor(Color.rgb(235, 228, 215));
+        t.setGravity(android.view.Gravity.CENTER);
+        t.setMaxLines(1);
+        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, COL_LABEL_H);
+        tp.topMargin = 2;                       // 33+54+2 = 89 → 标签中心 108.5
+        tp.bottomMargin = COL_BTN_H - 89 - COL_LABEL_H;
+        b.addView(t, tp);
+        b.setOnClickListener(v -> {
+            try {
+                toggleSwitchState(label);
+            } catch (Throwable ex) {
+                android.util.Log.e("LCSWITCH", "toggle failed " + label, ex);
+            }
+            onToolClick(label);                 // 原有动作保持不变（K-01 行为不动）
+        });
+        return b;
+    }
+
+    /** 药丸开关图形：轨道 107×54 + 旋钮 45（关=白钮靠左、开=蓝钮靠右）。 */
+    private static final class SwitchGlyph extends View {
+        private final android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private boolean on;
+
+        SwitchGlyph(android.content.Context c, boolean on) {
+            super(c);
+            this.on = on;
+        }
+
+        void setOn(boolean v) {
+            if (on != v) {
+                on = v;
+                invalidate();
+            }
+        }
+
+        @Override
+        protected void onDraw(android.graphics.Canvas cv) {
+            int w = getWidth(), h = getHeight();
+            if (w <= 0 || h <= 0) return;
+            float r = h / 2f;
+            paint.setColor(on ? Color.WHITE : Color.rgb(142, 142, 142));
+            cv.drawRoundRect(0, 0, w, h, r, r, paint);
+            float d = h - 9f;
+            float cx = on ? w - r : r;
+            paint.setColor(on ? Color.rgb(50, 90, 182) : Color.WHITE);
+            cv.drawCircle(cx, h / 2f, d / 2f, paint);
+        }
     }
 
     /**
@@ -2353,8 +2506,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         content.addView(bar, lp);
     }
 
-    /** R2-015：更多面板网格 4 行的 id（原版行顶 1540/1836/2132/2428）。 */
-    private static final int[] MORE_ROW_IDS = {
+    /** R2-015：更多面板网格 4 行的 id（原版行顶 1540/1836/2132/2428）。 */    private static final int[] MORE_ROW_IDS = {
             R.id.lc_more_row0, R.id.lc_more_row1, R.id.lc_more_row2, R.id.lc_more_row3
     };
 

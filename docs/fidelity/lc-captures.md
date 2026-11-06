@@ -93,16 +93,16 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 
 采集口径：`--build-commit e88ed0c2aa70272e36f6d03a0a6f12511d6bf532`、APK sha256 `CCD5686F…`（7,059,457 B）、heading 冻结 0°、地图 `setView(39.9042,116.4074,12)`；脚本 `tools/map/collect_map_lc.ps1`（`7253788`）。`map-home-01` 复用 §1 第 03 行（同一构建同一 commit）。
 
-**已实采（4，PNG+XML+meta 齐全）**
+**已实采（3，PNG+XML+meta 齐全）**
 
 | 行 | stem | 文件 | 实测要点 |
 |---|---|---|---|
 | 04 | `map-beijing-z12` | `.png/.xml/.meta.json` | 固定态北京 z12；左列 8 项、右列 10 项、底部角注条 `[0,2544][1228,2578]` |
 | 26 | `map-overlay-sheet` | `.png/.xml/.meta.json` | 「数据叠加」页：4 Tab（行政区域/地形地貌/水文水系/自然保护）+ 公路(路网)开关 + 全部开启/关闭 |
 | 28 | `map-layer-sheet` | `.png/.xml/.meta.json` | 右列「图层」→「底图源」12 源面板（3 可用 / 9 置灰），关闭按钮 `[67,2058]-[1161,2180]` |
-| 29 | `map-3d-mode` | `.png/.xml/.meta.json` | 右列「3D」→ 自研 WebGL 3D 地形（等价替代原版 `libterrain.so`），工具列保留 |
 
-**待采（11，目标暂停，恢复后补；入口坐标取自 `map-home-01.xml` 实测 bounds）**
+
+**待采（12，目标暂停，恢复后补；入口坐标取自 `map-home-01.xml` 实测 bounds 或屏上实测）**
 
 | 行 | stem | 入口 |
 |---|---|---|
@@ -117,6 +117,7 @@ pwsh -File docs\fidelity\collect_lc_client.ps1 -BuildCommit e88ed0c2aa70272e36f6
 | 24 | `map-mountains-entry` | 右列「山脉」`[1027,1008]-[1222,1136]` |
 | 25 | `map-water-entry` | 右列「水系」`[1027,1203]-[1222,1331]` |
 | 27 | `map-explore-page` | 右列「探索」`[1027,1398]-[1222,1526]` |
+| 29 | `map-3d-mode` | 右列「3D」屏上 `(1126,2187)`（dump bounds `[1027,2366]-[1222,2494]`）：单击与长按 900ms **均未进入 3D**，界面保持 2D 地图态（已撤下误采的同名 2D 证据，待恢复后复核是否入口失效） |
 
 **缺失（1）**：行 30 相机权限弹窗——LC 地图无相机/AR 入口，`map-home-01.xml` 全节点无相机相关控件，不产生权限弹窗。
 

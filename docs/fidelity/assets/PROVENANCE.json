@@ -1542,6 +1542,134 @@
       }
     },
     {
+      "target": "pages/_shared/icons/svg_title_back.xml",
+      "mode": "decoded",
+      "entry": "res/e2.xml",
+      "resource_id": "0x7f08040a",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "24683423ab086f3365bc6589321d30c77b06a12a23619668c16b420f648cb7f2",
+      "file_sha256": "14be0ac5f1fef97cf8af9d278e82675bb5bd5ce2fa4014d40198e2f925fe19c3",
+      "bytes": 456,
+      "image": null,
+      "kind": "page-icon",
+      "note": "",
+      "meta": {
+        "decoder": "apktool",
+        "decoder_version": "2.9.3",
+        "resource": "svg_title_back",
+        "use": "共用返回箭头（9 页 dump 均有「返回」节点）",
+        "evidence": "res/values/public.xml 资源名 + 9 页 dump 的「返回」节点",
+        "checksheet": "S-共用"
+      },
+      "decoder": "apktool",
+      "decoder_version": "2.9.3"
+    },
+    {
+      "target": "pages/about/icons/ic_launcher.png",
+      "mode": "verbatim",
+      "entry": "res/o-.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "3da3b70380fe766db3d1e2ddee1f7de5f39d5293d2267ef5985f5e9ea21e4196",
+      "bytes": 57571,
+      "image": {
+        "width": 192,
+        "height": 192
+      },
+      "kind": "page-icon",
+      "note": "",
+      "meta": {
+        "resource": "ic_launcher",
+        "raster": "mipmap-xxxhdpi",
+        "use": "关于我们-品牌 logo（候选）",
+        "evidence": "页面顶部 logo 区 [399,995][829,1074] 附近",
+        "checksheet": "S-关于我们"
+      }
+    },
+    {
+      "target": "pages/account/icons/ic_default_avatar.png",
+      "mode": "verbatim",
+      "entry": "res/Qc.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "ac6d865eb51f4e4614881d9999b3439177fbed88e7cc7407aac14856b3da9bea",
+      "bytes": 3694,
+      "image": {
+        "width": 240,
+        "height": 240
+      },
+      "kind": "page-icon",
+      "note": "",
+      "meta": {
+        "resource": "ic_default_avatar",
+        "raster": "mipmap-xxxhdpi",
+        "use": "账户设置-默认头像（候选）",
+        "evidence": "页面「头像」行 [39,502][1084,581]；未证明占位图即此资源",
+        "checksheet": "S-账户设置"
+      }
+    },
+    {
+      "target": "pages/feedback/icons/ic_add_image.png",
+      "mode": "verbatim",
+      "entry": "res/A0.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "1ab9a548678dcb6c16fb7787c86712565cc4ffdaaaab48fd0254c073ec23d94b",
+      "bytes": 1552,
+      "image": {
+        "width": 280,
+        "height": 280
+      },
+      "kind": "page-icon",
+      "note": "",
+      "meta": {
+        "resource": "ic_add_image",
+        "raster": "mipmap-xxxhdpi",
+        "use": "投诉反馈-添加图片",
+        "evidence": "页面文案「添加图片 [39,1333][243,1412]」",
+        "checksheet": "S-投诉反馈"
+      }
+    },
+    {
+      "target": "pages/share/icons/icon_share_circle.png",
+      "mode": "verbatim",
+      "entry": "res/mv.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "6aacac32e9bde2fdbb4d4a8ad1beb9424fbc807333c1fc2d6433b9b78f43896a",
+      "bytes": 6350,
+      "image": {
+        "width": 96,
+        "height": 96
+      },
+      "kind": "page-icon",
+      "note": "",
+      "meta": {
+        "resource": "icon_share_circle",
+        "raster": "mipmap-xxxhdpi",
+        "use": "推荐给好友-微信朋友圈（候选）",
+        "evidence": "2 个 ImageButton：[822,2140][986,2304]",
+        "checksheet": "S-推荐给好友"
+      }
+    },
+    {
+      "target": "pages/share/icons/icon_share_wx.png",
+      "mode": "verbatim",
+      "entry": "res/PV.png",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "007ba7f94de8d127cec1e58ffd3990f3d261bdc8936f0dd2f822137102764860",
+      "bytes": 4951,
+      "image": {
+        "width": 96,
+        "height": 96
+      },
+      "kind": "page-icon",
+      "note": "",
+      "meta": {
+        "resource": "icon_share_wx",
+        "raster": "mipmap-xxxhdpi",
+        "use": "推荐给好友-微信（候选）",
+        "evidence": "2 个 ImageButton：[241,2140][405,2304]",
+        "checksheet": "S-推荐给好友"
+      }
+    },
+    {
       "target": "tools/ic_3d_white.png",
       "mode": "verbatim",
       "entry": "res/Ji.png",

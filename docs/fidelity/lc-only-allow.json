@@ -20,6 +20,16 @@
       "state": "map-roadnet-on",
       "reason": "原版无独立路网开态 stem（索引行 22 的对照物是 orig/map-home-01.xml），LC 侧单独成态，不是原版缺该态",
       "by": "LC测试"
+    },
+    {
+      "state": "map-contour-relief",
+      "reason": "LC 侧补充证据、非对照态：固定态（39.9042/116.4074 z12）地形起伏≈0，等高线开关前后 canvas 渲染哈希一致（13567:1033006902 三次），故换到 40.35/116.00 z12 拍等高线可见态，证明能力存在；原版无同名态，不参与 diff 配对，也不替代清单第 23 行的原版对照",
+      "by": "LC地图"
+    },
+    {
+      "state": "map-3d-img",
+      "reason": "LC 侧补充证据、非对照态：与 map-3d-mode 同一 3D 状态，只把贴面切到影像（setBase('img') → drape=img，getState 断言 mode=3d/pitch=45/zoom=12/hasTexture=true），用于解决 vec 贴面下 3D 与 2D 肉眼难辨的证据可读性问题；原版同名态由「清单第 29 行」对照，不参与 diff 配对",
+      "by": "LC地图"
     }
   ]
 }

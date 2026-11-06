@@ -1,9 +1,9 @@
 {
   "tool": "fidelity",
-  "version": "1.3.0",
-  "state": "tool-contour-01",
+  "version": "1.7.0",
+  "state": "map-contour-relief",
   "side": "lc",
-  "captured_at": "2026-11-06T15:45:44+0800",
+  "captured_at": "2026-11-06T17:15:39+0800",
   "serial": "L2E0222531014833",
   "package": "com.luopan.fengshui",
   "checksheet_id": "ST-C-contour",
@@ -17,14 +17,14 @@
     "bytes": 7059457
   },
   "image": {
-    "file": "tool-contour-01.png",
+    "file": "map-contour-relief.png",
     "width": 1228,
     "height": 2700,
-    "sha256": "f037f73577c5b56d68d94364172ec6fc284dbbbe70464e3290a2f461bcb6fcb6"
+    "sha256": "334427de4cc54059c9b7cf4881b1e32da1cb60c3d88d793a5364b1868f68c8e1"
   },
   "dump": {
-    "file": "tool-contour-01.xml",
-    "sha256": "3d14b3c2539a165d111a4bd1351a134f099f68a4a5bc1865de411467fdffcbb2"
+    "file": "map-contour-relief.xml",
+    "sha256": "fb828565008230e714d41018f1b9bc37e3343947611bdf3f8e21f5c566a9b3ee"
   },
   "device": {
     "ro.product.model": "JAD-AL00",

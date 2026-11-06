@@ -38,7 +38,7 @@
 | R2-018 | `cfb9606` | 客户端已交 | 有（`p0d/`） | **复判（21:31）9/9 落点**：`地图设置→.SettingActivity` ✓；`账户设置/投诉反馈/关于我们/联系我们/开具发票/帮助中心/用户协议`（7 项）`→.InfoPageActivity` ✓ 且页内有同名标题；`推荐给好友→.HwChooserActivity`（系统分享）✓；**toast 检测全 false** ✓；DI 台账已在 `67fa61d` §2.1 落定：7 行 `D-012 账户设置 … D-018 用户协议`，blob `fb4ea82…`，推荐给好友不在 DI 表 | **通过** | 落点 9/9 + toast 0 + DI 7 条（`D-012…D-018`）。合入 `develop` 后只需确认报告 blob 仍为 `fb4ea82…`，不再复核内容；7 项 DI 不算「已关闭」，原版内容取证后替换 |
 | R2-006 | 同上 | 客户端已交 | 有 | 隐藏后：`显示[1040,192][1215,306]` ✓、`reading_text[13,87][722,293]` 保留 ✓、`lc_coord_text[8,300][358,358]`=`116.4074，39.9042` ✓、左右工具列 **0** ✓、`mResumedActivity` 仍 `MainActivity` ✓；再点恢复 `罗盘复位` ✓ | **通过**（总监裁定） | 行为 6/6 对。台账写死：**R2-006 只关行为**；读数条 `[13,87][722,293]` 与原版 `[105,397][350,436]` 的差属 R2-003（P1，锚点 ×1.0473 系统性债），随 M2 一起关，**M2 不得当作已修** |
 | R2-025 |  |  |  |  | 待做 |  |
-| R2-007 |  |  |  |  | 待做 |  |
+| R2-007 | `a794c7f`+`bfbc755`（+地图 `1911c96` 异步 DEM）／证据 `9b38c85` | 已交（`compass-main-01`，meta `build.commit=de857a6`） | 有（我复核轮 `p0e/`） | **本人上机复核（22:40，APK `dfcc450c…`，lastUpdateTime 22:39:00）**：进海拔模式 `(103,1674)` 后 `mResumedActivity=MainActivity` ✓；点图 `(614,1350)` 后 `lc_elev_value [47,2162][1181,2281]`=`海拔 53.0 m（本地 DEM） 纬度:39.904200 经度:116.407375` ✓（一位小数+来源）；`lc_elev_o2 [47,2281][1181,2335]`=`含氧量 20.87 %`，`round(20.95−0.0016×53.0,2)=20.87` 自洽 ✓（±0.01）；`lc_elev_pressure [47,2335][1181,2389]`=`气压 100.69 千帕（本地估算·数据源差异 DI）` ✓（千帕+两位小数+来源，≠102.4）；`lc_elev_mark [47,2389][614,2551]`=打点 ✓；点打点后 `立向点 39.9042,116.4074` count=1，与查询点同坐标 ✓ | **通过** | 五项全过；与客户端 `9b38c85` 同构建（`apk.sha256=dfcc450c…`、`build.commit=de857a6`），非自签。过程坑：首轮没保唤醒，灭屏后点击弹华为认证对话框、dump 全空 → 重跑加 `svc power stayon true` + 每步 `keyevent 224` 才干净（已写入 §4.4） |
 | R2-030 | `4e398b3`（+`bad44f3`/`e7897ba`） | 已交（`right-mountains-entry`/`-off` 双态） | 有 | 开态 dump：`lc_mtn_layer [0,1341][1228,2578]`（1237px≈0.48×2578，半屏）、`lc_mtn_title`=看山脉、`lc_mtn_close [884,1368][1181,1530]`、`lc_mtn_status`=`视野内山名 113 个（天地图地名搜索 · 分类 260203 山）`、`lc_mtn_list`；关态 dump：`lc_mtn_*` 节点 **0**；代码 `MainActivity:1049-1057` `case "山脉" → toggleMountainLayer()`、`:1447-1474` 只对 View 做 add/visibility，**无 startActivity** → 前台必为 `MainActivity` | **通过** | 判据按总监订正执行：允许面板标题叫「看山脉」，判「非整页 + 前台 MainActivity + 关闭后节点 0 + 可重开」。整页特征（`MountainActivity` 前台 / 独立整页标题栏）均未出现；113 条山名来自天地图检索，非编造 |
 
 > 判定命令与坐标见 §4；关键 bounds 已抄进本表，原始 dump 在临时目录（未入库，可一键复拍）。
@@ -93,4 +93,9 @@ adb -s L2E0222531014833 pull /sdcard/a.xml .
 # 抽屉：tap 97 202；逐项中心点按；每次点后取 mResumedActivity
 adb -s L2E0222531014833 shell dumpsys activity activities | Select-String 'mResumedActivity'
 ```
+### 4.4 真机核验必做：保唤醒（本轮踩到）
+
+- 首轮 R2-007 判据复核失败不是实现问题：装置灭屏后第一次点击唤醒了锁屏，前台变成 `com.huawei.coauthservice/...UnifiedAuthenticationDialogActivity`，dump 全空、logcat 0 条。
+- 正确做法（本轮改用后一次通过）：`adb shell svc power stayon true`（USB 保持唤醒）→ 每次点按前 `input keyevent 224` → 结束 `svc power stayon false` 并回桌面。
+- 纪律里「唤醒解锁」要落到「**每次 dump 前都确认亮屏且前台是我方包**」，否则会拿锁屏界面当证据。
 

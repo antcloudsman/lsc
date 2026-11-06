@@ -1601,5 +1601,31 @@
     ],
     "pointer": "assets/webapp/assets/imgs/compass/pointer.png (46x188)",
     "note": "14 幅整盘图与 14 个 CompassReadTypeEnum 数量一致，但两者是否为一一对应未确认；mipmap 只有 compass.png + compass1..4_min 共 5 个缩略图。"
+  },
+  "altitude_panel": {
+    "note": "原版海拔工具面板（AltitudeToolsController.kt / AltitudeToolsKt）的含氧量/气压口径；补证 R10（2026-11-06）",
+    "oxygen": {
+      "formula": "20.95 - 0.0016 * altitude_m",
+      "sea_level_percent": 20.95,
+      "per_meter": 0.0016,
+      "smali": "space/xinzhi/globe/ui/controller/d.smali:263-314 (r; consts 10.0 L282, 0.016 L288, 20.95 L294)",
+      "display": "round2(value) + '%'",
+      "sample_56m": 20.8604,
+      "verified_against": "docs/fidelity/orig/compass-main-01.xml: 20.86%"
+    },
+    "pressure": {
+      "computed_locally": false,
+      "source": "GET https://globe.xinzhi.space/api/weather/getPressure?longitude=&latitude=",
+      "smali": "net/ApiService.smali:926-951; net/ApiHelper.smali BASE_URL; model/smart/SmartLngLat.smali:1086-1164",
+      "display": "round2(value) + '千帕' (ui/tools/o.1.smali:4930-4986, unit string L4983)",
+      "sample_56m": 102.4,
+      "verified_against": "docs/fidelity/orig/compass-main-01.xml: 102.4千帕"
+    },
+    "altitude": {
+      "computed_locally": false,
+      "source": "POST api/map/batchGet (List<JsonObject> -> ApiResult<List<Integer>>)",
+      "smali": "net/ApiService.smali:530+",
+      "sample_56m": 56
+    }
   }
 }

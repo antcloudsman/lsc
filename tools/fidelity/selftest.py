@@ -97,6 +97,15 @@ def main() -> int:
             "dE2000: symmetric",
         )
         check(np.allclose(fidelity.delta_e2000(colors_a, colors_a), 0.0), "dE2000: identity is 0")
+        allow_probe = [
+            {"pair": ["a", "b"], "reason": "r", "by": "x"},
+            {"pair": ["b", "c"], "reason": "r", "by": "x"},
+        ]
+        check(
+            fidelity._allow_duplicate(["a", "b", "c"], allow_probe) is not None,
+            "allowlist: connected pairs cover a 3-state group",
+        )
+        check(fidelity._allow_duplicate(["a", "b", "c"], allow_probe[:1]) is None, "allowlist: uncovered state still fails")
 
         root = temp / "docs" / "fidelity"
         orig_png, lc_png = make_images(temp / "source")
@@ -189,6 +198,31 @@ def main() -> int:
         dup_groups = dup_summary["integrity"]["orig"]["duplicates"] + dup_summary["integrity"]["lc"]["duplicates"]
         check(len(dup_groups) == 2, f"report: duplicates recorded on both sides (got {len(dup_groups)})")
         check("证据完整性" in (report_dir / "index.html").read_text(encoding="utf-8"), "report: integrity section in HTML")
+
+        allow_path = report_root / "duplicates-allow.json"
+        valid_allow = {
+            "allow": [
+                {"pair": ["01-compass-main", "03-duplicate"], "reason": "selftest: same synthetic screen", "by": "LC服务端"}
+            ]
+        }
+        allow_path.write_text(json.dumps(valid_allow, ensure_ascii=False), encoding="utf-8")
+        run(["report", "--root", str(report_root)])  # 02-missing only fails under --strict
+        allowed_summary = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        allowed_groups = (
+            allowed_summary["integrity"]["orig"]["duplicates"] + allowed_summary["integrity"]["lc"]["duplicates"]
+        )
+        check(
+            len(allowed_groups) == 2 and all(group.get("allowed") for group in allowed_groups),
+            "report: allowlisted duplicate passes on both sides",
+        )
+
+        allow_path.write_text(
+            json.dumps({"allow": [{"pair": ["01-compass-main", "03-duplicate"], "by": "LC服务端"}]}),
+            encoding="utf-8",
+        )
+        output = run(["report", "--root", str(report_root)], expect=1)
+        check("reason" in output, "report: allowlist missing reason is an error")
+        allow_path.write_text(json.dumps(valid_allow, ensure_ascii=False), encoding="utf-8")
 
         (report_root / "orig" / "04-empty.png").write_bytes(b"")
         output = run(["report", "--root", str(report_root)], expect=1)

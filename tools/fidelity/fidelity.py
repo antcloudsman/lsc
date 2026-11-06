@@ -44,7 +44,7 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
 DEFAULT_THRESHOLD = 8
@@ -581,6 +581,72 @@ def _scan_image_integrity(directory: Path) -> dict:
     return result
 
 
+def _load_allowlist(root: Path, override: str | None) -> list[dict]:
+    """Load docs/fidelity/duplicates-allow.json and validate it strictly."""
+    path = Path(override) if override else root / "duplicates-allow.json"
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise FidelityError(f"cannot read allowlist {path}: {error}") from error
+    if not isinstance(data, dict):
+        raise FidelityError(f"allowlist {path} must be a JSON object with an 'allow' array")
+    entries = data.get("allow", [])
+    if not isinstance(entries, list):
+        raise FidelityError(f"allowlist {path}: 'allow' must be an array")
+    cleaned = []
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            raise FidelityError(f"allowlist {path}: allow[{index}] must be an object")
+        pair = entry.get("pair")
+        if (
+            not isinstance(pair, list)
+            or len(pair) != 2
+            or not all(isinstance(item, str) and item.strip() for item in pair)
+            or pair[0].strip() == pair[1].strip()
+        ):
+            raise FidelityError(
+                f"allowlist {path}: allow[{index}].pair must be two distinct non-empty state ids"
+            )
+        reason = entry.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            raise FidelityError(f"allowlist {path}: allow[{index}] is missing a non-empty reason")
+        by = entry.get("by")
+        if not isinstance(by, str) or not by.strip():
+            raise FidelityError(f"allowlist {path}: allow[{index}] is missing a non-empty by")
+        cleaned.append(
+            {"pair": [pair[0].strip(), pair[1].strip()], "reason": reason.strip(), "by": by.strip()}
+        )
+    return cleaned
+
+
+def _allow_duplicate(states: list[str], allow: list[dict]) -> dict | None:
+    """A duplicate group is allowed only when allowlist pairs connect every state in it."""
+    if len(states) < 2 or not allow:
+        return None
+    states_set = set(states)
+    edges = [(entry, entry["pair"]) for entry in allow if set(entry["pair"]) <= states_set]
+    if not edges:
+        return None
+    seen = {states[0]}
+    frontier = [states[0]]
+    while frontier:
+        current = frontier.pop()
+        for entry, (a, b) in edges:
+            neighbor = b if current == a else a if current == b else None
+            if neighbor and neighbor not in seen:
+                seen.add(neighbor)
+                frontier.append(neighbor)
+    if seen != states_set:
+        return None
+    return {
+        "allowed": True,
+        "by": sorted({entry["by"] for entry, _ in edges}),
+        "reason": "; ".join(entry["reason"] for entry, _ in edges),
+    }
+
+
 def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, integrity: dict) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -637,11 +703,19 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
     for side in ("orig", "lc"):
         for group in integrity.get(side, {}).get("duplicates", []):
             integrity_rows += 1
-            html.append(
-                "<table><tr><th>duplicate</th><td>"
-                f"{_esc(side)}: {_esc(', '.join(group['states']))} share sha256 {_esc(group['sha256'][:16])}…"
-                "</td></tr></table>"
-            )
+            if group.get("allowed"):
+                html.append(
+                    "<table><tr><th class=\"pass\">duplicate (allowed)</th><td class=\"pass\">"
+                    f"{_esc(side)}: {_esc(', '.join(group['states']))} share sha256 {_esc(group['sha256'][:16])}… "
+                    f"— {_esc(group.get('reason', ''))} ({_esc(', '.join(group.get('by', [])))})"
+                    "</td></tr></table>"
+                )
+            else:
+                html.append(
+                    "<table><tr><th class=\"fail\">duplicate</th><td class=\"fail\">"
+                    f"{_esc(side)}: {_esc(', '.join(group['states']))} share sha256 {_esc(group['sha256'][:16])}…"
+                    "</td></tr></table>"
+                )
         for name in integrity.get(side, {}).get("empty", []):
             integrity_rows += 1
             html.append(f"<p class=\"fail\">empty screenshot (0 bytes): {_esc(side)}/{_esc(name)}</p>")
@@ -709,9 +783,15 @@ def write_report(rows: list[dict], out_dir: Path, root: Path, threshold: int, in
     else:
         for side in ("orig", "lc"):
             for group in integrity.get(side, {}).get("duplicates", []):
-                md.append(
-                    f"- DUPLICATE {side}: {', '.join(group['states'])} share sha256 `{group['sha256'][:16]}…`"
-                )
+                if group.get("allowed"):
+                    md.append(
+                        f"- DUPLICATE (allowed) {side}: {', '.join(group['states'])} share sha256 "
+                        f"`{group['sha256'][:16]}…` — {group.get('reason', '')} ({', '.join(group.get('by', []))})"
+                    )
+                else:
+                    md.append(
+                        f"- DUPLICATE {side}: {', '.join(group['states'])} share sha256 `{group['sha256'][:16]}…`"
+                    )
             for name in integrity.get(side, {}).get("empty", []):
                 md.append(f"- EMPTY {side}/{name} (0 bytes)")
     md.extend([
@@ -866,17 +946,33 @@ def cmd_report(args: argparse.Namespace) -> int:
         raise FidelityError(f"no *.png pairs found under {root}")
 
     integrity = {"orig": _scan_image_integrity(orig_dir), "lc": _scan_image_integrity(lc_dir)}
+    allow = _load_allowlist(root, getattr(args, "allow_file", None))
+    known_states = set()
+    for directory in (orig_dir, lc_dir):
+        if directory.exists():
+            known_states.update(path.stem for path in directory.glob("*.png") if not path.name.startswith("_"))
+    for entry in allow:
+        missing = [state for state in entry["pair"] if state not in known_states]
+        if missing:
+            info(f"warning: allowlist entry references missing state(s): {', '.join(missing)}")
+
     for side in ("orig", "lc"):
         for group in integrity[side]["duplicates"]:
-            failed(
-                f"duplicate screenshot across states ({side}): {', '.join(group['states'])} "
-                f"share sha256 {group['sha256'][:16]}…; re-capture or mark the state as missing"
-            )
+            allowed = _allow_duplicate(group["states"], allow)
+            if allowed:
+                group.update(allowed)
+            else:
+                failed(
+                    f"duplicate screenshot across states ({side}): {', '.join(group['states'])} "
+                    f"share sha256 {group['sha256'][:16]}…; re-capture, mark the state as missing, "
+                    "or add a reasoned entry to docs/fidelity/duplicates-allow.json"
+                )
         for name in integrity[side]["empty"]:
             failed(f"empty screenshot (0 bytes) ({side}): {name}; remove it or re-capture with a real screenshot")
-    integrity_failed = any(
-        integrity[side]["duplicates"] or integrity[side]["empty"] for side in ("orig", "lc")
-    )
+    integrity_failed = False
+    for side in ("orig", "lc"):
+        if any(not group.get("allowed") for group in integrity[side]["duplicates"]) or integrity[side]["empty"]:
+            integrity_failed = True
 
     crop = parse_rect(args.crop, "--crop") if args.crop else None
     ignore_rects = [parse_rect(value, "--ignore-rect") for value in (args.ignore_rect or [])]
@@ -1128,6 +1224,7 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--crop", help="common crop x,y,w,h applied to both images")
     report.add_argument("--ignore-rect", action="append", metavar="x,y,w,h")
     report.add_argument("--state", action="append", help="only these state ids (repeatable)")
+    report.add_argument("--allow-file", help="duplicates allowlist JSON (default: <root>/duplicates-allow.json)")
     report.add_argument("--strict", action="store_true", help="exit 1 when any pair is not compared")
     report.set_defaults(func=cmd_report)
 

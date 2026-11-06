@@ -163,6 +163,30 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
 
 默认读 `<root>/duplicates-allow.json`；仓库内模板是空 `allow`，各负责人按归属自行追加并保留理由。
 
+### 5.2 dump-only 豁免（截图确实不可得）
+
+`docs/fidelity/dump-only-allow.json`（或 `--dump-only-file`）登记「有 dump、但没有可用截图」的状态：
+
+```json
+{
+  "allow": [
+    {
+      "state": "tool-weather-01",
+      "reason": "OpenVipActivity 为 FLAG_SECURE，screencap 返回 0 字节；dump 可取",
+      "by": "LC逆向"
+    }
+  ]
+}
+```
+
+规则：
+
+- 豁免态**只要求 dump、跳过 PNG 配对**；两侧都有 dump 时仍做控件量取，`report` 状态记为 `dump-only`；
+- `state` 必须在 `orig/` 或 `lc/` 至少有一份 XML，否则 `report` 直接报错——**豁免不能用来掩盖漏采**；
+- 豁免态若出现 0 字节 PNG，仍按空证据失败；完整性检查不跳过；
+- 若豁免态两侧 PNG 都存在，`report` 会忽略豁免、按正常配对比较并提示，避免拿豁免藏掉已有截图；
+- `state`/`reason`/`by` 缺一即报错；允许列表条目引用不存在的目录会在启动校验时失败。
+
 ## 6. 写发现时的硬要求
 
 每条“差异”至少带：`state id` + 复现命令（或入口路径 + 坐标）+ 量化值（px / hex / sp / 文案逐字）。工具输出只是证据，结论里不要出现“差不多/基本一致/类似”；无法复现的不写进报告。

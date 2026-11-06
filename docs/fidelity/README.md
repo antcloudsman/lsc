@@ -16,6 +16,7 @@ docs/fidelity/
   checksheet.md                  # LC产品维护：字段定义 + 严重度 + 覆盖面
   orig-inventory.md              # LC逆向维护：≥30 页面/状态清单（入口路径/状态机）
   duplicates-allow.json          # 合法同态允许列表（reason/by 必填；只豁免重复图）
+  dump-only-allow.json           # dump-only 豁免（reason/by 必填；只跳过 PNG 配对）
   findings/                      # 工具生成，勿手改
     report/index.html            # 批量对照页
     report/summary.json|summary.md
@@ -48,6 +49,8 @@ docs/fidelity/
 `findings/` 由 `python tools/fidelity/fidelity.py report --root docs/fidelity` 生成，是可再生成的派生证据，不手工编辑；需要留档的结论写进审阅文档并引用 `state id` 与 metrics 数值。
 
 `report` 带证据完整性硬检查：同一侧不同 state 的 PNG sha256 相同、或出现 0 字节 PNG，都会 exit 1 并在 `summary.json` 的 `integrity` 与 `index.html` 标出；不要用一张图冒充多个状态，缺图按「缺失」登记。合法同态（如「更多面板不可滚动」）写入 `duplicates-allow.json`，每条必须带 `reason` 与 `by`，缺字段直接报错；0 字节 PNG 不能豁免。
+
+截图确实不可得（如 `FLAG_SECURE`）但 dump 存在的状态，写入 `dump-only-allow.json`：`report` 只跳过 PNG 配对、仍做控件量取；引用无 dump 的 state 或出现 0 字节 PNG 都会失败，不能拿来掩盖漏采。
 
 ## 快速命令
 

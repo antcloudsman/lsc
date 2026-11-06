@@ -1376,6 +1376,44 @@ function elevAt(lat, lng) {
   return Math.round(v * 10) / 10;
 }
 
+/* R2-007 / F-03：2D 下按点补拉 DEM 瓦片，再同步采样。
+ * 背景：elevAt 只在 DEM 缓存有该 z 的瓦片时返回数值；DEM 平时由 3D patch(ensurePatch) 拉，
+ * 所以 2D 固定态直接调 elevAt 必为 null。这里只补「该点 2×2 像素涉及的 1~2 个瓦片」，
+ * 不切 3D、不改相机、不建 patch。 */
+function elevDemZ() {
+  return patch ? patch.z : Math.max(4, Math.min(12, Math.round(zoom) - 1));
+}
+function demPrefetchFor(lat, lng) {
+  var z = elevDemZ();
+  var t = lonLatToTile(lng, lat, z);
+  var px = t.x * 256, py = t.y * 256;
+  var x0 = Math.floor(px), y0 = Math.floor(py);
+  var jobs = [];
+  var seen = {};
+  [[x0, y0], [x0 + 1, y0], [x0, y0 + 1], [x0 + 1, y0 + 1]].forEach(function (p) {
+    var n = Math.pow(2, z);
+    var tx = Math.floor(p[0] / 256), ty = Math.floor(p[1] / 256);
+    if (ty < 0 || ty >= n) return;
+    tx = wrapX(tx, n);
+    var k = z + "/" + tx + "/" + ty;
+    if (seen[k]) return;
+    seen[k] = 1;
+    jobs.push(demTile(z, tx, ty));
+  });
+  if (!jobs.length) return Promise.reject(new Error("dem-oob"));
+  return Promise.all(jobs);
+}
+/* 异步取高程：缓存命中走同步；否则拉瓦片后回调（取不到仍回 null，不编 0） */
+function elevAtAsync(lat, lng, cb) {
+  var e = elevAt(lat, lng);
+  if (e !== null) { cb(e); return; }
+  demPrefetchFor(lat, lng).then(function () {
+    cb(elevAt(lat, lng));
+  }).catch(function () {
+    cb(null);
+  });
+}
+
 /* ---------------- 模式 / 视角 ---------------- */
 function toggle3D() {
   setMode(mode === "3d" ? "2d" : "3d");
@@ -1716,7 +1754,15 @@ function placeMarker(x, y) {
     var ll2 = latLngOfScreen(x - rect.left, y - rect.top);
     if (ll2) {
       var e = elevAt(ll2.lat, ll2.lng);
-      emit({ type: "elev", lat: ll2.lat, lng: ll2.lng, elev: e });
+      if (e !== null) {
+        emit({ type: "elev", lat: ll2.lat, lng: ll2.lng, elev: e });
+      } else {
+        /* 2D：DEM 瓦片未缓存 → 按点补拉后回事件（不切 3D、不改相机） */
+        var pt2 = ll2;
+        elevAtAsync(pt2.lat, pt2.lng, function (v) {
+          emit({ type: "elev", lat: pt2.lat, lng: pt2.lng, elev: v, demFetched: true });
+        });
+      }
     }
     return;
   }
@@ -2702,6 +2748,8 @@ window.__LC3D = {
   setMode: setMode,
   setUiMode: setUiMode,
   attribution: getAttribution,
+  elevAt: elevAt,
+  elevAtAsync: elevAtAsync,
   setRoadNet: setRoadNet,
   setRidge: setRidge,
   setWayback: setWayback,

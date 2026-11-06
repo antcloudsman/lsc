@@ -1,6 +1,7 @@
 # D1 真机核验证据（Stage 4 / Stage 1 · 核验用，不是对照证据）
 
-- 执行人：LC审核验　｜　执行时间：2026-11-06 17:38–17:46
+- 执行人：LC审核验　｜　执行时间：2026-11-06 17:38–17:46（首轮）+ 19:45–19:55（有效轮，v3/v4/v5）
+- 机上 APK sha256：`381d163ea095cbffa4d1c719af6c080daa8fe46376476e195bb10cfae6815788`（= D2 的 `beafeb7` 构建）
 - 设备：L2E0222531014833（1228×2700，density 540），单台串行
 - 前置：动画三项 0、唤醒解锁、`rm -f /sdcard/a.xml` 后再 dump、heading 冻结 0°、`setView(39.9042,116.4074,12)`
 - 代码基准：`develop` `bd0323b`；与 findings 基准 `3d7fcb3` 逐字节同源（`git diff --stat 3d7fcb3 bd0323b -- app/android/app/src` → **0 行**），故本次结果可直接用于两份 findings
@@ -29,8 +30,8 @@ adb -s L2E0222531014833 shell logcat -d | Select-String 'D1STATE|LC3D'
 
 | 项 | 步骤（坐标） | 观测 | 判定 | dump | 截图 sha256(前16) |
 |---|---|---|---|---|---|
-| client 05 | 地图态点图 `614 1350` | 点击前后 dump **逐字节相同**（`85059F7C…`），无「导航/复制经纬度/距我」 | 成立 | `client05-map.xml` / `client05-tap.xml` | map `62B05611…` / tap `D701BD55…` |
-| client 09 | 罗盘 `103 1868` → 隐藏 `1127 249` | 隐藏前有读盘/隐藏/罗盘复位；隐藏后 `全地图工具`=True、`罗盘复位`=False、无「显示」；**隐藏后截图 sha = 2D 固定态 `68469C5C…`** | 成立 | `client09-compass.xml` / `client09-hidden.xml` | `63B81E2B…` / `68469C5C…` |
+| client 05 | 点图 `614 1000`、`800 1600` | 每次点按新增 `立向点 向 子山 · 坐 午山` 标记（2 次=2 个，可累积），无「导航/复制经纬度/距我/名称」面板 | 成立·修正 R9（「无任何可见反馈」不成立） | `client05-map.xml` / `client05-tap.xml` | map `62B05611…` / tap `D701BD55…` |
+| client 09 | 罗盘 `103 1868` → 隐藏 `1127 249` | 隐藏前有读盘/隐藏/罗盘复位；隐藏后 `全地图工具`=True、`罗盘复位`=False、无「显示」；**隐藏后截图 sha = 当次地图基线** | 成立 | `client09-compass.xml` / `client09-hidden.xml` | `63B81E2B…` / `68469C5C…`（首轮）；v4 轮 baseline=hidden=`AC06F0B5…` |
 | client 10 | 海拔查询 `103 1674` → 页内点图 `614 1350` | `mResumedActivity=…/.ElevationActivity`；无「打点」；点图后出现「纬度/海拔」行 | 成立（R3 限定被证实） | `client10-elev.xml` / `client10-elevtap.xml` | `4A14B658…` / `7776E111…` |
 | client 17 | 更多 `103 2453` → 收藏点 `232 1453` | 面板有「地图工具/收藏点」；点击后 `mResumedActivity=…/.InterestListActivity`、「暂无收藏点」、无「添加点」 | 成立 | `client17-more.xml` / `client17-favorite.xml` | `B77834FA…` / `057C5CDF…` |
 | map C-01 | 搜索 `1127 249` | dump 命中 `搜索：盘面 / 圈层 / 知识条目` | 成立 | `mapC01-search.xml` | `F0A246D1…` |
@@ -47,7 +48,15 @@ adb -s L2E0222531014833 shell logcat -d | Select-String 'D1STATE|LC3D'
 1. **C-04**：本次 3D 态 dump sha `3D14B3C2…` 与旧 `lc/map-3d-mode.xml` 相同、截图 sha `F037F735…` 与旧 `lc/map-3d-mode.png` 相同 → 旧证据与我今天在 `mode=3d/drape=vec` 下拍的**是同一状态**；「实为 2D」不成立（详见 `verify-round2.md` §3.9）。
 2. **C-12**：3D 下开/关等高线三张截图全等，而 `logcat` 确认 `contour on=true uniform=1` → 同图原因是固定态北京地形平坦（`elev=53`）、无可绘等值线，不是「不在 3D」。
 3. **client 09**：隐藏后截图 sha 回到 2D 固定态 `68469C5C…` → 「隐藏＝退出罗盘态」在像素级成立。
-4. **client 05**：点图前后 dump 逐字节相同 → 无任何面板/状态变化。
+4. **client 05**：点图不是「无反馈」——v5 实测每次点按新增 `立向点 向 子山 · 坐 午山` 标记（2 次=2 个，会累积），但始终无 POI 面板（详见 `verify-round2.md` R9）。
+
+## 3.1 复现性告警（同态 ≠ 同 sha）
+
+- 同一 UI 状态在 17:45 与 19:49 两次采集：节点树**完全相同**（38 节点、零差异），但 PNG sha 不同（`68469C5C…` → `AC06F0B5…`）——地图像素受瓦片加载/渲染时序影响。
+- 会让截图变化的两个已知副作用：① 点图累积「立向点」标记；② D2「加钓点」写本机 DB（`LC客户端` 已登记）。
+- 所以「同一状态」只能靠节点树 + 状态断言（`D1STATE`/前台 Activity）保证，不能靠 sha 相等；复跑同一态前先重启 App。
+- `fidelity.py report` 的重复图判定按 sha，不会误报，但也**发现不了「同态不同 sha」的重复采集**——建议在工具 README 注明，别把 sha 不同当作「两个不同态」。
+
 
 ## 4. 截图未入库说明
 

@@ -59,6 +59,10 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $root
 
+# `& adb` 会解析到本脚本同名的 Adb 函数（递归爆栈），必须锁定外部可执行文件
+$script:AdbExe = (Get-Command adb -CommandType Application | Select-Object -First 1).Source
+if (-not $script:AdbExe) { throw "找不到 adb 可执行文件（PATH 里没有 Application 类型的 adb）" }
+
 $script:Fail = $false
 function Info([string]$m) { Write-Host "[map] $m" }
 function Fail([string]$m) { Write-Host "[map][FATAL] $m"; $script:Fail = $true; throw $m }
@@ -69,7 +73,7 @@ function Want([string]$state) {
 
 function Adb([string[]]$ArgList) {
   if ($DryRun) { Write-Host ("DRY: adb -s $Serial " + ($ArgList -join ' ')); return '' }
-  $out = & adb -s $Serial @ArgList 2>&1
+  $out = & $script:AdbExe -s $Serial @ArgList 2>&1
   return ($out | Out-String)
 }
 function Sh([string]$cmd) { Adb @('shell', $cmd) | Out-Null }
@@ -172,13 +176,16 @@ function Assert-LiveTextAbsent([string]$pattern, [string]$hint) {
   Info "前置断言 ok（负向）: $hint 不含 /$pattern/"
 }
 
-function Wait-Logcat([string]$pattern, [int]$timeoutSec = 20) {  $deadline = (Get-Date).AddSeconds($timeoutSec)
+function Wait-Logcat([string]$pattern, [int]$timeoutSec = 20) {
+  # WebView 的 console.log 落在 tag hwschromium-*（文本形如 [INFO:CONSOLE(230)] "LC3D mode=3d"），
+  # 按 tag=LC3D 过滤永远匹配不到；取最近 400 行全量按内容匹配。
+  $deadline = (Get-Date).AddSeconds($timeoutSec)
   while ((Get-Date) -lt $deadline) {
-    $logs = Adb @('logcat', '-d', '-s', 'LC3D:V', 'LCJS:V', 'LCDEBUG:V')
+    $logs = Adb @('logcat', '-d', '-t', '400')
     if ($logs -match $pattern) { Info "logcat ok: $pattern"; return $logs }
     Start-Sleep -Milliseconds 700
   }
-  $tail = (Adb @('logcat', '-d', '-s', 'LC3D:V', 'LCJS:V', 'LCDEBUG:V') -split "`n" | Select-Object -Last 12) -join ' | '
+  $tail = (Adb @('logcat', '-d', '-t', '400') -split "`n" | Select-Object -Last 12) -join ' | '
   Fail "logcat 等不到 /$pattern/（${timeoutSec}s）。最后 12 行：$tail"
 }
 # 读页面真实状态（map.html getState），用于「先确认为 3D 再拍」
@@ -293,6 +300,10 @@ if ($SelfTest) {
 }
 
 # 0) 工具能力闸门：检查表 §5 要求 meta 带 build.commit + apk.sha256
+# 注意：pwsh -File 传 -Only a,b,c 时逗号列表是「一个字符串」，必须自己拆
+if ($Only.Count -eq 1 -and $Only[0] -match ',') { $Only = @($Only[0] -split ',') }
+$Only = @($Only | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+Write-Host ("[map] states filter: " + $(if ($Only.Count -gt 0) { $Only -join ',' } else { 'ALL(15)' }))
 if (-not $Apk) { Fail "必须给 -Apk（develop 构建的 app-debug.apk）；只做无设备自检请加 -SelfTest" }
 if (-not $Commit) { Fail "必须给 -Commit（40 位 sha）" }
 $help = (python tools\fidelity\fidelity.py collect --help 2>&1 | Out-String)
@@ -308,7 +319,7 @@ Info "APK sha256=$apkSha bytes=$apkBytes commit=$Commit"
 # 1) 设备闸门 + 前置
 $dev = (Adb @('get-state')).Trim()
 if (-not $DryRun -and $dev -ne 'device') {
-  $list = (adb devices | Out-String)
+  $list = (& $script:AdbExe devices | Out-String)
   Fail "设备不可用（adb get-state=$dev）。adb devices:`n$list"
 }
 Sh 'settings put global window_animation_scale 0'
@@ -511,6 +522,6 @@ Sh 'input keyevent KEYCODE_HOME'
 Sh 'settings put global window_animation_scale 1'
 Sh 'settings put global transition_animation_scale 1'
 Sh 'settings put global animator_duration_scale 1'
-if (-not $DryRun) { adb forward --remove-all | Out-Null }
+if (-not $DryRun) { & $script:AdbExe forward --remove-all | Out-Null }
 Info "released: force-stop + HOME, animations=1, forward cleared"
 Info "DONE. 索引 §4 请按新证据回填；报告门禁: python tools\fidelity\fidelity.py report --root docs\fidelity"

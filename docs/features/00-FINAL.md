@@ -102,6 +102,7 @@
 - **两把 key 不能混用**：服务端 key 配原生 UA 用于 Java 侧逆地理/检索；网页端 key 配浏览器 UA 用于 WebView 瓦片。混用返回 `301013 权限类型错误`（实测结论）。
 - **闸门**：`tests/secrets/secret_gate.py` 扫全仓，真 key 命中即 FAIL（已接入 smoke）；旧第三方 key `dd1885…` 已失效（`301001 非法key`），代码里不再出现。
 - **轮换**：只改 `secrets/tdt.properties`，构建自动生效；仓库是 **PUBLIC**，**禁止任何 key 入库**（含文档、测试夹具、截图、日志）。
+- **证据与日志必须经 `LogRedact` 脱敏**：WebView 内部日志会把 URL 连同 `tk` 参数一并打出，属**已知泄漏点**；`tests/lib/LogRedact.ps1` 统一处理 logcat/ui dump/manifest/文件名，写入前自检，失败拒写。
 - **冻结报告的旧 key 字面量**：`docs/review/20-M3-map.md`、`50-M6-docs.md` 含旧 key（`dd1885…`）完整字面量，属**冻结基线证据**（sha 前缀 `75108000C87DFD84`），按纪律**不修改**；该 key 已 `301001` 失效，风险为零。
 
 ## 5 证据索引
@@ -163,6 +164,7 @@
 | 11 | ~~基线重冻未回填~~ **已完成（2026-11-06）** | `docs/qa/baseline-android/round-acceptance/` 已落（构建提交 `f332b9c`，APK sha `A928023F…7E07BB`） | §6 已回填；`k01-compass.png` 与 `k01-compass-needle-on.png` 哈希相同＝采集时序落在同一状态（默认进罗盘态指针就是开的），**不是丢图** |
 | 12 | SW-006 面板裁切窗 | **待按 round-acceptance 新布局实测**（旧裁切窗已随上一轮 UI 失效，不得沿用） | 只在以后做像素 diff 时才需要；届时重测并写进 AT |
 | 13 | 裁切窗测量依据 | **未提供**（谁量、哪张截图、怎么定面板上缘均未写） | 重取时必须写明测量方法/取样点，否则 diff 结果不可复现 |
+| 14 | **网页端天地图 key 曾进入公开仓库 git history** | 已就地脱敏（`c86f10e`，替换 `***REDACTED***`），但 **history 仍保留原文** | `docs/qa/baseline-android/round-acceptance/logcat.txt` 初版含华为 WebView 内部日志 `map.html?tk=<key>`，共 10 处（`02e6a6e` 引入）。该 key 为**浏览器类型**、本就会打进 APK，实际风险是**配额被第三方蹭用**，非数据泄露；**服务端 key 未泄露**。**用户裁决：不轮换，接受并登记**。缓解：`tests/secrets/secret_gate.py` 硬门禁（当前 404 文件零命中）、`tests/lib/LogRedact.ps1` 统一脱敏（写入前自检，失败拒写） |
 
 ## 8 后续建议
 
@@ -190,3 +192,4 @@
 | v0.10 | 2026-11-06 | **填实 §0 摘要与 §6 结论**：18 项通过（分轮证据 + 总监核定）、未通过项「无」、门禁七项 PASS（`docs/qa/final-gates-20261106.md`，debug `FF97AE8A…A435` / release unsigned `A9AF7096…8562`）；补两条门禁边界（`-SkipDevice` 不替代真机结论、APK sha 不作可复现校验）；§5 补验收目录与门禁留档行；§7 增 release 未签名、基线重冻待回填；基线 `f332b9c`（应用代码 `0dda97e` ≡ `857a471`）；标题去「骨架」 |
 | v0.11 | 2026-11-06 | 基线重冻状态写具体：客户端已落 `round-acceptance/README.md`，读数与截图待设备接线后补跑，路径届时回填；§7 第 11 条同步「最终构建校验仍是待办」；`TEAM_CHARTER.md` 新增 §9 当前有效工作流（develop 主线 + 各自 worktree feature 分支；`output`/`fix-p0` 只读归档；`output/AGENTS.md` 的「唯一 worktree 是 fix-p0」失效，以章程为准） |
 | v0.12 | 2026-11-06 | **基线重冻回填完成**（develop `f8f22e9`）：§6 写目录、口径 `-BuildHead 0dda97e`、构建提交 `f332b9c`、APK `7,059,441 B`/sha `A928023F…7E07BB`、冷启 653 ms、左 8/右 10/更多 16/罗盘文字 19、中心偏差最大 8.5 px（容差 ±45）、门禁 85 + CARGO PASS、FATAL/ANR 0；§7 第 11 条关闭（并注明 `k01-compass` 与 `needle-on` 同哈希是采集时序、非丢图），新增第 12/13 条（SW-006 裁切窗待按新布局实测、裁切窗测量依据未提供）；§5 增基线重冻证据行；**全文已无【待填】** |
+| v0.13 | 2026-11-06 | 风险登记：§7 新增第 14 条「网页端天地图 key 曾进入公开仓库 git history」（`02e6a6e` 引入 10 处、`c86f10e` 就地脱敏但 history 保留；浏览器类型 key、风险为配额蹭用、服务端 key 未泄；**用户裁决不轮换**；缓解 `secret_gate` 硬门禁 + `LogRedact` 统一脱敏）；§4.1 补「证据/日志必须经 LogRedact，WebView 日志会打 `tk`」 |

@@ -311,6 +311,28 @@ def main() -> int:
         check("empty screenshot (0 bytes)" in output, "report: dump-only exemption does not skip 0-byte PNG check")
         (report_root / "orig" / "05-dump-only.png").unlink()
 
+        shutil.copyfile(orig_xml, report_root / "orig" / "14-dump-only.xml")
+        valid_dump_allow["allow"].append(
+            {"state": "14-dump-only", "reason": "selftest: FLAG_SECURE, dump only", "by": "LC服务端"}
+        )
+        dump_allow_path.write_text(json.dumps(valid_dump_allow, ensure_ascii=False), encoding="utf-8")
+        (report_root / "lc-captures.md").write_text(
+            "| stem | 清单行 | R2 | 分类 | 依据 |\n"
+            "|---|---|---|---|---|\n"
+            "| 14-dump-only | 26 | R2-030 | 证据不可得 | FLAG_SECURE, dump only |\n",
+            encoding="utf-8",
+        )
+        run(["report", "--root", str(report_root), "--state", "14-dump-only"])
+        dump_only_known = json.loads((report_dir / "summary.json").read_text(encoding="utf-8"))
+        check(
+            dump_only_known["known_red"]["classes"]["证据不可得"] == 1,
+            "report: §6 证据不可得 class registered",
+        )
+        check(
+            dump_only_known["checksheet"]["required"] == 0,
+            "report: §6 known-red states are excluded from checksheet coverage",
+        )
+
         lc_only_states = ["07-lc-only-a", "08-lc-only-b", "09-lc-only-c", "10-lc-only-d"]
         for index, name in enumerate(lc_only_states):
             Image.new("RGB", (320, 600), (10 + index * 40, 50, 200)).save(report_root / "lc" / f"{name}.png")

@@ -125,7 +125,7 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --threshold 8
 - `summary.json` / `summary.md`：机读/人读汇总
 - `<state>/metrics.json`、`side_by_side.png`、`diff.png` 等
 
-缺一侧、尺寸不一致、解析失败都会在表里标 `missing-lc` / `missing-orig` / `error` 并列在控制台。**退出码**：`missing-orig`/`error`、完整性失败、checksheet 冲突、未登记的 `missing-lc`、或 `--require-checksheet-id` 下的覆盖缺失 → exit 1；**已在索引 §5 登记的 `missing-lc` 属 known-red，不算失败**。确需在已知红状态下出报告时显式加 `--allow-known-red`（控制台会打印该提示）。`--strict` 保留兼容但已无作用（默认就是严格）。
+缺一侧、尺寸不一致、解析失败都会在表里标 `missing-lc` / `missing-orig` / `error` 并列在控制台。**退出码**：`missing-orig`/`error`、完整性失败、checksheet 冲突、未登记的 `missing-lc`、或 `--require-checksheet-id` 下的覆盖缺失 → exit 1；**已在索引 §5/§6 登记的 `missing-lc` 属 known-red，不算失败**。确需在已知红状态下出报告时显式加 `--allow-known-red`（控制台会打印该提示）。`--strict` 保留兼容但已无作用（默认就是严格）。
 
 **checksheet_id 覆盖与缺图**：报告自动汇总每个「有原版证据的 state」的 `meta.json.checksheet_id`，写进 `summary.json.checksheet`（`required/with_id/missing/conflicts`）、`summary.md` 与 `index.html` 的「checksheet_id 覆盖」小节；orig/lc 两侧 id 不一致记 conflict。D3 的 38/38 校验命令：
 
@@ -135,7 +135,7 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --require-checkshe
 
 退出码 0 = 覆盖齐全且无缺图/无完整性失败；缺 `checksheet_id`、orig/lc 冲突、缺图、重复图、0 字节图都会非 0。缺图清单同时列在 `summary.md` 的 state 表（`missing-orig`/`missing-lc`）。
 
-**known-red §5 门禁**：`report` 解析索引 §5（`stem｜清单行｜R2｜分类`，`--index` 可另指）。每个 `missing-lc` 必须在 §5 登记，否则 exit 1；`分类` 必须严格是 `真缺失`/`命名不一致`/`载体不同` 之一，带括号注释或其它值直接报错；一个 state 重复登记不同 R2/分类、或一行解析出多个 state 也报错。§5 只做登记与分类统计，**不作为 `checksheet_id` 来源**（避免 P0 补采后 orig 的 `R2-*` 与 lc 的 `ST-*` 冲突）。计数写进 `summary.json.known_red`（`classes/unregistered_missing/stale`）。
+**known-red §5 ∪ §6 门禁**：`report` 解析索引 §5/§6（列序 `stem｜清单行｜R2｜分类`，`--index` 可另指）。每个 `missing-lc` 必须在登记表里，否则 exit 1；`分类` 必须严格是 `真缺失`/`命名不一致`/`载体不同`/`证据不可得` 之一，带括号注释或其它值直接报错；一个 state 重复登记不同 R2/分类、或一行解析出多个 state 也报错。§5/§6 只做登记与分类统计，**不作为 `checksheet_id` 来源**（避免 P0 补采后 orig 的 `R2-*` 与 lc 的 `ST-*` 冲突）。`required` 会扣掉这两组，`checksheet_id` 覆盖只在未登记态上计算。计数写进 `summary.json.known_red`（`classes/unregistered_missing/stale`）。
 
 **证据完整性硬检查**（不看 `--strict`，命中即 exit 1）：
 
@@ -241,7 +241,7 @@ python tools\fidelity\fidelity.py report --root docs\fidelity --require-checkshe
 - 输入只能来自「已有 png/xml」+「`<root>/lc-captures.md` 表格里的 `checksheet_id`」（`--index` 可另指）；`state` 取自文件名；
 - `image.sha256`/`dump.sha256` 现算，`width/height` 从 PNG 读，**不提供任何手填 hash/尺寸的参数**；
 - 映射冲突（同一 state 两个不同 id）直接报错，整次不写；映射找不到的 state 跳过并打印原因；
-- **§5 登记的 known-red 态一律跳过**，理由写 `known-red (index §5)`；R2 编号只用于分类，不写进 `checksheet_id`；
+- **§5/§6 登记的 known-red 态一律跳过**，理由写 `known-red (index §5)` 或 `known-red (index §6)`；R2 编号只用于分类，不写进 `checksheet_id`；
 - 一行索引里出现多个候选 state（如 `ST-C-3d` 行同时含 `map-3d-mode`/`map-3d-img`）时，工具**跳过并 warning**，不猜归属；先把索引改成一行一 state 再跑；
 - 任一待写状态证据缺失/PNG 读不出 → **整次中止、不写半份 meta**；
 - 已有 `meta.json` 默认跳过，`--force` 才覆盖；只写工具与 meta，不替你提交证据目录；

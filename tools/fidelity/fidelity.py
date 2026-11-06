@@ -44,8 +44,8 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.10.0"
-KNOWN_RED_CLASSES = ("真缺失", "命名不一致", "载体不同")
+VERSION = "1.11.0"
+KNOWN_RED_CLASSES = ("真缺失", "命名不一致", "载体不同", "证据不可得")
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
 DEFAULT_THRESHOLD = 8
@@ -744,13 +744,15 @@ def _meta_checksheet_id(meta_path: Path) -> str:
     return value.strip() if isinstance(value, str) else ""
 
 
-def _collect_checksheet(orig_dir: Path, lc_dir: Path, states: set[str], lc_only: set[str]) -> dict:
-    """Coverage of meta.checksheet_id over original-backed states (LC-only states excluded)."""
+def _collect_checksheet(orig_dir: Path, lc_dir: Path, states: set[str], lc_only: set[str],
+                        exclude: set[str] | None = None) -> dict:
+    """Coverage of meta.checksheet_id over original-backed states (LC-only/known-red excluded)."""
     missing, conflicts = [], []
     required = 0
     with_id = 0
+    exclude = exclude or set()
     for state in sorted(states):
-        if state in lc_only:
+        if state in lc_only or state in exclude:
             continue
         if not ((orig_dir / f"{state}.png").exists() or (orig_dir / f"{state}.xml").exists()):
             continue
@@ -1234,7 +1236,6 @@ def cmd_report(args: argparse.Namespace) -> int:
             failed(f"{state}: {row['status']} - {row['error']}")
         rows.append(row)
 
-    checksheet = _collect_checksheet(orig_dir, lc_dir, states, set(lc_only))
     index_path = Path(args.index) if getattr(args, "index", None) else root / "lc-captures.md"
     if index_path.exists():
         known_red, known_red_errors = _parse_known_red(index_path, root)
@@ -1244,21 +1245,25 @@ def cmd_report(args: argparse.Namespace) -> int:
     if known_red_errors:
         for error in known_red_errors:
             failed(error)
-        raise FidelityError("invalid known-red register in the fidelity index (§5)")
+        raise FidelityError("invalid known-red register in the fidelity index (§5/§6)")
+    checksheet = _collect_checksheet(orig_dir, lc_dir, states, set(lc_only), set(known_red))
     class_counts = {name: 0 for name in KNOWN_RED_CLASSES}
     for entry in known_red.values():
         class_counts[entry["class"]] = class_counts.get(entry["class"], 0) + 1
     info(
-        f"known-red (index §5): {len(known_red)} registered | "
+        f"known-red (index §5 ∪ §6): {len(known_red)} registered | "
         + " / ".join(f"{name} {count}" for name, count in class_counts.items())
     )
     missing_lc_states = [row["state"] for row in rows if row["status"] == "missing-lc"]
     unregistered_missing = [state for state in missing_lc_states if state not in known_red]
-    stale_known_red = [state for state in known_red if state not in missing_lc_states]
+    stale_known_red = [
+        state for state, entry in known_red.items()
+        if state not in missing_lc_states and entry["class"] != "证据不可得"
+    ]
     for state in unregistered_missing:
-        failed(f"missing-lc not registered in index §5: {state}")
+        failed(f"missing-lc not registered in index §5 ∪ §6: {state}")
     if stale_known_red:
-        info(f"warning: §5 states that are no longer missing-lc: {', '.join(stale_known_red)}")
+        info(f"warning: §5/§6 states that are no longer missing-lc: {', '.join(stale_known_red)}")
     info(
         f"checksheet_id coverage: {checksheet['with_id']}/{checksheet['required']}"
         + (f", missing={','.join(checksheet['missing'])}" if checksheet["missing"] else "")

@@ -259,6 +259,27 @@
       "meta": null
     },
     {
+      "target": "compass/ic_compass_vip.webp",
+      "mode": "verbatim",
+      "entry": "res/Dn.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "5e2811b6914f53b162bfa3cb1b7c62378eab8c4612711117a129634b41e39e48",
+      "bytes": 2074,
+      "image": {
+        "width": 132,
+        "height": 112
+      },
+      "kind": "bitmap",
+      "note": "",
+      "meta": {
+        "resource": "ic_compass_vip",
+        "raster": "mipmap-xxxhdpi",
+        "size": "132x112",
+        "use": "读盘 sheet 每行行尾的 VIP 徽标（金色钻石 + V）——此前被误记为 ◆ 字符",
+        "evidence": "docs/fidelity/orig/w3-sheet.png：金色像素外接框 [861,1966][936,2030]=76x65（比例 1.169），资源比例 1.179；全量 res 位图缩放到 76x65 逐一比对 MAE=13.41，次名 ic_tab_indicator2 为 19.97；a11y bbox [862,1967][935,2020]=74x54 是裁剪框（金色像素溢到 y=2030）"
+      }
+    },
+    {
       "target": "compass/plate/compass.png",
       "mode": "verbatim",
       "entry": "assets/webapp/assets/imgs/compass/compass.png",

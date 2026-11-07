@@ -218,10 +218,10 @@ public class M3PageActivity extends Activity {
         // M6 第 4 条：账户页贴底红按钮（1150x66 由列表内距折出，这里固定在最底部，不随滚动）
         if (bottomFixedButton != null) {
             LinearLayout.LayoutParams blp2 = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 66);
+                    LinearLayout.LayoutParams.MATCH_PARENT, 124);   // 像素实测 1150x124（dump 的 66 是窗口底截断值）
             blp2.leftMargin = 39;
             blp2.rightMargin = 39;
-            blp2.bottomMargin = 24;
+            blp2.bottomMargin = 0;   // 红条贴到内容帧底；原版到 2635 需窗口级 edge-to-edge，见备注
             root.addView(bottomFixedButton, blp2);
         }
 
@@ -601,7 +601,7 @@ public class M3PageActivity extends Activity {
         android.graphics.drawable.GradientDrawable logoutBg = new android.graphics.drawable.GradientDrawable();
         logoutBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
         logoutBg.setColor(0xFFE93B4D);
-        logoutBg.setCornerRadius(dp(8));
+        logoutBg.setCornerRadius(12f);   // 像素实测圆角 12px（首/末行内缩 12）
         logout.setBackground(logoutBg);
         logout.setPadding(0, dp(2), 0, dp(7));
         logout.setOnClickListener(v -> doLogout(token));

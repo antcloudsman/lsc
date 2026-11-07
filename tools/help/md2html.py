@@ -151,8 +151,10 @@ def convert(md, src_name, blob_sha):
             alt, src = mi.group(1), mi.group(2)
             # 统一放到 assets/lc-help/ 同级，引用只留文件名
             src = src.split("/")[-1]
-            out.append('<figure><img src="%s" alt="%s"><figcaption>%s</figcaption></figure>'
-                       % (html.escape(src), html.escape(alt), inline(alt)))
+            # 契约第 5 条：图号与锚点同名（fig-05.png <-> id="fig-05"），便于机械核对图文对应
+            anchor = src.rsplit(".", 1)[0]
+            out.append('<figure id="%s"><img src="%s" alt="%s"><figcaption>%s</figcaption></figure>'
+                       % (html.escape(anchor), html.escape(src), html.escape(alt), inline(alt)))
             i += 1
             continue
 

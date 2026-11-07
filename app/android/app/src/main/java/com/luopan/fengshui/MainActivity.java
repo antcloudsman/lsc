@@ -112,6 +112,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      *  值只从 `getState().mode` 回读，不做乐观赋值——原版 `initGL()` 失败会回落 2d，猜就错了。 */
     private boolean is3D = false;
 
+    /** M6 第 8 条：跨 **Activity 配置变更**保住 3D 状态的进程级载体。
+     *  原版 `is3D` 在 MainViewModel 的 MutableState：配置变更存活、`finish()` 后销毁、进程死不恢复。
+     *  `onSaveInstanceState` 会跨进程恢复（多做了持久化）、裸 static 会跨「退出再进」（也多做了），
+     *  所以用 static + `onDestroy` 里 `isFinishing()` 清理，语义才与原版等价。**不写 SharedPreferences**。 */
+    private static Boolean sIs3D = null;
+
     /** F-17（LC 自建）：罗盘显示参数（底盘透明度 / 天干地支辅助线）。 */
     private CompassDisplayStore compassDisplay;
 
@@ -197,6 +203,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         trueNorth = prefs.getBoolean("true_north", false);
         calibrationDone = prefs.getBoolean("calibration_done", false);
         p01Enabled = prefs.getBoolean("p0_1_enabled", true);
+        // M6 第 8 条：配置变更重建时沿用进程级载体（原版靠 ViewModel 存活）
+        if (sIs3D != null) is3D = sIs3D;
 
         compassTab = buildSinglePage();
         content.addView(compassTab);
@@ -1300,9 +1308,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             if (value == null) return;
                             boolean now3d = value.contains("3d");
                             if (now3d != is3D) {
-                                is3D = now3d;
-                                android.util.Log.d("LC3DSTATE", "native is3D=" + is3D + " from page state=" + value);
+                                android.util.Log.d("LC3DSTATE", "native is3D=" + now3d + " from page state=" + value);
                             }
+                            is3D = now3d;
+                            sIs3D = now3d;
                         });
             } catch (Throwable t) {
                 android.util.Log.w("LC3DSTATE", "read-back failed: " + t.getClass().getSimpleName());
@@ -3953,6 +3962,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onDestroy() {
+        // M6 第 8 条：真正退出（isFinishing）才丢 3D 态；配置变更重建不走这里，
+        // 这样「退出再进」回默认，与 ViewModel 生命周期一致。
+        if (isFinishing()) sIs3D = null;
         // C-05：主页面 WebView 也要销毁（新增页都已补，主页面此前漏着）。
         measureHandler.removeCallbacks(measurePoll);
         if (compassMapView != null) {

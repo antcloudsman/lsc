@@ -1523,7 +1523,7 @@
     {
       "target": "map/source-thumb/ic_base_map_xintu_satellite.png",
       "mode": "verbatim",
-      "entry": "res/Eo.webp",
+      "entry": "res/ml.webp",
       "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
       "entry_sha256": "626d04b3f90551b5877880a5631af008984457e3dea8cdd7b7fb4f3b419f7fa2",
       "bytes": 104638,
@@ -1537,8 +1537,29 @@
         "resource": "ic_base_map_xintu_satellite",
         "raster": "mipmap-xxxhdpi",
         "use": "星图·卫星",
-        "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+        "evidence": "res/values/public.xml 资源名 ic_base_map_xintu_satellite + mipmap-xxxhdpi 条目 res/ml.webp（Eo.webp 属 xintu_satellite）+ 大小/CRC 唯一比对",
         "checksheet": "A-07 12 源卡片缩略图"
+      }
+    },
+    {
+      "target": "map/source-thumb/xintu_satellite.png",
+      "mode": "verbatim",
+      "entry": "res/Eo.webp",
+      "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+      "entry_sha256": "626d04b3f90551b5877880a5631af008984457e3dea8cdd7b7fb4f3b419f7fa2",
+      "bytes": 104638,
+      "image": {
+        "width": 874,
+        "height": 536
+      },
+      "kind": "source-thumb",
+      "note": "",
+      "meta": {
+        "resource": "xintu_satellite",
+        "raster": "mipmap-xxxhdpi",
+        "use": "世纪空间（原版第4源卡；与中科星图卡同图）",
+        "evidence": "res/values/public.xml 资源名 xintu_satellite + mipmap-xxxhdpi 密度 + 文件 sha256 626d04b3… 与 ic_base_map_xintu_satellite(res/ml.webp) 字节一致",
+        "checksheet": "A-07 12 源底图缩略图"
       }
     },
     {

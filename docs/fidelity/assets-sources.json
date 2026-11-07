@@ -1,1045 +1,1045 @@
 {
-  "apk": "E:\\APPDetector\\input\\swss.apk",
-  "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
-  "items": [
-    {
-      "entry": "assets/compassIntroduce/人盘中针二十四山.html",
-      "target": "compass-introduce/人盘中针二十四山.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/先天八卦_卦位.html",
-      "target": "compass-introduce/先天八卦_卦位.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/先天八卦洛书数.html",
-      "target": "compass-introduce/先天八卦洛书数.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/先天圆图六十四卦外卦.html",
-      "target": "compass-introduce/先天圆图六十四卦外卦.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/先天方图六十四卦内卦.html",
-      "target": "compass-introduce/先天方图六十四卦内卦.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/六十甲配六十四卦五行.html",
-      "target": "compass-introduce/六十甲配六十四卦五行.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/后天八卦_卦位.html",
-      "target": "compass-introduce/后天八卦_卦位.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/地盘正针二十四山.html",
-      "target": "compass-introduce/地盘正针二十四山.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/地盘正针百二十分金.html",
-      "target": "compass-introduce/地盘正针百二十分金.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/天盘缝针二十四山.html",
-      "target": "compass-introduce/天盘缝针二十四山.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/天盘缝针百二十分金.html",
-      "target": "compass-introduce/天盘缝针百二十分金.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/正兼向度数指标.html",
-      "target": "compass-introduce/正兼向度数指标.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/穿山七十二龙.html",
-      "target": "compass-introduce/穿山七十二龙.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/compassIntroduce/透地平分六十龙.html",
-      "target": "compass-introduce/透地平分六十龙.html",
-      "kind": "knowledge-html"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/pointer.png",
-      "target": "compass/pointer.png",
-      "kind": "bitmap",
-      "note": "罗盘中心指针，46x188"
-    },
-    {
-      "entry": "res/6g.png",
-      "target": "tools/ic_tool_compass.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_compass",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "罗盘",
-      "enum": "COMPASS",
-      "evidence": "ToolsEnum.smali:155（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/SH.png",
-      "target": "tools/ic_tool_super_map.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_super_map",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "超清地图",
-      "enum": "SUPER_MAP",
-      "evidence": "ToolsEnum.smali:179（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/QJ.png",
-      "target": "tools/ic_tool_mountain.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_mountain",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "看山脉",
-      "enum": "MOUNTAIN",
-      "evidence": "ToolsEnum.smali:203（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/vY.png",
-      "target": "tools/ic_tool_water.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_water",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "看水系",
-      "enum": "WATER",
-      "evidence": "ToolsEnum.smali:227（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/JE.png",
-      "target": "tools/ic_tool_vr.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_vr",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "（当前面板未展示：more-sheet-03-fresh.xml 无此项）",
-      "enum": "VR",
-      "evidence": "ToolsEnum.smali:251（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/KL.png",
-      "target": "tools/ic_tool_altitude.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_altitude",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "海拔查询",
-      "enum": "ALTITUDE",
-      "evidence": "ToolsEnum.smali:275（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/vd.png",
-      "target": "tools/ic_tool_weather.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_weather",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "天气",
-      "enum": "WEATHER",
-      "evidence": "ToolsEnum.smali:299（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/Fe.png",
-      "target": "tools/ic_tool_history.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_history",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "历史影像",
-      "enum": "HISTORY",
-      "evidence": "ToolsEnum.smali:323（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/pM.png",
-      "target": "tools/ic_tool_isoline.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_isoline",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "等高线",
-      "enum": "ISOLINE",
-      "evidence": "ToolsEnum.smali:347（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/dd.png",
-      "target": "tools/ic_tool_collect.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_collect",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "收藏点",
-      "enum": "COLLECT",
-      "evidence": "ToolsEnum.smali:371（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/5g.png",
-      "target": "tools/ic_tools_street.png",
-      "kind": "tool-icon",
-      "resource": "ic_tools_street",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "（当前面板未展示：dump 无「景点」项）",
-      "enum": "STREET",
-      "evidence": "ToolsEnum.smali:395（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/zv.png",
-      "target": "tools/ic_tool_measure.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_measure",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "测量",
-      "enum": "MEASURE",
-      "evidence": "ToolsEnum.smali:419（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/B2.png",
-      "target": "tools/ic_tool_paint.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_paint",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "画笔",
-      "enum": "DRAW",
-      "evidence": "ToolsEnum.smali:443（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/uU.png",
-      "target": "tools/ic_tool_fish.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_fish",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "钓点",
-      "enum": "FISH",
-      "evidence": "ToolsEnum.smali:467（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/fh.png",
-      "target": "tools/ic_tools_track.png",
-      "kind": "tool-icon",
-      "resource": "ic_tools_track",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "轨迹记录",
-      "enum": "TRACK_RECORD",
-      "evidence": "ToolsEnum.smali:491（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/TP.png",
-      "target": "tools/ic_tools_road.png",
-      "kind": "tool-icon",
-      "resource": "ic_tools_road",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "路网",
-      "enum": "ROAD",
-      "evidence": "ToolsEnum.smali:515（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/eS.png",
-      "target": "tools/ic_tools_geographic_imagery.png",
-      "kind": "tool-icon",
-      "resource": "ic_tools_geographic_imagery",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "地理影像",
-      "enum": "GEOGRAPHIC_IMAGERY",
-      "evidence": "ToolsEnum.smali:539（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/-d.png",
-      "target": "tools/ic_tool_super_map_old.png",
-      "kind": "tool-icon",
-      "resource": "ic_tool_super_map_old",
-      "raster": "mipmap-xxxhdpi",
-      "size": "184x184",
-      "use": "超清优化",
-      "enum": "SUPER_MAP_OLD",
-      "evidence": "ToolsEnum.smali:563（sget R$mipmap）",
-      "checksheet": "A-03 更多 16 格图标"
-    },
-    {
-      "entry": "res/58.webp",
-      "target": "map/source-thumb/ic_base_map_amap_normal.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_amap_normal",
-      "raster": "mipmap-xxxhdpi",
-      "use": "高德·标准",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/BG.webp",
-      "target": "map/source-thumb/ic_base_map_amap_satellite.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_amap_satellite",
-      "raster": "mipmap-xxxhdpi",
-      "use": "高德·卫星",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/nc1.webp",
-      "target": "map/source-thumb/ic_base_map_custome.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_custome",
-      "raster": "mipmap-xxxhdpi",
-      "use": "自定义源",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/UE.png",
-      "target": "map/source-thumb/ic_base_map_jilin1_satellite_2023.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_jilin1_satellite_2023",
-      "raster": "mipmap-xxxhdpi",
-      "use": "吉林一号·2023 卫星",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/b0.png",
-      "target": "map/source-thumb/ic_base_map_jilin1_satellite_globe.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_jilin1_satellite_globe",
-      "raster": "mipmap-xxxhdpi",
-      "use": "吉林一号·球面卫星",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/AY.webp",
-      "target": "map/source-thumb/ic_base_map_tdt_normal.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_tdt_normal",
-      "raster": "mipmap-xxxhdpi",
-      "use": "天地图·标准",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/eV.webp",
-      "target": "map/source-thumb/ic_base_map_tdt_satellite.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_tdt_satellite",
-      "raster": "mipmap-xxxhdpi",
-      "use": "天地图·卫星",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/aw.webp",
-      "target": "map/source-thumb/ic_base_map_tdt_terrain.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_tdt_terrain",
-      "raster": "mipmap-xxxhdpi",
-      "use": "天地图·地形",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/Nv.webp",
-      "target": "map/source-thumb/ic_base_map_tecent_normal.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_tecent_normal",
-      "raster": "mipmap-xxxhdpi",
-      "use": "腾讯·标准",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/UL.webp",
-      "target": "map/source-thumb/ic_base_map_tencent_satellite.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_tencent_satellite",
-      "raster": "mipmap-xxxhdpi",
-      "use": "腾讯·卫星",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/5z.webp",
-      "target": "map/source-thumb/ic_base_map_tencent_terrain.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_tencent_terrain",
-      "raster": "mipmap-xxxhdpi",
-      "use": "腾讯·地形",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "res/Eo.webp",
-      "target": "map/source-thumb/ic_base_map_xintu_satellite.png",
-      "kind": "source-thumb",
-      "resource": "ic_base_map_xintu_satellite",
-      "raster": "mipmap-xxxhdpi",
-      "use": "星图·卫星",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
-      "checksheet": "A-07 12 源卡片缩略图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass.png",
-      "target": "compass/plate/compass.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass",
-      "use": "默认盘面（二十四山·阴）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass1.png",
-      "target": "compass/plate/compass1.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass1",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass1.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass2.png",
-      "target": "compass/plate/compass2.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass2",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass2.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass3.png",
-      "target": "compass/plate/compass3.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass3",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass3.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass4.png",
-      "target": "compass/plate/compass4.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass4",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass4.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass5.png",
-      "target": "compass/plate/compass5.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass5",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass5.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass6.png",
-      "target": "compass/plate/compass6.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass6",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass6.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass7.png",
-      "target": "compass/plate/compass7.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass7",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass7.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass8.png",
-      "target": "compass/plate/compass8.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass8",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass8.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass9.png",
-      "target": "compass/plate/compass9.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass9",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass9.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass10.png",
-      "target": "compass/plate/compass10.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass10",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass10.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass11.png",
-      "target": "compass/plate/compass11.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass11",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass11.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass12.png",
-      "target": "compass/plate/compass12.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass12",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass12.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "assets/webapp/assets/imgs/compass/compass13.png",
-      "target": "compass/plate/compass13.png",
-      "kind": "plate",
-      "resource": "webapp/imgs/compass/compass13",
-      "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
-      "evidence": "assets/webapp/assets/imgs/compass/compass13.png；APK 条目路径未混淆",
-      "checksheet": "A-05 读盘图"
-    },
-    {
-      "entry": "res/TE.webp",
-      "target": "brand/ic_splash_bg.webp",
-      "kind": "brand",
-      "resource": "ic_splash_bg",
-      "raster": "mipmap-xxxhdpi",
-      "use": "启动页背景实景图（1500x3248）",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
-      "checksheet": "A-08 启动页品牌图"
-    },
-    {
-      "entry": "res/uO.webp",
-      "target": "brand/ic_splash_logo.webp",
-      "kind": "brand",
-      "resource": "ic_splash_logo",
-      "raster": "mipmap-xxxhdpi",
-      "use": "启动页品牌 logo",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
-      "checksheet": "A-08 启动页品牌图"
-    },
-    {
-      "entry": "res/ec.webp",
-      "target": "brand/ic_splash_bg2.webp",
-      "kind": "brand",
-      "resource": "ic_splash_bg2",
-      "raster": "mipmap-xxxhdpi",
-      "use": "启动页次级背景",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
-      "checksheet": "A-08 启动页品牌图"
-    },
-    {
-      "entry": "res/o-.png",
-      "target": "brand/ic_launcher.png",
-      "kind": "brand",
-      "resource": "ic_launcher",
-      "raster": "mipmap-xxxhdpi",
-      "use": "应用图标（192x192，山体+3D实景）",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
-      "checksheet": "A-08 启动页品牌图"
-    },
-    {
-      "entry": "0x7f0803fd",
-      "target": "icons/drawer/svg_setting.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_setting",
-      "use": "抽屉 地图设置",
-      "evidence": "res/values/public.xml 资源名 + MainActivity$A.smali:5627；解码文件 sha256=204e8f0de278c3b4…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f08039b",
-      "target": "icons/drawer/svg_account_setting.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_account_setting",
-      "use": "抽屉 账户设置",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:316；解码文件 sha256=f1611352cacac974…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f080413",
-      "target": "icons/drawer/svg_tousu.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_tousu",
-      "use": "抽屉 投诉反馈",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:334；解码文件 sha256=3013fd9e6c00f73f…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f08039a",
-      "target": "icons/drawer/svg_about.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_about",
-      "use": "抽屉 关于我们",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:352；解码文件 sha256=14919d6143436953…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f0803bf",
-      "target": "icons/drawer/svg_contact_us.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_contact_us",
-      "use": "抽屉 联系我们",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:370；解码文件 sha256=224b27638b59236a…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f0803e5",
-      "target": "icons/drawer/svg_menu_share.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_menu_share",
-      "use": "抽屉 推荐给好友",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:388；解码文件 sha256=6eeeb76d63c96e82…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f0803a6",
-      "target": "icons/drawer/svg_bill_apply.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_bill_apply",
-      "use": "抽屉 开具发票",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:406；解码文件 sha256=979f6b478472ccd8…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f0803cb",
-      "target": "icons/drawer/svg_helper.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_helper",
-      "use": "抽屉 帮助中心",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:424；解码文件 sha256=dce394bdd5a4c4b9…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f08041e",
-      "target": "icons/drawer/svg_user_agreement.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_user_agreement",
-      "use": "抽屉 用户协议",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:442；解码文件 sha256=0543423d5c355451…",
-      "checksheet": "A-02 抽屉 9 项图标"
-    },
-    {
-      "entry": "0x7f0803fa",
-      "target": "icons/drawer/svg_scropy.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_scropy",
-      "use": "左列 截屏",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:31269；解码文件 sha256=5b9bc6c9fc45dddc…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f080402",
-      "target": "icons/drawer/svg_super_map_old.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_super_map_old",
-      "use": "左列 超清优化",
-      "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:566；解码文件 sha256=77c821b3a7a0a866…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803a0",
-      "target": "icons/drawer/svg_altitude.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_altitude",
-      "use": "左列 海拔查询",
-      "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:278；解码文件 sha256=6447852ad993dddf…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803b7",
-      "target": "icons/drawer/svg_compass.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_compass",
-      "use": "左列 罗盘",
-      "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:158；解码文件 sha256=23316aa139fb59f8…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803f9",
-      "target": "icons/drawer/svg_road.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_road",
-      "use": "左列 路网",
-      "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:518；解码文件 sha256=8d2e40a60d1d510c…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803d0",
-      "target": "icons/drawer/svg_isoline.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_isoline",
-      "use": "左列 等高线",
-      "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:350；解码文件 sha256=940bbe2fa75a21b9…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803e7",
-      "target": "icons/drawer/svg_more.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_more",
-      "use": "左列 更多",
-      "evidence": "res/values/public.xml 资源名 + MainActivity$h.1.smali:218；解码文件 sha256=914f43d9cb18f5f0…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803da",
-      "target": "icons/drawer/svg_layer.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_layer",
-      "use": "右列 图层",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15130；解码文件 sha256=3fc8a1eda0fccbd4…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803ec",
-      "target": "icons/drawer/svg_overlay.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_overlay",
-      "use": "右列 叠加",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15287；解码文件 sha256=dfdb3c6c2980ae8d…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803e8",
-      "target": "icons/drawer/svg_mountain.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_mountain",
-      "use": "右列 山脉",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15367；解码文件 sha256=ec6fa1723a293e30…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f080421",
-      "target": "icons/drawer/svg_water.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_water",
-      "use": "右列 水系",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15447；解码文件 sha256=926c542208b66f93…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803c4",
-      "target": "icons/drawer/svg_discovery.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_discovery",
-      "use": "右列 探索",
-      "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15527；解码文件 sha256=c9f168ca4278840e…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f080424",
-      "target": "icons/drawer/svg_zoom_in.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_zoom_in",
-      "use": "右列 +（放大）",
-      "evidence": "res/values/public.xml 资源名 + ui/compose/u4.smali:983；解码文件 sha256=f8a98325ab48f716…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f080425",
-      "target": "icons/drawer/svg_zoom_out.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_zoom_out",
-      "use": "右列 −（缩小）",
-      "evidence": "res/values/public.xml 资源名 + ui/compose/u4.smali:1394；解码文件 sha256=1346ac6140fb46de…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f0803db",
-      "target": "icons/drawer/svg_locate.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_locate",
-      "use": "右列 定位",
-      "evidence": "res/values/public.xml 资源名 + ui/compose/p1.1.smali:604；解码文件 sha256=6905bc68aee674ae…",
-      "checksheet": "A-04 左 8 / 右 10 工具图标"
-    },
-    {
-      "entry": "0x7f08040c",
-      "target": "icons/drawer/svg_tool_folder.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_tool_folder",
-      "use": "全地图工具",
-      "evidence": "资源名 tool_folder 直配；smali 未见 R$drawable 引用",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "0x7f0803ba",
-      "target": "icons/drawer/svg_compass_reset.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_compass_reset",
-      "use": "罗盘复位",
-      "evidence": "CompassToolsKt.smali:9507 / 9620",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "0x7f0803b9",
-      "target": "icons/drawer/svg_compass_lock.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_compass_lock",
-      "use": "罗盘锁定",
-      "evidence": "资源名 compass_lock 直配；smali 未见引用",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "0x7f0803f3",
-      "target": "icons/drawer/svg_read_compass.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_read_compass",
-      "use": "读盘",
-      "evidence": "CompassToolsKt.smali:9707",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "0x7f080408",
-      "target": "icons/drawer/svg_tiedi.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_tiedi",
-      "use": "贴地",
-      "evidence": "CompassToolsKt.smali:9805",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "0x7f0803ff",
-      "target": "icons/drawer/svg_street.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_street",
-      "use": "实景（候选，待确认）",
-      "evidence": "资源名 street 直配；smali 未见引用",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "res/Ji.png",
-      "target": "tools/ic_3d_white.png",
-      "kind": "tool-icon",
-      "resource": "ic_3d_white",
-      "raster": "mipmap-xxxhdpi",
-      "use": "3D",
-      "evidence": "mipmap-xxxhdpi；白色立方线稿，与右列 3D 按钮一致",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "res/pf.png",
-      "target": "tools/ic_north_needle.png",
-      "kind": "tool-icon",
-      "resource": "ic_north_needle",
-      "raster": "mipmap-xxxhdpi",
-      "use": "指北针",
-      "evidence": "mipmap-xxxhdpi；红/灰针形，与右列指北针一致",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "0x7f080404",
-      "target": "icons/drawer/svg_surround.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_surround",
-      "use": "坐南朝北（候选：环绕/朝向）",
-      "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "0x7f0803be",
-      "target": "icons/drawer/svg_compass_switch.xml",
-      "kind": "icon-drawer",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_compass_switch",
-      "use": "指针开关（候选：罗盘切换）",
-      "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
-      "checksheet": "P1-33-A 罗盘/地图工具条图标"
-    },
-    {
-      "entry": "0x7f08040a",
-      "target": "pages/_shared/icons/svg_title_back.xml",
-      "kind": "page-icon",
-      "decoded": true,
-      "decoder": "apktool",
-      "decoder_version": "2.9.3",
-      "resource": "svg_title_back",
-      "use": "共用返回箭头（9 页 dump 均有「返回」节点）",
-      "evidence": "res/values/public.xml 资源名 + 9 页 dump 的「返回」节点",
-      "checksheet": "S-共用"
-    },
-    {
-      "entry": "res/A0.png",
-      "target": "pages/feedback/icons/ic_add_image.png",
-      "kind": "page-icon",
-      "resource": "ic_add_image",
-      "raster": "mipmap-xxxhdpi",
-      "use": "投诉反馈-添加图片",
-      "evidence": "页面文案「添加图片 [39,1333][243,1412]」",
-      "checksheet": "S-投诉反馈"
-    },
-    {
-      "entry": "res/Qc.webp",
-      "target": "pages/account/icons/ic_default_avatar.png",
-      "kind": "page-icon",
-      "resource": "ic_default_avatar",
-      "raster": "mipmap-xxxhdpi",
-      "use": "账户设置-默认头像（候选）",
-      "evidence": "页面「头像」行 [39,502][1084,581]；未证明占位图即此资源",
-      "checksheet": "S-账户设置"
-    },
-    {
-      "entry": "res/PV.png",
-      "target": "pages/share/icons/icon_share_wx.png",
-      "kind": "page-icon",
-      "resource": "icon_share_wx",
-      "raster": "mipmap-xxxhdpi",
-      "use": "推荐给好友-微信（候选）",
-      "evidence": "2 个 ImageButton：[241,2140][405,2304]",
-      "checksheet": "S-推荐给好友"
-    },
-    {
-      "entry": "res/mv.png",
-      "target": "pages/share/icons/icon_share_circle.png",
-      "kind": "page-icon",
-      "resource": "icon_share_circle",
-      "raster": "mipmap-xxxhdpi",
-      "use": "推荐给好友-微信朋友圈（候选）",
-      "evidence": "2 个 ImageButton：[822,2140][986,2304]",
-      "checksheet": "S-推荐给好友"
-    }
-  ],
-  "decode": {
-    "name": "apktool",
-    "version": "2.9.3",
-    "command": "apktool d -f -o <dir> <apk>"
+ "apk": "E:\\APPDetector\\input\\swss.apk",
+ "apk_sha256": "2fd1fc159c92cbd6fea1b210621eb619dce87b051a8a9275c9330ffb0992bfe8",
+ "items": [
+  {
+   "entry": "assets/compassIntroduce/人盘中针二十四山.html",
+   "target": "compass-introduce/人盘中针二十四山.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/先天八卦_卦位.html",
+   "target": "compass-introduce/先天八卦_卦位.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/先天八卦洛书数.html",
+   "target": "compass-introduce/先天八卦洛书数.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/先天圆图六十四卦外卦.html",
+   "target": "compass-introduce/先天圆图六十四卦外卦.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/先天方图六十四卦内卦.html",
+   "target": "compass-introduce/先天方图六十四卦内卦.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/六十甲配六十四卦五行.html",
+   "target": "compass-introduce/六十甲配六十四卦五行.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/后天八卦_卦位.html",
+   "target": "compass-introduce/后天八卦_卦位.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/地盘正针二十四山.html",
+   "target": "compass-introduce/地盘正针二十四山.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/地盘正针百二十分金.html",
+   "target": "compass-introduce/地盘正针百二十分金.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/天盘缝针二十四山.html",
+   "target": "compass-introduce/天盘缝针二十四山.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/天盘缝针百二十分金.html",
+   "target": "compass-introduce/天盘缝针百二十分金.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/正兼向度数指标.html",
+   "target": "compass-introduce/正兼向度数指标.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/穿山七十二龙.html",
+   "target": "compass-introduce/穿山七十二龙.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/compassIntroduce/透地平分六十龙.html",
+   "target": "compass-introduce/透地平分六十龙.html",
+   "kind": "knowledge-html"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/pointer.png",
+   "target": "compass/pointer.png",
+   "kind": "bitmap",
+   "note": "罗盘中心指针，46x188"
+  },
+  {
+   "entry": "res/6g.png",
+   "target": "tools/ic_tool_compass.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_compass",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "罗盘",
+   "enum": "COMPASS",
+   "evidence": "ToolsEnum.smali:155（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/SH.png",
+   "target": "tools/ic_tool_super_map.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_super_map",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "超清地图",
+   "enum": "SUPER_MAP",
+   "evidence": "ToolsEnum.smali:179（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/QJ.png",
+   "target": "tools/ic_tool_mountain.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_mountain",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "看山脉",
+   "enum": "MOUNTAIN",
+   "evidence": "ToolsEnum.smali:203（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/vY.png",
+   "target": "tools/ic_tool_water.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_water",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "看水系",
+   "enum": "WATER",
+   "evidence": "ToolsEnum.smali:227（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/JE.png",
+   "target": "tools/ic_tool_vr.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_vr",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "（当前面板未展示：more-sheet-03-fresh.xml 无此项）",
+   "enum": "VR",
+   "evidence": "ToolsEnum.smali:251（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/KL.png",
+   "target": "tools/ic_tool_altitude.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_altitude",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "海拔查询",
+   "enum": "ALTITUDE",
+   "evidence": "ToolsEnum.smali:275（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/vd.png",
+   "target": "tools/ic_tool_weather.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_weather",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "天气",
+   "enum": "WEATHER",
+   "evidence": "ToolsEnum.smali:299（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/Fe.png",
+   "target": "tools/ic_tool_history.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_history",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "历史影像",
+   "enum": "HISTORY",
+   "evidence": "ToolsEnum.smali:323（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/pM.png",
+   "target": "tools/ic_tool_isoline.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_isoline",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "等高线",
+   "enum": "ISOLINE",
+   "evidence": "ToolsEnum.smali:347（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/dd.png",
+   "target": "tools/ic_tool_collect.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_collect",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "收藏点",
+   "enum": "COLLECT",
+   "evidence": "ToolsEnum.smali:371（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/5g.png",
+   "target": "tools/ic_tools_street.png",
+   "kind": "tool-icon",
+   "resource": "ic_tools_street",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "（当前面板未展示：dump 无「景点」项）",
+   "enum": "STREET",
+   "evidence": "ToolsEnum.smali:395（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/zv.png",
+   "target": "tools/ic_tool_measure.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_measure",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "测量",
+   "enum": "MEASURE",
+   "evidence": "ToolsEnum.smali:419（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/B2.png",
+   "target": "tools/ic_tool_paint.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_paint",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "画笔",
+   "enum": "DRAW",
+   "evidence": "ToolsEnum.smali:443（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/uU.png",
+   "target": "tools/ic_tool_fish.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_fish",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "钓点",
+   "enum": "FISH",
+   "evidence": "ToolsEnum.smali:467（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/fh.png",
+   "target": "tools/ic_tools_track.png",
+   "kind": "tool-icon",
+   "resource": "ic_tools_track",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "轨迹记录",
+   "enum": "TRACK_RECORD",
+   "evidence": "ToolsEnum.smali:491（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/TP.png",
+   "target": "tools/ic_tools_road.png",
+   "kind": "tool-icon",
+   "resource": "ic_tools_road",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "路网",
+   "enum": "ROAD",
+   "evidence": "ToolsEnum.smali:515（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/eS.png",
+   "target": "tools/ic_tools_geographic_imagery.png",
+   "kind": "tool-icon",
+   "resource": "ic_tools_geographic_imagery",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "地理影像",
+   "enum": "GEOGRAPHIC_IMAGERY",
+   "evidence": "ToolsEnum.smali:539（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/-d.png",
+   "target": "tools/ic_tool_super_map_old.png",
+   "kind": "tool-icon",
+   "resource": "ic_tool_super_map_old",
+   "raster": "mipmap-xxxhdpi",
+   "size": "184x184",
+   "use": "超清优化",
+   "enum": "SUPER_MAP_OLD",
+   "evidence": "ToolsEnum.smali:563（sget R$mipmap）",
+   "checksheet": "A-03 更多 16 格图标"
+  },
+  {
+   "entry": "res/58.webp",
+   "target": "map/source-thumb/ic_base_map_amap_normal.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_amap_normal",
+   "raster": "mipmap-xxxhdpi",
+   "use": "高德·标准",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/BG.webp",
+   "target": "map/source-thumb/ic_base_map_amap_satellite.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_amap_satellite",
+   "raster": "mipmap-xxxhdpi",
+   "use": "高德·卫星",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/nc1.webp",
+   "target": "map/source-thumb/ic_base_map_custome.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_custome",
+   "raster": "mipmap-xxxhdpi",
+   "use": "自定义源",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/UE.png",
+   "target": "map/source-thumb/ic_base_map_jilin1_satellite_2023.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_jilin1_satellite_2023",
+   "raster": "mipmap-xxxhdpi",
+   "use": "吉林一号·2023 卫星",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/b0.png",
+   "target": "map/source-thumb/ic_base_map_jilin1_satellite_globe.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_jilin1_satellite_globe",
+   "raster": "mipmap-xxxhdpi",
+   "use": "吉林一号·球面卫星",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/AY.webp",
+   "target": "map/source-thumb/ic_base_map_tdt_normal.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_tdt_normal",
+   "raster": "mipmap-xxxhdpi",
+   "use": "天地图·标准",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/eV.webp",
+   "target": "map/source-thumb/ic_base_map_tdt_satellite.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_tdt_satellite",
+   "raster": "mipmap-xxxhdpi",
+   "use": "天地图·卫星",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/aw.webp",
+   "target": "map/source-thumb/ic_base_map_tdt_terrain.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_tdt_terrain",
+   "raster": "mipmap-xxxhdpi",
+   "use": "天地图·地形",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/Nv.webp",
+   "target": "map/source-thumb/ic_base_map_tecent_normal.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_tecent_normal",
+   "raster": "mipmap-xxxhdpi",
+   "use": "腾讯·标准",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/UL.webp",
+   "target": "map/source-thumb/ic_base_map_tencent_satellite.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_tencent_satellite",
+   "raster": "mipmap-xxxhdpi",
+   "use": "腾讯·卫星",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/5z.webp",
+   "target": "map/source-thumb/ic_base_map_tencent_terrain.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_tencent_terrain",
+   "raster": "mipmap-xxxhdpi",
+   "use": "腾讯·地形",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "res/ml.webp",
+   "target": "map/source-thumb/ic_base_map_xintu_satellite.png",
+   "kind": "source-thumb",
+   "resource": "ic_base_map_xintu_satellite",
+   "raster": "mipmap-xxxhdpi",
+   "use": "星图·卫星",
+   "evidence": "res/values/public.xml 资源名 ic_base_map_xintu_satellite + mipmap-xxxhdpi 条目 res/ml.webp（Eo.webp 属 xintu_satellite）+ 大小/CRC 唯一比对",
+   "checksheet": "A-07 12 源卡片缩略图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass.png",
+   "target": "compass/plate/compass.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass",
+   "use": "默认盘面（二十四山·阴）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass1.png",
+   "target": "compass/plate/compass1.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass1",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass1.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass2.png",
+   "target": "compass/plate/compass2.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass2",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass2.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass3.png",
+   "target": "compass/plate/compass3.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass3",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass3.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass4.png",
+   "target": "compass/plate/compass4.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass4",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass4.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass5.png",
+   "target": "compass/plate/compass5.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass5",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass5.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass6.png",
+   "target": "compass/plate/compass6.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass6",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass6.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass7.png",
+   "target": "compass/plate/compass7.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass7",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass7.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass8.png",
+   "target": "compass/plate/compass8.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass8",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass8.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass9.png",
+   "target": "compass/plate/compass9.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass9",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass9.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass10.png",
+   "target": "compass/plate/compass10.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass10",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass10.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass11.png",
+   "target": "compass/plate/compass11.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass11",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass11.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass12.png",
+   "target": "compass/plate/compass12.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass12",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass12.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "assets/webapp/assets/imgs/compass/compass13.png",
+   "target": "compass/plate/compass13.png",
+   "kind": "plate",
+   "resource": "webapp/imgs/compass/compass13",
+   "use": "罗盘盘面图（读盘/R2-013 依赖的盘面素材）",
+   "evidence": "assets/webapp/assets/imgs/compass/compass13.png；APK 条目路径未混淆",
+   "checksheet": "A-05 读盘图"
+  },
+  {
+   "entry": "res/TE.webp",
+   "target": "brand/ic_splash_bg.webp",
+   "kind": "brand",
+   "resource": "ic_splash_bg",
+   "raster": "mipmap-xxxhdpi",
+   "use": "启动页背景实景图（1500x3248）",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+   "checksheet": "A-08 启动页品牌图"
+  },
+  {
+   "entry": "res/uO.webp",
+   "target": "brand/ic_splash_logo.webp",
+   "kind": "brand",
+   "resource": "ic_splash_logo",
+   "raster": "mipmap-xxxhdpi",
+   "use": "启动页品牌 logo",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+   "checksheet": "A-08 启动页品牌图"
+  },
+  {
+   "entry": "res/ec.webp",
+   "target": "brand/ic_splash_bg2.webp",
+   "kind": "brand",
+   "resource": "ic_splash_bg2",
+   "raster": "mipmap-xxxhdpi",
+   "use": "启动页次级背景",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+   "checksheet": "A-08 启动页品牌图"
+  },
+  {
+   "entry": "res/o-.png",
+   "target": "brand/ic_launcher.png",
+   "kind": "brand",
+   "resource": "ic_launcher",
+   "raster": "mipmap-xxxhdpi",
+   "use": "应用图标（192x192，山体+3D实景）",
+   "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中 + sha256 复核",
+   "checksheet": "A-08 启动页品牌图"
+  },
+  {
+   "entry": "0x7f0803fd",
+   "target": "icons/drawer/svg_setting.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_setting",
+   "use": "抽屉 地图设置",
+   "evidence": "res/values/public.xml 资源名 + MainActivity$A.smali:5627；解码文件 sha256=204e8f0de278c3b4…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f08039b",
+   "target": "icons/drawer/svg_account_setting.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_account_setting",
+   "use": "抽屉 账户设置",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:316；解码文件 sha256=f1611352cacac974…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f080413",
+   "target": "icons/drawer/svg_tousu.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_tousu",
+   "use": "抽屉 投诉反馈",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:334；解码文件 sha256=3013fd9e6c00f73f…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f08039a",
+   "target": "icons/drawer/svg_about.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_about",
+   "use": "抽屉 关于我们",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:352；解码文件 sha256=14919d6143436953…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f0803bf",
+   "target": "icons/drawer/svg_contact_us.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_contact_us",
+   "use": "抽屉 联系我们",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:370；解码文件 sha256=224b27638b59236a…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f0803e5",
+   "target": "icons/drawer/svg_menu_share.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_menu_share",
+   "use": "抽屉 推荐给好友",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:388；解码文件 sha256=6eeeb76d63c96e82…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f0803a6",
+   "target": "icons/drawer/svg_bill_apply.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_bill_apply",
+   "use": "抽屉 开具发票",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:406；解码文件 sha256=979f6b478472ccd8…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f0803cb",
+   "target": "icons/drawer/svg_helper.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_helper",
+   "use": "抽屉 帮助中心",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:424；解码文件 sha256=dce394bdd5a4c4b9…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f08041e",
+   "target": "icons/drawer/svg_user_agreement.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_user_agreement",
+   "use": "抽屉 用户协议",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:442；解码文件 sha256=0543423d5c355451…",
+   "checksheet": "A-02 抽屉 9 项图标"
+  },
+  {
+   "entry": "0x7f0803fa",
+   "target": "icons/drawer/svg_scropy.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_scropy",
+   "use": "左列 截屏",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:31269；解码文件 sha256=5b9bc6c9fc45dddc…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f080402",
+   "target": "icons/drawer/svg_super_map_old.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_super_map_old",
+   "use": "左列 超清优化",
+   "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:566；解码文件 sha256=77c821b3a7a0a866…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803a0",
+   "target": "icons/drawer/svg_altitude.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_altitude",
+   "use": "左列 海拔查询",
+   "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:278；解码文件 sha256=6447852ad993dddf…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803b7",
+   "target": "icons/drawer/svg_compass.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_compass",
+   "use": "左列 罗盘",
+   "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:158；解码文件 sha256=23316aa139fb59f8…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803f9",
+   "target": "icons/drawer/svg_road.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_road",
+   "use": "左列 路网",
+   "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:518；解码文件 sha256=8d2e40a60d1d510c…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803d0",
+   "target": "icons/drawer/svg_isoline.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_isoline",
+   "use": "左列 等高线",
+   "evidence": "res/values/public.xml 资源名 + ToolsEnum.smali:350；解码文件 sha256=940bbe2fa75a21b9…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803e7",
+   "target": "icons/drawer/svg_more.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_more",
+   "use": "左列 更多",
+   "evidence": "res/values/public.xml 资源名 + MainActivity$h.1.smali:218；解码文件 sha256=914f43d9cb18f5f0…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803da",
+   "target": "icons/drawer/svg_layer.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_layer",
+   "use": "右列 图层",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15130；解码文件 sha256=3fc8a1eda0fccbd4…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803ec",
+   "target": "icons/drawer/svg_overlay.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_overlay",
+   "use": "右列 叠加",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15287；解码文件 sha256=dfdb3c6c2980ae8d…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803e8",
+   "target": "icons/drawer/svg_mountain.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_mountain",
+   "use": "右列 山脉",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15367；解码文件 sha256=ec6fa1723a293e30…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f080421",
+   "target": "icons/drawer/svg_water.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_water",
+   "use": "右列 水系",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15447；解码文件 sha256=926c542208b66f93…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803c4",
+   "target": "icons/drawer/svg_discovery.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_discovery",
+   "use": "右列 探索",
+   "evidence": "res/values/public.xml 资源名 + MainActivity.smali:15527；解码文件 sha256=c9f168ca4278840e…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f080424",
+   "target": "icons/drawer/svg_zoom_in.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_zoom_in",
+   "use": "右列 +（放大）",
+   "evidence": "res/values/public.xml 资源名 + ui/compose/u4.smali:983；解码文件 sha256=f8a98325ab48f716…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f080425",
+   "target": "icons/drawer/svg_zoom_out.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_zoom_out",
+   "use": "右列 −（缩小）",
+   "evidence": "res/values/public.xml 资源名 + ui/compose/u4.smali:1394；解码文件 sha256=1346ac6140fb46de…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f0803db",
+   "target": "icons/drawer/svg_locate.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_locate",
+   "use": "右列 定位",
+   "evidence": "res/values/public.xml 资源名 + ui/compose/p1.1.smali:604；解码文件 sha256=6905bc68aee674ae…",
+   "checksheet": "A-04 左 8 / 右 10 工具图标"
+  },
+  {
+   "entry": "0x7f08040c",
+   "target": "icons/drawer/svg_tool_folder.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_tool_folder",
+   "use": "全地图工具",
+   "evidence": "资源名 tool_folder 直配；smali 未见 R$drawable 引用",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "0x7f0803ba",
+   "target": "icons/drawer/svg_compass_reset.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_compass_reset",
+   "use": "罗盘复位",
+   "evidence": "CompassToolsKt.smali:9507 / 9620",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "0x7f0803b9",
+   "target": "icons/drawer/svg_compass_lock.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_compass_lock",
+   "use": "罗盘锁定",
+   "evidence": "资源名 compass_lock 直配；smali 未见引用",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "0x7f0803f3",
+   "target": "icons/drawer/svg_read_compass.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_read_compass",
+   "use": "读盘",
+   "evidence": "CompassToolsKt.smali:9707",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "0x7f080408",
+   "target": "icons/drawer/svg_tiedi.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_tiedi",
+   "use": "贴地",
+   "evidence": "CompassToolsKt.smali:9805",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "0x7f0803ff",
+   "target": "icons/drawer/svg_street.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_street",
+   "use": "实景（候选，待确认）",
+   "evidence": "资源名 street 直配；smali 未见引用",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "res/Ji.png",
+   "target": "tools/ic_3d_white.png",
+   "kind": "tool-icon",
+   "resource": "ic_3d_white",
+   "raster": "mipmap-xxxhdpi",
+   "use": "3D",
+   "evidence": "mipmap-xxxhdpi；白色立方线稿，与右列 3D 按钮一致",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "res/pf.png",
+   "target": "tools/ic_north_needle.png",
+   "kind": "tool-icon",
+   "resource": "ic_north_needle",
+   "raster": "mipmap-xxxhdpi",
+   "use": "指北针",
+   "evidence": "mipmap-xxxhdpi；红/灰针形，与右列指北针一致",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "0x7f080404",
+   "target": "icons/drawer/svg_surround.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_surround",
+   "use": "坐南朝北（候选：环绕/朝向）",
+   "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "0x7f0803be",
+   "target": "icons/drawer/svg_compass_switch.xml",
+   "kind": "icon-drawer",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_compass_switch",
+   "use": "指针开关（候选：罗盘切换）",
+   "evidence": "资源名直配；右列按钮在 smali 中以 Compose 内联绘制，无 R$drawable 引用，标为候选",
+   "checksheet": "P1-33-A 罗盘/地图工具条图标"
+  },
+  {
+   "entry": "0x7f08040a",
+   "target": "pages/_shared/icons/svg_title_back.xml",
+   "kind": "page-icon",
+   "decoded": true,
+   "decoder": "apktool",
+   "decoder_version": "2.9.3",
+   "resource": "svg_title_back",
+   "use": "共用返回箭头（9 页 dump 均有「返回」节点）",
+   "evidence": "res/values/public.xml 资源名 + 9 页 dump 的「返回」节点",
+   "checksheet": "S-共用"
+  },
+  {
+   "entry": "res/A0.png",
+   "target": "pages/feedback/icons/ic_add_image.png",
+   "kind": "page-icon",
+   "resource": "ic_add_image",
+   "raster": "mipmap-xxxhdpi",
+   "use": "投诉反馈-添加图片",
+   "evidence": "页面文案「添加图片 [39,1333][243,1412]」",
+   "checksheet": "S-投诉反馈"
+  },
+  {
+   "entry": "res/Qc.webp",
+   "target": "pages/account/icons/ic_default_avatar.png",
+   "kind": "page-icon",
+   "resource": "ic_default_avatar",
+   "raster": "mipmap-xxxhdpi",
+   "use": "账户设置-默认头像（候选）",
+   "evidence": "页面「头像」行 [39,502][1084,581]；未证明占位图即此资源",
+   "checksheet": "S-账户设置"
+  },
+  {
+   "entry": "res/PV.png",
+   "target": "pages/share/icons/icon_share_wx.png",
+   "kind": "page-icon",
+   "resource": "icon_share_wx",
+   "raster": "mipmap-xxxhdpi",
+   "use": "推荐给好友-微信（候选）",
+   "evidence": "2 个 ImageButton：[241,2140][405,2304]",
+   "checksheet": "S-推荐给好友"
+  },
+  {
+   "entry": "res/mv.png",
+   "target": "pages/share/icons/icon_share_circle.png",
+   "kind": "page-icon",
+   "resource": "icon_share_circle",
+   "raster": "mipmap-xxxhdpi",
+   "use": "推荐给好友-微信朋友圈（候选）",
+   "evidence": "2 个 ImageButton：[822,2140][986,2304]",
+   "checksheet": "S-推荐给好友"
   }
+ ],
+ "decode": {
+  "name": "apktool",
+  "version": "2.9.3",
+  "command": "apktool d -f -o <dir> <apk>"
+ }
 }

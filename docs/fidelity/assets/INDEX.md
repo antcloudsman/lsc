@@ -1,7 +1,7 @@
 # 原版素材索引（自动生成，勿手改）
 
 - 工具：`tools/fidelity/assets.py` v1.2.0
-- 文件数：**102**，合计 **10495443** 字节
+- 文件数：**103**，合计 **10600081** 字节
 - 校验：`python tools\fidelity\assets.py verify --dir docs\fidelity\assets`
 
 | # | 文件（`docs/fidelity/assets/` 下） | 载体 | 字节 | 尺寸 | sha256 | APK 内条目 | 资源名 | 用途 | 类别 |
@@ -82,29 +82,30 @@
 | 74 | `map/source-thumb/ic_base_map_tecent_normal.png` | 位图 | 16582 | 300x186 | `f5ec1b87febb79f5…` | `res/Nv.webp` | ic_base_map_tecent_normal | 腾讯·标准 | source-thumb |
 | 75 | `map/source-thumb/ic_base_map_tencent_satellite.png` | 位图 | 11260 | 300x186 | `1f7496ab8b7c1478…` | `res/UL.webp` | ic_base_map_tencent_satellite | 腾讯·卫星 | source-thumb |
 | 76 | `map/source-thumb/ic_base_map_tencent_terrain.png` | 位图 | 6938 | 300x186 | `0f4eff35dfcb0927…` | `res/5z.webp` | ic_base_map_tencent_terrain | 腾讯·地形 | source-thumb |
-| 77 | `map/source-thumb/ic_base_map_xintu_satellite.png` | 位图 | 104638 | 874x536 | `626d04b3f90551b5…` | `res/Eo.webp` | ic_base_map_xintu_satellite | 星图·卫星 | source-thumb |
-| 78 | `pages/_shared/icons/svg_title_back.xml` | 矢量/解码 | 456 | - | `14be0ac5f1fef97c…` | `res/e2.xml` | svg_title_back | 共用返回箭头（9 页 dump 均有「返回」节点） | page-icon |
-| 79 | `pages/account/icons/ic_default_avatar.png` | 位图 | 3694 | 240x240 | `ac6d865eb51f4e46…` | `res/Qc.webp` | ic_default_avatar | 账户设置-默认头像（候选） | page-icon |
-| 80 | `pages/feedback/icons/ic_add_image.png` | 位图 | 1552 | 280x280 | `1ab9a548678dcb6c…` | `res/A0.png` | ic_add_image | 投诉反馈-添加图片 | page-icon |
-| 81 | `pages/share/icons/icon_share_circle.png` | 位图 | 6350 | 96x96 | `6aacac32e9bde2fd…` | `res/mv.png` | icon_share_circle | 推荐给好友-微信朋友圈（候选） | page-icon |
-| 82 | `pages/share/icons/icon_share_wx.png` | 位图 | 4951 | 96x96 | `007ba7f94de8d127…` | `res/PV.png` | icon_share_wx | 推荐给好友-微信（候选） | page-icon |
-| 83 | `tools/ic_3d_white.png` | 位图 | 1118 | 96x96 | `f45d85fe092ab5d5…` | `res/Ji.png` | ic_3d_white | 3D | tool-icon |
-| 84 | `tools/ic_north_needle.png` | 位图 | 5117 | 152x156 | `8ccb3b5aefc41cab…` | `res/pf.png` | ic_north_needle | 指北针 | tool-icon |
-| 85 | `tools/ic_tool_altitude.png` | 位图 | 11328 | 184x184 | `516c110b85dded69…` | `res/KL.png` | ic_tool_altitude | 海拔查询 | tool-icon |
-| 86 | `tools/ic_tool_collect.png` | 位图 | 12757 | 184x184 | `e36a7c2da513eab0…` | `res/dd.png` | ic_tool_collect | 收藏点 | tool-icon |
-| 87 | `tools/ic_tool_compass.png` | 位图 | 13400 | 184x184 | `6fb11483d2eead88…` | `res/6g.png` | ic_tool_compass | 罗盘 | tool-icon |
-| 88 | `tools/ic_tool_fish.png` | 位图 | 14748 | 184x184 | `9f304273d8e338b1…` | `res/uU.png` | ic_tool_fish | 钓点 | tool-icon |
-| 89 | `tools/ic_tool_history.png` | 位图 | 11232 | 184x184 | `f3b5c01b53be6ff0…` | `res/Fe.png` | ic_tool_history | 历史影像 | tool-icon |
-| 90 | `tools/ic_tool_isoline.png` | 位图 | 17936 | 184x184 | `783f3b992a9234b7…` | `res/pM.png` | ic_tool_isoline | 等高线 | tool-icon |
-| 91 | `tools/ic_tool_measure.png` | 位图 | 15129 | 184x184 | `395455901ecc393a…` | `res/zv.png` | ic_tool_measure | 测量 | tool-icon |
-| 92 | `tools/ic_tool_mountain.png` | 位图 | 13190 | 184x184 | `fba48827d465e74f…` | `res/QJ.png` | ic_tool_mountain | 看山脉 | tool-icon |
-| 93 | `tools/ic_tool_paint.png` | 位图 | 14970 | 184x184 | `952cb7a95a75e997…` | `res/B2.png` | ic_tool_paint | 画笔 | tool-icon |
-| 94 | `tools/ic_tool_super_map.png` | 位图 | 15614 | 184x184 | `127acded4f58ceef…` | `res/SH.png` | ic_tool_super_map | 超清地图 | tool-icon |
-| 95 | `tools/ic_tool_super_map_old.png` | 位图 | 13465 | 184x184 | `803762a72f1d24b2…` | `res/-d.png` | ic_tool_super_map_old | 超清优化 | tool-icon |
-| 96 | `tools/ic_tool_vr.png` | 位图 | 12911 | 184x184 | `e178f3e642edbbc7…` | `res/JE.png` | ic_tool_vr | （当前面板未展示：more-sheet-03-fresh.xml 无此项） | tool-icon |
-| 97 | `tools/ic_tool_water.png` | 位图 | 14709 | 184x184 | `84cf3ead69a53f43…` | `res/vY.png` | ic_tool_water | 看水系 | tool-icon |
-| 98 | `tools/ic_tool_weather.png` | 位图 | 11476 | 184x184 | `eeeef55545f2d724…` | `res/vd.png` | ic_tool_weather | 天气 | tool-icon |
-| 99 | `tools/ic_tools_geographic_imagery.png` | 位图 | 14358 | 184x184 | `26ddea2dab371a0d…` | `res/eS.png` | ic_tools_geographic_imagery | 地理影像 | tool-icon |
-| 100 | `tools/ic_tools_road.png` | 位图 | 13893 | 184x184 | `c8e2267973995fdc…` | `res/TP.png` | ic_tools_road | 路网 | tool-icon |
-| 101 | `tools/ic_tools_street.png` | 位图 | 13054 | 184x184 | `a161d5d86570a3a9…` | `res/5g.png` | ic_tools_street | （当前面板未展示：dump 无「景点」项） | tool-icon |
-| 102 | `tools/ic_tools_track.png` | 位图 | 12726 | 184x184 | `cab2f268cffc3569…` | `res/fh.png` | ic_tools_track | 轨迹记录 | tool-icon |
+| 77 | `map/source-thumb/ic_base_map_xintu_satellite.png` | 位图 | 104638 | 874x536 | `626d04b3f90551b5…` | `res/ml.webp` | ic_base_map_xintu_satellite | 星图·卫星 | source-thumb |
+| 78 | `map/source-thumb/xintu_satellite.png` | 位图 | 104638 | 874x536 | `626d04b3f90551b5…` | `res/Eo.webp` | xintu_satellite | 世纪空间（原版第4源卡；与中科星图卡同图） | source-thumb |
+| 79 | `pages/_shared/icons/svg_title_back.xml` | 矢量/解码 | 456 | - | `14be0ac5f1fef97c…` | `res/e2.xml` | svg_title_back | 共用返回箭头（9 页 dump 均有「返回」节点） | page-icon |
+| 80 | `pages/account/icons/ic_default_avatar.png` | 位图 | 3694 | 240x240 | `ac6d865eb51f4e46…` | `res/Qc.webp` | ic_default_avatar | 账户设置-默认头像（候选） | page-icon |
+| 81 | `pages/feedback/icons/ic_add_image.png` | 位图 | 1552 | 280x280 | `1ab9a548678dcb6c…` | `res/A0.png` | ic_add_image | 投诉反馈-添加图片 | page-icon |
+| 82 | `pages/share/icons/icon_share_circle.png` | 位图 | 6350 | 96x96 | `6aacac32e9bde2fd…` | `res/mv.png` | icon_share_circle | 推荐给好友-微信朋友圈（候选） | page-icon |
+| 83 | `pages/share/icons/icon_share_wx.png` | 位图 | 4951 | 96x96 | `007ba7f94de8d127…` | `res/PV.png` | icon_share_wx | 推荐给好友-微信（候选） | page-icon |
+| 84 | `tools/ic_3d_white.png` | 位图 | 1118 | 96x96 | `f45d85fe092ab5d5…` | `res/Ji.png` | ic_3d_white | 3D | tool-icon |
+| 85 | `tools/ic_north_needle.png` | 位图 | 5117 | 152x156 | `8ccb3b5aefc41cab…` | `res/pf.png` | ic_north_needle | 指北针 | tool-icon |
+| 86 | `tools/ic_tool_altitude.png` | 位图 | 11328 | 184x184 | `516c110b85dded69…` | `res/KL.png` | ic_tool_altitude | 海拔查询 | tool-icon |
+| 87 | `tools/ic_tool_collect.png` | 位图 | 12757 | 184x184 | `e36a7c2da513eab0…` | `res/dd.png` | ic_tool_collect | 收藏点 | tool-icon |
+| 88 | `tools/ic_tool_compass.png` | 位图 | 13400 | 184x184 | `6fb11483d2eead88…` | `res/6g.png` | ic_tool_compass | 罗盘 | tool-icon |
+| 89 | `tools/ic_tool_fish.png` | 位图 | 14748 | 184x184 | `9f304273d8e338b1…` | `res/uU.png` | ic_tool_fish | 钓点 | tool-icon |
+| 90 | `tools/ic_tool_history.png` | 位图 | 11232 | 184x184 | `f3b5c01b53be6ff0…` | `res/Fe.png` | ic_tool_history | 历史影像 | tool-icon |
+| 91 | `tools/ic_tool_isoline.png` | 位图 | 17936 | 184x184 | `783f3b992a9234b7…` | `res/pM.png` | ic_tool_isoline | 等高线 | tool-icon |
+| 92 | `tools/ic_tool_measure.png` | 位图 | 15129 | 184x184 | `395455901ecc393a…` | `res/zv.png` | ic_tool_measure | 测量 | tool-icon |
+| 93 | `tools/ic_tool_mountain.png` | 位图 | 13190 | 184x184 | `fba48827d465e74f…` | `res/QJ.png` | ic_tool_mountain | 看山脉 | tool-icon |
+| 94 | `tools/ic_tool_paint.png` | 位图 | 14970 | 184x184 | `952cb7a95a75e997…` | `res/B2.png` | ic_tool_paint | 画笔 | tool-icon |
+| 95 | `tools/ic_tool_super_map.png` | 位图 | 15614 | 184x184 | `127acded4f58ceef…` | `res/SH.png` | ic_tool_super_map | 超清地图 | tool-icon |
+| 96 | `tools/ic_tool_super_map_old.png` | 位图 | 13465 | 184x184 | `803762a72f1d24b2…` | `res/-d.png` | ic_tool_super_map_old | 超清优化 | tool-icon |
+| 97 | `tools/ic_tool_vr.png` | 位图 | 12911 | 184x184 | `e178f3e642edbbc7…` | `res/JE.png` | ic_tool_vr | （当前面板未展示：more-sheet-03-fresh.xml 无此项） | tool-icon |
+| 98 | `tools/ic_tool_water.png` | 位图 | 14709 | 184x184 | `84cf3ead69a53f43…` | `res/vY.png` | ic_tool_water | 看水系 | tool-icon |
+| 99 | `tools/ic_tool_weather.png` | 位图 | 11476 | 184x184 | `eeeef55545f2d724…` | `res/vd.png` | ic_tool_weather | 天气 | tool-icon |
+| 100 | `tools/ic_tools_geographic_imagery.png` | 位图 | 14358 | 184x184 | `26ddea2dab371a0d…` | `res/eS.png` | ic_tools_geographic_imagery | 地理影像 | tool-icon |
+| 101 | `tools/ic_tools_road.png` | 位图 | 13893 | 184x184 | `c8e2267973995fdc…` | `res/TP.png` | ic_tools_road | 路网 | tool-icon |
+| 102 | `tools/ic_tools_street.png` | 位图 | 13054 | 184x184 | `a161d5d86570a3a9…` | `res/5g.png` | ic_tools_street | （当前面板未展示：dump 无「景点」项） | tool-icon |
+| 103 | `tools/ic_tools_track.png` | 位图 | 12726 | 184x184 | `cab2f268cffc3569…` | `res/fh.png` | ic_tools_track | 轨迹记录 | tool-icon |

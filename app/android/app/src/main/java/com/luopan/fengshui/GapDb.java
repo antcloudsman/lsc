@@ -130,10 +130,26 @@ class GapDb extends SQLiteOpenHelper {
         return getWritableDatabase().insert(T_INTEREST, null, v);
     }
 
-    List<InterestPoint> listInterest() {
+    /**
+     * 界面列表：**只显示当前账号的行**（审核验 §33）。
+     *
+     * 不加账号条件会造成跨账号破坏性副作用：在 B 的会话里看到并删掉 A 的行 → 墓碑因 `owner_uid=A`
+     * 进不了 `listDeletePending(B)`、挂在本地不推 → 等 A 下次同步取到它，把 A 服务端的数据真删了。
+     * 用户以为自己删的是 B 的。
+     *
+     * `owner_uid=0` 的孤儿行（升级前存量、归属未知）**不显示**：它们不可判断归属，
+     * 显示出来点删除就会落入上面那条链路。等正确账号登录、或后续版本人工处理。
+     */
+    List<InterestPoint> listInterest(int uid) {
         List<InterestPoint> out = new ArrayList<>();
         // delete_pending=1 是「已删、待推服务端」的墓碑：列表不再显示，但同步要用它补推删除。
-        try (Cursor c = getReadableDatabase().query(T_INTEREST, null, "delete_pending=0", null,
+        String where = "delete_pending=0";
+        String[] args = null;
+        if (uid > 0) {
+            where += " AND owner_uid=?";
+            args = new String[]{String.valueOf(uid)};
+        }
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, null, where, args,
                 null, null, "created_at DESC, id DESC")) {
             while (c.moveToNext()) {
                 out.add(new InterestPoint(

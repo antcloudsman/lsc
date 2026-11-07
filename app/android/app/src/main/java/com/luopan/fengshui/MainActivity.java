@@ -1719,7 +1719,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     private void openFavoriteList() {
         if (favoriteSubList == null) return;
-        java.util.List<InterestPoint> pts = new GapDb(this).listInterest();
+        java.util.List<InterestPoint> pts = new GapDb(this).listInterest(LcSession.uid(this));
         final java.util.List<String> rows = new java.util.ArrayList<>();
         for (InterestPoint ip : pts) {
             rows.add(String.format(java.util.Locale.US, "%s  %.6f,%.6f",
@@ -3164,7 +3164,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 refreshChips.run();
             } else if (active[0] == 3) {
                 // 收藏点 tab：本机数据，不需要关键词、不需要网络
-                java.util.List<InterestPoint> pts = new GapDb(this).listInterest();
+                java.util.List<InterestPoint> pts = new GapDb(this).listInterest(LcSession.uid(this));
                 if (pts.isEmpty()) {
                     rows.add("暂无收藏点（可在地图收藏点态「添加点」）");
                 } else {
@@ -3931,4 +3931,5 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 }
+
 

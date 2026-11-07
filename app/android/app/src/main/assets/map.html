@@ -52,24 +52,28 @@
   #srcPanel { position:absolute; left:38px; right:60px; top:160px; height:246px;
     z-index:20; display:none; }
   #srcPanel .box { position:absolute; left:0; right:0; top:0; bottom:0; overflow:hidden;
-    background:#f6f5f5f5; border-radius:5px; padding:11px 10px 8px; box-sizing:border-box; }
-  #srcBox { display:grid; grid-template-columns:repeat(3, 1fr); grid-auto-rows:47.4px;
-    column-gap:7.7px; row-gap:0; }
+    background:#f6f5f5f5; border-radius:5px; padding:11px 10px 7px; box-sizing:border-box; }
+  /* 行距 160 = 卡 38.8（131 设备 px）+ 行间 8.6（29 设备 px）；卡高 131 = 缩略图 92 + 标签条 39 */
+  #srcBox { display:grid; grid-template-columns:repeat(3, 1fr); grid-auto-rows:38.8px;
+    column-gap:7.7px; row-gap:8.6px; }
   .srcCard { display:flex; flex-direction:column; padding:0; overflow:hidden; width:100%;
-    background:#fff; color:#333; border:0; border-radius:3px; box-shadow:0 1px 2px #0000001f; }
+    height:38.8px; background:#fff; color:#fff; border:0; border-radius:3px;
+    box-shadow:0 1px 2px #0000001f; }
   .srcCard.off { opacity:.55; }
   .srcCard.on .srcName { background:#1c45a5; color:#fff; }
   .srcThumb { height:27.3px; width:100%; display:block; object-fit:cover; background:#e8e8e8; }
   .srcCard.off .srcThumb { filter:grayscale(1) brightness(.85); }
   .srcNoThumb { height:27.3px; display:flex; align-items:center; justify-content:center;
     background:#eee; color:#8a8a8a; font-size:8px; }
-  .srcName { flex:1; display:flex; align-items:center; justify-content:center; padding:0 3px;
-    font-size:9px; line-height:1; text-align:center; background:#fff;
+  /* 原版标签条：高 39 设备 px（11.6 CSS）、底 (28,37,50)、白字；选中态底 (28,69,165) */
+  .srcName { flex:none; display:flex; align-items:center; justify-content:center; padding:0 3px;
+    height:11.5px; min-height:11.5px; font-size:8.5px; line-height:1; text-align:center;
+    background:#1c2532; color:#fff;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* 第 13 格：原版浅灰块 260x127（灰 225,232,235）+ 居中细加号，无文字 */
   .srcPlus { display:flex; align-items:center; justify-content:center; width:100%;
-    height:37.6px; align-self:start; background:#e1e8eb; border:0; border-radius:3px;
-    padding:0; box-shadow:none; }
+    height:37.6px; min-height:37.6px; align-self:start; background:#e1e8eb; border:0;
+    border-radius:3px; padding:0; box-shadow:none; }
   .srcPlus i { display:block; position:relative; width:24px; height:24px; }
   .srcPlus i::before, .srcPlus i::after { content:""; position:absolute; background:#8d949a; border-radius:1px; }
   .srcPlus i::before { left:0; right:0; top:11px; height:2px; }

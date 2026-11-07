@@ -107,6 +107,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** F-04 路网：原版 MapManager.showRoad 默认 true；状态持久化在 MapManager prefs。 */
     private boolean roadNetOn = true;
 
+    /** M6 第 8 条：3D 状态**由原生持有**（原版在 MainViewModel 的 MutableState，网页重载不丢），
+     *  map.html 的 `mode` 只是投影；`onPageFinished` 按它重放 `setMode('3d')`。
+     *  值只从 `getState().mode` 回读，不做乐观赋值——原版 `initGL()` 失败会回落 2d，猜就错了。 */
+    private boolean is3D = false;
+
+    /** M6 第 8 条：跨 **Activity 配置变更**保住 3D 状态的进程级载体。
+     *  原版 `is3D` 在 MainViewModel 的 MutableState：配置变更存活、`finish()` 后销毁、进程死不恢复。
+     *  `onSaveInstanceState` 会跨进程恢复（多做了持久化）、裸 static 会跨「退出再进」（也多做了），
+     *  所以用 static + `onDestroy` 里 `isFinishing()` 清理，语义才与原版等价。**不写 SharedPreferences**。 */
+    private static Boolean sIs3D = null;
+
     /** F-17（LC 自建）：罗盘显示参数（底盘透明度 / 天干地支辅助线）。 */
     private CompassDisplayStore compassDisplay;
 
@@ -192,6 +203,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         trueNorth = prefs.getBoolean("true_north", false);
         calibrationDone = prefs.getBoolean("calibration_done", false);
         p01Enabled = prefs.getBoolean("p0_1_enabled", true);
+        // M6 第 8 条：配置变更重建时沿用进程级载体（原版靠 ViewModel 存活）
+        if (sIs3D != null) is3D = sIs3D;
 
         compassTab = buildSinglePage();
         content.addView(compassTab);
@@ -860,6 +873,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean pointerOn = true;            // 内存态
     private final java.util.Map<String, SwitchGlyph> switchGlyphs = new java.util.HashMap<>();
 
+    /**
+     * M6 第 3 条（逆向 §6.8/§6.9 更正后）：指针图可见性的**唯一判定点**。
+     *
+     * 原版 `show = if (g.q() && !g.p()) false else MainViewModel.M0()`：
+     *  - 纯地图模式（地图开、实景关）→ **恒隐藏**，与「指针开关」无关；
+     *  - 实景态（`p=true`）或地图模式关（`q=false`）→ 取「指针开关」（原版 `h0`）。
+     * 我方 `compassMapMode` 是互斥三态（MAP/REALITY/NONE），原版是两个独立布尔；
+     * 在这个门控里 `p=true` 一律取开关值、与 `q` 无关，所以三态模型**行为等价**。
+     * 另外叠加两个我方状态：只在罗盘浮层里（`compassMode`）、且没点「隐藏」（`!compassHidden`）。
+     *
+     * 四个入口（切罗盘态 / 点隐藏 / 点指针开关 / 切地图·实景）都只调这里，禁止各处自己算一套。
+     */
+    private void refreshPointerVisibility() {
+        if (pointerView == null) return;
+        boolean visible = compassMode && !compassHidden
+                && compassMapMode != MAP_MODE_MAP
+                && (compassView == null || compassView.isShowPointer());
+        pointerView.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
     /** 开关初始状态（与截图默认一致）。 */
     private boolean switchStateOf(String label) {
         switch (label) {
@@ -900,6 +933,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         android.util.Log.d("LCSWITCH", "toggle " + label + " mapMode=" + compassMapMode
                 + " southNorth=" + southNorthOn + " pointer=" + pointerOn);
+        // M6 第 3 条：地图/实景态可能改变指针门控，切换后必须重算
+        refreshPointerVisibility();
     }
 
     /** 开态按钮底：原版蓝 (50,90,182)、bbox 144×144（四边内缩 7）、圆角 15。 */
@@ -1256,6 +1291,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * 原实现靠 onPageFinished 重放一次，这里再补一个 pendingUiMode：未就绪时先记下，
      * 页面就绪后再发，避免「浮层已开、地图仍停在 full 态」的不同步。
      */
+    /**
+     * M6 第 8 条：从网页回读真实 3D 状态到原生 `is3D`。
+     *
+     * 为什么不在点击时直接 `is3D = !is3D`：原版 `switch3D` 之后 WebGL 初始化失败会回落 2d
+     * （`last3dError = "webgl-unavailable"`），乐观赋值会让原生记着「3D 开着」而屏幕是 2D，
+     * 重载后还会把 2D 页面重放成 3D。所以只认 `getState().mode`。
+     * 延迟 700ms：`toggle3D` 内部要拉 DEM 与贴面瓦片，立刻读会读到切换前的值。
+     */
+    private void sync3DStateFromPage() {
+        if (compassMapView == null) return;
+        compassMapView.postDelayed(() -> {
+            try {
+                compassMapView.evaluateJavascript("(typeof getState==='function')&&(getState().mode||'2d')",
+                        value -> {
+                            if (value == null) return;
+                            boolean now3d = value.contains("3d");
+                            if (now3d != is3D) {
+                                android.util.Log.d("LC3DSTATE", "native is3D=" + now3d + " from page state=" + value);
+                            }
+                            is3D = now3d;
+                            sIs3D = now3d;
+                        });
+            } catch (Throwable t) {
+                android.util.Log.w("LC3DSTATE", "read-back failed: " + t.getClass().getSimpleName());
+            }
+        }, 700);
+    }
+
     private void applyMapUiMode(String mode) {
         if (compassMapView == null) return;
         if (!mapPageReady) {
@@ -1470,9 +1533,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(label + "：原版为工具子页，本步未实现");
                 }
                 break;
-            case "贴地": js("toggleGround()"); break;
+            case "贴地":
+                js("toggleGround()");
+                // 贴地会强制进 3D（原版同一个 ground 位），状态一样要回读
+                sync3DStateFromPage();
+                break;
             case "定位": js("locate()"); break;
-            case "3D": js("toggle3D()"); break;
+            case "3D":
+                js("toggle3D()");
+                // M6 第 8 条：切完回读网页真实 mode（WebGL 不可用会回落 2d，不能乐观置 true）
+                sync3DStateFromPage();
+                break;
             case "+": js("zoomIn()"); break;
             case "−": js("zoomOut()"); break;
             case "指北针": js("toggleNeedle()"); break;
@@ -1484,9 +1555,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (compassMode) {
                     boolean on = compassView != null && !compassView.isShowPointer();
                     if (compassView != null) compassView.setShowPointer(on);
-                    // M6 第 1 条（逆向 §6.8）：指针开关控的是**竖向指针图**（原版 pointer.png 23×94），
-                    // 不是十字线上的红三角（那属于十字线，常显、无独立开关）。
-                    if (pointerView != null) pointerView.setVisibility(on ? View.VISIBLE : View.GONE);
+                    // 指针图显隐统一由 refreshPointerVisibility() 判定（含地图/实景门控与隐藏态）
+                    refreshPointerVisibility();
                     toast(on ? "罗盘北针：开" : "罗盘北针：关");
                 } else {
                     js("toggleNeedle()");
@@ -1498,6 +1568,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // 函数由 map.html 侧提供，落地前用守卫写法，避免未定义函数抛 JS 错。
                 if (compassView != null) compassView.reset();
                 compassMapView.evaluateJavascript("(typeof resetCompass==='function')&&resetCompass()", null);
+                // 复位会退 2D，原生状态跟着回读一次
+                sync3DStateFromPage();
                 break;
             case "罗盘锁定":
                 // B-05：锁定＝显式冻结开关（原版左列独立项），与「拖动/翻坐向」彻底分开。
@@ -1556,9 +1628,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // M6 第 1 条：十字经线只在罗盘态显示（原版 marker 只在罗盘浮层存在）
         if (crosshairView != null) crosshairView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
-        // R2-005：中心指针只在罗盘态显示；「指针开关」关掉时也一起隐（与既有 setShowPointer 同步）
-        if (pointerView != null) pointerView.setVisibility(
-                on && (compassView == null || compassView.isShowPointer()) ? View.VISIBLE : View.GONE);
+        // R2-005 + M6 第 3 条：指针可见性统一判定（罗盘态 × 未隐藏 × 非纯地图模式 × 开关）
+        refreshPointerVisibility();
         if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
@@ -1701,6 +1772,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (compassView != null) compassView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         // M6 第 1 条：隐藏态（R2-006）连十字一起隐——原版「隐藏」隐的是整个罗盘浮层
         if (crosshairView != null) crosshairView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        // M6 第 3 条：隐藏态此前漏了 pointerView（罗盘/十字/工具列都隐了，只剩指针图飘着）
+        refreshPointerVisibility();
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (compassToolBar != null) compassToolBar.setVisibility(showCompass ? View.VISIBLE : View.GONE);
@@ -3533,6 +3606,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     applyPendingMapView();
                     // F-04：页面重载后按持久化状态重放路网开关。
                     view.evaluateJavascript("try{setRoadNet(" + roadNetOn + ")}catch(e){}", null);
+                    // M6 第 8 条：3D 状态同样按原生重放（页面级 `var mode` 一重载就回 2d，
+                    // 用户会以为「3D 自己关了」；不许改用 localStorage —— 那会变成两份状态）
+                    if (is3D) view.evaluateJavascript("try{setMode('3d')}catch(e){}", null);
                     // R2-026：地图就绪后补一次左上地名（罗盘态不显示，不必取）。
                     if (!compassMode) refreshPlaceName();
                 }
@@ -3886,6 +3962,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onDestroy() {
+        // M6 第 8 条：真正退出（isFinishing）才丢 3D 态；配置变更重建不走这里，
+        // 这样「退出再进」回默认，与 ViewModel 生命周期一致。
+        if (isFinishing()) sIs3D = null;
         // C-05：主页面 WebView 也要销毁（新增页都已补，主页面此前漏着）。
         measureHandler.removeCallbacks(measurePoll);
         if (compassMapView != null) {

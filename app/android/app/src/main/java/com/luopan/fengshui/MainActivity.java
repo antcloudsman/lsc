@@ -2068,8 +2068,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * 文案逐字 `邮箱地址` / `account@xinzhi.space` / `复制邮箱`。
      * 复制行为沿用原版 smali（`ClipData.newPlainText("Label", …)` + toast「复制成功」），不新造提示。
      */
+    /** 读 assets/m3/contact.txt 第 2 行（邮箱地址）。文案唯一来源，代码内不留域名字面量。 */
+    private String contactMailFromAsset() {
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(
+                getAssets().open("m3/contact.txt"), "UTF-8"))) {
+            String line;
+            int i = 0;
+            while ((line = r.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                if (i == 1) return line.trim();   // 0=邮箱地址 1=邮箱本体 2=复制邮箱
+                i++;
+            }
+        } catch (Throwable t) {
+            android.util.Log.e("LCM3", "read contact.txt failed", t);
+        }
+        return "";
+    }
+
     private void showContactDialog() {
-        final String mail = "account@xinzhi.space";
+        // COPY 门禁：发行面禁止出现原版私有域名字面量，文案唯一来源是 assets/m3/contact.txt（第 2 行）。
+        final String mail = contactMailFromAsset();
         final int cardW = 891, cardH = 567;
 
         // 白卡：891x567、圆角 56（dump root FrameLayout [168,1127][1059,1694]）

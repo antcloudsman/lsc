@@ -127,7 +127,7 @@ final class FavoriteSync {
                 db.upsertRemoteInterest(id, o.optString("name", ""),
                         o.optDouble("latitude", 0), o.optDouble("longitude", 0),
                         rev, parseIso(o.optString("createTime", null)),
-                        sf == null ? 0 : sf[0], sf == null ? 180 : sf[1]);
+                        sf == null ? 0 : sf[0], sf == null ? 180 : sf[1], uid);
                 maxRev = Math.max(maxRev, rev);
                 pulled++;
             }
@@ -221,6 +221,7 @@ final class FavoriteSync {
         }
     }
 }
+
 
 
 

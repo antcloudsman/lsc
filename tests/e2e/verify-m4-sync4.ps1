@@ -1,12 +1,13 @@
-# M4 同步四项复验（P0 跨账号 / A-B 崩窗口 / 坐向还原 / 删除双向）
+# M4 同步五项复验（P0 跨账号 / A-B 崩窗口 / 坐向还原 / 删除双向 / §33 账号隔离）
 # 用法：pwsh -File tests\e2e\verify-m4-sync4.ps1 -Apk <apk> [-Only xacct,crash,sit,del]
 # 纪律：坐标当次 dump 解析；结论只认库内字段与服务端计数；每项输出 PASS/FAIL + 数字
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$Apk,
     [string]$Device = 'L2E0222531014833',
-    [string[]]$Only = @('xacct', 'crash', 'sit', 'del')
+    [string[]]$Only = @('xacct', 'crash', 'sit', 'del', 'sec33', 'orphan')
 )
+if ($Only.Count -eq 1 -and $Only[0] -match ',') { $Only = $Only[0] -split ',' | ForEach-Object { $_.Trim() } }
 . (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'tests\lib\ui-drive.ps1')
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $out = Join-Path $root ('checks\sync4-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -34,10 +35,19 @@ print(str(db.execute(sys.argv[2]).fetchall()))
 '@ | Set-Content -LiteralPath $py -Encoding UTF8
     return ((& python $py $db $sql) -join '').Trim()
 }
+function LocalScalar([string]$db, [string]$sql) {
+    $py = Join-Path $env:TEMP 'sync4s.py'
+    @'
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1])
+print(db.execute(sys.argv[2]).fetchone()[0])
+'@ | Set-Content -LiteralPath $py -Encoding UTF8
+    return ((& python $py $db $sql) -join '').Trim()
+}
 function RemoteJs([string]$code) {
     $f = Join-Path $env:TEMP 'sync4r.mjs'
     Set-Content -LiteralPath $f -Value $code -Encoding UTF8
-    return ((Get-Content -LiteralPath $f -Raw | & docker exec -i lc-backend node --input-type=module 2>&1) -join ' ')
+    return ((Get-Content -LiteralPath $f -Raw | & docker exec -i lc-backend node --no-warnings --input-type=module 2>&1) -join ' ')
 }
 function PushLocal([string]$src) {
     & adb -s $Device push $src /data/local/tmp/sync4.db | Out-Null
@@ -58,17 +68,65 @@ function LogoutIfIn() {
     if ($d -and (Find-Node $d '昵称：' '')) { Tap-NodeRetry '' 'lc_m3_logout' 3 2000 | Out-Null; Start-Sleep -Seconds 1; return $true }
     return $false
 }
+function Set-LoginField([string]$id, [string]$val) {
+    for ($t = 1; $t -le 3; $t++) {
+        $dd = Get-UiDump
+        if ($dd -and (Tap-Node $dd '' $id 700)) { Input-Text $val; return $true }
+        Start-Sleep -Milliseconds 700
+    }
+    return $false
+}
+function Hide-Keyboard {
+    (Invoke-Adb @('shell', 'input', 'keyevent', '111')) | Out-Null   # ESC 收 IME，避免提交按钮被键盘盖住
+    Start-Sleep -Milliseconds 600
+}
+function LoginFormSubmit {
+    Hide-Keyboard
+    for ($t = 1; $t -le 3; $t++) {
+        $dd = Get-UiDump
+        if (-not ($dd -and (Find-Node $dd '' 'lc_login_submit'))) { return $true }
+        Tap-Node $dd '' 'lc_login_submit' 2500 | Out-Null
+        Start-Sleep -Seconds 2
+        $chk = Get-UiDump
+        if ($chk -and (Find-Node $chk '昵称：' '')) { return $true }
+        if ($chk -and -not (Find-Node $chk '' 'lc_login_submit')) { return $true }
+    }
+    return $false
+}
+function LoginAs([string]$u, [string]$p) {
+    if (-not ((Get-Focus) -match 'com.luopan.fengshui')) { AppStart }
+    Tap-NodeRetry '' 'lc_m3_login' 3 1500 | Out-Null
+    Set-LoginField 'lc_login_username' $u | Out-Null
+    Set-LoginField 'lc_login_password' $p | Out-Null
+    return (LoginFormSubmit)
+}
 function RegisterAs([string]$prefix) {
     $u = $prefix + (Get-Random -Maximum 99999); $p = 'LcQa!' + (Get-Random -Maximum 99999)
+    $script:lastUser = $u; $script:lastPass = $p
+    if (-not ((Get-Focus) -match 'com.luopan.fengshui')) { AppStart }
     Tap-NodeRetry '' 'lc_m3_login' 3 1500 | Out-Null
     Tap-NodeRetry '注册' '' 3 900 | Out-Null
-    $ids = @('lc_login_username', 'lc_login_password', 'lc_login_display'); $vals = @($u, $p, ($prefix + 'nick'))
-    for ($i = 0; $i -lt 3; $i++) {
-        for ($t = 1; $t -le 3; $t++) { $dd = Get-UiDump; if ($dd -and (Tap-Node $dd '' $ids[$i] 700)) { Input-Text $vals[$i]; break }; Start-Sleep -Milliseconds 700 }
-    }
-    $dd = Get-UiDump; Tap-Node $dd '' 'lc_login_submit' 2500 | Out-Null
-    Start-Sleep -Seconds 2
+    Set-LoginField 'lc_login_username' $u | Out-Null
+    Set-LoginField 'lc_login_password' $p | Out-Null
+    Set-LoginField 'lc_login_display' ($prefix + 'nick') | Out-Null
+    $ok = LoginFormSubmit
+    if (-not $ok) { LoginAs $u $p | Out-Null }
+    $dd = Get-UiDump
+    if ($dd) { Set-Content -LiteralPath (Join-Path $out ('reg-' + $u + '.xml')) -Value ($dd.OuterXml) -Encoding UTF8 }
+    Log ("register_ok=" + [bool]($dd -and (Find-Node $dd '昵称：' '')) + " user=$u")
     return $u
+}
+function OpenFavList() {
+    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null; Start-Sleep -Milliseconds 800
+    if (-not ((Get-Focus) -match 'MainActivity')) {
+        Invoke-Adb @('shell', 'am', 'start', '-n', 'com.luopan.fengshui/.MainActivity') | Out-Null
+        Start-Sleep -Seconds 3; Freeze-Heading 0
+    }
+    Tap-NodeRetry '更多' '' 3 1500 | Out-Null
+    Tap-NodeRetry '收藏点' '' 3 1800 | Out-Null
+    Start-Sleep -Milliseconds 900
+    Tap-NodeRetry '收藏列表' '' 3 1800 | Out-Null
+    Start-Sleep -Milliseconds 1200
 }
 function SyncNow([int]$waitSec = 7) {
     & adb -s $Device shell logcat -c | Out-Null
@@ -99,17 +157,32 @@ AppStart
 if ($Only -contains 'xacct') {
     GoAccount | Out-Null
     LogoutIfIn | Out-Null
-    # 以 A 建 3 条并同步，让 remote_id 落地
-    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null; Start-Sleep -Milliseconds 800
+    # 清空本机 interest 与增量游标：从「A 的 3 条」这个干净基线出发，避免上一次运行的存量行混进条数
+    AppStop
+    $db0 = PullLocal 'local-clean.db'
+    $py0 = Join-Path $env:TEMP 'sync4clean.py'
+    @'
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1]); db.execute("delete from interest"); db.commit(); print("cleaned")
+'@ | Set-Content -LiteralPath $py0 -Encoding UTF8
+    ((& python $py0 $db0) -join '') | Out-Null
+    PushLocal $db0
+    & adb -s $Device shell "run-as com.luopan.fengshui sh -c 'rm -f shared_prefs/lc_sync.xml'" | Out-Null
+    AppStart
+    # 以 A 建 3 条并同步，让 remote_id 落地（AppStart 后已在主界面，不能再按 back：会把应用退到桌面）
     GoAccount | Out-Null
     $userA = RegisterAs 'xa'
     Log "userA=$userA"
     for ($i = 1; $i -le 3; $i++) { AddLocalFavorite ("xa-$i") }
-    GoAccount | Out-Null
+    $dbPre = PullLocal 'local-pre-push.db'
+    Log ('pre_push: ' + (LocalQuery $dbPre "select id,owner_uid,remote_id,sync_state,name from interest order by id"))
+    $goOk = GoAccount
+    Log "A_go_account=$goOk"
     $s = SyncNow
+    Log ("A_sync_ok=" + $s.Ok)
     Log ("A_sync: " + $s.Log)
     $dbA = PullLocal 'local-A.db'
-    $rowsA = LocalQuery $dbA "select count(*) from interest where remote_id>0"
+    $rowsA = LocalScalar $dbA "select count(*) from interest where remote_id>0"
     Log "A_rows_with_remote=$rowsA"
     # 模拟升级前存量行：owner_uid 归 0、保留 remote_id
     AppStop
@@ -128,17 +201,17 @@ print(db.execute("select count(*) from interest where owner_uid=0 and remote_id>
     LogoutIfIn | Out-Null
     $userB = RegisterAs 'xb'
     Log "userB=$userB"
-    $before = LocalQuery (PullLocal 'local-before-sync.db') "select count(*) from interest"
+    $before = LocalScalar (PullLocal 'local-before-sync.db') "select count(*) from interest"
     $s = SyncNow
     Log ("B_first_sync: " + $s.Log)
-    $after = LocalQuery (PullLocal 'local-after-sync.db') "select count(*) from interest"
+    $after = LocalScalar (PullLocal 'local-after-sync.db') "select count(*) from interest"
     $bCnt = RemoteJs @"
 import { DatabaseSync } from "node:sqlite";
 const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
 console.log("B_ACTIVE=" + db.prepare("select count(*) c from favorites f join users u on u.id=f.user_id where u.username_lc=? and f.deleted=0").get("$userB").c);
 "@
     Log ("counts: before=$before after=$after ; " + $bCnt)
-    $ok = ([int]$before -ge 3) -and ([int]$after -eq [int]$before)
+    $ok = ([int]$before -ge 3) -and ([int]$after -eq [int]$before) -and ([int]$zero -eq [int]$before)
     Verdict 'P0-①' '升级后首次登 B，本地条数不减' $ok ("before=$before after=$after; " + $bCnt)
 }
 
@@ -179,7 +252,7 @@ import { DatabaseSync } from "node:sqlite";
 const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
 console.log("TOTAL_ACTIVE=" + db.prepare("select count(*) c from favorites where deleted=0").get().c);
 '@
-    $restored = LocalQuery (PullLocal 'local-crash-after.db') "select remote_id from interest order by id desc limit 1"
+    $restored = LocalScalar (PullLocal 'local-crash-after.db') "select remote_id from interest where name='crash-row' order by id desc limit 1"
     Log ("remote_total before=$beforeCnt after=$afterCnt ; restored_remote_id=$restored")
     $ok = ($s.Log -match 'dedup|重推|push=1') -and ([int]($restored -replace '\D', '') -gt 0)
     Verdict 'A/B-②' '崩窗口重推不新建、remote_id 认领回' $ok ("restored=$restored; " + $beforeCnt + " -> " + $afterCnt)
@@ -199,7 +272,7 @@ if ($Only -contains 'sit') {
 import sqlite3, sys
 db = sqlite3.connect(sys.argv[1])
 row = db.execute("select id from interest order by id desc limit 1").fetchone()
-db.execute("update interest set sitting_deg=90, facing_deg=270 where id=?", (row[0],))
+db.execute("update interest set sitting_deg=90, facing_deg=270, sync_state='pending' where id=?", (row[0],))
 db.commit()
 print("set=" + str(db.execute("select id,sitting_deg,facing_deg,remote_id from interest where id=?", (row[0],)).fetchone()))
 '@ | Set-Content -LiteralPath $py -Encoding UTF8
@@ -218,9 +291,12 @@ db = sqlite3.connect(sys.argv[1]); db.execute("delete from interest"); db.commit
 '@ | Set-Content -LiteralPath $py2 -Encoding UTF8
     ((& python $py2 $db2) -join '') | Out-Null
     PushLocal $db2
+    # 清本地后拉回必须同时重置增量游标：cursor 留在 prefs 里时 since=cursor 不返回老行，
+    # 那是「本机有旧游标」的增量语义，不是「新设备/清数据后登录拉全量」。两者不能混为一谈。
+    & adb -s $Device shell "run-as com.luopan.fengshui sh -c 'rm -f shared_prefs/lc_sync.xml'" | Out-Null
     AppStart; GoAccount | Out-Null
     SyncNow 8 | Out-Null
-    $pulled = LocalQuery (PullLocal 'local-sit-pulled.db') "select sitting_deg,facing_deg from interest order by id desc limit 1"
+    $pulled = LocalQuery (PullLocal 'local-sit-pulled.db') "select sitting_deg,facing_deg from interest where name='sit-row' order by id desc limit 1"
     Log "pulled_sit=$pulled"
     $ok = ($pulled -match '90') -and ($pulled -match '270')
     Verdict '坐向-③' '坐 90 / 向 270 拉回后保持' $ok ("pulled=$pulled (set=$set)")
@@ -228,56 +304,185 @@ db = sqlite3.connect(sys.argv[1]); db.execute("delete from interest"); db.commit
 
 # ---------- ④ 删除双向 ----------
 if ($Only -contains 'del') {
-    # 方向一：本机删 → 服务端 active 减 1
+    # 方向一：本机删 → 该行服务端 deleted=1（按 remote_id 单行判，不用全库计数）
     Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null; Start-Sleep -Milliseconds 800
     if (-not ((Get-Focus) -match 'MainActivity')) { AppStart }
     AddLocalFavorite 'del-row'
     GoAccount | Out-Null
     SyncNow 7 | Out-Null
-    $b1 = RemoteJs @'
+    $db = PullLocal 'local-del.db'
+    $rid = LocalScalar $db "select remote_id from interest where name='del-row' order by id desc limit 1"
+    $b1 = RemoteJs @"
 import { DatabaseSync } from "node:sqlite";
 const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
-console.log("ACTIVE=" + db.prepare("select count(*) c from favorites where deleted=0").get().c);
-'@
+const r = db.prepare("select id,deleted from favorites where id=?").get($rid);
+console.log("ROW_BEFORE=" + (r ? (r.id + ":" + r.deleted) : "MISSING"));
+"@
     # 通过本地库置墓碑（等价于界面上删除，UI 路径已由 InterestListActivity 覆盖）
     AppStop
-    $db = PullLocal 'local-del.db'
     $py = Join-Path $env:TEMP 'sync4del.py'
     @'
 import sqlite3, sys
 db = sqlite3.connect(sys.argv[1])
-row = db.execute("select id,remote_id from interest order by id desc limit 1").fetchone()
+row = db.execute("select id,remote_id from interest where name='del-row' order by id desc limit 1").fetchone()
 db.execute("update interest set delete_pending=1 where id=?", (row[0],))
 db.commit()
 print("tombstone=" + str(db.execute("select id,remote_id,delete_pending from interest where id=?", (row[0],)).fetchone()))
 '@ | Set-Content -LiteralPath $py -Encoding UTF8
     $tb = ((& python $py $db) -join '').Trim()
     PushLocal $db
-    Log "tombstone=$tb"
+    Log "tombstone=$tb remote_id=$rid"
     AppStart; GoAccount | Out-Null
     SyncNow 8 | Out-Null
-    $b2 = RemoteJs @'
+    $b2 = RemoteJs @"
 import { DatabaseSync } from "node:sqlite";
 const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
-console.log("ACTIVE=" + db.prepare("select count(*) c from favorites where deleted=0").get().c);
-'@
-    $ok1 = ([int](($b2 -replace '\D', '')) -eq ([int](($b1 -replace '\D', '')) - 1))
-    Verdict '删除-④a' '本机删 → 服务端 active 减 1' $ok1 ($b1 + " -> " + $b2)
-    # 方向二：服务端软删一条 → 本地消失
-    $target = RemoteJs @'
+const r = db.prepare("select id,deleted from favorites where id=?").get($rid);
+console.log("ROW_AFTER=" + (r ? (r.id + ":" + r.deleted) : "MISSING"));
+"@
+    $ok1 = ($b1 -match 'ROW_BEFORE=(\d+):0') -and ($b2 -match 'ROW_AFTER=\d+:1')
+    Verdict '删除-④a' '本机删 → 同一 remote_id 服务端 deleted=0→1' $ok1 ("rid=$rid ; " + $b1 + " -> " + $b2)
+    # 方向二：服务端软删本机仍存在的一行 → 本地该行消失（按 remote_id 判）
+    $db2 = PullLocal 'local-del-b2.db'
+    $rid2 = LocalScalar $db2 "select remote_id from interest where remote_id>0 and delete_pending=0 order by id desc limit 1"
+    $before = LocalScalar $db2 "select count(*) from interest where remote_id=$rid2"
+    $target = RemoteJs @"
 import { DatabaseSync } from "node:sqlite";
 const db = new DatabaseSync("/data/lc.sqlite");
-const r = db.prepare("select id from favorites where deleted=0 order by id desc limit 1").get();
-if (r) db.prepare("update favorites set deleted=1, rev=rev+1 where id=?").run(r.id);
-console.log("SOFTDELETED=" + (r ? r.id : "none"));
-'@
-    Log "remote_softdelete=$target"
-    $before = LocalQuery (PullLocal 'local-del-before.db') "select count(*) from interest"
+const r = db.prepare("select id,deleted from favorites where id=?").get($rid2);
+if (r && !r.deleted) db.prepare("update favorites set deleted=1, rev=rev+1 where id=?").run(r.id);
+console.log("SOFTDELETED=" + (r ? (r.id + ":" + r.deleted) : "MISSING"));
+"@
+    Log "remote_softdelete=$target (target_remote_id=$rid2, local_before=$before)"
     SyncNow 8 | Out-Null
-    $after = LocalQuery (PullLocal 'local-del-after.db') "select count(*) from interest"
-    Log ("local_count: $before -> $after")
-    $ok2 = [int]$after -lt [int]$before
-    Verdict '删除-④b' '服务端软删 → 本地消失' $ok2 ("$before -> $after; " + $target)
+    $after = LocalScalar (PullLocal 'local-del-after.db') "select count(*) from interest where remote_id=$rid2"
+    Log "local_count_by_remote_id: $before -> $after"
+    $ok2 = ([int]$before -ge 1) -and ([int]$after -eq 0)
+    Verdict '删除-④b' '服务端软删 → 本地同一行消失' $ok2 ("remote_id=$rid2 local=$before -> $after ; " + $target)
+}
+
+# ---------- ⑤ §33 账号隔离（B 侧列表看不到 A 的行、无删除入口；切回 A 行仍在、服务端行仍在） ----------
+if ($Only -contains 'sec33') {
+    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null; Start-Sleep -Milliseconds 800
+    if (-not ((Get-Focus) -match 'MainActivity')) { AppStart }
+    GoAccount | Out-Null
+    LogoutIfIn | Out-Null
+    $userA = RegisterAs 'sa'
+    $passA = $script:lastPass
+    Log "sec33_userA=$userA"
+    AddLocalFavorite 's33-a1'
+    AddLocalFavorite 's33-a2'
+    GoAccount | Out-Null
+    $s = SyncNow
+    Log ("A_sync: " + $s.Log)
+    $dbA = PullLocal 'sec33-A.db'
+    $aRows = LocalScalar $dbA "select count(*) from interest where name like 's33-%' and remote_id>0"
+    $aIds = LocalScalar $dbA "select group_concat(remote_id) from (select remote_id from interest where name like 's33-%' order by id)"
+    $aSrv1 = RemoteJs @"
+import { DatabaseSync } from "node:sqlite";
+const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
+const u = db.prepare("select id from users where username_lc=?").get("$userA");
+const ids = db.prepare("select group_concat(id) g, count(*) c from favorites where user_id=? and deleted=0").get(u.id);
+console.log("A_SRV_ACTIVE=" + ids.c + " A_SRV_IDS=" + ids.g);
+"@
+    Log ("A_before: local_remote=$aRows ids=$aIds ; " + $aSrv1)
+    # 切到 B（B 第一次同步时本地仍带 A 的行）
+    GoAccount | Out-Null
+    LogoutIfIn | Out-Null
+    $userB = RegisterAs 'sb'
+    Log "sec33_userB=$userB"
+    $s = SyncNow
+    Log ("B_first_sync: " + $s.Log)
+    $dbB = PullLocal 'sec33-B.db'
+    $kept = LocalScalar $dbB "select count(*) from interest where name like 's33-%'"
+    $owner = LocalScalar $dbB "select group_concat(distinct owner_uid) from interest where name like 's33-%'"
+    # B 侧界面：进入 收藏点 → 收藏列表（页面内覆盖层，行来自 listInterest(uid)）
+    OpenFavList
+    $d = Get-UiDump
+    $dText = if ($d) { $d.OuterXml } else { '' }
+    Set-Content -LiteralPath (Join-Path $out 'sec33-B-list.xml') -Value $dText -Encoding UTF8
+    & adb -s $Device exec-out screencap -p > (Join-Path $out 'sec33-B-list.png')
+    $visA1 = $dText -match 's33-a1'
+    $visA2 = $dText -match 's33-a2'
+    $subList = Find-Node $d '' 'lc_fav_sublist'
+    $emptyText = $dText -match '暂无收藏点'
+    # 长按列表区域：无删除入口时不应出现任何确认框
+    $ln = Find-Node $d '' 'lc_fav_sublist_list'
+    $dlgAfterLongPress = $false
+    if ($ln) {
+        Invoke-Adb @('shell', 'input', 'swipe', "$($ln.X)", "$($ln.Y)", "$($ln.X)", "$($ln.Y)", '800') | Out-Null
+        Start-Sleep -Milliseconds 900
+        $dl = Get-UiDump
+        Set-Content -LiteralPath (Join-Path $out 'sec33-B-longpress.xml') -Value ($dl.OuterXml) -Encoding UTF8
+        $dlgAfterLongPress = [bool]($dl) -and ($dl.OuterXml -match '删除|确定')
+    }
+    Log "B_ui: sublist_open=$([bool]$subList) visA1=$visA1 visA2=$visA2 empty_text=$emptyText longpress_dialog=$dlgAfterLongPress ; local_kept=$kept owner_uid=$owner"
+    $okUi = ([bool]$subList) -and (-not $visA1) -and (-not $visA2) -and $emptyText -and (-not $dlgAfterLongPress)
+    Verdict '§33-a' 'B 侧收藏列表看不到 A 的行、长按无删除入口' $okUi ("sublist_open=$([bool]$subList) visA1=$visA1 visA2=$visA2 empty_text=$emptyText longpress_dialog=$dlgAfterLongPress; local_kept=$kept owner_uid=$owner")
+    # 切回 A：两行仍在、界面可见、服务端行仍在
+    Tap-NodeRetry '' 'lc_fav_sublist_back' 2 900 | Out-Null
+    GoAccount | Out-Null
+    LogoutIfIn | Out-Null
+    LoginAs $userA $passA
+    $s = SyncNow
+    Log ("A_back_sync: " + $s.Log)
+    $aLater = LocalScalar (PullLocal 'sec33-A-back.db') "select count(*) from interest where name like 's33-%'"
+    $aSrv2 = RemoteJs @"
+import { DatabaseSync } from "node:sqlite";
+const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
+const u = db.prepare("select id from users where username_lc=?").get("$userA");
+const ids = db.prepare("select group_concat(id) g, count(*) c from favorites where user_id=? and deleted=0").get(u.id);
+console.log("A_SRV_ACTIVE=" + ids.c + " A_SRV_IDS=" + ids.g);
+"@
+    OpenFavList
+    $d2 = Get-UiDump
+    $t2 = if ($d2) { $d2.OuterXml } else { '' }
+    Set-Content -LiteralPath (Join-Path $out 'sec33-A-back-list.xml') -Value $t2 -Encoding UTF8
+    & adb -s $Device exec-out screencap -p > (Join-Path $out 'sec33-A-back-list.png')
+    $backA1 = $t2 -match 's33-a1'; $backA2 = $t2 -match 's33-a2'
+    Log ("A_back: local=$aLater visA1=$backA1 visA2=$backA2 ; " + $aSrv2)
+    $okBack = ([int]$aLater -ge 2) -and $backA1 -and $backA2 -and ($aSrv2 -match 'A_SRV_ACTIVE=2')
+    Verdict '§33-b' '切回 A：本地两行仍在、界面可见、服务端行未被删' $okBack ("local=$aLater visA1=$backA1 visA2=$backA2; " + $aSrv2 + "; ids_before=$aIds")
+    Tap-NodeRetry '' 'lc_fav_sublist_back' 2 900 | Out-Null
+}
+
+
+# ---------- ⑥ §32 孤儿墓碑归零（owner_uid=0 + remote_id>0 的墓碑必须能推出，不能挂死本地） ----------
+if ($Only -contains 'orphan') {
+    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null; Start-Sleep -Milliseconds 800
+    if (-not ((Get-Focus) -match 'MainActivity')) { AppStart }
+    AppStop
+    $db = PullLocal 'orphan-before.db'
+    $rid = LocalScalar $db "select remote_id from interest where remote_id>0 and delete_pending=0 order by id desc limit 1"
+    $nm = LocalScalar $db "select name from interest where remote_id=$rid and delete_pending=0 order by id desc limit 1"
+    if ([int]$rid -gt 0) {
+        $py = Join-Path $env:TEMP 'sync4orphan.py'
+        @'
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1])
+row = db.execute("select id from interest where remote_id=? and delete_pending=0 order by id desc limit 1", (sys.argv[2],)).fetchone()
+db.execute("update interest set owner_uid=0, delete_pending=1 where id=?", (row[0],))
+db.commit()
+print("orphan_tombstone=" + str(db.execute("select id,remote_id,owner_uid,delete_pending from interest where id=?", (row[0],)).fetchone()))
+'@ | Set-Content -LiteralPath $py -Encoding UTF8
+        $orph = ((& python $py $db $rid) -join '').Trim()
+        PushLocal $db
+        Log "orphan=$orph name=$nm"
+        AppStart; GoAccount | Out-Null
+        SyncNow 8 | Out-Null
+        $srv = RemoteJs @"
+import { DatabaseSync } from "node:sqlite";
+const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
+const r = db.prepare("select id,deleted from favorites where id=?").get($rid);
+console.log("DELETED=" + (r ? r.deleted : "MISSING"));
+"@
+        $left = LocalScalar (PullLocal 'orphan-after.db') "select count(*) from interest where remote_id=$rid"
+        Log "orphan_after: $srv local_left=$left"
+        $ok = ($srv -match 'DELETED=1') -and ([int]$left -eq 0)
+        Verdict '孤儿-⑥' '孤儿墓碑（owner_uid=0）能推出、服务端 deleted=1、本地归零' $ok ("rid=$rid name=$nm local_left=$left ; " + $srv)
+    } else {
+        Verdict '孤儿-⑥' '孤儿墓碑（owner_uid=0）能推出、服务端 deleted=1、本地归零' $false 'no local row with remote_id>0 (前置构造失败)'
+    }
 }
 
 # ---------- 收尾 ----------
@@ -287,3 +492,9 @@ AdbOk @('shell', 'input', 'keyevent', 'KEYCODE_HOME') | Out-Null
 AdbOk @('reverse', '--remove-all') | Out-Null
 Log ("fails=" + $script:fails + " out=$out")
 if ($script:fails -eq 0) { exit 0 } else { exit 1 }
+
+
+
+
+
+

@@ -46,9 +46,10 @@
   #hint, #hud, #heading-label, #srcInfo { pointer-events:none; }
   /* R2-027：按原版像素还原（orig/map-layer-sheet.png 逐像素实测）
    * 面板 x128..1027 / y540..1371 = 900x832 设备 px -> 266.7x246.5 CSS px（密度 3.375）
-   * 卡 260x160（缩略图 92 + 标签 68），列距 286、行距 160；第 13 格「+」260x127
+   * 卡 260x131（缩略图 92 + 标签条 39）、列距 286、行距 160（行间 29）；第 13 格「+」260x127
    * 浅色面板、无深色遮罩、面板内无关闭控件；选中态是蓝色标签条 rgb(28,69,165)
-   * 注：面板左边 128 会盖住工具列 128..201（73 px），原版面板同样如此。 */
+   * 注：原版面板左缘 128 覆盖其左列 x39..127；我方左列 x33..191，与面板 128..1026 相交 63 px，
+   *     相交的「截屏 / 超清优化」两枚在面板态由 D-028 隐藏（有意差异，不是原版行为）。 */
   #srcPanel { position:absolute; left:38px; right:60px; top:160px; height:246px;
     z-index:20; display:none; }
   #srcPanel .box { position:absolute; left:0; right:0; top:0; bottom:0; overflow:hidden;

@@ -1654,6 +1654,50 @@ MIGRATIONS : 001_init … 006_favorites_idem
 目前不构成重复建点路径 —— 因为跨安装后本地那些「`remote_id=0` 的新建行」本身已不存在，拉回来的行都带 `remote_id`、走更新分支，不需要键。
 **待确认**：若将来出现「`remote_id` 丢失但本地行仍在」的场景（比如本地库部分损坏），才会重新暴露。到时再决定要不要在响应里回显 `idem_key`。
 
+服务端补了一条更准确的边界：「重装且本地数据从备份恢复、但没恢复 `client_key` 列」才会重复建——**这是客户端持久化责任，不是接口缺陷**。
+我同意**不要**把 `idem_key` 加进 `list` 响应：它是去重内部标记，回显会让客户端产生「可重建键」的错误预期，且目前没有消费者。
+
+## 29. 跨账号同步整批误删 —— 代码机制已证实（2026-11-07 21:15）
+
+测试在真机撞到：本地 3 条（`remote_id=23/24/25`，属于旧账号 `clean` 态）→ 换账号 `sb8397` 同步 → `purgedRemote=3`，本地 **3 → 0**。我把代码读到行号，机制成立且**不可逆**。
+
+### 29.1 三段代码咬合
+
+```
+FavoriteSync.java:152-157（fddce8d）
+  for (InterestPoint local : db.listInterest()) {        ← 遍历全部本地行，不带账号条件
+      long remote = db.remoteIdOf(local.id);
+      if (remote <= 0 || live.contains(remote)) continue;  ← live = 本次 list 返回的 id 集合
+      db.purgeInterest(local.id);                          ← 不在集合里就删
+      purgedRemote++;
+  }
+
+GapDb.java:199-201
+  void purgeInterest(long localId) {
+      getWritableDatabase().delete(T_INTEREST, "id=?", …);  ← 硬删，不是打标记
+  }
+```
+
+而服务端 `list` **只返回当前 token 那个账号的行**（我 §26.2 实测：B 的 list `count=0`，A 的行不可见）。
+→ 换账号后，旧账号所有 `remote_id>0` 的行都不在 `live` 里，**整批被硬删**。
+
+`git grep -n 'owner_uid\|ownerUid\|currentUid\|\.uid' fddce8d -- FavoriteSync.java` → **无命中**，确认没有任何账号守卫。
+
+### 29.2 影响面与当前状态
+
+- **未进主线**：`git grep -n 'purgeInterest\|purgedRemote' origin/develop` → 无命中。这段只在 `feature/client-m4-sync-fix`（`122a8d1`+`fddce8d`）。
+  → 只要**别原样合这支**，缺陷不会进 develop；修好再合即可。
+- 严重度：**不可逆删除本地用户数据**，高于 A/B（A/B 最坏是多一行/少一行，可见可手删）。
+
+### 29.3 复验判据（修完按这三条判）
+
+1. **切账号同步后本地条数不减少**：假设 A 有 3 条 `clean` 行 → 登出 → B 登录 → 同步 → 本地仍 3 条（状态可降级为「别的账号」但不许删）。
+2. **不许串数据**：同一次同步后，服务端 B 的 `favorites` 计数**不增加**（A 的行没被推到 B）；用 `/health` 前后对比或直接查库按 `user_id` 计数。
+3. **切回 A 账号**：那 3 条恢复为正常可同步状态（`remote_id` 仍是 A 的 id），执行一次同步后与 A 服务端一致。
+
+⚠️ 客户端方案里若写「换账号后把旧行 `remote_id` 置 0 重推」，**这条要打回**：那是把 A 的数据推到 B 账号，属另一种串数据。正确做法是**整行既不推也不对账**（`owner_uid != 当前 uid` 即跳过）。
+
+
 
 
 

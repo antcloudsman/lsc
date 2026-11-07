@@ -34,10 +34,10 @@ public class M3PageActivity extends Activity {
     private static final int LIGHT_BG = 0xFFF0F3F7;
     private static final int CARD_WHITE = 0xFFFFFFFF;
     private static final int TEXT_MAIN = 0xFF23272B;
-    private static final int TEXT_SUB = 0xFF8E8E8E;
+    private static final int TEXT_SUB = 0xFF8D9299;   // 审客户端实测 (141,146,153)
     private static final int TEXT_HINT = 0xFF9C9C9C;
-    private static final int ACCENT = 0xFF2C66D6;
-    private static final int LINK = 0xFF2C66D6;
+    private static final int ACCENT = 0xFF1C45A5;     // 审客户端实测 (28,69,165)
+    private static final int LINK = 0xFF1C45A5;
     private static final int DANGER = 0xFFE93B4D;
     private static final int DIVIDER = 0xFFE6E8EB;
 
@@ -571,11 +571,20 @@ public class M3PageActivity extends Activity {
         });
         list.addView(sync);
 
+        // M6 第 4 条：退出登录 = **红底按钮**，不是红字。
+        // 几何取 dump 父节点 [39,2512][1189,2578] = 1150x66（文本节点 183x37 只是字）；
+        // 颜色只能靠像素：#E93B4D。列表左右内距 dp(12)≈40px，MATCH_PARENT 恰好 1148 ≈ 1150。
         TextView logout = new TextView(this);
         logout.setId(R.id.lc_m3_logout);
         logout.setText("退出登录");
         logout.setTextSize(16f);
-        logout.setTextColor(DANGER);
+        logout.setTextColor(android.graphics.Color.WHITE);
+        logout.setGravity(Gravity.CENTER);
+        android.graphics.drawable.GradientDrawable logoutBg = new android.graphics.drawable.GradientDrawable();
+        logoutBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        logoutBg.setColor(0xFFE93B4D);
+        logoutBg.setCornerRadius(dp(8));
+        logout.setBackground(logoutBg);
         logout.setPadding(0, dp(2), 0, dp(7));
         logout.setOnClickListener(v -> doLogout(token));
         list.addView(logout);
@@ -713,10 +722,14 @@ public class M3PageActivity extends Activity {
         row.setBackgroundColor(CARD_WHITE);
         row.setMinimumHeight(dp(48));
         list.addView(row);
+        // 原版分隔 = 3px、色 #F0F3F7（与页面底同色）、左右内缩 39px（审客户端 quantify）
         View divider = new View(this);
-        divider.setBackgroundColor(DIVIDER);
-        list.addView(divider, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, dp(0.3f))));
+        divider.setBackgroundColor(0xFFF0F3F7);
+        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 3);
+        dlp.leftMargin = 39;
+        dlp.rightMargin = 39;
+        list.addView(divider, dlp);
     }
 
     /**
@@ -737,6 +750,9 @@ public class M3PageActivity extends Activity {
             tv.setText(text);
             tv.setTextSize(15f);
             tv.setTextColor(TEXT_MAIN);
+            // M6 第 4 条：原版这两页正文**居中**（dump 三维山水全景地图 [399,995][829,1074]、
+            // 邮箱地址 [506,1199][722,1278] 的中心都在 614 = 屏半宽），不是左对齐。
+            tv.setGravity(Gravity.CENTER);
             tv.setPadding(0, 12, 0, 12);
             if ("复制邮箱".equals(text) && mail != null) {
                 tv.setId(R.id.lc_m3_copy_mail);
@@ -770,6 +786,7 @@ public class M3PageActivity extends Activity {
             TextView tv = new TextView(this);
             tv.setText(text);
             tv.setTextSize(15f);
+            tv.setGravity(Gravity.CENTER);   // M6 第 4 条：原版关于我们正文居中
             tv.setPadding(0, 12, 0, 12);
             if (text.contains("《用户协议》")) {
                 tv.setTextColor(LINK);

@@ -610,6 +610,7 @@ public class M3PageActivity extends Activity {
         addAccountRow(list, nameRow);
         // 头像：160 行内放 120x120，垂直居中
         LinearLayout avatarRow = new LinearLayout(this);
+        avatarRow.setId(R.id.lc_m3_avatar_row);   // 复验按容器顶 502 判（图片节点会落在 522）
         avatarRow.setOrientation(LinearLayout.VERTICAL);
         avatarRow.setBackgroundColor(CARD_WHITE);
         avatarRow.setMinimumHeight(160);

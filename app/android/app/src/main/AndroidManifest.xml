@@ -151,15 +151,21 @@
             android:exported="false"
             android:theme="@style/Theme.Luopan" />
 
+        <!-- R2-001：冷启先进品牌启动页（原版 SplashActivity 同构），1.5s 后进主界面 -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SplashActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden">
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
     </application>
 
 </manifest>

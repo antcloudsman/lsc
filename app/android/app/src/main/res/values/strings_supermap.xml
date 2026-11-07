@@ -2,7 +2,8 @@
 <resources>
     <!-- F-02 超清地图文案（LC地图）。本地拼接：天地图 img z18，进度按实际下载瓦片数。 -->
     <string name="lc_supermap_title">超清地图</string>
-    <string name="lc_supermap_empty">把地图拖到想看的位置、放大到街道级，再点「生成超清图」：LC 会按天地图影像 z18（原生最高级）下载当前视野的瓦片并拼接成一张大图。没有云端超分，全部在本机完成。</string>
+    <!-- R2-008：删除实现口径措辞（产品/技术视角的描述），只留用户可操作说明 -->
+    <string name="lc_supermap_empty">把地图拖到想看的位置、放大到街道级，再点「生成超清图」，即可生成当前视野的高清大图。</string>
     <string name="lc_supermap_generate">生成超清图</string>
     <string name="lc_supermap_progress">正在下载第 %1$d / %2$d 张瓦片…</string>
     <string name="lc_supermap_stitching">正在拼接 %1$d 张瓦片…</string>

@@ -1,0 +1,16 @@
+# M3 Stage3 / D-026 分享降级日志（真机补录）
+# 采证：LC客户端  时间：2026-11-07 09:12:06 +08:00
+# 设备：L2E0222531014833  commit：f17ac7a  APK sha256：d21d719cdc6bcb6f11c4bd3b68f854db4221445a8e813605e31780d686bb3747
+# 构建：gradle assembleDebug（JDK17/Gradle 8.7）  lastUpdateTime=2026-11-07 09:11:45
+# 步骤：抽屉→推荐给好友（经抽屉进入，未用 am start 直启），分别点「微信」「微信朋友圈」，看 LCM3 日志与前台窗口
+
+## 渠道「微信」  tap(126,502)
+foreground:  mResumedActivity: ActivityRecord{199c0c3 u0 com.huawei.android.internal.app/.HwResolverActivity t1026142}
+11-07 09:12:15.050 11191 11191 D LCM3    : share 微信 channel=WEIXIN ACTION_SEND -> wechat resolver (D-026 downgrade), text=我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~ url=https://sj.qq.com/appdetail/space.xinzhi.globe
+
+## 渠道「微信朋友圈」  tap(338,502)
+foreground:  mResumedActivity: ActivityRecord{1c827df u0 com.huawei.android.internal.app/.HwResolverActivity t1026143}
+11-07 09:12:29.960 11627 11627 D LCM3    : share 微信朋友圈 channel=WEIXIN_CIRCLE ACTION_SEND -> wechat resolver (D-026 downgrade), text=我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~ url=https://sj.qq.com/appdetail/space.xinzhi.globe
+
+# 结论：两个渠道都是 ACTION_SEND 到 com.tencent.mm，落同一个微信 resolver「发送给朋友 / 添加到微信收藏」；
+# 朋友圈分流能力按 D-026 记为技术上不可得，页面不加提示，仅日志与台账体现。

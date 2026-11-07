@@ -59,6 +59,7 @@ public class M3WebActivity extends Activity {
         bar.addView(titleView, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         root.addView(bar);
 
+        // 加载中 / 失败两态都必须可见（D-023：不白屏）；失败时给「重试」，不假装加载成功
         final TextView status = new TextView(this);
         status.setId(R.id.lc_web_status);
         status.setText("加载中…");
@@ -67,21 +68,73 @@ public class M3WebActivity extends Activity {
         status.setPadding(20, 0, 20, 8);
         root.addView(status);
 
-        WebView web = new WebView(this);
+        final TextView retry = new TextView(this);
+        retry.setId(R.id.lc_web_retry);
+        retry.setText("重试");
+        retry.setTextSize(13f);
+        retry.setTextColor(Color.rgb(50, 90, 182));
+        retry.setPadding(20, 0, 20, 8);
+        retry.setVisibility(android.view.View.GONE);
+        root.addView(retry);
+
+        final WebView web = new WebView(this);
         web.setId(R.id.lc_web_view);
         web.setBackgroundColor(Color.WHITE);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
+        final boolean[] failed = {false};
+        retry.setOnClickListener(v -> {
+            failed[0] = false;
+            retry.setVisibility(android.view.View.GONE);
+            status.setText("加载中…");
+            status.setTextColor(Color.rgb(120, 120, 120));
+            web.reload();
+        });
         web.setWebViewClient(new WebViewClient() {
+            private void fail(String why, String u) {
+                failed[0] = true;
+                status.setText("加载失败：" + why + "\n原版同样依赖远端服务（D-023），离线时两边都不可用；可点「重试」。");
+                status.setTextColor(Color.rgb(180, 60, 60));
+                status.setVisibility(android.view.View.VISIBLE);
+                retry.setVisibility(android.view.View.VISIBLE);
+                android.util.Log.d("LCM3WEB", "load fail url=" + u + " why=" + why);
+            }
+
+            @Override
+            public void onPageStarted(WebView v, String u, android.graphics.Bitmap f) {
+                status.setVisibility(android.view.View.VISIBLE);
+                status.setText("加载中…");
+                status.setTextColor(Color.rgb(120, 120, 120));
+                retry.setVisibility(android.view.View.GONE);
+            }
+
             @Override
             public void onPageFinished(WebView v, String u) {
+                if (failed[0]) return;   // 失败态保留，不被 onPageFinished 清掉
                 status.setText("");
+                status.setVisibility(android.view.View.GONE);
+            }
+
+            @Override
+            public void onReceivedError(WebView v, android.webkit.WebResourceRequest req,
+                                        android.webkit.WebResourceError err) {
+                if (req != null && !req.isForMainFrame()) return;
+                fail(err == null ? "未知错误" : String.valueOf(err.getDescription()),
+                        req == null ? null : req.getUrl().toString());
             }
 
             @Override
             public void onReceivedError(WebView v, int c, String d, String u) {
-                status.setText("加载失败（D-023：原版依赖远端，离线时同样不可用）");
+                fail(d == null ? ("code " + c) : d, u);
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView v, android.webkit.WebResourceRequest req,
+                                            android.webkit.WebResourceResponse r) {
+                if (req == null || !req.isForMainFrame()) return;
+                fail("HTTP " + (r == null ? "?" : String.valueOf(r.getStatusCode())),
+                        req.getUrl().toString());
             }
         });
         if (url != null && !url.isEmpty()) web.loadUrl(url);

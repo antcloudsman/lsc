@@ -34,3 +34,4 @@ item6 帮助中心  fg=.M3WebActivity     title=帮助中心（远端真实加�
 item7 用户协议  fg=.M3WebActivity     title=用户协议（正文逐字加载）                      back→MainActivity
 
 结论：七页 + 地图设置全部可达、标题与骨架未被 M4 改动碰坏、BACK 均一层回 MainActivity。
+

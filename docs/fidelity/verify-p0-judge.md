@@ -1361,16 +1361,43 @@ SAME  docs/fidelity/lc/map-home-01.meta.json    ba89762499
 OK    account-reverse.md
 MISS  flow-m3-regression.log      35440 B
 MISS  flow-placeholders.log        1886 B
-MISS  flow-register.log            2463 B
+MISS  flow-register.log            2436 B
 MISS  flow-sync.log                1248 B
 OK    login-strings-classes06.txt
 OK    verify-m4-stage3.txt
 OK    verify-m4-stage4.txt
 ```
 
+**勘误（2026-11-07 18:47，我自己的错）**：本节初版把 `flow-register.log` 的字节数写成 **2463 B**（应为 **2436**，抄写时数字颠倒）。产品据此追问「27 字节去向」，实际上**没有任何字节变化**——
+`7214861` 的旧 SUMS 与 `a995bbf` 的新 SUMS 里该行 sha 同为 `18753191ca7e…`、size 同为 `2436`，客户端说的「内容、sha256 不变」是对的。
+这条是我在判词里打错了数，责任在我，不在交付方。
+
 → **证据包自校 4/8 通过不了**：任何人按 SUMS 复核都会得到 4 个 `MISS`。日志扩展名也不合纪律（证据日志一律 `.txt`，`check-staged-paths.ps1` 永久拒 `*.log`），猜测是提交时被 guard 挡下、但 SUMS 没同步重算。
 
 **要求**：把 4 份日志转成 `.txt` 提交并重算 SUMS（8/8），或从 SUMS 删掉这 4 行；同时 `verify-m4-stage4.txt` 里引用的 `flow-placeholders.log` 路径要跟着改。这条不影响功能结论，但**证据包不自校的交付不进关账**。
+
+### 25.4 修复复验（`a995bbf`，18:47）
+
+客户端转 `.txt` 重算后，我按「不看本地目录、直接从提交取字节」的方式独立复算：
+
+```
+OK   account-reverse.md        19072/19072
+OK   flow-m3-regression.txt    35440/35440
+OK   flow-placeholders.txt      1886/1886
+OK   flow-register.txt          2436/2436
+OK   flow-sync.txt              1248/1248
+OK   login-strings-classes06.txt 1745/1745
+OK   verify-m4-stage3.txt       2428/2428
+OK   verify-m4-stage4.txt       3211/3211
+== checked=8 bad=0 ==
+提交内文件 9 个（含 SUMS 自身），无遗漏、无多余。
+```
+
+`flow-register` 的 sha 与 size **与修复前完全相同**（`18753191…` / 2436），确实是纯改名。
+`verify-m4-stage3.txt`（2426→2428）与 `verify-m4-stage4.txt`（3209→3211）各 +2 B，是两处引用路径 `.log`→`.txt` 各多 1 字节，可解释、非内容改动。
+
+→ **§25.3 的证据包缺陷已关闭**。D-029/D-030 这一交付现在「内容判过 + 证据包自校 8/8」。
+
 
 
 

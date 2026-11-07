@@ -87,7 +87,8 @@ commit          9b7a486 + 本笔（feature/地图-m6-3d）
 APK             8,595,333 B
 apk.sha256      DF064302AD4932C9680BDE81EF5D26A6A9B523DAB2F48FD11C911ACC4093ADF7
 zip 条目        518
-真机            未在本提交上跑（设备按新协议由 LC测试 调度），故本文不写「已验」
+真机            已由 LC测试 在 0113714 构建上复验（sha f31603d8… / lastUpdateTime 03:03:58），
+                证据 docs/qa/m6-stage2-verify.md（feature/lc-test-m4-e2e = cfb5835）；实测值见 §2.1
 ```
 
 ### 1.6.1 给测试的注入口径（审地图 指出的缓存坑，必须照做）
@@ -96,3 +97,23 @@ zip 条目        518
 js("TERRARIUM='https://127.0.0.1:1/'; DEM={}; DEM_PENDING={}; DEM_ORDER=[]; ensurePatch(true)")
 ```
 恢复：改回 `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/` 并再清三张表，或重载页面。
+
+## 2.1 真机复验实测值（LC测试，0113714 构建）
+
+`
+成功         last3dError=null              warn=null        mode=3d tex=true
+dem-missing  last3dError="dem-missing"     warn="dem-edge"  mode=3d tex=true  demZoom=11
+texture-fail last3dError="texture-fail 0/36" warn=null     mode=3d tex=false demZoom=11
+恢复后       last3dError=null              warn=null        mode=3d tex=true
+`
+
+### 一条必须写进判据的行为（与之前口头推断不一致，以实测为准）
+dem-missing **不回落、也不清空 patch**：mode 仍为 3d、hasTexture 仍为 	rue、demZoom 仍是**上一块**的值。
+原因是代码在 startPatch 失败分支里只 loadingKey = null; return;，**旧的 patch 对象原样留着**，渲染继续用上一块地形。
+因此判据**不能**写「dem-missing ⇒ patch == null / 灰底」——那会把正确实现判 FAIL。正确写法：
+- mode === "3d"；
+- last3dError 前缀匹配 dem-missing；
+- **patch 保持上一块**（hasTexture 与 demZoom 不变），画面继续显示旧地形。
+
+warn="dem-edge" 在该档出现是因为沿用旧 patch 时相机目标落到了旧块边缘，属 §1.5 定义的局部降级，**不影响成功态判定**（这正是拆字段的目的）。
+webgl-unavailable 无法注入（需 GPU 不可用），仍按代码路径登记，不写「已验证」。

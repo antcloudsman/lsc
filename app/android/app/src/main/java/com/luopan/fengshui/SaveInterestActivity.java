@@ -134,8 +134,10 @@ public class SaveInterestActivity extends Activity {
     private void save() {
         if (!hasPoint) return;
         String name = nameInput.getText().toString().trim();
-        db.insertInterest(name, lat, lng, sitting, facing);
+        // owner_uid 在创建时刻写死（LcSession.uid）：拉回/新建的行都必须带归属，否则会被下次同步认领给别的账号。
+        db.insertInterest(name, lat, lng, sitting, facing, LcSession.uid(this));
         Toast.makeText(this, R.string.lc_save_saved, Toast.LENGTH_SHORT).show();
         finish();
     }
 }
+

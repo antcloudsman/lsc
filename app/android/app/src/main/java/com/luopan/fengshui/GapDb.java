@@ -116,9 +116,11 @@ class GapDb extends SQLiteOpenHelper {
 
     // ---------------- 收藏点 ----------------
 
+    /** 新建本地收藏点：`ownerUid` 在创建时刻写死，避免「拉回/新建的行 owner_uid=0 被下次同步认领给别的账号」。 */
     long insertInterest(String name, double lat, double lng,
-                        double sittingDeg, double facingDeg) {
+                        double sittingDeg, double facingDeg, int ownerUid) {
         ContentValues v = new ContentValues();
+        v.put("owner_uid", ownerUid);
         v.put("name", name == null ? "" : name);
         v.put("lat", lat);
         v.put("lng", lng);
@@ -170,7 +172,9 @@ class GapDb extends SQLiteOpenHelper {
         String where = "sync_state<>'clean' AND delete_pending=0";
         String[] args = null;
         if (ownerUid > 0) {
-            where += " AND (owner_uid=0 OR owner_uid=?)";
+            // 只推本账号的行。不再放行 owner_uid=0：无归属行可能是别的账号的存量数据（remote_id>0），
+            // 推进当前账号就是串数据（审核验 §30）。无归属且未同步过的行已由 adoptUnownedRows 认领。
+            where += " AND owner_uid=?";
             args = new String[]{String.valueOf(ownerUid)};
         }
         try (Cursor c = getReadableDatabase().query(T_INTEREST, null, where, args, null, null, "id ASC")) {
@@ -191,17 +195,18 @@ class GapDb extends SQLiteOpenHelper {
         }
     }
 
-    void setOwnerUid(long localId, int uid) {
-        ContentValues v = new ContentValues();
-        v.put("owner_uid", uid);
-        getWritableDatabase().update(T_INTEREST, v, "id=?", new String[]{String.valueOf(localId)});
-    }
-
     /** 绑定账号时把「无归属」的存量行认领给该账号；已有归属的不动（可能是别的账号的）。 */
+    /**
+     * 绑定账号时只认领「从未同步过」的行（`owner_uid=0 AND remote_id=0`）。
+     *
+     * **不能认领 `remote_id>0` 的无归属行**：这类行是升级/旧版本留下的，它在某个账号的服务端已经存在，
+     * 本地无从判断主人。自动认领 = 猜，猜错就会让新账号把这些行当自己的 → 对账时「本账号 list 里没有」
+     * 被整批 purge（审核验 §30 实测路径）。这类行一律「既不推也不对账」，切回正确账号时人工/后续版本处理。
+     */
     int adoptUnownedRows(int uid) {
         ContentValues v = new ContentValues();
         v.put("owner_uid", uid);
-        return getWritableDatabase().update(T_INTEREST, v, "owner_uid=0", null);
+        return getWritableDatabase().update(T_INTEREST, v, "owner_uid=0 AND remote_id=0", null);
     }
 
     /** 幂等键：每行一个稳定 UUID，首次同步时生成并持久化，重推沿用它 → 服务端撞键返回同一行，不会重复建点。 */
@@ -281,7 +286,7 @@ class GapDb extends SQLiteOpenHelper {
 
     /** 拉取落地：按 remote_id 更新或插入；不覆盖本地待同步行（让本地先推）。 */
     long upsertRemoteInterest(long remoteId, String name, double lat, double lng, int rev, long createdAtMs) {
-        return upsertRemoteInterest(remoteId, name, lat, lng, rev, createdAtMs, 0, 180);
+        return upsertRemoteInterest(remoteId, name, lat, lng, rev, createdAtMs, 0, 180, 0);
     }
 
     /**
@@ -289,7 +294,8 @@ class GapDb extends SQLiteOpenHelper {
      * 不再硬编码 0/180 —— 否则换设备/重装后所有收藏点坐向全错（审客户端 §4b）。
      */
     long upsertRemoteInterest(long remoteId, String name, double lat, double lng,
-                              int rev, long createdAtMs, double sittingDeg, double facingDeg) {
+                              int rev, long createdAtMs, double sittingDeg, double facingDeg,
+                              int ownerUid) {
         SQLiteDatabase db = getWritableDatabase();
         try (Cursor c = db.query(T_INTEREST, new String[]{"id", "sync_state"},
                 "remote_id=?", new String[]{String.valueOf(remoteId)}, null, null, null)) {
@@ -301,6 +307,9 @@ class GapDb extends SQLiteOpenHelper {
                     v.put("lat", lat);
                     v.put("lng", lng);
                     v.put("rev", rev);
+                    // 更新分支也补写 owner_uid：否则「升级前拉回来、owner_uid=0」的行永远无归属，
+                    // 下次换账号仍会被认领、进而被本账号 list 判成「远端已删」purge（审核验 §31③）。
+                    if (ownerUid > 0) v.put("owner_uid", ownerUid);
                     db.update(T_INTEREST, v, "id=?", new String[]{String.valueOf(id)});
                 }
                 return id;
@@ -316,6 +325,7 @@ class GapDb extends SQLiteOpenHelper {
         v.put("remote_id", remoteId);
         v.put("rev", rev);
         v.put("sync_state", "clean");
+        v.put("owner_uid", ownerUid);
         return db.insert(T_INTEREST, null, v);
     }
 
@@ -393,6 +403,10 @@ class GapDb extends SQLiteOpenHelper {
         }
     }
 }
+
+
+
+
 
 
 

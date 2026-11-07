@@ -1,0 +1,37 @@
+===== H P1-21-A 收藏列表子页系统返回 =====
+more-sheet: 收藏点 cells=1
+  tap [23,2132][319,2363] -> 171,2248
+favmode: column=[966,1195][1222,1505] list=[966,1195][1222,1350]
+  tap [966,1195][1222,1350] -> 1094,1272
+sublist-open: lc_fav_sublist=[0,0][1228,2578]
+after-back: lc_fav_sublist=GONE
+LCFAV-logs=11-07 08:40:02.285  7289  7289 D LCFAV   : sublist close by back-key
+after-back-fg= mResumedActivity: ActivityRecord{e0647ac u0 com.luopan.fengshui/.MainActivity t1026066}
+===== I 分享渠道（微信 / 朋友圈）=====
+  tap [346,1774][616,1853] -> 481,1814
+ids: wx=[20,374][232,629] circle=[232,374][444,629] cancel=[20,653][1208,769]
+  tap [20,374][232,629] -> 126,502
+wx-fg= mResumedActivity: ActivityRecord{e1f3eeb u0 com.huawei.android.internal.app/.HwResolverActivity t1026067}
+wx-logs=11-07 08:40:21.501  7865  7865 D LCM3    : share 微信 channel=WEIXIN direct -> resolver, text=我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~ url=https://sj.qq.com/appdetail/space.xinzhi.globe
+  tap [232,374][444,629] -> 338,502
+circle-fg= mResumedActivity: ActivityRecord{9d1e6b u0 com.huawei.android.internal.app/.HwResolverActivity t1026067}
+circle-logs=11-07 08:40:29.730  7865  7865 D LCM3    : share 微信朋友圈 channel=WEIXIN_CIRCLE direct -> resolver, text=我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~ url=https://sj.qq.com/appdetail/space.xinzhi.globe
+  tap [20,653][1208,769] -> 614,711
+cancel-fg= mResumedActivity: ActivityRecord{8204f96 u0 com.luopan.fengshui/.MainActivity t1026067}
+===== J 联系我们（复制 + toast + 文案不再挂起）=====
+  tap [346,1585][562,1664] -> 454,1624
+contact-texts=|||||返回|联系我们|||邮箱地址|account@xinzhi.space|复制邮箱|
+has-stale-note=False
+  tap [20,438][1208,530] -> 614,484
+copy-logs=11-07 08:40:55.186  8369  8369 D LCM3    : copy mail ok text=account@xinzhi.space
+clip-dumpsys=
+clip-cmd=No shell command implementation.
+===== K 投诉反馈离线提交（网络不可用态）=====
+  tap [346,1207][562,1286] -> 454,1246
+  tap [20,400][1208,477] -> 614,438
+edit-count=3
+  tap [20,472][1208,610] -> 614,541
+  tap [20,706][1208,844] -> 614,775
+  tap [20,940][1208,1078] -> 614,1009
+  tap [20,1445][1208,1570] -> 614,1508
+offline-submit-status=[提交失败：当前网络不可用（原版提交依赖服务端，D-022）]

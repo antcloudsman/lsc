@@ -41,7 +41,7 @@
 | 绑定 | 只绑 127.0.0.1 | **容器内** `HOST=0.0.0.0`（`server.js:24-25`），**宿主机**端口映射 `127.0.0.1:8787:8787`（`docker-compose.yml`） | 一致（回环在宿主侧实现，见 §4） |
 | CORS | 收窄 | 仅当 `LC_CORS_ORIGIN` 命中白名单才回 `access-control-allow-origin`（`server.js:92-99`）；默认空 = 不发 CORS 头 | 一致 |
 | 反馈幂等 | 撞键返回既有行 | `db.js:130-133` 唯一索引 + `server.js:506-524` 读 `idempotency-key` | 一致 |
-| 收藏点幂等 | 契约 §3 要求 client_id 幂等 | `/v2/userCollectPoint/save` **尚不读** `Idempotency-Key`（`server.js:464-483`） | **未达成，Stage 5 打回项**（见 §5） |
+| 收藏点幂等 | 契约 §3.3 新建幂等 | `/v2/userCollectPoint/save` 新建分支读 `Idempotency-Key`（`server.js` `readIdemKey()`、`db.js` `createFavorite`、迁移 `006_favorites_idem`，唯一索引 `(user_id, idem_key)`）；契约已增 §3.3 | **已实现并已入主线**（`047b2be` 合入 `develop`；核对点 `bd30997`） |
 
 ## 4 未实现 / 未取证的边界
 
@@ -54,7 +54,7 @@
 
 | 打回项 | 契约侧应有动作 | 归属 |
 |---|---|---|
-| 收藏点重复创建 | `save` 读 `Idempotency-Key`，撞键返回既有行（复用 `db.js:130-133` 的模式） | LC服务端 |
+| 收藏点重复创建 | **已实现并已入主线（`047b2be`）**：`save` 新建分支读 `Idempotency-Key`，撞键返回既有行（200 + `deduplicated:true`）；自检 80 项含「该 key 只有一行」查库断言 | LC服务端 |
 | 删除两端不同步 | 契约需定义**删除信号**（tombstone 或以 `rev` 递增 + 删除标记），否则增量拉取永远学不到删除 | LC服务端（契约补充）+ LC客户端 |
 | 坐向丢失 | `CollectPointModel.des` 已含「坐X° 向Y°」，契约无需改；由客户端拉回解析 | LC客户端 |
 
@@ -66,3 +66,10 @@
 - 实现：`backend/src/server.js`、`db.js`、`token.mjs`、`password.mjs`、`ratelimit.mjs`
 - 部署：`backend/docker-compose.yml`、`backend/Dockerfile`
 - 自检：`backend/scripts/selfcheck.mjs`（容器内跑，68 checks，见 `docs/fidelity/m4-close-summary.md` §2 第 1 条）
+## 7 变更记录
+
+| 日期 | 变更 | 触发 |
+|---|---|---|
+| 2026-11-07 | §3「收藏点幂等」由「未达成/打回项」改为「**已实现并已入主线**（`047b2be` 合入 `develop`，核对点 `bd30997`）」；§5 同步；补记语义：首次 201 `deduplicated:false` / 同键重发 200 `deduplicated:true` 返回首行 / 同 key 不同 body 不改写 / 键只作用于新建分支 / 软删行保留键不复活 | LC服务端 `047b2be` 判据 A 实测 + 契约 `backend/api.md` §3.3；合并核对：`git merge-base --is-ancestor 047b2be origin/develop` exit 0、develop 上 `readIdemKey` 3 处、迁移 `006_favorites_idem` 在库 |
+
+> **核对方式（可复跑）**：`git merge-base --is-ancestor 047b2be origin/develop`（exit 0）+ `git show origin/develop:backend/src/server.js | grep readIdemKey`（3 处）+ `git show origin/develop:backend/src/db.js | grep 006_favorites_idem`。三条任一不成立，本条即回退为「未生效」。

@@ -860,6 +860,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean pointerOn = true;            // 内存态
     private final java.util.Map<String, SwitchGlyph> switchGlyphs = new java.util.HashMap<>();
 
+    /**
+     * M6 第 3 条（逆向 §6.8/§6.9 更正后）：指针图可见性的**唯一判定点**。
+     *
+     * 原版 `show = if (g.q() && !g.p()) false else MainViewModel.M0()`：
+     *  - 纯地图模式（地图开、实景关）→ **恒隐藏**，与「指针开关」无关；
+     *  - 实景态（`p=true`）或地图模式关（`q=false`）→ 取「指针开关」（原版 `h0`）。
+     * 我方 `compassMapMode` 是互斥三态（MAP/REALITY/NONE），原版是两个独立布尔；
+     * 在这个门控里 `p=true` 一律取开关值、与 `q` 无关，所以三态模型**行为等价**。
+     * 另外叠加两个我方状态：只在罗盘浮层里（`compassMode`）、且没点「隐藏」（`!compassHidden`）。
+     *
+     * 四个入口（切罗盘态 / 点隐藏 / 点指针开关 / 切地图·实景）都只调这里，禁止各处自己算一套。
+     */
+    private void refreshPointerVisibility() {
+        if (pointerView == null) return;
+        boolean visible = compassMode && !compassHidden
+                && compassMapMode != MAP_MODE_MAP
+                && (compassView == null || compassView.isShowPointer());
+        pointerView.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
     /** 开关初始状态（与截图默认一致）。 */
     private boolean switchStateOf(String label) {
         switch (label) {
@@ -900,6 +920,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         android.util.Log.d("LCSWITCH", "toggle " + label + " mapMode=" + compassMapMode
                 + " southNorth=" + southNorthOn + " pointer=" + pointerOn);
+        // M6 第 3 条：地图/实景态可能改变指针门控，切换后必须重算
+        refreshPointerVisibility();
     }
 
     /** 开态按钮底：原版蓝 (50,90,182)、bbox 144×144（四边内缩 7）、圆角 15。 */
@@ -1484,9 +1506,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (compassMode) {
                     boolean on = compassView != null && !compassView.isShowPointer();
                     if (compassView != null) compassView.setShowPointer(on);
-                    // M6 第 1 条（逆向 §6.8）：指针开关控的是**竖向指针图**（原版 pointer.png 23×94），
-                    // 不是十字线上的红三角（那属于十字线，常显、无独立开关）。
-                    if (pointerView != null) pointerView.setVisibility(on ? View.VISIBLE : View.GONE);
+                    // 指针图显隐统一由 refreshPointerVisibility() 判定（含地图/实景门控与隐藏态）
+                    refreshPointerVisibility();
                     toast(on ? "罗盘北针：开" : "罗盘北针：关");
                 } else {
                     js("toggleNeedle()");
@@ -1556,9 +1577,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // M6 第 1 条：十字经线只在罗盘态显示（原版 marker 只在罗盘浮层存在）
         if (crosshairView != null) crosshairView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
-        // R2-005：中心指针只在罗盘态显示；「指针开关」关掉时也一起隐（与既有 setShowPointer 同步）
-        if (pointerView != null) pointerView.setVisibility(
-                on && (compassView == null || compassView.isShowPointer()) ? View.VISIBLE : View.GONE);
+        // R2-005 + M6 第 3 条：指针可见性统一判定（罗盘态 × 未隐藏 × 非纯地图模式 × 开关）
+        refreshPointerVisibility();
         if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
@@ -1701,6 +1721,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (compassView != null) compassView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         // M6 第 1 条：隐藏态（R2-006）连十字一起隐——原版「隐藏」隐的是整个罗盘浮层
         if (crosshairView != null) crosshairView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        // M6 第 3 条：隐藏态此前漏了 pointerView（罗盘/十字/工具列都隐了，只剩指针图飘着）
+        refreshPointerVisibility();
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (compassToolBar != null) compassToolBar.setVisibility(showCompass ? View.VISIBLE : View.GONE);

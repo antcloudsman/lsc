@@ -1,0 +1,37 @@
+# M4 Stage 4 · D-029/D-030 占位入口 + M3 七页回归（客户端）
+# 设备 L2E0222531014833  Android 12  采证 2026-11-07 18:26-18:32
+# 分支 feature/client-m4-stage4（base develop 9028cbe / d53d4bc）
+# APK sha256 c30c370437312bde0f6aca89ea8e254fa1e9457323ed013ddfcc7e7d5900e4fc（设备 pm path sha256 一致）
+
+## 一、四入口占位（未登录态，两处齐）
+### 账户设置（M3PageActivity）
+account-texts=返回|账户设置|账号密码登录/注册为本项目新增（原版无此页）…|您当前未登录|立即登录|绑定手机|一键登录|微信登录
+account-placeholders: bind_phone=1 onetap=1 wechat=1
+orig-strings-kept: 您当前未登录=1 立即登录=1     ← 原版取证串未被改
+
+### 登录页（LoginActivity，新增）
+login-placeholders: sms=1 onetap=1 honor=1 wechat=1
+点击说明（优先用原版串，不编造）：
+  验证码登录 → [验证码登录：后续可通过手机号验证码快速登录~（D-029）]   ← 原版串
+  一键登录   → [一键登录：一键登录需运营商号码认证，本项目无法接入（D-030）]
+  荣耀登录   → [荣耀登录：无法使用荣耀登录（D-030）]                    ← 原版串
+  微信登录   → [微信登录：微信开放平台登记包名+签名，本项目本包无法通过校验（D-031）]
+LCLOGIN: placeholder 验证码登录 D-029 / 一键登录 D-030 / 荣耀登录 D-030 / 微信登录 D-031
+
+文案出处：docs/fidelity/m4/login-strings-classes06.txt（DEX 字符串池逐字）：`验证码登录`、`一键登录`、`荣耀登录`、
+`后续可通过手机号验证码快速登录~`、`无法使用荣耀登录` —— 均在本文件内可查，未自写。
+
+「不假装可用」：点击只写状态行，无「发送验证码/加载中」伪流程、无静默无响应、不跳转。
+
+## 二、M3 七页回归（形状/文案/返回链路）
+item0 地图设置  fg=.SettingActivity   texts=‹|地图设置|地图滤镜|…|坐标系|WGS84|›        back→MainActivity
+item1 账户设置  fg=.M3PageActivity    title=账户设置                                  back→MainActivity
+item2 投诉反馈  fg=.M3PageActivity    title=投诉反馈 texts=问题反馈|订单投诉|未选择任何订单   back→MainActivity
+item3 关于我们  fg=.M3PageActivity    title=关于我们 texts=三维山水全景地图|重庆新知空间科技有限公司|测绘资质|v1.6.1|APP备案编号：渝ICP备20003923号-12A| 《用户协议》 | 《隐私政策》  back→MainActivity
+item4 联系我们  fg=.M3PageActivity    title=联系我们 texts=邮箱地址|account@xinzhi.space|复制邮箱   back→MainActivity
+item5 推荐给好友 fg=.M3PageActivity   title=推荐给好友 texts=选择要分享到的平台|微信|微信朋友圈|取消分享  back→MainActivity
+item6 帮助中心  fg=.M3WebActivity     title=帮助中心（远端真实加载：产品帮助中心目录）      back→MainActivity
+item7 用户协议  fg=.M3WebActivity     title=用户协议（正文逐字加载）                      back→MainActivity
+
+结论：七页 + 地图设置全部可达、标题与骨架未被 M4 改动碰坏、BACK 均一层回 MainActivity。
+

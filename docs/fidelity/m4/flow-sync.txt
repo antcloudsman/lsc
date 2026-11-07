@@ -1,0 +1,13 @@
+== 1) 添加并保存一个本地收藏点 ==
+save-page=‹|保存收藏点|名称（可空）|坐标|39.904200, 116.407400|坐向|坐180.0° 向0.0°|时间|2026-11-07 18:07|保存
+  tap=[保存]
+after-save-fg= mResumedActivity: ActivityRecord{9741b8a u0 com.luopan.fengshui/.MainActivity t1026213}
+db-interest=databases/lc_gap.db: sqlite3: inaccessible or not found
+== 2) 断 reverse 后同步 → 离线队列保留 ==
+offline-sync=同步失败：连不上本地服务（需 adb reverse tcp:8787）
+db-after-offline=databases/lc_gap.db: sqlite3: inaccessible or not found
+== 3) 恢复 reverse 后同步 → 上传成功 ==
+online-sync=同步收藏点：同步完成：上传 1，拉取 1
+db-after-online=databases/lc_gap.db: sqlite3: inaccessible or not found
+sync-logs=11-07 18:07:37.952 15327 15550 W LCSYNC  : push net id=1 ConnectException || 11-07 18:07:48.294 15327 15609 D LCAPI   : POST /v2/userCollectPoint/save -> 201 || 11-07 18:07:48.300 15327 15609 D LCAPI   : GET /v2/userCollectPoint/list?pageNum=1&limit=200 -> 200 || 11-07 18:07:48.302 15327 15609 D LCSYNC  : push=1 failed=0 conflict=0 pull=1 cursor=45
+final-fg= mResumedActivity: ActivityRecord{34587f8 u0 com.huawei.android.launcher/.unihome.UniHomeLauncher t7}

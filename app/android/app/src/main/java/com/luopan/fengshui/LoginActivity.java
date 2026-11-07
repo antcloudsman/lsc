@@ -116,13 +116,33 @@ public class LoginActivity extends Activity {
 
         wx = new TextView(this);
         wx.setId(R.id.lc_login_wechat);
-        wx.setText("微信登录（D-031 待接入，暂不可用）");
+        wx.setText("微信登录");
         wx.setTextSize(14f);
         wx.setTextColor(Color.rgb(150, 130, 100));
         wx.setGravity(Gravity.CENTER);
         wx.setPadding(0, 20, 0, 20);
-        wx.setOnClickListener(v -> status.setText("微信登录需微信开放平台包名+签名登记，本项目本包无法通过校验（D-031）。"));
+        wx.setOnClickListener(v -> unavailable("微信登录", "D-031",
+                "微信登录需微信开放平台登记包名+签名，本项目本包无法通过校验，本轮不实现。"));
         body.addView(wx);
+
+        // D-029 / D-030：原版登录入口占位。文案取自 DEX 字符串池逐字
+        // （docs/fidelity/m4/login-strings-classes06.txt：`验证码登录`、`一键登录`、`荣耀登录`、`更多登录方式`、`无法使用荣耀登录`）。
+        // 只做占位 + 不可用说明，不假装可用（总监 M4 Stage 4 派单）。
+        TextView more = new TextView(this);
+        more.setId(R.id.lc_login_more_title);
+        more.setText("更多登录方式");
+        more.setTextSize(13f);
+        more.setTextColor(Color.rgb(200, 190, 170));
+        more.setGravity(Gravity.CENTER);
+        more.setPadding(0, 8, 0, 8);
+        body.addView(more);
+
+        body.addView(placeholder("验证码登录", R.id.lc_login_sms, "D-029",
+                "后续可通过手机号验证码快速登录~"));
+        body.addView(placeholder("一键登录", R.id.lc_login_onetap, "D-030",
+                "一键登录需运营商号码认证，本项目无法接入"));
+        body.addView(placeholder("荣耀登录", R.id.lc_login_honor, "D-030",
+                "无法使用荣耀登录"));
 
         TextView note = new TextView(this);
         note.setId(R.id.lc_login_note);
@@ -168,6 +188,26 @@ public class LoginActivity extends Activity {
         t.setTextColor(Color.rgb(200, 190, 170));
         t.setPadding(0, 20, 0, 8);
         return t;
+    }
+
+    /** 原版登录入口占位（不可用）：文案逐字，点击只在状态行说明「不可用 + DI 编号」，不跳转、不假装可用。 */
+    private TextView placeholder(String text, int id, String di, String why) {
+        TextView t = new TextView(this);
+        t.setId(id);
+        t.setText(text);
+        t.setTextSize(15f);
+        t.setTextColor(Color.rgb(150, 130, 100));
+        t.setGravity(Gravity.CENTER);
+        t.setPadding(0, 18, 0, 18);
+        t.setBackgroundColor(Color.rgb(34, 30, 26));
+        t.setOnClickListener(v -> unavailable(text, di, why));
+        return t;
+    }
+
+    private void unavailable(String name, String di, String why) {
+        status.setTextColor(Color.rgb(200, 170, 120));
+        status.setText(name + "：" + why + "（" + di + "）");
+        android.util.Log.d("LCLOGIN", "placeholder " + name + " " + di);
     }
 
     private EditText input(String hint, int type) {
@@ -227,3 +267,5 @@ public class LoginActivity extends Activity {
         });
     }
 }
+
+

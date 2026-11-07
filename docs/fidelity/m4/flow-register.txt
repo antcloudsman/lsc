@@ -1,0 +1,15 @@
+== M4 client start user=lcui175727 ==
+fg= mResumedActivity: ActivityRecord{ef605b u0 com.luopan.fengshui/.MainActivity t1026209}
+account-before=返回|账户设置|账号密码登录/注册为本项目新增（原版无此页）；原版手机号验证码/一键/荣耀/微信入口见 D-029/030/031（占位，不可用）。|您当前未登录|立即登录|微信登录（D-031 待接入，暂不可用）
+login-page=返回|账号登录（本项目新增）|登录|注册|账号（3–32 位，字母/数字/._-）|请输入账号|密码（8–128 位）|请输入密码|登录|微信登录（D-031 待接入，暂不可用）|说明：本页为本项目新增的账号密码登录，不是原版页面。原版的手机号验证码 / 一键登录 / 荣耀账号 / 微信登录只做入口占位，登记为 D-029 / D-030 / D-031，本轮不实现。
+after-register-fg= mResumedActivity: ActivityRecord{54f5bea u0 com.luopan.fengshui/.M3PageActivity t1026209}
+account-after=返回|账户设置|账号密码登录/注册为本项目新增（原版无此页）；原版手机号验证码/一键/荣耀/微信入口见 D-029/030/031（占位，不可用）。|昵称：LCUI　（点此修改）|账号：lcui175727　uid：34|修改密码|同步收藏点（本地优先，失败留离线队列）|退出登录
+account-sync=返回|账户设置|账号密码登录/注册为本项目新增（原版无此页）；原版手机号验证码/一键/荣耀/微信入口见 D-029/030/031（占位，不可用）。|昵称：LCUI　（点此修改）|账号：lcui175727　uid：34|修改密码|同步收藏点：同步完成：上传 0，拉取 0|退出登录
+complaint-edits=3
+complaint-status=[提交成功]
+account-loggedout=返回|账户设置|账号密码登录/注册为本项目新增（原版无此页）；原版手机号验证码/一键/荣耀/微信入口见 D-029/030/031（占位，不可用）。|您当前未登录|立即登录|微信登录（D-031 待接入，暂不可用）
+== token storage (run-as, 只打印是否含明文) ==
+prefs-has-token_enc=False
+prefs-plaintext-token-like=False
+logs=11-07 17:58:31.540 11149 12091 D LCAPI   : POST /v2/feedback/add -> 201 || 11-07 17:58:31.540 11149 12091 D LCM3    : feedback ok id=0 || 11-07 17:58:48.004 11149 12243 D LCAPI   : POST /v2/auth/logout -> 200
+final-fg= mResumedActivity: ActivityRecord{34587f8 u0 com.huawei.android.launcher/.unihome.UniHomeLauncher t7}

@@ -76,5 +76,10 @@
     <item name="lc_m3_sync" type="id" />
     <item name="lc_m3_editname" type="id" />
     <item name="lc_m3_wechat_entry" type="id" />
+    <item name="lc_login_more_title" type="id" />
+    <item name="lc_login_sms" type="id" />
+    <item name="lc_login_onetap" type="id" />
+    <item name="lc_login_honor" type="id" />
+    <item name="lc_m3_bind_phone" type="id" />
+    <item name="lc_m3_onetap" type="id" />
 </resources>
-

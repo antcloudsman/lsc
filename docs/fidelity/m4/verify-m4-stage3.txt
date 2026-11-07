@@ -38,3 +38,4 @@ users 33→34  favorites 11→12  feedback 7→8   schema=005_legacy_user_id
 ## 口径
 - 登录/注册页 = 本项目新增（原版无此页），不按原版 1:1 判；原版四入口按 D-029/030/031 只判占位+不可用说明。
 - 明文 HTTP 仅放行回环（res/xml/network_security_config.xml 只列 127.0.0.1 / localhost），全局 cleartext 未打开。
+

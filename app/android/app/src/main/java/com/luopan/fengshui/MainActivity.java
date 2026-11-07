@@ -1493,7 +1493,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             case "罗盘复位":
+                // M6 第 6 条（逆向 §6.4）：原版复位 = 盘面参数复位(g.I()) + map.resetNorth({})。
+                // 盘面那半在 CompassView.reset()（跟随关 + 偏移清 0）；地图那半走 JS 桥，
+                // 函数由 map.html 侧提供，落地前用守卫写法，避免未定义函数抛 JS 错。
                 if (compassView != null) compassView.reset();
+                compassMapView.evaluateJavascript("(typeof resetCompass==='function')&&resetCompass()", null);
                 break;
             case "罗盘锁定":
                 // B-05：锁定＝显式冻结开关（原版左列独立项），与「拖动/翻坐向」彻底分开。

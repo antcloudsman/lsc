@@ -110,6 +110,15 @@ applyTransform(); refreshNeedle(); updateHud();
 - `groundMode` 同样有坑：它保存 `pitchBeforeGround`，直接置 `pitch` 而不清 `groundMode`，后续任何 `toggleGround()` 会把 pitch 还原成旧值。
 - 别用裸赋值：至少要顺带 `applyTransform()`（清 `rotateZ`）、`render()` 或 3D 下 `ensurePatch(true)`、`updateHud()`、`refreshNeedle()`，并同步 `#pitchRange` 滑块与 `#btn_3d` 文案（后者由 `setMode` 维护）。
 
+**⚠ `setZoom()` 不存在（全仓零命中）** —— 若判据写「zoom 复位必须走 `setZoom()`」，照字面实现会直接抛错。现网与缩放相关的只有三个：
+| 入口 | 行为 |
+|---|---|
+| `zoomIn()` / `zoomOut()` | 每次 ±1；3D 下 `ensurePatch()`，否则 `render()`；再 `updateHud()` |
+| `debugSetView(lat,lng,z,p,b)` | `zoom = clamp(2,18)`，随后 3D 下 `ensurePatch(true)+updateHud()`、2D 下 `applyTransform()+render()`（**这是目前唯一"设到指定级并刷新"的完整序列**） |
+| `setView(...)` | 已在 `window` API 导出列表内，客户端可用；但它不是纯 zoom setter |
+
+正确处理：若复位确需动 zoom，应**新增** `setZoom(z)`，内部复用 `debugSetView` 尾部那段序列（clamp → 3D 走 `ensurePatch`、2D 走 `applyTransform+render` → `updateHud`），这样才满足「不裸赋值」；不要直接写 `zoom = z`，否则 `#pitchRange`、`#btn_3d` 文案、瓦片层与 `getState()` 会与真实状态脱节。
+
 **我方全部视图状态面（供逆向一对一映射，字段语义我不替逆向认）**：
 `mode`(2d/3d)、`bearing`、`pitch`(0–60)、`zoom`、`center`、`sitMode`/`bearingBeforeSit`、`groundMode`/`pitchBeforeGround`、`needleOn`、`contourOn`、`ridgeOn`、`roadNet`、`base`/`anno`/`drape`。
 候选映射（**待逆向确认，不作判据**）：`Q=0.0` 像 `bearing`；`P/R/N` 像三种布尔（`sitMode`/`groundMode`/`mode`）；`W/V/S` 像缩放与中心偏移；`K=100` 像百分比类，**不像 `zoom`**（我方 `zoom` 是整数级）。

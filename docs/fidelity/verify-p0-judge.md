@@ -603,6 +603,31 @@ R 超 3/255 约 1.3。这与客户端自报的「R 残差 4.3」是同一个量�
 `f0a463c` 对 `MainActivity.java` 的 diff 显示 **3784 增 / 3495 删**，但 `git diff -w` 后只有 **328 增 / 39 删**——
 整文件发生了空白/缩进重排（`--ignore-cr-at-eol` 同样是 328/39）。功能无影响，但会让 review 与后续 merge 噪声很大，建议后续统一格式化配置，别在功能提交里顺带重排。
 
+## 13. P1-21-A 复验（develop `12f3c58`，2026-11-07 08:05–08:07）
+
+**背景**：§12.3 在 `f0a463c` 上判出「系统返回键不关收藏子页」。核代码后确认这是**分支落后**而非回归：
+- `f0a463c` 的 `onBackPressed()`（3768–3783）只有 `favoriteMode`/`compassMode` 两层，**没有子页分支**；
+- `develop` 的 `onBackPressed()`（**3822–3829**）已有子页分支：
+  `if (favoriteSubList != null && favoriteSubList.getVisibility() == View.VISIBLE) { favoriteSubList.setVisibility(View.GONE); Log.d("LCFAV","sublist close by back-key"); return; }`
+  注释直接写着「R2-021（判词 P1-21-A）」。
+
+**实测（develop `12f3c58` 自建包，7,283,836 B、sha256 `F8F215CA…CED`，`lastUpdateTime=2026-11-07 08:05:43`）**：
+
+```
+08:06:37.245 D/LCFAV: favoriteMode=true
+08:06:43.490 D/LCFAV: sublist open rows=1
+08:06:48.878 D/LCFAV: sublist close by back-key      ← input keyevent 4 之后
+硬件返回后: lc_fav_sublist=False  收藏列表=True  添加点=True  fore=MainActivity
+```
+
+**判词：P1-21-A 关闭（已修，develop 复验通过）**。台账不应再记「M3 回归待复验」，改为「已修·`12f3c58` 复验」。
+
+**关于「包指纹 `meta.build.commit`」**：develop 里没有这个机制——调试广播只支持
+`heading/accuracy/tilt/url/js/capture/declination/search/place/reset`（`MainActivity` 338–396），全仓 grep 无 `build.commit`/`BUILD_COMMIT`。
+本次复验用的指纹是：**commit `12f3c58` + 构建命令 + APK sha（仅作构建体标识，非身份） + `lastUpdateTime` + 全量 `LCFAV` 日志**。
+若要真包内指纹，需要在 `BuildConfig` 里注入 commit 并在页面/日志输出，属新增小改动，需另行派单。
+
+
 
 ### 11.1 右列四枚的真实形态（4× 放大复核，修正 §11 上表的措辞）
 

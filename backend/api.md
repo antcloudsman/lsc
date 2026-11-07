@@ -1,269 +1,216 @@
-# LC Backend API v1（`/v1`）
+# LC Backend API v2（`/v2`）
 
-山水罗盘本地服务端骨架：风水案例库、云同步、分享链接、用户设置同步。**本地优先**：单个 SQLite 文件即全部状态，无云依赖也能演示；全部依赖在 Docker 内，宿主机只留源码。
+> 状态：**契约（v2，未实现）**。M4 起由本文件取代 v1；v1 原文归档在 [`api-v1.md`](api-v1.md)（只读），`/v1/*` 统一返回 `410 deprecated`。
+> 对齐依据：LC逆向 `docs/fidelity/m4/account-reverse.md`（`16f3018`）——基址/信封/认证头/登录/收藏/反馈全部按原版取证结果落；标注规则见 §0.2。
+> 安全红线：全部依赖在 Docker 内（Node 22 + `node:sqlite`）、只绑 `127.0.0.1`、密码 scrypt、token 不透明随机、日志脱敏。
 
-- 默认地址：`http://127.0.0.1:8787`（compose 只绑定回环地址）
-- 数据：`/data/lc.sqlite`（Docker volume `lc-backend_lc-data`）
-- 传输：JSON / UTF-8；时间戳一律 ISO-8601 UTC；请求体上限 1 MB
-- 版本：`0.1.0`（骨架，契约以本文件为准）
-- 实现：Node 22 标准库（`node:http` + `node:sqlite`），**无 npm 依赖**
+## 0. 与原版协议的关系
 
-## 1. 约定
+### 0.1 已取证事实（引用即锚点，不重复取证）
 
-### 1.1 身份（v1 无鉴权）
-
-v1 是本地演示版，没有登录体系。`owner_id` 是客户端生成的**不透明设备/用户标识**，服务端只按它隔离数据：
-
-- 格式：`[A-Za-z0-9._:-]{1,128}`（例如 `dev_L2E0222531014833`）
-- 服务端不做身份校验，**绑定 127.0.0.1 仅本机可用**；上线前必须加 token 鉴权并改注释，见 §6。
-
-### 1.2 通用响应
-
-成功：`200` / `201`，资源包在命名字段里（`case`、`items`、`settings`、`share`、`sync`）。
-
-错误：
-
-```json
-{ "error": { "code": "case_not_found", "message": "case case_x not found" } }
-```
-
-| 状态 | `code` | 含义 |
+| 项 | 原版值 | 出处 |
 |---|---|---|
-| 400 | `invalid_field` / `invalid_json` / `invalid_owner_id` / `invalid_case_id` / `invalid_limit` / `invalid_since` | 参数不合法 |
-| 404 | `case_not_found` / `share_not_found` / `not_found` | 资源不存在 |
-| 405 | `method_not_allowed` | 方法不支持 |
-| 409 | `case_exists` | 客户端指定了已存在的 `id` |
-| 413 | `payload_too_large` | 请求体超过 1 MB |
-| 415 | `unsupported_media_type` | 请求体不是 `application/json` |
-| 500 | `internal_error` | 未处理异常（服务端日志） |
+| 基址 | `https://globe.xinzhi.space` | `net/ApiHelper.smali` |
+| 回包信封 | `ApiResult<T>{ code:int, msg:String, data:T }` | `net/ApiResult.smali` |
+| **成功码** | **`200`**（`0xC8`，不是 0） | `ApiResult.smali:111` |
+| 认证头 | **`token: <opaque>`**，无值时**不带该头** | `HeaderInterceptor.smali:388` |
+| token 存储 | MMKV `AccountManager` / `currentAccount`，值是 `AccountModel` 的 Gson 整串 | `AccountManager` |
+| 登录 | `POST api/user/login`，`LoginParameter` 11 字段；`loginType` ∈ `phone/phoneOauth/wechat/qq/honor/device` | `ApiService` / `LoginParameter$LoginType` |
+| 注册 | **原版无注册页/注册接口**：手机号+验证码登录即注册 | manifest / `ApiService` 全量 |
+| 收藏点 | `GET api/userCollectPoint/list`、`POST …/save`、`DELETE …/delete?id=`；`CollectPointModel` 13 字段 | `ApiService` / `CollectPointModel` |
+| 投诉反馈 | `POST api/feedback/add`、`GET api/feedback/list`；`AddFeedbackReqModel(attachments, contactWay, orderNum, reasons, remark, type:int)`，实测 `type=2`、`remark` 恒空 | `ApiService` / `FeedbackViewModel` |
 
-CORS：`Access-Control-Allow-Origin: *`（`OPTIONS` 预检返回 204），供 WebView 内 H5 分享页/调试页直连。
+### 0.2 标注规则（本文强制）
 
-### 1.3 案例对象（Case）
+- **【原版】**：有 DEX/真机证据，字段名/取值照抄，不改写。
+- **【我方新增】**：原版没有（账号密码登录/注册；限流；rev 增量同步等），验收不得当原版缺失判 1:1。
+- **【原版未取证】**：原版存在但未取到取值域/错误码，本文只写已知部分并标注。
+- 我方新增字段**不得与【原版】同名列**，避免客户端误当原版语义。
 
-```json
-{
-  "id": "case_9f0c...",
-  "owner_id": "dev_L2E0222531014833",
-  "title": "西湖某宅 · 巽山乾向",
-  "sit_degree": 135,
-  "facing_degree": 315,
-  "compass_type": "sanyuan",
-  "location": { "lat": 30.25, "lng": 120.15, "name": "杭州", "address": "…", "coord_system": "wgs84" },
-  "tags": ["住宅", "坐向"],
-  "notes": "自由文本",
-  "data": { "panel": { "mountains": "…" } },
-  "created_at": "2026-11-05T02:00:00.000Z",
-  "updated_at": "2026-11-05T02:00:00.000Z",
-  "rev": 12,
-  "deleted": false
-}
-```
+## 1. 通用约定
 
-字段规则：
+### 1.1 信封
 
-| 字段 | 类型/范围 | 说明 |
-|---|---|---|
-| `title` | string, 1–200 | 必填 |
-| `sit_degree` | number, [0, 360] | 坐向度数；`360` 归一为 `0` |
-| `facing_degree` | number, [0, 360] | 朝向；不传由客户端自行按 `(sit+180)%360` 计算 |
-| `compass_type` | string ≤ 64 | 盘面标识（对应 5 盘面，由客户端约定） |
-| `location` | object / null | `lat` [-90,90]、`lng` [-180,180]，`name`/`address`/`coord_system` ≤ 200 |
-| `tags` | string[] ≤ 32 项，每项 ≤ 32 字符 | |
-| `notes` | string ≤ 20000 | 可为空 |
-| `data` | object / null ≤ 256 KB | 客户端扩展字段（圈层快照、截图元数据等） |
-| `rev` | integer | 服务端单调递增版本号，用于增量同步 |
-| `deleted` | boolean | 软删除标记，默认列表不返回 |
-
-## 2. 健康检查
-
-`GET /health`（同时支持 `/v1/health`）
+成功（HTTP 200/201）：
 
 ```json
-{
-  "status": "ok",
-  "service": "lc-backend",
-  "version": "0.1.0",
-  "time": "2026-11-05T02:00:00.000Z",
-  "uptime_s": 42,
-  "db": "ok",
-  "cases": 3,
-  "shares": 1
-}
+{ "code": 200, "msg": "ok", "data": { } }
 ```
 
-`status` 为 `ok` 当且仅当 SQLite 可读；`db` 为 `ok`/`error`。容器内 HEALTHCHECK 与 `scripts/smoke.ps1`（可选）都依赖此端点。
-
-## 3. 案例库
-
-### 3.1 列表
-
-`GET /v1/cases?owner_id=<id>&since=<rev>&limit=<1..200>&include_deleted=0|1`
-
-- `since`：只返回 `rev > since` 的案例（增量拉取；默认 0）
-- `limit`：默认 100，最大 200
-- `include_deleted=1`：包含软删除记录
+失败（HTTP 4xx/5xx，`data` 为 `null`）：
 
 ```json
-{ "items": [ { "id": "case_…", "rev": 3, "…": "…" } ], "count": 1 }
+{ "code": 401, "msg": "账号或密码不正确", "data": null }
 ```
 
-### 3.2 新建
+- `code` 与 HTTP 状态一致（成功固定 200，与原版一致）；`msg` 为人类可读中文；`data` 为资源包。
+- 兼容原版 `ApiResult` 的解析方式：客户端只看 `code==200`，不看 HTTP 状态。
 
-`POST /v1/cases`
+### 1.2 认证（【原版】头名 + 【我方】扩展）
 
-```json
-{
-  "owner_id": "dev_xxx",
-  "title": "案例标题",
-  "sit_degree": 135,
-  "facing_degree": 315,
-  "compass_type": "sanyuan",
-  "tags": ["住宅"],
-  "notes": "",
-  "location": { "lat": 30.25, "lng": 120.15, "name": "杭州" },
-  "data": {}
-}
-```
+- 受保护请求带 **`token: <opaque>`**。这是**我方 32 字节随机 token**（`base64url`，43 字符），非 JWT——与原版「不透明串 + 有效期」一致（总监 2026-11-07 定）。
+- 服务端只存 `sha256(token + LC_TOKEN_PEPPER)`；`Authorization: Bearer <token>` 作为**我方扩展**同时接受（便于 curl/调试），两者等价。
+- 服务端不存明文 token；DB 泄露不能直接冒用会话。
 
-- 201 返回 `{ "case": {…} }`
-- 可传 `id`（`[A-Za-z0-9_-]{6,64}`）用于**离线创建后上传**；已存在则 409，避免覆盖
-- 不传 `id` 时服务端生成 `case_<32hex>`
+### 1.3 错误码表
 
-### 3.3 读取 / 更新 / 删除
+| HTTP | code | msg 示例 | 来源 |
+|---|---|---|---|
+| 200 | 200 | `ok` | 【原版】成功码 |
+| 400 | 400 | `参数不合法：username` | 【我方】 |
+| 401 | 401 | `账号或密码不正确` / `token 无效或已过期` | 【我方】（原版错误码表未取证） |
+| 403 | 403 | `无权访问该资源` | 【我方】 |
+| 404 | 404 | `资源不存在` | 【我方】 |
+| 409 | 409 | `用户名已被占用` | 【我方】 |
+| 413 | 413 | `请求体过大` | 【我方】 |
+| 415 | 415 | `仅接受 application/json` | 【我方】 |
+| 429 | 429 | `请求过于频繁`（带 `Retry-After`） | 【我方】 |
+| 500 | 500 | `服务端内部错误` | 【我方】 |
+
+> **原版未取证**：200 之外的业务错误码（含 `logoutOnAccountInvalid` 的触发码、验证码错误码）。本文不编造原版数值，客户端按「非 200 即失败 + 展示 `msg`」处理。
+
+## 2. 账号与会话（【我方新增】，原版无密码登录）
+
+> 原版的 `phone / phoneOauth / wechat / qq / honor / device` 六种 `loginType` 本轮**只做入口占位 + DI**（D-029 手机号验证码、D-030 一键/荣耀、D-031 微信；`qq` 入口文案未取证不占位）。本节是我方自建账号体系，**不是原版 1:1**。
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/v1/cases/{id}?owner_id=<id>` | 200 `{case}`；软删除后 404 |
-| PUT | `/v1/cases/{id}` | 部分更新：只改传入字段，body 需含 `owner_id`；200 `{case}` |
-| DELETE | `/v1/cases/{id}?owner_id=<id>` | 软删除；200 `{deleted:true,id}` |
-
-`PUT` 语义是**字段合并**（非全量替换）：未传字段保持原值；`location`/`data` 传 `null` 可清空。每次写/删都会推进 `rev` 并写入变更日志。
-
-## 4. 设置同步
-
-### 4.1 读取
-
-`GET /v1/settings/{owner_id}`
-
-```json
-{ "owner_id": "dev_xxx", "settings": { "theme": "dark" }, "rev": 8, "updated_at": "…" }
-```
-
-无记录时返回 `settings: {}`、`rev: 0`、`updated_at: null`。
-
-### 4.2 写入
-
-`PUT /v1/settings/{owner_id}`
-
-```json
-{ "settings": { "theme": "dark", "active_compass": 3 } }
-```
-
-- `settings` 必须是 JSON 对象，≤ 256 KB
-- 200 返回 `{ owner_id, settings, rev, updated_at }`
-- 整对象覆盖（最后写入胜出），不做字段级合并
-
-## 5. 同步与分享
-
-### 5.1 增量拉取
-
-`GET /v1/sync/pull?owner_id=<id>&since=<seq>&limit=<1..200>`
+| POST | `/v2/auth/register` | `{username, password, display_name?}` → 201 `{user, token, expires_at}` |
+| POST | `/v2/auth/login` | `{username, password}` → 200 同上；失败 401、超限 429 |
+| POST | `/v2/auth/logout` | 需 token；撤销当前会话 |
+| POST | `/v2/auth/logout-all` | 撤销该用户全部会话 |
+| POST | `/v2/auth/password` | `{current_password, new_password}`，成功后撤销其它会话 |
+| GET | `/v2/auth/me` | 当前用户 |
+| PATCH | `/v2/auth/me` | `{display_name}` |
+| GET | `/v2/auth/sessions` | 会话列表（不含 token） |
+| DELETE | `/v2/auth/sessions/{id}` | 撤销指定会话 |
 
 ```json
 {
-  "sync": {
-    "cursor": 42,
-    "changes": [
-      { "seq": 41, "entity": "case", "entity_id": "case_…", "op": "update", "payload": { "…": "case snapshot" }, "rev": 9, "changed_at": "…" },
-      { "seq": 42, "entity": "case", "entity_id": "case_…", "op": "delete", "payload": null, "rev": 10, "changed_at": "…" }
-    ]
-  }
+  "user": { "id": "user_9f0c…", "username": "laoliu", "display_name": "老刘",
+            "phone": null, "avatar": null, "created_at": "…", "last_login_at": "…" },
+  "token": "3f9c…", "expires_at": "2026-12-07T06:00:00.000Z"
 }
 ```
 
-- 游标是变更日志自增 `seq`；客户端保存 `cursor`，下次传 `since=cursor`
-- `op`：`create` / `update` / `delete`；`payload` 为写入时的**完整快照**（`delete` 为 `null`）
-- 拉到 `changes` 为空表示已同步；`limit` 截断时 `cursor` 为本次最后一条
+- `username` 3–32 `[A-Za-z0-9._-]`，大小写不敏感唯一；`password` 8–128；哈希格式 `scrypt$N=32768,r=8,p=1$<salt_b64>$<hash_b64>`（【我方】）。
+- `user.phone/avatar` 为**原版 `AccountModel` 同名字段预留**（本轮恒 `null`，绑定能力属 D-029/031）。
+- `token` 只在签发响应出现一次；默认 30 天（`LC_TOKEN_TTL_DAYS`），同用户最多 10 会话。
 
-### 5.2 批量推送（离线同步）
+## 3. 收藏点（【原版】路径与字段）
 
-`POST /v1/sync/push`
+### 3.1 对象（原版 `CollectPointModel` 13 字段，照抄）
 
 ```json
 {
-  "owner_id": "dev_xxx",
-  "cases": [ { "id": "case_offline_1", "title": "离线新建", "sit_degree": 90 } ],
-  "settings": { "theme": "dark" }
+  "id": 1723456789012,
+  "userId": 340992,
+  "name": "西湖某宅",
+  "address": "浙江省杭州市西湖区…",
+  "latitude": 30.2501,
+  "longitude": 120.1502,
+  "des": "坐向：巽山乾向",
+  "images": "[\"https://…\"]",
+  "icon": "default",
+  "style": "0",
+  "overlay": 1,
+  "dbId": 12,
+  "createTime": "2026-11-07T06:00:00.000Z"
 }
 ```
 
-- `cases` 内每条按 §1.3 校验；带 `id` 且服务端存在 → 合并更新，不存在 → 新建
-- 服务端已软删除的同 id → 记入 `conflicts`（`reason: "deleted_on_server"`），不复活
-- 200 返回 `{ "sync": { "applied": [case…], "conflicts": [ {id, reason, server_rev} ], "settings": {…}|null } }`
-- **冲突策略**：最后写入胜出（服务端时间）；不做逐字段三方合并。v1 仅保证幂等，不保证跨设备无覆盖。
+- 类型照原版：`id:Long`、`userId:Long`、`latitude/longitude:double`、`overlay:int`、`dbId:int`、`createTime:Date`，其余 string。
+- `images` 原版为字符串（格式未取证），我方原样透传、不解析。
+- **【我方扩展，原版无此字段】**：`rev:int`（增量游标）、`deleted:bool`、`updatedAt`。只在 v2 响应里附带，客户端可忽略；**不作为原版字段**。
 
-### 5.3 创建分享链接
+### 3.2 端点（路径与原版一致）
 
-`POST /v1/shares`
-
-```json
-{ "owner_id": "dev_xxx", "case_id": "case_…", "expires_in_days": 30 }
-```
-
-- `expires_in_days`：1–365，默认 30
-- 201 返回：
-
-```json
-{
-  "share": {
-    "token": "9f7c…32hex",
-    "url": "http://127.0.0.1:8787/s/9f7c…",
-    "case_id": "case_…",
-    "created_at": "…",
-    "expires_at": "…"
-  }
-}
-```
-
-`PUBLIC_BASE_URL` 环境变量决定 `url` 前缀（局域网演示可设为 `http://<pc-ip>:8787`）。
-
-### 5.4 打开 / 撤销分享
-
-| 方法 | 路径 | 说明 |
+| 方法 | 路径 | 入参 |
 |---|---|---|
-| GET | `/v1/shares/{token}` | 200 `{share:{token,created_at,expires_at,case}}`；案例快照**不含 `owner_id`**；撤销/过期/删除 → 404 |
-| GET | `/s/{token}` | 同一链接的 HTML 页面（`text/html`），供手机浏览器/微信内打开 |
-| DELETE | `/v1/shares/{token}?owner_id=<id>` | 撤销；200 `{revoked:true,token}` |
+| GET | `/v2/userCollectPoint/list` | `pageNum:int`（原版）、`overlay:bool?`（原版）；**我方扩展**：`since:int?`、`limit:int?`（增量） |
+| POST | `/v2/userCollectPoint/save` | `CollectPointModel`（无 `id` 即新建；有 `id` 且属当前用户即更新） |
+| DELETE | `/v2/userCollectPoint/delete?id=<long>` | `id`（query，原版） |
 
-分享是**读取快照**：打开时读取案例当前内容，之后案例更新会反映在链接里；撤销即时生效。
+- `userId` 服务端按 token 覆盖，**忽略客户端传值**（防越权）；`dbId` 原样存。
+- 归属他人 `id` → 404（不泄露存在性）。
+- 原版还有 `AddCollectParameter`（含 `addr/country/province/city/district/street/adCode/altitude/sceneCode/notify/notifyConfig/token`）作为**另一条写入链路**，调用方未定位：本文只登记，不实现（【原版未取证】）。
+- 原版同步时机（登录后是否全量拉取/本地合并）未取证：我方按「登录后拉一次列表 + 后续 `since` 增量」实现（【我方新增】行为）。
 
-## 6. 运行与自检
+## 4. 投诉反馈（【原版】`type:int`）
 
-```powershell
-cd E:\APPDetector\output\backend
-docker compose up -d --build
-docker compose ps
-curl.exe -s http://127.0.0.1:8787/health
-docker compose exec api node --no-warnings scripts/selfcheck.mjs
-docker compose down          # 数据保留在 volume；docker compose down -v 会清空
+| 方法 | 路径 | 入参 |
+|---|---|---|
+| POST | `/v2/feedback/add` | `AddFeedbackReqModel` |
+| GET | `/v2/feedback/list` | 无（分页由服务端默认 20 条，【我方】） |
+
+```json
+{
+  "attachments": "",
+  "contactWay": "wechat_abc",
+  "orderNum": "",
+  "reasons": "闪退",
+  "remark": "",
+  "type": 2
+}
 ```
 
-宿主机不需要 Node/JDK：`docker compose up` 一键起，`node:22-bookworm-slim` 镜像内运行。
+- 字段名与顺序照原版：`attachments, contactWay, orderNum, reasons, remark, type`。
+- **`type` 是 int，只落已取证值 `2`**（`FeedbackViewModel.P`）；其余取值域【原版未取证】，**不得写 `problem|order` 当原版值**，也不得自造新值。
+- `remark` 在原版那条链路恒为 `""`（描述走 `reasons`）；我方**原样接收**，不强制改写，但默认空串。
+- `attachments` 本轮只接受 `null`/空串：图片上传走 DI（`getUploadOssPreSignUrl` 属原版 OSS 链路，未取证）。
+- 限流：每用户 5 次/小时（【我方】）。
 
-## 7. 边界与非目标（v1）
+## 5. 账户设置相关接口（【原版】，本轮不实现）
 
-- 无鉴权、无多租户、无限流、无审计日志 → 只绑 `127.0.0.1`，不可直接公网暴露
-- 不存图片二进制（截图/缩略图后续走对象存储或分享页 base64，单独立项）
-- 不做天地图代理（地图 key/配额由客户端与 LC地图 负责）
-- 不替代 `mechanics.json` 数值源：罗盘常量仍以 `app/mechanics.json` 为唯一来源，服务端不下发
-- SQLite 使用 Node 22 内置 `node:sqlite`（当前标记 experimental）；契约层不依赖其实现，后续可平移 Postgres
+以下为原版 Map 传参真实 key（`account-reverse.md` §5），**本轮只做页面展示 + DI 标注**，不开放接口：
 
-## 8. 后续增量（未实现，仅登记）
+| 原版接口 | Map key |
+|---|---|
+| `bindPhone` | `phone`、`code` |
+| `changePhone` | `phone`、`code` |
+| `verifyCurrentPhone` | `phone`、`code` |
+| `updateNickname` | `nickname` |
+| `bindAccount`（绑第三方） | `phone`、`smsCode`、`wxOpenid`、`wxUnionid`、`loginType="wechat"` |
 
-| 项 | 说明 | 依赖 |
-|---|---|---|
-| 鉴权 | device token / 登录，`owner_id` 改为服务端签发 | 产品确认账号体系 |
-| 图片附件 | 案例截图上传/缩略图/分享页图集 | 对象存储或本地卷策略 |
-| 协作案例 | 共享编辑、评论 | 权限模型 |
-| 服务端推送 | 同步长连接/SSE | 客户端网络层 |
+未取证：`updateAvatar` 的 Map key（走 `uploadImage`/`updateCover` 链路）。
+
+## 6. 安全基线（实现必须逐条落地）
+
+1. API 只绑 `127.0.0.1`：compose 只发布 `127.0.0.1:8787`，容器内 `HOST=0.0.0.0` 仅用于端口映射。
+2. 密码：`scrypt`（`node:crypto`，`N=32768,r=8,p=1`，16B salt，64B 输出）+ `timingSafeEqual`；**禁止**明文、`md5/sha1/sha256(pwd)`、可逆加密。
+3. token：32 字节随机 `base64url`；DB 只存 `sha256(token+pepper)`；`LC_TOKEN_PEPPER` 走环境变量或仓库外 secrets，不入库。
+4. 限流（内存滑窗）：登录 每 IP 10/分 + 每用户 5/分 + 每 IP 50/时；注册 3/时/IP；改密 3/时/用户；反馈 5/时/用户；超限 429 + `Retry-After`。
+5. CORS：默认不发 `Access-Control-Allow-Origin`；`LC_CORS_ORIGIN` 逗号白名单精确匹配，不用 `*`。
+6. 日志：`Authorization`/`token`/`password` 永不打印；`/v2/auth/*` 永久屏蔽 body；统一 `logSafe(event,{user_id,path,status,ms})`。
+7. 请求体上限：鉴权 16 KB、业务 256 KB、`sync/push` 1 MB；超限 413。
+8. 响应不回堆栈；`code` 与 HTTP 状态一致；`X-Request-Id` 回显便于对日志。
+
+## 7. 数据模型与迁移（v1 → v2）
+
+```sql
+users(id TEXT PK, username TEXT, username_lc TEXT UNIQUE, display_name TEXT, phone TEXT,
+      avatar TEXT, password_hash TEXT, status TEXT, created_at TEXT, last_login_at TEXT,
+      failed_attempts INT, locked_until TEXT);
+sessions(id TEXT PK, user_id TEXT, token_hash TEXT UNIQUE, device TEXT, created_at TEXT,
+         last_used_at TEXT, expires_at TEXT, revoked INT);
+favorites(id INTEGER PK, user_id TEXT, name TEXT, address TEXT, latitude REAL, longitude REAL,
+          des TEXT, images TEXT, icon TEXT, style TEXT, overlay INT, db_id INT,
+          create_time TEXT, rev INTEGER, deleted INT, updated_at TEXT);   -- 13 原版字段 + 4 我方扩展
+feedback(id TEXT PK, user_id TEXT, attachments TEXT, contact_way TEXT, order_num TEXT,
+         reasons TEXT, remark TEXT, type INT, status TEXT, created_at TEXT, idem_key TEXT);
+changes(...)  -- 沿用 v1，实体增加 favorite
+```
+
+- `schema_migrations` 幂等迁移：`001_init` → `002_users_sessions` → `003_favorites` → `004_feedback`。
+- v1 的 `cases/settings/shares` 保留（改为 `user_id` 归属，v1 行 `user_id NULL` 不自动归属；一次性脚本 `claim-owner.mjs` 显式认领）。
+- `/v1/*` 全量 `410 deprecated`（`{code:410,msg:"deprecated",data:{replacement:"/v2/…"}}`）；`/health` 不变。
+- 切换：停服 → 备份 `lc.sqlite` → `docker compose up -d --build`（启动跑迁移）→ `selfcheck.mjs`（注册/登录/401/429/收藏/反馈/登出）→ 回滚 = 还原备份 + 上一镜像。
+- 环境变量：`LC_TOKEN_TTL_DAYS=30`、`LC_TOKEN_PEPPER`、`LC_CORS_ORIGIN`、`LC_LOG_BODY=0`、`LC_RATE_LIMIT=1`。
+
+## 8. 非目标与 DI
+
+- 微信/QQ/荣耀/一键登录：只占位（D-029/030/031），不实现 OAuth。
+- 图片附件上传（`attachments` 只收空）。
+- 公网部署/TLS/多租户。
+- 服务端下发罗盘常量（仍以 `app/mechanics.json` 为唯一来源）。
+- 原版错误码表、`logoutOnAccountInvalid` 触发码、反馈 `type` 其余值域、收藏同步时机、`updateAvatar` key：**原版未取证**，不编造。

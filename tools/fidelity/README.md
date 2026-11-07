@@ -43,6 +43,12 @@ python tools\fidelity\fidelity.py collect --side lc --state compass-main-01 --dr
 "apk":   { "path": "...", "sha256": "<hex>", "bytes": 3127xxx }
 ```
 
+**装机指纹前置（2026-11-07 起，防「元数据写我们的 commit、机上却是别人的包」）**：真实采集前，`collect` 会先跑 `pm path <pkg>` 找到机上 `base.apk`，再取它的 `size` 与 `sha256sum`，与 `--apk` 比对：
+
+- size 或 sha256 不一致 → 打印两边数值并**直接拒采**，一张图都不落（多成员共用一台设备时，别人的 `pm install` 会覆盖我们的包）；
+- 取不到（无 `--pkg`、或设备侧命令失败）→ 只 warning，不阻断；
+- 比对通过时 `[PASS] installed apk matches --apk`，并把 `device_apk: {path,size,sha256}` 写进 `meta.json`，事后可复核这份证据是哪次装机采的。
+
 这是 checksheet §5 的作废条件（反例 `cd47703`）；原版侧 `build`/`apk` 为 `null`。
 
 写入 `docs/fidelity/{orig,lc}/<state>.png` + `.xml` + `.meta.json`（截图 SHA256、分辨率、设备型号/系统、包名、采集时间）。已有同名采集默认拒绝覆盖，确认要重拍加 `--force`。`--serial` 或 `ANDROID_SERIAL` 指定设备。

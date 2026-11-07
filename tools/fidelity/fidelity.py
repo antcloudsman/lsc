@@ -44,7 +44,7 @@ try:
 except ImportError:  # pragma: no cover - exercised only on minimal installs
     np = None
 
-VERSION = "1.11.0"
+VERSION = "1.12.0"
 KNOWN_RED_CLASSES = ("真缺失", "命名不一致", "载体不同", "证据不可得")
 STATE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 EXPECTED_SIZE = (1228, 2700)
@@ -1359,6 +1359,82 @@ def _adb_command(adb: str, serial: str | None, *parts: str) -> list[str]:
     return command + list(parts)
 
 
+def installed_apk_fingerprint(adb: str, serial: str | None, pkg: str) -> dict | None:
+    """`pm path` → base.apk path/size/sha256 on the device.
+
+    Evidence must prove *which* build produced it: another member's install can overwrite
+    the package between build and capture (seen at 2026-11-07 09:30), leaving metadata that
+    names our commit while the device runs someone else's apk.
+    """
+    if not pkg:
+        return None
+    try:
+        output = _run_text(_adb_command(adb, serial, "shell", "pm", "path", pkg))
+    except FidelityError:
+        return None
+    path = ""
+    for line in output.splitlines():
+        line = line.strip()
+        if not line.startswith("package:"):
+            continue
+        candidate = line[len("package:"):].strip()
+        if candidate.endswith("base.apk"):
+            path = candidate
+            break
+        if not path:
+            path = candidate
+    if not path:
+        return None
+    size: int | None = None
+    digest: str | None = None
+    try:
+        raw = _run_text(_adb_command(adb, serial, "shell", "stat", "-c", "%s", path)).strip()
+        if raw.isdigit():
+            size = int(raw)
+    except FidelityError:
+        pass
+    if size is None:
+        try:
+            raw = _run_text(_adb_command(adb, serial, "shell", "wc", "-c", path)).split()
+            if raw and raw[0].isdigit():
+                size = int(raw[0])
+        except FidelityError:
+            pass
+    try:
+        raw = _run_text(_adb_command(adb, serial, "exec-out", "sha256sum", path)).split()
+        token = raw[0].strip().lower() if raw else ""
+        if re.fullmatch(r"[0-9a-f]{64}", token):
+            digest = token
+    except FidelityError:
+        pass
+    return {"path": path, "size": size, "sha256": digest}
+
+
+def compare_installed_apk(installed: dict, apk: Path) -> list[str]:
+    """Problems between the installed base.apk and the local apk we claim to have built."""
+    if not apk.exists():
+        return [f"apk not found: {apk}"]
+    problems: list[str] = []
+    local_size = apk.stat().st_size
+    if installed.get("size") is not None and installed["size"] != local_size:
+        problems.append(
+            f"installed base.apk is {installed['size']} B, --apk is {local_size} B; "
+            "the device is running a different build (another member's install?)"
+        )
+    local_sha = sha256_file(apk)
+    if installed.get("sha256") and installed["sha256"] != local_sha:
+        problems.append(
+            f"installed base.apk sha256 {installed['sha256']} != --apk {local_sha}; "
+            "refusing to label this capture with our build"
+        )
+    return problems
+
+
+def _run_text(command: list[str]) -> str:
+    result = _run(command, capture=True)
+    return (result.stdout or b"").decode("utf-8", "replace")
+
+
 def _resolve_build(args: argparse.Namespace) -> dict | None:
     """LC evidence must record its build provenance (checksheet §5)."""
     if args.side != "lc":
@@ -1401,6 +1477,30 @@ def cmd_collect(args: argparse.Namespace) -> int:
     meta_path = side_dir / f"{args.state}.meta.json"
     if side_dir.exists() and (png_path.exists() or xml_path.exists()) and not args.force:
         raise FidelityError(f"{args.state} already captured for {args.side}; pass --force to overwrite")
+
+    # Preflight: prove the device is running the build we claim (--apk), before any capture.
+    apk_path = Path(args.apk) if getattr(args, "apk", None) else None
+    installed: dict | None = None
+    if args.pkg and not args.dry_run:
+        installed = installed_apk_fingerprint(adb, serial, args.pkg)
+        if installed:
+            info(
+                f"installed apk: {installed['path']} size={installed['size']} "
+                f"sha256={(installed['sha256'] or 'n/a')[:12]}…"
+            )
+            if apk_path is not None:
+                problems = compare_installed_apk(installed, apk_path)
+                if problems:
+                    for problem in problems:
+                        failed(problem)
+                    raise FidelityError("installed apk does not match --apk; refusing to collect")
+                passed(f"installed apk matches --apk (size {apk_path.stat().st_size} B)")
+            else:
+                info("warning: no --apk given; the installed build cannot be tied to a local apk")
+        else:
+            info(f"warning: cannot read installed base.apk for {args.pkg}; preflight skipped")
+    elif args.pkg and args.dry_run:
+        info("dry-run: installed apk preflight skipped (no device call)")
 
     commands: list[list[str]] = []
     if not args.skip_anim:
@@ -1488,6 +1588,7 @@ def cmd_collect(args: argparse.Namespace) -> int:
         "checksheet_id": args.checksheet_id or "",
         "build": build["build"] if build else None,
         "apk": build["apk"] if build else None,
+        "device_apk": installed,
         "image": {
             "file": png_path.name,
             "width": width,

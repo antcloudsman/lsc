@@ -443,6 +443,61 @@ def main() -> int:
         ], expect=1)
         check("--build-commit" in missing_build, "collect: lc capture rejects missing build provenance")
 
+        # Preflight: the installed base.apk must match --apk (another member's install can overwrite it).
+        fingerprint_apk = temp / "fingerprint.apk"
+        fingerprint_apk.write_bytes(b"PK\x03\x04" + b"\x00" * 4096)
+        fingerprint_size = fingerprint_apk.stat().st_size
+        fingerprint_sha = fidelity.sha256_file(fingerprint_apk)
+        check(
+            fidelity.compare_installed_apk(
+                {"path": "/data/app/x/base.apk", "size": fingerprint_size, "sha256": fingerprint_sha},
+                fingerprint_apk,
+            ) == [],
+            "collect preflight: matching installed apk passes",
+        )
+        size_problem = fidelity.compare_installed_apk(
+            {"path": "/data/app/x/base.apk", "size": fingerprint_size + 1, "sha256": fingerprint_sha},
+            fingerprint_apk,
+        )
+        check(
+            len(size_problem) == 1 and "different build" in size_problem[0],
+            "collect preflight: size mismatch is rejected",
+        )
+        sha_problem = fidelity.compare_installed_apk(
+            {"path": "/data/app/x/base.apk", "size": fingerprint_size, "sha256": "0" * 64},
+            fingerprint_apk,
+        )
+        check(
+            len(sha_problem) == 1 and "sha256" in sha_problem[0],
+            "collect preflight: sha256 mismatch is rejected",
+        )
+
+        real_run = fidelity._run
+
+        class FakeDevice:
+            def __init__(self, text: str) -> None:
+                self.stdout = text.encode("utf-8")
+
+        def fake_run(command, capture: bool = False):
+            joined = " ".join(command)
+            if "pm path" in joined:
+                return FakeDevice("package:/data/app/~~abc/base.apk\n")
+            if "stat -c %s" in joined:
+                return FakeDevice("4096\n")
+            if "sha256sum" in joined:
+                return FakeDevice(fingerprint_sha + "  /data/app/~~abc/base.apk\n")
+            return FakeDevice("")
+
+        fidelity._run = fake_run
+        try:
+            fingerprint = fidelity.installed_apk_fingerprint("adb", None, "com.luopan.fengshui")
+        finally:
+            fidelity._run = real_run
+        check(
+            fingerprint == {"path": "/data/app/~~abc/base.apk", "size": 4096, "sha256": fingerprint_sha},
+            "collect preflight: pm path + stat + sha256sum parsed",
+        )
+
         fake_apk = temp / "fake-debug.apk"
         fake_apk.write_bytes(b"PK\x03\x04" + b"\x00" * (200 * 1024))
         bad_build = run([

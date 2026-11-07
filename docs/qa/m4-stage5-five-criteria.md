@@ -35,9 +35,25 @@
 2. **③ 假失败根因**：改坐向后未置 `sync_state='pending'`，clean 行不进推送队列；且清本地后未清游标。
 3. **计数解析**：`LocalQuery` 返回 `[(n,)]`，`[int]` 直接转会抛错导致判定被跳过；新增 `LocalScalar` 取单值，④ 改为按 `remote_id` 单行判。
 
+
 ## 局限与说明
 
-- ⑥ 会真实删掉一行服务端数据（本例 emote_id=350，A 的 s33-a2）：这是 **§32 允许孤儿墓碑推出的设计行为**，测试用当前账号 A 推 A 自己的孤儿墓碑，不构成跨账号删除。
-- **删除功能在可达 UI 里没有入口（M4-GAP-DELETE-UI，审核验 §35.3）**：可达覆盖层只有点击跳图、无长按无删除；唯一删除 UI 在不可达的 InterestListActivity:157/159。因此 ④ 只能记「同步机制通过」（本地库置墓碑 → 服务端 deleted=1），**不能记「用户能删除」**。§33 的『不可删』证据也随之换成代码链：markInterestDeletePending 全仓唯一调用点是 InterestListActivity:147 ← confirmDelete ← :123 长按 ← :72 listInterest(uid) 的行，该页不可达 ⇒ 账号过滤链闭合但与覆盖层无关。
-- ⑤ 未覆盖「收藏列表页存活期间切账号」的理论路径（`LIST-SNAPSHOT`，客户端已加 `onResume` 重载，未合入 `525704c`）；本条判据在 `383d54f` 合入后可补一轮衍生验证。
-- 本轮未复验 `LIMIT=200` 超限跳过与翻页认领（`adoptByRemoteIds` 只取第一页，属已知限制，客户端已在注释与摘要登记）。
+- ⑥ 会真实删掉一行服务端数据（本例 `remote_id=350`，A 的 `s33-a2`）：这是 **§32 允许孤儿墓碑推出的设计行为**，用当前账号推自己的孤儿墓碑，不构成跨账号删除。
+- **删除入口**：`525704c` 时可达 UI 无删除入口（`M4-GAP-DELETE-UI`）；已在 `9e42ef1` 补到覆盖层并真机验过（见下节）。长按形态是**我方新增**（原版收藏 dump `long-clickable=true` 计数为 0，原版只有「编辑」按钮），登记有意差异（DI）；确认框用中性文案，`lc_interest_delete_*` 是 `strings_gap.xml` 的 gap 文案，非原版取证。
+- ⑤ 未覆盖「列表页存活期间切账号」的理论路径（`LIST-SNAPSHOT`）：`InterestListActivity` 不可达（`exported=false`、零启动点、`run-as am start` 也被 `SecurityException` 拒），`onResume` 属防御性代码，设备不可复现。
+- 本轮未复验 `LIMIT=200` 超限跳过与翻页认领（`adoptByRemoteIds` 只取第一页，属已知限制）。
+
+## 增补（`9e42ef1`）：删除 UI 四条 + 回归六项
+
+- 构建 `9e42ef1`（0d4f5dd：覆盖层长按删除），APK sha256 `39df3bc18e8440ae4ea45bc72fb2cbcdfe824a589b9a37280c6a7e5bba6f2a47`
+- 证据：`E:\APPDetector\reports\M4-stage5-9e42ef1\`（`delui/`、`regress/`、`orphanui/` 三组，各带 run.log/table.md/库快照/dump+截图）
+
+| 判据 | 结果 | 关键数字 |
+|---|---|---|
+| 长按删**已同步**行 | PASS | `LCFAV sublist delete id=65 remote=tombstone`；同步 `del=1`；服务端 `356:1`（deleted=1）；本地 `syn_left=0`、`pending_left=0` |
+| 长按删**未同步**行（`remote_id=0`） | PASS | `LCFAV ... remote=local-only`；行立即消失（`un_left=0`）；服务端 delete 请求计数 `0->0`（未发请求） |
+| 切 B 长按（入口已存在，非平凡） | PASS | B 列表「暂无收藏点」、长按无确认框 |
+| 回归六项（P0①/②/③/④a④b/⑤§33/⑥） | PASS | ①3→3、B_ACTIVE=0；②restored 360、ACTIVE 93→93；③90/270；④a 362:0→1、④b 1→0；⑤A 363,364 可见、服务端未变；⑥364→deleted=1、本地 0 |
+| 孤儿行不可见（补充） | PASS | `(77, owner=0, remote=365)` 不在列表（`vis_ou=False`，同页 A 的行可见）；同步 `adopted by remote ids=1`、`push=0`、服务端 `DELETED=0` |
+
+**结论口径**：④ 可升级为「删除可经**可达 UI** 完成（我方形态）」，但**不得**写成「删除形态与原版一致」——长按是新增形态，原版未取证；文案为中性，非原版 gap string。

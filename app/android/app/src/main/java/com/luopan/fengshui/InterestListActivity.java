@@ -62,6 +62,16 @@ public class InterestListActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // §33 防御（审核验 §34 / 产品 LIST-SNAPSHOT）：本页存活期间若账号变了，
+        // 列表会是上一账号的快照，那批行仍可长按删除 → §33 会从"快照"这条缝回来。
+        // 每次回到前台按当前账号重建列表；顺带让"同步完回列表"能看到新数据。
+        // 与同仓 MainActivity / TrackListActivity 的写法一致。
+        if (db != null) reload();
+    }
+
+    @Override
     protected void onDestroy() {
         if (db != null) db.close();
         super.onDestroy();

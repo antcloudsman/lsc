@@ -1354,7 +1354,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         TextView title = new TextView(this);
         title.setText(R.string.lc_compass_display_title);
-        title.setTextSize(16f);
+        title.setTextSize(16f);   // 原版 216 宽/4 字/3.375 = 16sp
         title.setTextColor(Color.rgb(235, 228, 215));
         panel.addView(title);
 
@@ -2107,7 +2107,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         TextView title = new TextView(this);
         title.setText("邮箱地址");
-        title.setTextSize(17f);
+        title.setTextSize(16f);   // 原版 216 宽/4 字/3.375 = 16sp
         title.setTextColor(0xFF23272B);
         title.setGravity(android.view.Gravity.CENTER);
         // 宽度按**文字自身**（dump: 标题 [506,1199][722,1278] = 216、正文 [328,1350][899,1429] = 571），
@@ -2128,7 +2128,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         TextView copy = new TextView(this);
         copy.setId(R.id.lc_m3_copy_mail);
         copy.setText("复制邮箱");
-        copy.setTextSize(17f);
+        copy.setTextSize(14f);   // 原版 188 宽/4 字/3.375 ≈ 13.9 -> 14sp
         copy.setTextColor(android.graphics.Color.WHITE);
         copy.setGravity(android.view.Gravity.CENTER);
         android.graphics.drawable.GradientDrawable btnBg = new android.graphics.drawable.GradientDrawable();

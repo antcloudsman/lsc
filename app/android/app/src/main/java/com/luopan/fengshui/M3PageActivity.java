@@ -136,6 +136,9 @@ public class M3PageActivity extends Activity {
         // M6 第 4 条：标题栏改 FrameLayout —— 返回贴左、标题**居中且 wrap_content**（原版宽 216）、我的贴右。
         // 用 LinearLayout 时标题靠 weight 撑满，dump 宽度永远是整栏，Δ 表必挂（测试实测 ΔR=+465）。
         android.widget.FrameLayout bar = new android.widget.FrameLayout(this);
+        // 标题栏高度固定（原版正文从 y=265 起、状态栏 122 -> 143），
+        // 否则「我的」158 高会把 bar 撑高、把标题一起推下去（实测标题 +31 就是这条）。
+
         bar.setPadding(dp(12), dp(7), dp(12), dp(5));
         TextView back = new TextView(this);
         back.setId(R.id.lc_m3_back);
@@ -159,7 +162,8 @@ public class M3PageActivity extends Activity {
                 new android.widget.FrameLayout.LayoutParams(
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
-        titleLp.gravity = Gravity.CENTER;
+        titleLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        titleLp.topMargin = 32;   // 原版标题 y154 - 状态栏 122
         titleLp.height = 79;   // 原版标题高 79（四页一致），wrap 只有 76
         title.setIncludeFontPadding(false);
         bar.addView(title, titleLp);
@@ -181,7 +185,8 @@ public class M3PageActivity extends Activity {
                     android.widget.Toast.LENGTH_SHORT).show());
             android.widget.FrameLayout.LayoutParams mineLp =
                     new android.widget.FrameLayout.LayoutParams(158, 158);
-            mineLp.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
+            mineLp.gravity = Gravity.END | Gravity.TOP;
+            mineLp.topMargin = -7;   // 原版 y115 - 状态栏 122
             mineLp.rightMargin = 15;
             // 实测偏差：右移 41、上移 31（我方 [1014,146][1172,304] -> 原版 [1056,115][1213,272]）
             mineBtn.setTranslationX(41f);
@@ -658,7 +663,7 @@ public class M3PageActivity extends Activity {
         logoutBg.setColor(0xFFE93B4D);
         logoutBg.setCornerRadius(12f);   // 像素实测圆角 12px（首/末行内缩 12）
         logout.setBackground(logoutBg);
-        logout.setPadding(0, dp(2), 0, dp(7));
+        logout.setPadding(0, 0, 0, 0);   // 去掉不对称内距：上2/下7 会把字心推高约 2.5px（审核验实测字心 2565 vs 2572）
         logout.setOnClickListener(v -> doLogout(token));
         // 贴底：挂到 root，不放进 ScrollView（原版 y 2512..2578 固定底部）
         bottomFixedButton = logout;
@@ -889,7 +894,8 @@ public class M3PageActivity extends Activity {
             // 测绘资质 209/4/3.375≈15.5sp；v1.6.1 ink 高 25 ≈ 10.5sp；备案编号 ink 621×31 单行。
             // 备案编号按总监估算 10.5sp（8 中文 + 18 拉丁：8×35.4 + 18×17.7 ≈ 601，落在 621±20）；v1.6.1 同档，
             // 这是**估算值**，装好后按 dump 实测回填，不拿估算当结论。
-            float[] sps = {16f, 13f, 15.5f, 10.5f, 10.5f};
+            // 备案编号按实测回填：10.5sp 实测宽 638，目标 621 -> 10.5×621/638 ≈ 10.2sp
+            float[] sps = {16f, 13f, 15.5f, 10.5f, 10.2f};
             tv.setTextSize(sps[Math.min(k, sps.length - 1)]);
             tv.setSingleLine(true);   // 五项在原版都是单行（备案编号此前被折成两行，宽 330）
 
@@ -911,9 +917,12 @@ public class M3PageActivity extends Activity {
                     }
                 });
             }
+            // 框高按 dump 的有效值（y2 不是 2578 的三个才有意义）：三维/重庆 79、测绘资质 157；
+            // 文字在框内垂直居中（原版 ink 只有 49 高，框 157 并不是字高）。
+            int[] frameH = {79, 79, 157, 0, 0};
             android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(
                     android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
-                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+                    frameH[k] > 0 ? frameH[k] : android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
             lp.gravity = Gravity.CENTER_HORIZONTAL;
             tv.setTag(ys[k]);
             stage.addView(tv, lp);

@@ -38,7 +38,7 @@ import java.util.List;
 class GapDb extends SQLiteOpenHelper {
 
     static final String NAME = "lc_gap.db";
-    static final int VERSION = 2;
+    static final int VERSION = 3;
 
     static final String T_INTEREST = "interest";
     static final String T_TOOL = "tool";
@@ -59,7 +59,9 @@ class GapDb extends SQLiteOpenHelper {
                 + "created_at INTEGER NOT NULL,"
                 + "remote_id INTEGER NOT NULL DEFAULT 0,"
                 + "rev INTEGER NOT NULL DEFAULT 0,"
-                + "sync_state TEXT NOT NULL DEFAULT 'pending')");
+                + "sync_state TEXT NOT NULL DEFAULT 'pending',"
+                + "client_key TEXT NOT NULL DEFAULT '',"
+                + "delete_pending INTEGER NOT NULL DEFAULT 0)");
         db.execSQL("CREATE TABLE " + T_TOOL + " ("
                 + "key TEXT PRIMARY KEY,"
                 + "sort INTEGER NOT NULL,"
@@ -77,6 +79,11 @@ class GapDb extends SQLiteOpenHelper {
                     db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN remote_id INTEGER NOT NULL DEFAULT 0");
                     db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN rev INTEGER NOT NULL DEFAULT 0");
                     db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN sync_state TEXT NOT NULL DEFAULT 'pending'");
+                    break;
+                case 2:
+                    // M4 v3：幂等键（重推不重复建点）+ 删除墓碑（远端删本地补推）
+                    db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN client_key TEXT NOT NULL DEFAULT ''");
+                    db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN delete_pending INTEGER NOT NULL DEFAULT 0");
                     break;
                 default:
                     break;
@@ -117,7 +124,8 @@ class GapDb extends SQLiteOpenHelper {
 
     List<InterestPoint> listInterest() {
         List<InterestPoint> out = new ArrayList<>();
-        try (Cursor c = getReadableDatabase().query(T_INTEREST, null, null, null,
+        // delete_pending=1 是「已删、待推服务端」的墓碑：列表不再显示，但同步要用它补推删除。
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, null, "delete_pending=0", null,
                 null, null, "created_at DESC, id DESC")) {
             while (c.moveToNext()) {
                 out.add(new InterestPoint(
@@ -150,14 +158,58 @@ class GapDb extends SQLiteOpenHelper {
     List<InterestPoint> listPendingInterest() {
         List<InterestPoint> out = new ArrayList<>();
         try (Cursor c = getReadableDatabase().query(T_INTEREST, null,
-                "sync_state<>'clean'", null, null, null, "id ASC")) {
+                "sync_state<>'clean' AND delete_pending=0", null, null, null, "id ASC")) {
             while (c.moveToNext()) out.add(row(c));
         }
         return out;
     }
 
-    long remoteIdOf(long localId) {
-        try (Cursor c = getReadableDatabase().query(T_INTEREST, new String[]{"remote_id"},
+    /** 幂等键：每行一个稳定 UUID，首次同步时生成并持久化，重推沿用它 → 服务端撞键返回同一行，不会重复建点。 */
+    String clientKeyOf(long localId) {
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, new String[]{"client_key"},
+                "id=?", new String[]{String.valueOf(localId)}, null, null, null)) {
+            if (c.moveToFirst()) {
+                String k = c.getString(0);
+                if (k != null && !k.isEmpty()) return k;
+            }
+        }
+        String key = java.util.UUID.randomUUID().toString().replace("-", "");
+        ContentValues v = new ContentValues();
+        v.put("client_key", key);
+        getWritableDatabase().update(T_INTEREST, v, "id=?", new String[]{String.valueOf(localId)});
+        return key;
+    }
+
+    /** 删除墓碑：本地先软删（delete_pending=1），推送成功后再物理删，避免「本地删了远端还在」复活。 */
+    void markInterestDeletePending(long localId) {
+        ContentValues v = new ContentValues();
+        v.put("delete_pending", 1);
+        getWritableDatabase().update(T_INTEREST, v, "id=?", new String[]{String.valueOf(localId)});
+    }
+
+    List<InterestPoint> listDeletePending() {
+        List<InterestPoint> out = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, null,
+                "delete_pending=1", null, null, null, "id ASC")) {
+            while (c.moveToNext()) out.add(row(c));
+        }
+        return out;
+    }
+
+    void purgeInterest(long localId) {
+        getWritableDatabase().delete(T_INTEREST, "id=?", new String[]{String.valueOf(localId)});
+    }
+
+    /** 远端已删（本地有 remote_id 但服务端 list 里没有）→ 本地跟随删除。 */
+    long localIdByRemote(long remoteId) {
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, new String[]{"id"},
+                "remote_id=? AND sync_state='clean' AND delete_pending=0",
+                new String[]{String.valueOf(remoteId)}, null, null, null)) {
+            return c.moveToFirst() ? c.getLong(0) : 0L;
+        }
+    }
+
+    long remoteIdOf(long localId) {        try (Cursor c = getReadableDatabase().query(T_INTEREST, new String[]{"remote_id"},
                 "id=?", new String[]{String.valueOf(localId)}, null, null, null)) {
             return c.moveToFirst() ? c.getLong(0) : 0L;
         }
@@ -180,6 +232,15 @@ class GapDb extends SQLiteOpenHelper {
 
     /** 拉取落地：按 remote_id 更新或插入；不覆盖本地待同步行（让本地先推）。 */
     long upsertRemoteInterest(long remoteId, String name, double lat, double lng, int rev, long createdAtMs) {
+        return upsertRemoteInterest(remoteId, name, lat, lng, rev, createdAtMs, 0, 180);
+    }
+
+    /**
+     * 拉取落地（带坐向）：坐向由服务端 `des`（「坐X° 向Y°」）解析后传入，还原原值，
+     * 不再硬编码 0/180 —— 否则换设备/重装后所有收藏点坐向全错（审客户端 §4b）。
+     */
+    long upsertRemoteInterest(long remoteId, String name, double lat, double lng,
+                              int rev, long createdAtMs, double sittingDeg, double facingDeg) {
         SQLiteDatabase db = getWritableDatabase();
         try (Cursor c = db.query(T_INTEREST, new String[]{"id", "sync_state"},
                 "remote_id=?", new String[]{String.valueOf(remoteId)}, null, null, null)) {
@@ -200,8 +261,8 @@ class GapDb extends SQLiteOpenHelper {
         v.put("name", name == null ? "" : name);
         v.put("lat", lat);
         v.put("lng", lng);
-        v.put("sitting_deg", 0);
-        v.put("facing_deg", 180);
+        v.put("sitting_deg", sittingDeg);
+        v.put("facing_deg", facingDeg);
         v.put("created_at", createdAtMs);
         v.put("remote_id", remoteId);
         v.put("rev", rev);
@@ -283,4 +344,7 @@ class GapDb extends SQLiteOpenHelper {
         }
     }
 }
+
+
+
 

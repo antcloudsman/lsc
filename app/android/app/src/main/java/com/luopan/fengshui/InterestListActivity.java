@@ -141,7 +141,13 @@ public class InterestListActivity extends Activity {
                 .setTitle(R.string.lc_interest_delete_title)
                 .setMessage(R.string.lc_interest_delete_msg)
                 .setPositiveButton(R.string.lc_interest_delete_ok, (d, w) -> {
-                    db.deleteInterest(p.id);
+                    // M4 §27③：已同步到服务端的点不能只删本地（否则会在别的设备复活）。
+                    // 有 remote_id 就先打删除墓碑，等下次同步推给服务端；没同步过的直接物理删。
+                    if (db.remoteIdOf(p.id) > 0) {
+                        db.markInterestDeletePending(p.id);
+                    } else {
+                        db.deleteInterest(p.id);
+                    }
                     reload();
                 })
                 .setNegativeButton(R.string.lc_interest_cancel, null)

@@ -83,8 +83,13 @@ final class LcApi {
         return request("GET", path, null, token);
     }
 
-    static JSONObject savePoint(String token, JSONObject point) throws Exception {
-        return request("POST", "/v2/userCollectPoint/save", point, token);
+    static JSONObject savePoint(String token, JSONObject point, String idemKey) throws Exception {
+        java.util.Map<String, String> extra = null;
+        if (idemKey != null && !idemKey.isEmpty()) {
+            extra = new java.util.HashMap<>();
+            extra.put("Idempotency-Key", idemKey);
+        }
+        return request("POST", "/v2/userCollectPoint/save", point, token, extra);
     }
 
     static JSONObject deletePoint(String token, long id) throws Exception {
@@ -108,6 +113,11 @@ final class LcApi {
     // ---------------- HTTP ----------------
 
     private static JSONObject request(String method, String path, JSONObject body, String token) throws Exception {
+        return request(method, path, body, token, null);
+    }
+
+    private static JSONObject request(String method, String path, JSONObject body, String token,
+                                      java.util.Map<String, String> extraHeaders) throws Exception {
         HttpURLConnection c = null;
         try {
             URL url = new URL(BASE + path);
@@ -119,6 +129,11 @@ final class LcApi {
             if (token != null && !token.isEmpty()) {
                 c.setRequestProperty("token", token);
                 c.setRequestProperty("Authorization", "Bearer " + token);
+            }
+            if (extraHeaders != null) {
+                for (java.util.Map.Entry<String, String> e : extraHeaders.entrySet()) {
+                    c.setRequestProperty(e.getKey(), e.getValue());
+                }
             }
             byte[] payload = null;
             if (body != null) {
@@ -159,3 +174,4 @@ final class LcApi {
         }
     }
 }
+

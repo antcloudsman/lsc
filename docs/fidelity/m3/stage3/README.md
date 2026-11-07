@@ -10,10 +10,12 @@
 | 构建 | `gradle assembleDebug`（JDK 17.0.21+9 / Gradle 8.7），`APP_DIR=app/android`，exit 0 |
 | APK sha256 | `f3f789fb64483079e3a4124b6df689b7e6192d7720f6ce0cf5f80521bf85cfbb` |
 | 设备侧校验 | `adb pull /data/app/.../base.apk` 的 sha256 与本地一致（`F3F789FB…`） |
+| D-026 补录 APK | 代码 `f17ac7a`（= `51793a9` + 分享日志文案），构建 sha256 `d21d719cdc6bcb6f11c4bd3b68f854db4221445a8e813605e31780d686bb3747`，`lastUpdateTime=2026-11-07 09:11:45` |
 | 桌面包 | 同一工作树 `scripts/build-desktop.ps1` → DESKTOP: PASS（docker cargo build，1100×780 截图 266376 B，mechanics 19 值 0 估计） |
 | 单源/文案门禁 | `tests/copy/copy_gate.py` → COPY: PASS（钉子 `contact.txt:1` / `agreement.txt:2`）；`tests/numeric/run_all.py` → PASS |
 
-> 说明：`51793a9` 之后另有一笔**只改分享日志文案**的提交（加入 `ACTION_SEND` / `D-026` 字样），UI 与行为不变；那行日志的真机补录见后续更新。本目录截图与日志均采自 `51793a9` 的 APK。
+> 说明：除 `d026-share.txt` 外，本目录截图与三份日志均采自 `51793a9` 的 APK（`f3f789fb…`）。
+> `d026-share.txt` 采自 `f17ac7a` 的 APK（`d21d719c…`）——两者只差分享日志文案，UI 与行为不变。
 
 ## 采证纪律
 
@@ -38,9 +40,10 @@
 | `i-share-wx.png` | M3-05 微信渠道 | 点 `微信` → 微信 `ACTION_SEND` resolver「发送给朋友 / 添加到微信收藏」 |
 | `i-share-circle.png` | M3-05 朋友圈渠道（D-026） | 点 `微信朋友圈` → **同一个**微信 resolver（降级）；两个渠道落同一面板，故两张截图逐字节相同（sha 相同，非复制错误） |
 | `h-sublist-after-back.png` | P1-21-A | 收藏列表子页 `lc_fav_sublist` 打开后 `input keyevent 4` → dump 为 `GONE`，日志 `LCFAV: sublist close by back-key`，前台 `MainActivity` |
-| `verify-final.log` | A–G 逐页 | 账户 / 投诉 / 关于 / 联系 / 分享 / 帮助 / 用户协议 / 离线态全量输出 |
-| `verify2-final.log` | H–K | P1-21-A / 分享渠道 / 联系我们 / 投诉离线 |
-| `loading-probe.log` | M3-06 加载中 | 打开后 200ms 截图 + 1s 后 dump |
+| `verify-final.txt` | A–G 逐页 | 账户 / 投诉 / 关于 / 联系 / 分享 / 帮助 / 用户协议 / 离线态全量输出 |
+| `verify2-final.txt` | H–K | P1-21-A / 分享渠道 / 联系我们 / 投诉离线 |
+| `loading-probe.txt` | M3-06 加载中 | 打开后 200ms 截图 + 1s 后 dump |
+| `d026-share.txt` | M3-05 / D-026 | `f17ac7a` 真机补录：微信 `channel=WEIXIN`、朋友圈 `channel=WEIXIN_CIRCLE`，两行都是 `ACTION_SEND -> wechat resolver (D-026 downgrade)`，前台 `HwResolverActivity`；正文与 URL 逐字 |
 
 ## 分享正文出处（逐字）
 
@@ -56,3 +59,4 @@
 - 投诉反馈表单字段级 bounds / 字号未按 dump 逐项对齐（Stage 2 遗留，结构与文案已 1:1）；
 - `测绘资质` 按 D-025 不跳转（日志 `measure prove page deferred by D-025`）；
 - 帮助中心正文为远端第三方内容，只判「加载成功/失败可见」。
+

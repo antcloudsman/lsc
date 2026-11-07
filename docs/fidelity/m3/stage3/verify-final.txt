@@ -1,0 +1,86 @@
+===== A 账户设置 (item1) =====
+  tap [20,192][155,306] -> 88,249
+  tap [346,1018][562,1097] -> 454,1058
+fg= mResumedActivity: ActivityRecord{2119d89 u0 com.luopan.fengshui/.M3PageActivity t1026058}
+texts=|||||返回|账户设置|本页的登录/绑定/注销需服务端账号体系支持，当前未接入（D-022）——以下为原版界面文案。||||您当前未登录|立即登录|
+ids=lc_m3_title=[[152,151][1208,233]] lc_m3_avatar_img=[[20,376][140,496]] lc_m3_avatar=[[20,496][1208,605]] lc_m3_login=[[20,605][1208,710]] lc_m3_dep_note=[[0,254][1228,376]]
+  tap [20,605][1208,710] -> 614,658
+after-login-texts=|||||返回|账户设置|本页的登录/绑定/注销需服务端账号体系支持，当前未接入（D-022）——以下为原版界面文案。||||您当前未登录|立即登录|登录需服务端账号体系，当前未接入（D-022）|
+back-fg= mResumedActivity: ActivityRecord{669e231 u0 com.luopan.fengshui/.MainActivity t1026058}
+===== B 投诉反馈 (item2) =====
+  tap [20,192][155,306] -> 88,249
+  tap [346,1207][562,1286] -> 454,1246
+fg= mResumedActivity: ActivityRecord{a3a29cf u0 com.luopan.fengshui/.M3PageActivity t1026059}
+texts=|||||返回|投诉反馈|本页的提交需服务端工单接口，当前未接入（D-022）——以下为原版界面文案。||||问题反馈||订单投诉|未选择任何订单|
+  tap [20,400][1208,477] -> 614,438
+form-texts=|||||返回|投诉反馈|本页的提交需服务端工单接口，当前未接入（D-022）——以下为原版界面文案。|||申请原因||联系方式|请输入您的联系方式|问题描述|请输入详细问题描述，以便我们提供更好的服务|问题截图||确认提交的信息准确无误，如果提交错误信息可能导致问题无法有效解决|提交||
+  tap [20,1445][1208,1570] -> 614,1508
+validate-status=[请先填写申请原因、联系方式与问题描述]
+edit-count=3
+  tap [20,472][1208,610] -> 614,541
+  tap [20,706][1208,844] -> 614,775
+  tap [20,940][1208,1078] -> 614,1009
+  tap [20,1445][1208,1570] -> 614,1508
+submit-status=[提交失败：服务端未接入（D-022），未发送请求]
+back-fg= mResumedActivity: ActivityRecord{a3a29cf u0 com.luopan.fengshui/.M3PageActivity t1026059}
+===== C 关于我们 (item3) =====
+  tap [20,192][155,306] -> 88,249
+  tap [346,1396][562,1475] -> 454,1436
+fg= mResumedActivity: ActivityRecord{9b88677 u0 com.luopan.fengshui/.M3PageActivity t1026060}
+texts=|||||返回|关于我们|||三维山水全景地图|重庆新知空间科技有限公司|测绘资质|v1.6.1|APP备案编号：渝ICP备20003923号-12A| 《用户协议》 | 《隐私政策》 |
+  tap [20,714][1208,806] -> 614,760
+agreement-fg= mResumedActivity: ActivityRecord{5cbbf0c u0 com.luopan.fengshui/.M3WebActivity t1026060} title=[用户协议] status=[none]
+  tap [20,146][152,238] -> 86,192
+back-from-agreement-fg= mResumedActivity: ActivityRecord{9b88677 u0 com.luopan.fengshui/.M3PageActivity t1026060}
+  tap [20,806][1208,898] -> 614,852
+privacy-fg= mResumedActivity: ActivityRecord{3052c8a u0 com.luopan.fengshui/.M3WebActivity t1026060} title=[隐私政策]
+  tap [20,146][152,238] -> 86,192
+back-from-privacy-fg= mResumedActivity: ActivityRecord{9b88677 u0 com.luopan.fengshui/.M3PageActivity t1026060}
+  tap [20,622][1208,714] -> 614,668
+beian-open-fg= mResumedActivity: ActivityRecord{af3630c u0 com.android.chrome/org.chromium.chrome.browser.ChromeTabbedActivity t1025997}
+beian-back-fg= mResumedActivity: ActivityRecord{9b88677 u0 com.luopan.fengshui/.M3PageActivity t1026060}
+  tap [20,438][1208,530] -> 614,484
+prove-click-fg= mResumedActivity: ActivityRecord{9b88677 u0 com.luopan.fengshui/.M3PageActivity t1026060}
+prove-logs=11-07 08:37:19.759  3895  3895 D LCM3    : measure prove page deferred by D-025
+===== D 联系我们 (item4) =====
+  tap [20,192][155,306] -> 88,249
+  tap [346,1585][562,1664] -> 454,1624
+fg= mResumedActivity: ActivityRecord{22edf93 u0 com.luopan.fengshui/.M3PageActivity t1026061}
+texts=|||||返回|联系我们|||邮箱地址|account@xinzhi.space|复制邮箱|
+  tap [20,438][1208,530] -> 614,484
+copy-logs=11-07 08:37:38.979  4924  4924 D LCM3    : copy mail ok text=account@xinzhi.space
+clip=
+back-fg= mResumedActivity: ActivityRecord{6111a22 u0 com.luopan.fengshui/.MainActivity t1026061}
+===== E 推荐给好友 (item5) =====
+  tap [20,192][155,306] -> 88,249
+  tap [346,1774][616,1853] -> 481,1814
+fg= mResumedActivity: ActivityRecord{6c6cc u0 com.luopan.fengshui/.M3PageActivity t1026062}
+texts=|||||返回|推荐给好友|||选择要分享到的平台||||微信|||微信朋友圈|取消分享|
+ids=lc_m3_share_wx=[[20,374][232,629]] lc_m3_share_circle=[[232,374][444,629]] lc_m3_share_cancel=[[20,653][1208,769]]
+  tap [20,374][232,629] -> 126,502
+wx-fg= mResumedActivity: ActivityRecord{b8ed2de u0 com.huawei.android.internal.app/.HwResolverActivity t1026062}
+wx-logs=11-07 08:37:59.321  5286  5286 D LCM3    : share 微信 channel=WEIXIN direct -> resolver, text=我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~ url=https://sj.qq.com/appdetail/space.xinzhi.globe
+back-to-share-fg= mResumedActivity: ActivityRecord{6c6cc u0 com.luopan.fengshui/.M3PageActivity t1026062}
+  tap [232,374][444,629] -> 338,502
+circle-fg= mResumedActivity: ActivityRecord{a1d4c6a u0 com.huawei.android.internal.app/.HwResolverActivity t1026062}
+circle-logs=11-07 08:38:07.506  5286  5286 D LCM3    : share 微信朋友圈 channel=WEIXIN_CIRCLE direct -> resolver, text=我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~ url=https://sj.qq.com/appdetail/space.xinzhi.globe
+  tap [20,653][1208,769] -> 614,711
+cancel-fg= mResumedActivity: ActivityRecord{6e53f6c u0 com.luopan.fengshui/.MainActivity t1026062}
+===== F 帮助中心 / 用户协议 (item6/item7) =====
+  tap [20,192][155,306] -> 88,249
+  tap [346,1963][562,2042] -> 454,2002
+help-fg= mResumedActivity: ActivityRecord{5633258 u0 com.luopan.fengshui/.M3WebActivity t1026063} title=[帮助中心] status=[none(hidden)]
+help-loaded status=[none]
+  tap [20,146][152,238] -> 86,192
+help-back-fg= mResumedActivity: ActivityRecord{6510247 u0 com.luopan.fengshui/.MainActivity t1026063}
+  tap [20,192][155,306] -> 88,249
+  tap [346,2152][562,2231] -> 454,2192
+agreement-fg= mResumedActivity: ActivityRecord{ee813e6 u0 com.luopan.fengshui/.M3WebActivity t1026064} title=[用户协议] status=[none(hidden)]
+agreement-loaded status=[none]
+  tap [20,146][152,238] -> 86,192
+agreement-back-fg= mResumedActivity: ActivityRecord{3a88861 u0 com.luopan.fengshui/.MainActivity t1026064}
+===== G 离线失败态 =====
+  tap [20,192][155,306] -> 88,249
+  tap [346,1963][562,2042] -> 454,2002
+offline-fg= mResumedActivity: ActivityRecord{f7158d2 u0 com.luopan.fengshui/.M3WebActivity t1026065} status=[加载失败：net::ERR_INTERNET_DISCONNECTED
+原版同样依赖远端服务（D-023），离线时两边都不可用；可点「重试」。] retry=[[0,412][1228,479]]

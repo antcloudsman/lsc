@@ -681,6 +681,19 @@ verify-final.log / verify2-final.log / loading-probe.log / d026-share.log → �
 修法（二选一，客户端做）：`git add -f docs/fidelity/m3/stage3/*.log`，或在 `.gitignore` 加 `!docs/fidelity/m3/stage3/*.log` 白名单；
 修完把 `SHA256SUMS.txt` 的 sha 与真实文件对齐。
 
+**已修复复验（`37a7cc0`，2026-11-07 09:16）**：客户端用 `git add -f` 把 4 份日志强制入库，未动 `.gitignore`。
+我把 `docs/fidelity/m3/stage3/` 从 `37a7cc0` 用 `git archive | tar -x` 导出成真实文件后逐条比对：
+
+```
+文件数 = 19（13 PNG + 4 log + README.md + SHA256SUMS.txt）
+SHA256SUMS.txt 条目 checked=17 ok=17 bad=0   （sha256 与字节数同时比对）
+```
+
+`d026-share.log` 内容与本机实测一致：两个渠道 `channel=WEIXIN` / `channel=WEIXIN_CIRCLE`，
+`ACTION_SEND -> wechat resolver (D-026 downgrade)`，正文与 URL 逐字，前台均为 `HwResolverActivity`。
+**证据包硬条件已满足**；`verify-final.log` 里那条旧措辞 `direct -> resolver` 属历史记录，以 `d026-share.log` 为准，不影响判词。
+
+
 
 
 

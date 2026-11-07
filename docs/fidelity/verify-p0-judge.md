@@ -1597,6 +1597,53 @@ Invoke-WebRequest -Uri http://127.0.0.1:8787/v2/userCollectPoint/save -Method PO
   -Body '{"name":"X","lng":116.4,"lat":39.9,"type":0}'    # 连发两次，比 data.point.id
 ```
 
+## 28. save 幂等复验（`047b2be`，2026-11-07 21:05）——**行为全过，但这是分支构建，不能直接当关账依据**
+
+### 28.1 先报环境事实：容器现在跑的**不是 develop**
+
+```
+develop   backend/src/server.js  sha256 = 7e2808a0ce4c   （还是 §26 那一版，无幂等）
+容器      /app/src/server.js     sha256 = 17e97436f557
+容器      /app/src/db.js         sha256 = f54c0e05983f
+分支 047b2be:backend/src/server.js = 17e97436f557  SAME
+分支 047b2be:backend/src/db.js     = f54c0e05983f  SAME
+git merge-base --is-ancestor 047b2be origin/develop  → exit 1（未合入）
+```
+
+即：容器是 `feature/服务端-save-idem`（`047b2be`）重建的，**不是 develop 构建**。
+按本轮纪律「证据要指向正确构建体」，下面的结果只能算**分支级预检**；要关账必须先把 `047b2be` 合进 develop、重建容器，再用同一段重跑。
+
+### 28.2 判据 A（幂等）—— 我自己跑，全过
+
+用新账号 `idm2wpqek`，同一 `Idempotency-Key = idem2-wpqek`：
+
+```
+1) 同 key 同内容 第1次 → 201  id=259  deduplicated=false
+   同 key 同内容 第2次 → 200  id=259  deduplicated=true      ← 同 id + 200，符合判据
+2) 同 key 不同内容 第3次 → 200  id=259  name=IDM2-A-wpqek    ← 仍是首行、内容未被改（我最担心的坑，处理正确）
+3) 换新 key 同内容      → 201  id=260                        ← 新键即新行，符合
+4) 不带 key 连发两次    → 201/201  id=261/262                ← 无键时不去重，符合契约
+```
+
+库级核对（`node:sqlite` 只读）：
+
+```
+ROWS  : id=259 idem_key=idem2-wpqek / id=260 idem_key=idem2-wpqek-b   （同名两条，键不同，符合判据 3）
+DUP_KEYS = []                                                          ← 同一 key 只有一行
+IDX   : CREATE UNIQUE INDEX idx_favorites_user_idem ON favorites(user_id, idem_key) WHERE idem_key IS NOT NULL
+MIGRATIONS : 001_init … 006_favorites_idem
+/health : schema=006_favorites_idem
+```
+
+偏索引 `WHERE idem_key IS NOT NULL` 是对的——否则「不带键」的多次新建会互相撞唯一约束，直接建不出第二行（判据 4 就会失败）。
+
+### 28.3 结论
+
+- **判据 A：分支级通过**（4 条子用例 + 库级唯一索引 + 迁移 006）。
+- **关账前置未满足**：`047b2be` 不在 develop，容器也不是 develop 构建。**合并 + 重建 + 我复跑 §28.2** 之后才计入。
+- 给客户端的判读口径（与服务端说明一致）：**重放是 200 + `deduplicated:true`**，判「是否新建」别看 201。
+
+
 
 
 

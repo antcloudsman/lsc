@@ -1,7 +1,7 @@
 # M6 第六轮冲刺 · 产品判据框架（8 项缺陷 + 审计 + 竞品）
 
 - 作者：LC产品｜评审：技术总监
-- 日期：2026-11-08｜版本：**v0.6（第 3 条 `pointer` 按 D1/D2/D3 落地并经审地图复核；第 8 条按 `6aa6614` 改判为「行为差异、带 VIP 门槛」，VIP 口径待总监裁）**
+- 日期：2026-11-08｜版本：**v0.7（落总监三条裁定：`last3dWarn` 拆分、注入先清 DEM 缓存、`is3D` 内存态两态验收；§0 增「上机前三句」）**
 - 基线：`develop` @ `d1467ea`（M4 关账）
 - 上游：用户 2026-11-08 提出 8 项人工实测缺陷（编号见 §1）；技术总监 M6 立项 + 6 阶段
 - 定位：**本文件只给判据框架与口径，不写结论**。取证结论由 LC逆向/LC测试/LC客户端/LC地图 在 Stage 1 回填，我按回填结果冻结判据。
@@ -13,6 +13,8 @@
 1. **帮助中心（第 5 条）只写「当前 APP 真实有的功能」**：未实现或未取证的（贴地、3D 等）**不许写成说明书**。判法：文档每条都要能对上「可复现路径 + 当前实现状态」；状态为「未实现 / 未取证」的，**不进正文**，只在文末「已知限制」列出。**文档与实现对不上，比没有文档更糟。**
 2. **第 3 条两个符号（当前位置 / 屏幕中心）不许自画**：原版是 drawable 还是 canvas 绘制，等逆向给资源名与尺寸；拿不到 → 挂「待素材」，**不用字符或近似图顶替**。
 3. **竞品分析（用户在 M6 提的第 3 项）放阶段 5，我主笔、LC审地图 补技术侧**：凡结论**必带来源链接**；「已定结论」与「我的建议」**分两节写**，不许混排。
+
+4. **上机前三句必须先跑**（总监 2026-11-08 定，两起现场事故的教训）：`pm path` 的 **size + sha**（防测了别人的包、`a92438d3` 那次）、`getState().uiMode`（防 App 停在罗盘态、浮层吃掉拖拽，2a/2b 因此全是零位移）、`MARKET_RESTORED`（防市场未恢复）。**缺任一句的"通过"不进口径**。
 
 另：本文件按 `checksheet.md` §10.1，**一律定点 edit**，不整文件重写。
 
@@ -31,7 +33,7 @@
 | **5** | **帮助中心**改成带插图的完整操作文档 | 不依赖原版（是本项目自己的文档）；**但受 §0-1 约束** | 当前 APP 真实功能面（我 + 客户端） | 条目覆盖率：每条功能一行、能复现 | **待回填**（见 §2 目录骨架） |
 | **6** | **指南针按钮 = 让偏转地图立即回正北**，不是切换显隐 | **已定案（逆向 `2597222`）**：**是两个不同控件**——①右列「指针开关」= `MainViewModel.h0` 的切换型开关（P1-33-C 成立、**不改**）；②「罗盘复位」= `I0(g)` @:684 → `g.I()`，动作型。复位 = `I()` **12 项模式/盘面参数** + JS `compassUI.reset()` 里的 **`this.map.resetNorth({})`** | 右列 4 开关现状（`P1-33C-switch-semantics.md`）+ `resetCompass()` | **判据（总监 2026-11-08 改判）**：`resetCompass()` 形状 = 清 sitMode/bearingBeforeSit/groundMode/pitchBeforeGround → 若在 3D 先 `setMode("2d")` → **bearing = 0（等价 `map.resetNorth`）** → `applyTransform()/render()/updateHud()`；**不碰 `center`、不碰 `zoom`**（`I()` 里无 `setCenter/setZoom`，`setZoom()` 不存在也不需要）；**判据只要求「画面 bearing 归 0；3D 下退 2D、倾斜随之消失」，不要求 pitch 单独归零**（`resetNorth` 只归 bearing） | **已冻结**（两控件已分、复位口径已定） |
 | **7** | **罗盘贴地**效果未实现 | **已证（逆向 `2597222`）**：原版**有这颗按钮、名字就叫「贴地」**——`CompassToolsKt;->L0` @:810，埋点 `name="贴地"` @:820，`g.k0(!g.D())` 翻转 `0x8` 位 → `setCompassMode(mask)` → web `setGround()` → **`compass_ground` raster 图层显隐 + `setCoordinates`**。通道 = **web 层 2D `<canvas>` 作 `canvas` source + 四角经纬度投影成 `raster`**（原生 `CompassView` 无 Matrix/Camera/透视，**不是**它；`drape` 只作用于地形，**同构的只是「canvas→纹理」**，几何不同构） | 当前实现：`toggleGround()` 推 `pitch=60°` + 机位距离压 35%（**不是原版效果**） | **判据拆两件**：①**按钮存在与文案 = 已证、1:1、不改名不删**（左列 6 项文案全对）；②**效果 = 我方未实现**，须按 canvas source + 四角投影重做。**缺口（补齐前不许写「已修复」）**：原版 `getCoordinates()` 四角算法**未取证**（屏幕四角 `unproject` 还是盘面半径换算的地面范围） | **已冻结（存在性与文案）**；**效果 = 未实现**，实现路径待四角算法取证 |
-| **8** | 右侧最下 **3D 按钮功能未正确实现** | **已取证（逆向 `6aa6614`）**：点击链路 `CompassToolsKt;->T0(vm, activity)` @:1245 → `track("compass_ck","name","3D")` @:1255 → `vm.D3(ctx,null)` → `MainViewModel.C3(ctx,flag=null)` @:3885；`C3()` 内**VIP 门槛**：`if (!is3D() && !AccountManager.getCurrentAccount().isVip() && AppConfig.getOpen3dTimes() > 0) { OpenVipActivity.a(ctx,"3D"); return }`；其后 `target = flag ?: !is3D()` → `y2(target)` 写状态位 → `switch3D(controller, is3D(), **false**)`（**anim=false**）；进入后 `setOpen3dTimes(+1)`，退出走 `controller?.c()` | 我方 `toggle3D()`（自拟名）+ `#gl` 层（`map.html`） | **改判：行为差异，不是渲染 bug**——原版 3D 是 **VIP 门槛 + 免费次数**功能（首次免费放行、每次成功进入 +1，次数用尽后非 VIP 只跳 VIP 页、不进 3D）；我方**无门槛、无计数**，「点 3D 一定进 3D」。另 `anim=false` ⇒ **不许加过渡动画**（我方 `#gl` 无 `transition`、`setMode()` 直切 `display`，**已满足**）。**未取证**：`switch3D` 的 JS 侧动作、`controller.c()` 退出收尾 | **已冻结（行为层）**；**VIP 门槛口径待总监裁**（①随 M2 的 VIP DI 走、登记「我方无 VIP 门槛、3D 恒可用」为有意差异；②补 `is3D`+`open3dTimes`+VIP 判定与跳转 = 新增 VIP 子系统，M6 不吞）；**另我方 3D 状态不持久**（`map.html` 页面级 `var mode="2d"`、`onPageFinished` 重放项无 3D ⇒ 重载后静默回 2D），与 VIP 无关、须单独修 |
+| **8** | 右侧最下 **3D 按钮功能未正确实现** | **已取证（逆向 `6aa6614`）**：点击链路 `CompassToolsKt;->T0(vm, activity)` @:1245 → `track("compass_ck","name","3D")` @:1255 → `vm.D3(ctx,null)` → `MainViewModel.C3(ctx,flag=null)` @:3885；`C3()` 内**VIP 门槛**：`if (!is3D() && !AccountManager.getCurrentAccount().isVip() && AppConfig.getOpen3dTimes() > 0) { OpenVipActivity.a(ctx,"3D"); return }`；其后 `target = flag ?: !is3D()` → `y2(target)` 写状态位 → `switch3D(controller, is3D(), **false**)`（**anim=false**）；进入后 `setOpen3dTimes(+1)`，退出走 `controller?.c()` | 我方 `toggle3D()`（自拟名）+ `#gl` 层（`map.html`） | **改判：行为差异，不是渲染 bug**——原版 3D 是 **VIP 门槛 + 免费次数**功能（首次免费放行、每次成功进入 +1，次数用尽后非 VIP 只跳 VIP 页、不进 3D）；我方**无门槛、无计数**，「点 3D 一定进 3D」。另 `anim=false` ⇒ **不许加过渡动画**（我方 `#gl` 无 `transition`、`setMode()` 直切 `display`，**已满足**）。**未取证**：`switch3D` 的 JS 侧动作、`controller.c()` 退出收尾 | **已冻结（行为层）**；**VIP 口径定案（登记 DI、不补 VIP 子系统）**：登记「我方无 VIP 门槛、3D 恒可用」为**有意差异**，注明原版带门槛作依据；**3D 状态持久性判据（总监 2026-11-08 裁定③）**：`is3D` 用**纯内存字段**（对齐原版 Compose `MutableState`）、**禁写 `SharedPreferences`**、`onPageFinished` 与 `setRoadNet` 并列重放 ⇒ 验收两态：**①Activity 重建/网页重载后仍是 3D（修这个 bug）；②杀进程冷启回 2D（不许多做持久化）**。客户端 `b62218c` 已落地（动作后 **700ms 回读 `getState().mode`**、**不做乐观赋值**——`initGL()` 失败回落 2d 时记成“3D 开着”会比现状更糟），**待真机复验** |
 
 ### 1.1 第 6 条：**已定案为 B（两个控件）**（逆向 `2597222`，2026-11-08）
 
@@ -62,7 +64,8 @@
 |---|---|---|---|
 | **高（本轮很可能唯一无法关账的）** | **第 3 条两个符号**（当前位置 / 屏幕中心） | **未取证**：原版 drawable / 绘制方式均无证据 | 按「未取证挂起」记账，**不自画、不近似替代**；M6 关账时如实写「第 3 条未关账：原版符号未取证」，不写成通过 |
 | 中 | 第 7 条贴地**效果** | 按钮存在性与文案已证 1:1；**效果未实现**，缺 `getCoordinates()` 四角算法 | 记「未实现」（不写「已修复」）；若 M6 内取不到四角算法，随 M7 做 |
-| 中 | 第 8 条 3D 三态失败可读 | `dem-load` 死分支**已裁定删除**，判据只认 `webgl-unavailable`/`dem-missing`/`texture-fail` | 三态各自触发条件必须可复现；`webgl-unavailable` 按代码路径（`initGL()` 返回 false）登记、**不硬造** |
+| 中 | 第 8 条 3D 三态失败可读 | `dem-load` 死分支**已裁定删除**，判据只认 `webgl-unavailable`/`dem-missing`/`texture-fail`；**`dem-edge`/`dem-edge-mesh` 已裁定移出 `last3dError`、另开 `last3dWarn`**（缠到地形边缘是正常操作，混进失败字段会把正常使用读成 3D 失败） | 三态各自触发条件必须可复现；`webgl-unavailable` 按代码路径（`initGL()` 返回 false）登记、**不硬造**；成功态 = `last3dError == null`、**`last3dWarn` 非空不影响成功判定**；`dem-missing` 注入**必须先清 `DEM`/`DEM_PENDING`/`DEM_ORDER` 再 `ensurePatch(true)`**，否则命中 `demTile` 缓存、必假失败 |
+| 低 | 第 8 条 3D 状态持久性 | 客户端 `b62218c`：内存字段 + `onPageFinished` 重放 + 700ms 回读，**禁 prefs** | 两态必须都测：重载保持 3D（修 bug）／冷启回 2D（不许多做）；只测前者不算过 |
 | 低 | 第 6 条复位 | 已定案、有硬证据（`3d\|45\|106.7221\|12` → `2d\|0\|106.7221\|12\|0`） | — |
 
 > **给用户的话（直说）**：第 3 条「当前位置符号 / 屏幕中心符号」如果逆向始终给不出原版出处，**这一条 M6 不会假装修好**——宁可关账时写明「未取证、未做」，也不自画两个符号糊过去。我们的判据是「能从原版反查出处」，写不出出处的一律不进实现。
@@ -104,7 +107,13 @@
 
 **我方的两处（与 VIP 无关，该修）**：`#gl` 无 `transition`、`setMode()` 直切 `display` ⇒ **动画这条已满足**；但 3D 状态是 `map.html` 的页面级 `var mode="2d"`，`onPageFinished` 重放清单里只有 `applyMapUiMode`/`applyPendingMapView`/`setRoadNet`/`syncAttributionBar`，**没有 mode/3D** ⇒ 任何一次 WebView 重载后静默回 2D，而原生那颗 3D 按钮无选中态 ⇒ 用户会以为「3D 自己关了」。这是**我方内部不自洽**，不因 VIP 裁不裁而消失。
 
-**待总监裁**：①随 M2 的 VIP DI 走（登记「我方无 VIP 门槛、3D 恒可用」为有意差异）；②补 `is3D` + `open3dTimes` + VIP 判定与跳转（**新增 VIP 子系统，M6 不吞**）。
+**裁定已下（总监 2026-11-08）**：VIP 门槛**登记 DI、不补 VIP 子系统**（「我方无 VIP 门槛、3D 恒可用」= 有意差异）；`is3D` 用**纯内存字段**、**禁写 prefs**（原版落 Compose `MutableState`：进程死丢、Activity 重建不丢），`onPageFinished` 与 `setRoadNet` 并列重放。
+
+**验收两态（新增，都不贵，缺一不可）**：
+1. **Activity 重建 / 网页重载 → 仍是 3D**（修的就是这个 bug，修前必回 2D）；
+2. **杀进程冷启 → 回 2D**（原版行为；若此刻仍是 3D，说明有人加了持久化，按缺陷/DI 判，别只测第 1 条就签收）。
+
+**实现口径**：客户端 `b62218c` 走「**只从网页回读、不做乐观赋值**」——动作后 **700ms** 读 `getState().mode`（`toggle3D()` 要拉 DEM 与贴面瓦片，立刻读会读到切换前的值），`initGL()` 失败回落 2d 时 `is3D` 保持 false。**待真机复验**。
 
 
 
@@ -147,7 +156,7 @@
 | 第 6 条冲突 | **已定案 B（两控件）**：复位=动作型、指针开关=切换型，P1-33-C 不动（§1.1） |
 | 帮助中心骨架 + 边界口径 | **已出（§2）** |
 | 竞品报告结构 + 来源纪律 | **已出（§3）** |
-| 8 项判据冻结 | **1 已冻结**、**6 已定案**（逆向 `2597222`）｜**8 已冻结（行为层）**（`6aa6614`：VIP 门槛+免费次数+`anim=false`；**VIP 口径待总监裁**，另我方 3D 状态不持久须单独修）｜**3 拆两半**：两个符号「未取证挂起」、`pointer` 条件已冻结（`1fa2dce`，§1.4）、`refreshPointerVisibility()` 已落地并经审地图复核（`d28cb9f`，红像素 663/1240/339）｜**7 存在性与文案已冻结、效果未实现**（缺四角算法）｜**2 判据已改强**（分轴符号 + `bearing=330` 镜像档），地图侧自测 2a 四方向同向 / 2b 0.0°·30.0°·90.0°，**待测试正式复跑**｜**4 待客户端差异初表** |
+| 8 项判据冻结 | **1 已冻结**、**6 已定案**（逆向 `2597222`）｜**8 已冻结（行为层+持久性）**（`6aa6614` + 总监三条裁定：VIP 登记 DI／`last3dWarn` 拆分／`is3D` 内存态两态验收，客户端 `b62218c` 待真机复验）｜**3 拆两半**：两个符号「未取证挂起」、`pointer` 条件已冻结（`1fa2dce`，§1.4）、`refreshPointerVisibility()` 已落地并经审地图复核（`d28cb9f`，红像素 663/1240/339）｜**7 存在性与文案已冻结、效果未实现**（缺四角算法）｜**2 判据已改强**（分轴符号 + `bearing=330` 镜像档），地图侧自测 2a 四方向同向 / 2b 0.0°·30.0°·90.0°，**待测试正式复跑**｜**4 待客户端差异初表** |
 
 ---
 
@@ -155,6 +164,7 @@
 
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
+| v0.7 | 2026-11-08 | **落总监三条裁定进判据**：①`dem-edge`/`dem-edge-mesh` 移出 `last3dError`、另开 `last3dWarn`（拖到地形边缘是正常操作，混字段会把正常使用读成 3D 失败）⇒ 成功态 = `last3dError == null`、`last3dWarn` 非空不影响判定；②`dem-missing` 注入**必须先清 `DEM`/`DEM_PENDING`/`DEM_ORDER` 再 `ensurePatch(true)`**（否则命中 `demTile` 缓存必假失败）；③`is3D` 用内存字段、**禁 prefs**，新增两态验收（重载保持 3D／冷启回 2D），客户端 `b62218c`「700ms 回读、不乐观赋值」待真机复验；另 §0 增第 4 条口径「上机前三句」（`pm path` size+sha、`getState().uiMode`、`MARKET_RESTORED`），VIP 口径记为「登记 DI、不补 VIP 子系统」 | LC产品 |
 | v0.6 | 2026-11-08 | **两处按复验结果定稿**：①第 3 条判据 ④ 换成 D1/D2/**D3**（D3 = `toggleSwitchState()` 只改状态与图标、不刷新可见性，由审客户端 `9961c7b` 独立复验补出），落地件 `d28cb9f`、`refreshPointerVisibility()` 四入口同调、无第五处自算；红像素判据写「隐藏态 ≈ 底图基线 339±噪声，不得出现指针形态（+577 量级）」，**不写「0 残留」**；新增 ⑥ 前置风险（`#needle` 一删，`js("toggleNeedle()")` 那条分支成死控件，须一并裁去留）；②**第 8 条改判**：按逆向 `6aa6614` 从「渲染 bug」改为「**行为差异**」——原版带 VIP 门槛与免费次数、`anim=false`，新增 **§1.5** 写证据表 + 三条验收口径 + 我方状态不持久（重载静默回 2D）；VIP 口径两条路**待总监裁**、M6 不吞 | LC产品 |
 | v0.5 | 2026-11-08 | **撤掉 v0.4 里「客户端等价推导成立」这句提前签收（审地图核出反例）**：①第 3 条判据 ④ 改写为「**等价尚未成立**」并列出两处代码缺陷——`pointerView` 可见性只吃 `on && isShowPointer()`、`compassMapMode` 不参与（纯地图态缺 `q&&!p` 门控）；`applyCompassHiddenVisuals()` 未含 `pointerView`（点「隐藏」后指针图残留）；修法 `refreshPointerVisibility()` 统一三条件、四个入口同调，**待复验**；②§1.4 下游表里「`0e40621` 不需回退」订正为「不用 revert、**但必须补门控**，未复验不得记达成」；③§4 冻结进度同步加「实现待复验」 | LC产品 |
 | v0.4 | 2026-11-08 | **撤回 v0.3 的 `pointer`「恒隐藏」结论（逆向 `1fa2dce`）**：①第 3 条表格里「`Z/Y` 零调用点 ⇒ 恒 false ⇒ 冗余开关」**整段替换**为按原版条件落地（纯地图态隐藏／实景态与地图模式关取 `h0`），**A/B 选择题作废**、不登记该条 DI；②新增 **§1.4** 记撤回错因（检索整份排除 `ui/controller/g.smali`）与五处下游变更（含我方 `0e40621` 不需回退（**已被 v0.5 订正为「须补门控」**）、`#needle` 与 `pointer.png` 是两件事）；③第 3 条风险标注改为「分两半：符号高／pointer 非风险项」；④§4 冻结进度按 `1fa2dce` 与第 2 条改强后的实测更新 | LC产品 |

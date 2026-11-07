@@ -147,4 +147,24 @@ PY
 
 ---
 
+## 7. 「退出登录」节点树更正（我按 XML 逐层父链核过，不是转述）
+
+```
+L0 android.widget.TextView  [523,2541][706,2578] clickable=false  text=退出登录
+L1 android.view.View        [39,2495][1189,2578] clickable=true   ← 真正可点的容器（高 83）
+   ├─ android.widget.TextView [523,2541][706,2578] clickable=false   （L0）
+   └─ android.widget.Button   [39,2512][1189,2578] clickable=false   （1150×66，视觉底）
+L2 android.view.View        [0,265][1228,2578]  clickable=false
+L5 androidx.compose.ui.platform.ComposeView [0,0][1228,2578] clickable=false
+```
+
+**三条更正（针对本轮群里的表述）：**
+1. **Button 不是文本的父节点，而是兄弟**：两者同属 L1；Button `[39,2512][1189,2578]` = 1150×66、`clickable=false`。
+2. **「文本和父节点都 clickable=false，所以点击由上层 Compose 处理」不成立**：L1 就是 `clickable=true`。正确说法是——「我的」的 clickable 在节点自身，退出登录的 clickable 在其父容器；两页都不是「没有可点节点」。
+3. **红条高度需要一次口径决定**：Button 节点按 dump 是 **66**（2512..2578）；像素上红底从 2512 一直画到 **2635**（124px），2640 之后才是 `#F0F3F7`。即红条**越过了 dump 的内容帧 2578**，这属于「窗口/导航区边界」问题，不是谁量错：
+   - 若要判「控件几何」→ 用 dump 的 **1150×66**；
+   - 若要判「看起来一致」→ 需先确认原版是否 edge-to-edge（红条是否延伸到导航区），再决定 66 还是 124。**这条我不替总监选，标「待定口径」。**
+
+---
+
 证据：`docs/fidelity/m3/{contact,account-setting,complaint,about}.xml/.png`（原版基线，只读）；`docs/fidelity/m3-text/contact.txt`；`M3PageActivity.java`（`176f1dc`:97/148-149/684-715）；python 采样输出见 §1 各表括号内坐标。本轮未占设备。

@@ -199,6 +199,7 @@ var bearingBeforeSit = 0;
 var contourOn = false;         // 等高线（3D 高程着色叠加）
 var groundMode = false;        // 贴地：低机位 + 高俯仰
 var pitchBeforeGround = 45;
+var last3dError = null;         /* M6 第 8 条：最近一次 3D 失败原因（webgl-unavailable / dem-missing / texture-fail），成功时清空；getState() 可读，原生侧亦可由 onConsoleMessage 捕获 */
 var drape = "img";             // 3D 贴面层（D-005：默认影像；ter 仍可用按钮切）
 var pick = null;               // 3D 立向点 {lng,lat,elev,world,heading}
 var pickEl = null;
@@ -1462,6 +1463,7 @@ function setMode(m) {
     mapEl.style.transform = "";
     if (!initGL()) {
       console.log("LC3D ERROR webgl-unavailable");
+      last3dError = "webgl-unavailable";
       setHud("WebGL 不可用，已退回 2D");
       setMode("2d");
       return;
@@ -1750,6 +1752,36 @@ function toggleGround() {
   updateHud();
 }
 
+/* M6 第 6 条：「罗盘复位」的地图侧一半。
+ * 原版语义（LC逆向 §6，DEX 锚点 CompassToolsKt.I0 → g.I → MapWebApiKt.resetCompass）：
+ *   setMode(0) + setOpacity(100) + setScale(0) + setRotation(0) + map.resetNorth({})
+ *   另有 k0(false)（字段 d / D()）＝「贴地」关。
+ * 原版 I() 里【没有】setCenter / setZoom ⇒ center 与 zoom 一律不复位（技术总监裁定）。
+ * 本函数只做地图侧；盘面（CompassView）由原生那一半负责，调用顺序：先盘面、后本函数。 */
+function resetCompass() {
+  try {
+    if (groundMode) toggleGround();   /* 原版复位含「贴地=关」；走既有开关以还原 pitchBeforeGround，不裸写 pitch */
+    /* 原版复位首句 setMode(0)；无论其语义是 2D/3D 切换还是显示模式，倾斜必须消失，
+     * 故当前在 3D 就先退出（走 setMode 以同步 #btn_3d 文案与 #pitchRange 滑块）。 */
+    if (mode === "3d") setMode("2d");
+    /* 必须先清 sitMode：否则下一帧原生 onSensorChanged → setHeading 会把 bearing 写回 heading，
+     * 用户看到「按了复位、盘面回正、地图一抖又歪」。 */
+    sitMode = 0;
+    bearingBeforeSit = 0;
+    var sitBtn = document.getElementById("btn_sit");
+    if (sitBtn) { sitBtn.textContent = "坐南朝北"; sitBtn.className = ""; }
+    bearing = 0;                      /* 等价于原版 setRotation(0) + resetNorth({}) */
+    applyTransform();                 /* 清掉 #map 的 rotateZ */
+    refreshNeedle();
+    updateHud();
+    emit({ type: "compass-reset", bearing: 0 });
+    return true;
+  } catch (e) {
+    console.log("LCRESET ERROR " + (e && e.message ? e.message : e));
+    return false;
+  }
+}
+
 function refreshNeedle() {
   var el = document.getElementById("needle");
   if (!el) return;
@@ -1771,10 +1803,19 @@ var lastTouchTs = 0;          // 触摸后合成的鼠标事件去重，避免�
 
 function pan(dxPx, dyPx) {
   if (mode === "3d") { pan3D(dxPx, dyPx); return; }
+  /* M6 2a：只改 2D 分支的落点符号（调用方与 pan3D 都不动，否则 3D 会从正确变反向）。
+   *         手指右移 → 内容跟手右移。 */
+  /* M6 2b：2D 下整张 #map 被 rotateZ(bearing) 转过，屏幕位移必须先按 -bearing 逆旋转再落经纬度，
+   *         否则 bearing≠0 时拖动斜着走（偏离手指方向一个 bearing 角）。 */
+  if (bearing) {
+    var rad = -bearing * Math.PI / 180, cs = Math.cos(rad), sn = Math.sin(rad);
+    var rdx = dxPx * cs - dyPx * sn, rdy = dxPx * sn + dyPx * cs;
+    dxPx = rdx; dyPx = rdy;
+  }
   var n = Math.pow(2, zoom);
   var c = lonLatToTile(center.lng, center.lat, zoom);
-  c.x -= dxPx / 256;
-  c.y -= dyPx / 256;
+  c.x += dxPx / 256;
+  c.y += dyPx / 256;
   center.lng = c.x / n * 360 - 180;
   var latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * c.y / n)));
   center.lat = latRad * 180 / Math.PI;
@@ -2195,6 +2236,7 @@ function startPatch(z, ox, oy) {
     for (var i = 0; i < tiles.length; i++) {
       if (!tiles[i]) {
         console.log("LC3D ERROR dem-missing");
+        last3dError = "dem-missing";
         setHud("DEM 加载失败");
         loadingKey = null;
         return;
@@ -2326,8 +2368,14 @@ function buildPatchTexture(p) {
   }
   Promise.all(tasks).then(function () {
     if (seq !== patchSeq || patch !== p) return;
-    if (ok >= 30) { p.texCanvas = cv; console.log("LC3D texture ok " + ok + "/36 " + drape + " z" + zt); }
-    else { console.log("LC3D texture fail " + ok + "/36 " + drape + " z" + zt); }
+    if (ok >= 30) {
+      p.texCanvas = cv;
+      last3dError = null;                       /* 贴面成功即清失败标记 */
+      console.log("LC3D texture ok " + ok + "/36 " + drape + " z" + zt);
+    } else {
+      last3dError = "texture-fail " + ok + "/36";
+      console.log("LC3D texture fail " + ok + "/36 " + drape + " z" + zt);
+    }
   });
 }
 
@@ -2786,7 +2834,7 @@ function getState() {
     sitMode: sitMode, sitNorth: sitMode !== 0,
     contour: contourOn, ground: groundMode, needle: needleOn,
     base: base, drape: drape, roadNet: roadNet,
-    ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind,
+    ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError,
     wayback: wbOn, waybackRelease: wbRelease,
     cache: tileCacheOn, cacheCount: tileCacheKeys.length,
     measure: (function () {
@@ -3050,7 +3098,7 @@ function runAT() {
   var thrown = false;
   try { pick3D(10, 10); } catch (e) { thrown = true; }
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
-  var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch",
+  var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch", "resetCompass",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
     "getState", "getFps", "setUiMode", "lc_setUiMode", "getAttribution", "setRoadNet",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",

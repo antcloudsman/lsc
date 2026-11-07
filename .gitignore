@@ -44,3 +44,9 @@ __pycache__/
 
 # ---- Docker 桌面门禁的容器内截图落点（宿主机可见、不入库） ----
 /app/checks/
+
+# ---- fidelity.py report 的生成物（240MB 级，可再生；仅 index.html 摘要留在 checks/） ----
+/docs/fidelity/findings/
+
+# ---- 证据日志以 .txt 入库（*.log 已被上方规则挡掉）：见 docs/fidelity/verify-r2025-final/ ----
+

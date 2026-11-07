@@ -258,11 +258,15 @@ public class M3PageActivity extends Activity {
      */
     private void buildComplaint(LinearLayout list) {
         // 一级：列表
-        addRow(list, "问题反馈", "", true, v -> {
+        // 投诉一级页步进 = 180px（原版 问题反馈 353 → 订单投诉 533）；账户页是 163，两者不同，
+        // 所以不能用一个全局行高，按页覆盖。
+        LinearLayout r1 = addRow(list, "问题反馈", "", true, v -> {
             list.removeAllViews();
             buildComplaintForm(list);
         });
-        addRow(list, "订单投诉", "未选择任何订单", false, null);
+        if (r1 != null) r1.setMinimumHeight(dp(53));
+        LinearLayout r2 = addRow(list, "订单投诉", "未选择任何订单", false, null);
+        if (r2 != null) r2.setMinimumHeight(dp(53));
     }
 
     private void buildComplaintForm(LinearLayout list) {
@@ -715,7 +719,7 @@ public class M3PageActivity extends Activity {
         return et;
     }
 
-    private void addRow(LinearLayout list, String name, String right, boolean clickable, View.OnClickListener onClick) {
+    private LinearLayout addRow(LinearLayout list, String name, String right, boolean clickable, View.OnClickListener onClick) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -745,6 +749,7 @@ public class M3PageActivity extends Activity {
         dlp.leftMargin = 39;
         dlp.rightMargin = 39;
         list.addView(divider, dlp);
+        return row;
     }
 
     /**

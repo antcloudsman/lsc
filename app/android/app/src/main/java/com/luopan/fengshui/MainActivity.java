@@ -29,6 +29,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private View bottomPanel;
     private String lastAttribution = "";
     private CompassView compassView;
+    /** M6 第 1 条：贯穿全屏的红色十字经线（独立层，盘面几何不受影响）。 */
+    private CompassCrosshairView crosshairView;
     private TextView readingView;
     /** R2-005：罗盘中心指针（原版 pointer 节点 81×324）。 */
     private android.widget.ImageView pointerView;
@@ -484,6 +486,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         FrameLayout.LayoutParams ptrp = new FrameLayout.LayoutParams(81, 324);
         ptrp.gravity = android.view.Gravity.CENTER;
         frame.addView(pointerView, ptrp);
+
+        // M6 第 1 条：全屏红色十字经线。原版是 MapLibre Marker 上的 CSS 伪元素（`.compass-line`，
+        // background:red、2 CSS px、viewport 对齐、不随 bearing 转），在盘面图层之上、按钮之下。
+        // 这里单开一层 MATCH_PARENT，不动 CompassView 的 922×922 与 r——否则盘面直径会跟着变。
+        crosshairView = new CompassCrosshairView(this);
+        crosshairView.setId(R.id.lc_compass_crosshair);
+        crosshairView.setVisibility(View.GONE);
+        frame.addView(crosshairView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         // K-01 z 序与触摸（验收 P-08 必读）：浮层之后又加了 读数/状态/左列/罗盘左列/右列/隐藏/底部条，
         // 它们都在浮层之上；其中工具列与「隐藏」是交互层，会正常吃掉落在按钮矩形内的触摸。
         // 圆盘外径 0.733W ≈ 900px@1228，水平方向圆外 50px 已压到左右工具列上，
@@ -1473,6 +1484,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (compassMode) {
                     boolean on = compassView != null && !compassView.isShowPointer();
                     if (compassView != null) compassView.setShowPointer(on);
+                    // M6 第 1 条（逆向 §6.8）：指针开关控的是**竖向指针图**（原版 pointer.png 23×94），
+                    // 不是十字线上的红三角（那属于十字线，常显、无独立开关）。
+                    if (pointerView != null) pointerView.setVisibility(on ? View.VISIBLE : View.GONE);
                     toast(on ? "罗盘北针：开" : "罗盘北针：关");
                 } else {
                     js("toggleNeedle()");
@@ -1535,9 +1549,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         if (!on) hidePoiPanel();
         if (compassView != null) compassView.setVisibility(on ? View.VISIBLE : View.GONE);
+        // M6 第 1 条：十字经线只在罗盘态显示（原版 marker 只在罗盘浮层存在）
+        if (crosshairView != null) crosshairView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         // R2-005：中心指针只在罗盘态显示；「指针开关」关掉时也一起隐（与既有 setShowPointer 同步）
-        if (pointerView != null) pointerView.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (pointerView != null) pointerView.setVisibility(
+                on && (compassView == null || compassView.isShowPointer()) ? View.VISIBLE : View.GONE);
         if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
@@ -1678,6 +1695,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void applyCompassHiddenVisuals() {
         boolean showCompass = compassMode && !compassHidden;
         if (compassView != null) compassView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        // M6 第 1 条：隐藏态（R2-006）连十字一起隐——原版「隐藏」隐的是整个罗盘浮层
+        if (crosshairView != null) crosshairView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (compassToolBar != null) compassToolBar.setVisibility(showCompass ? View.VISIBLE : View.GONE);

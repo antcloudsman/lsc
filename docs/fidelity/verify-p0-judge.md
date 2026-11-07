@@ -1882,6 +1882,32 @@ GapDb:133-137   List<InterestPoint> listInterest() {  query(T_INTEREST, null, "d
 
 **注意**：`FavoriteSync:157` 的对账循环用的是同一个 `listInterest()`，那边已有 `if (owner != uid) continue;` 兜住，**别为了改 UI 把那处守卫删掉**。
 
+### 33.1 修复复核（`6c289fd`，2026-11-07 21:40）—— 改对了
+
+```
+GapDb:143-151   listInterest(int uid): where="delete_pending=0"; uid>0 时 += " AND owner_uid=?"
+GapDb:133-142   javadoc 把「B 删 A 的行 → 墓碑挂到 A 登录时才执行」这条因果写进去了（以后不会被当冗余删掉）
+调用点          InterestListActivity:72 / MainActivity:1722 / MainActivity:3167 全部传 LcSession.uid(this)
+无参 listInterest()  → 已移除（grep 无命中）
+FavoriteSync:157 → db.listInterest(uid)（SQL 只取本账号）
+FavoriteSync:160-163 → 守卫与注释都在（「上一账号的行绝不能用本账号的 list 判已删」）
+listDeletePending:264 → 仍 `(owner_uid=0 OR owner_uid=?)`，§32 没被回退
+```
+
+### 33.2 新出现的可见性代价（不阻塞，建议 M5 处理）
+
+`listInterest(uid)` 之后，`owner_uid=0 且 remote_id>0` 的孤儿行从「能看不能用」变成**完全看不见**了：
+
+- 不显示（uid 匹配不到 0）、不推送（`listPendingInterest` 收窄）、不参与对账；
+- 删除也不行（虽然 `listDeletePending` 放行了它们，但 **UI 里根本点不到**）。
+
+→ 这批数据成了**占用存储、用户看不到也删不掉的幽灵行**。当前升级路径下数量很小可以接受，但一旦用户遇到，**只能靠改库或重装**，这不是产品该给用户留的出口。
+
+建议（二选一，M5）：
+1. **只读分区**：列表底部显示「本地历史数据（未归属）N 条」，灰显、**禁止删除**；
+2. **用户主动认领**：给一个「合并到当前账号」按钮——**注意这跟自动认领不是一回事**：自动认领是程序猜主人，用户主动点是自己声明，不违背 §30/§31 的原则。
+
+
 
 
 

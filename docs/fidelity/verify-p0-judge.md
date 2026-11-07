@@ -1330,6 +1330,229 @@ SAME  docs/fidelity/lc/map-home-01.meta.json    ba89762499
   **但要注意**：`map.html` 是 APK 内资产，注释进产物，所以 `d53d4bc` 自建的 APK **不会是** `8,565,452 B / 9928856C…`；
   证据的 `meta.build.commit = 1ad400d` 是如实记录，两者行为一致、字节不同——以后引用这组证据时不要写成「develop 版 APK sha 9928856C」。
 
+## 25. D-029/D-030 占位入口抽验（`7214861`，2026-11-07 18:40）
+
+### 25.1 判据订正：**我撤回「同屏四入口」这条**
+
+产品按 `git show 7214861` 逐字计数，指出账户设置页只有 `绑定手机 / 一键登录 / 微信登录`，缺 `验证码登录 / 荣耀登录`，问我判哪一档。**这条判据是我过严，判据错、实现对**：
+
+- 原版登录**方式选择**（`验证码登录 / 一键登录 / 荣耀登录 / 微信登录`）在**登录页**；`account-reverse.md` 的「账户设置」入口族是 `绑定手机号 / 绑定微信 / 更换手机号` 这类**账户管理项**，且属**已登录态**；
+- 原版未登录态账户页只有 `您当前未登录 / 立即登录` 两串（M3 已取证串）；
+- 所以「账户页也塞齐四个登录方式」**没有任何原版依据**——正是本轮反复禁止的「按判据造界面」。
+- **订正后的判据**：①登录页四入口齐、逐字；②账户页未登录态保持原版两串；③账户页其余可点入口（`绑定手机 / 一键登录 / 微信登录`）是**本项目新增的引导项，必须按新增登记，不计入 1:1**。
+
+### 25.2 抽验结果
+
+| 项 | 我复核方式 | 结果 |
+|---|---|---|
+| 文案逐字 | 对 `login-strings-classes06.txt` 逐行精确比对（`-eq`，非包含） | `验证码登录/一键登录/荣耀登录/微信登录/更多登录方式/无法使用荣耀登录/后续可通过手机号验证码快速登录~/绑定手机` **8/8 精确命中** |
+| 登录页四入口 | `LoginActivity.java:140-145` | `placeholder("验证码登录", …, "D-029", "后续可通过手机号验证码快速登录~")`、`一键登录`、`荣耀登录`（`"无法使用荣耀登录"`）、微信（`:125`）✔ |
+| 账户页 | `M3PageActivity.java:420-464` | `您当前未登录`/`立即登录` 原版串未改；`绑定手机`(`:438`)、`一键登录`(`:448`)、`微信登录`(`:458`) ✔ |
+| 不假装可用 | `LoginActivity.java:194-211` `placeholder()/unavailable()` | 只 `status.setText(...)` + `Log.d("LCLOGIN", …)`，**无网络调用、无伪流程、不跳转** ✔ |
+| 新增标注 | `M3PageActivity.java:57` | 「账号密码登录/注册为本项目新增（原版无此页）…」 ✔ |
+
+**内容判过**；`1/4 → 4/4` 可以改成「登录页 4/4；账户页按原版语义」，但**账户页那三个可点入口要按「本项目新增」登记**，否则下一轮会被当成 1:1 依据。
+
+### 25.3 证据包缺陷（合前必改，已证实）
+
+`git ls-tree -r 7214861 docs/fidelity/m4` 只有 **5 个文件**；而 `SHA256SUMS.txt` 列了 **8 行**，其中 4 行指向**未提交**的文件：
+
+```
+OK    account-reverse.md
+MISS  flow-m3-regression.log      35440 B
+MISS  flow-placeholders.log        1886 B
+MISS  flow-register.log            2436 B
+MISS  flow-sync.log                1248 B
+OK    login-strings-classes06.txt
+OK    verify-m4-stage3.txt
+OK    verify-m4-stage4.txt
+```
+
+**勘误（2026-11-07 18:47，我自己的错）**：本节初版把 `flow-register.log` 的字节数写成 **2463 B**（应为 **2436**，抄写时数字颠倒）。产品据此追问「27 字节去向」，实际上**没有任何字节变化**——
+`7214861` 的旧 SUMS 与 `a995bbf` 的新 SUMS 里该行 sha 同为 `18753191ca7e…`、size 同为 `2436`，客户端说的「内容、sha256 不变」是对的。
+这条是我在判词里打错了数，责任在我，不在交付方。
+
+→ **证据包自校 4/8 通过不了**：任何人按 SUMS 复核都会得到 4 个 `MISS`。日志扩展名也不合纪律（证据日志一律 `.txt`，`check-staged-paths.ps1` 永久拒 `*.log`），猜测是提交时被 guard 挡下、但 SUMS 没同步重算。
+
+**要求**：把 4 份日志转成 `.txt` 提交并重算 SUMS（8/8），或从 SUMS 删掉这 4 行；同时 `verify-m4-stage4.txt` 里引用的 `flow-placeholders.log` 路径要跟着改。这条不影响功能结论，但**证据包不自校的交付不进关账**。
+
+### 25.4 修复复验（`a995bbf`，18:47）
+
+客户端转 `.txt` 重算后，我按「不看本地目录、直接从提交取字节」的方式独立复算：
+
+```
+OK   account-reverse.md        19072/19072
+OK   flow-m3-regression.txt    35440/35440
+OK   flow-placeholders.txt      1886/1886
+OK   flow-register.txt          2436/2436
+OK   flow-sync.txt              1248/1248
+OK   login-strings-classes06.txt 1745/1745
+OK   verify-m4-stage3.txt       2428/2428
+OK   verify-m4-stage4.txt       3211/3211
+== checked=8 bad=0 ==
+提交内文件 9 个（含 SUMS 自身），无遗漏、无多余。
+```
+
+`flow-register` 的 sha 与 size **与修复前完全相同**（`18753191…` / 2436），确实是纯改名。
+`verify-m4-stage3.txt`（2426→2428）与 `verify-m4-stage4.txt`（3209→3211）各 +2 B，是两处引用路径 `.log`→`.txt` 各多 1 字节，可解释、非内容改动。
+
+→ **§25.3 的证据包缺陷已关闭**。D-029/D-030 这一交付现在「内容判过 + 证据包自校 8/8」。
+
+### 25.5 develop 落库核对（`8f9265f`，20:20）
+
+产品要求「按 develop 的 blob 抽验一次，确认与 §25 判过的内容一致」。我比 blob，不比重述：
+
+```
+LoginActivity.java    develop 27cee221a678…  ==  7214861 27cee221a678…   SAME
+M3PageActivity.java   develop 411463ff84dd…  ==  7214861 411463ff84dd…   SAME
+```
+
+→ **§25 的抽验结论直接适用于 develop，不需要重判。**
+
+我另外在 develop 上重跑了一遍逐字比对（对 `login-strings-classes06.txt` 做精确行匹配，同时数代码里的字面量）：
+
+| 串 | 原版文件精确命中 | 代码字面量 |
+|---|---|---|
+| `验证码登录` / `一键登录` / `荣耀登录` / `微信登录` | 1 / 1 / 1 / 1 | 1 / 1 / 1 / 2（微信一处是入口、一处是说明前缀） |
+| `更多登录方式` / `无法使用荣耀登录` / `后续可通过手机号验证码快速登录~` | 1 / 1 / 1 | 1 / 1 / 1 |
+| `绑定手机` | 1 | **0**（在 `M3PageActivity`，不在登录页——与 §25.1 口径一致） |
+
+三个入口调用点：`LoginActivity.java:140`（`D-029`）、`:142`（`D-030`）、`:144`（`D-030`，说明用原版串 `无法使用荣耀登录`）。
+
+**「4/4」的准确表述（我方判词口径）**：**登录页四入口 4/4**；账户设置按原版语义（`您当前未登录`/`立即登录` + 三个本项目新增引导项 `绑定手机`/`一键登录`/`微信登录`），**不计入 1:1、不含 `验证码登录`/`荣耀登录`**。产品在 `m4-plan.md` v1.10 的写法与此一致。
+
+## 26. M4 Stage 5 安全与链路独立复核（基线 `f285cf0`，2026-11-07 20:30–20:45）
+
+纪律：**全部自己跑**，不采信 68 项自报；运行中的容器才是我要验的对象（不是宿主机某个工作区）。
+
+### 26.0 先纠一条我自己的错
+
+我第一次比对「容器源码 vs develop」时，把 `git rev-parse <rev>:<path>` 的 **git blob sha1** 拿去和容器文件的 **sha256** 比，得出 6 个文件全 DIFF —— 那是**两种哈希算法在比**，无效。
+改用「`git cat-file blob` 导出原始字节 → 算 sha256 → 与 `docker cp` 出来的容器文件 sha256 比」：
+
+```
+server.js       dev=7e2808a0ce4c  ctr=7e2808a0ce4c  SAME
+db.js           dev=b55cc6f1c7a6  ctr=b55cc6f1c7a6  SAME
+password.mjs    dev=cdea3d8fdb53  ctr=cdea3d8fdb53  SAME
+token.mjs       dev=a5b43aa03544  ctr=a5b43aa03544  SAME
+ratelimit.mjs   dev=3860e496cd5d  ctr=3860e496cd5d  SAME
+selfcheck.mjs   dev=300098d9e48b  ctr=300098d9e48b  SAME
+```
+
+→ **容器跑的就是 develop `f285cf0` 的后端源码，6/6 一致**。同时提醒：`E:\APPDetector\output\backend\src` 只有 `db.js`+`server.js` 两个旧文件（那是地图那条工作区），**不能拿它当后端代码看**。
+
+### 26.1 账号五条链路 —— 全会话实测（关账）
+
+我注册两个测试用户 A/B 后逐条打接口（`http://127.0.0.1:8787`）：
+
+| 链路 | 实测 |
+|---|---|
+| 注册 | `POST /v2/auth/register` → **201**，返回 `token` 43 字符（base64url of 32 B） |
+| 登录 | 正确密码 → **200**；错误密码 → **401**（连续 5 次后转 429，见 26.3） |
+| 登出 | `/auth/me` 200 → `POST /auth/logout` 200 → 同一 token `/auth/me` → **401** |
+| 改密 | 两会话（t1/t2）改密 → `200 {"changed":true,"revoked_sessions":3}`；**t1（其他会话）→401**、t2（改密者）→200；**旧密码登录 401、新密码登录 200** |
+| 会话过期 | 把该会话 `expires_at` 写成 `2020-01-01` → `/auth/me` **401**，再调仍 **401**（`requireAuth` 会顺手 revoke） |
+
+代码锚点：`server.js:241` `if (Date.parse(found.session.expires_at) <= Date.now()) { … revokeSession … fail(401) }`；
+`server.js:405` 改密后 `revokeAllSessions(userId, { exceptSessionId: auth.session.id })`（设计上保留本人当前会话，符合常见做法）。
+
+### 26.2 越权 —— 关账
+
+```
+B 的 list 条数 = 0，不含 A 的收藏          B 修改 A 的收藏 id → 404 收藏点不存在
+B 删除 A 的收藏 id → 404                     A 的记录仍在（id=26 / rev=52，未被改动）
+B 的 feedback/list 不含 A 的反馈             无 token → 401   坏 token → 401
+```
+采用 404（不是 403）避免用状态码枚举他人资源是否存在，正确。
+
+### 26.3 限流 —— 关账
+
+```
+对同一用户名连续错误密码：第1–5次 401 → 第6次 429
+curl -i 原始头：HTTP/1.1 429 Too Many Requests   retry-after: 46
+限流生效期间即使密码正确也 429（先限流后校验）
+另一个用户名不受影响 → 200（按 user 维度隔离，不是全局限死）
+```
+配置锚点：`RATE_LIMITS.loginUser = { limit: 5, windowMs: 60000 }`；`server.js:217-223 guard()` 写 `retry-after`。
+
+### 26.4 密码哈希 / token / 日志脱敏 —— 关账
+
+- **密码**：库里 40/40 用户 `password_hash` 前缀均为 `scrypt$N=32768,r=8,p`，无明文、无其他格式。
+  实现 `password.mjs`：scrypt N=32768 r=8 p=1、16 B salt、64 B key、`timingSafeEqual` 比对；
+  未知用户名走 `burnPasswordTime()` 假验证，避免时序区分账号是否存在。
+- **token**：`token.mjs` 用 `randomBytes(32)`（256 bit）→ base64url 43 字符；**库里只存 `sha256(token+pepper)`**，
+  65/65 条 `token_hash` 均为 64 位 hex；比对用 `safeEqualHex()`（`timingSafeEqual`）；支持服务端撤销。
+- **日志**：`docker logs lc-backend --since 20m` 共 145 行，搜我自造的密码标记（`pwmark`/`Aa1!`/`Bb2!`）与两个 token 明文 → **命中 0**；
+  日志字段只有 `rid/method/path/status/ms/user`（`user` 也不记 uid）。
+
+### 26.5 网络暴露与 CORS —— 关账
+
+```
+docker ps → 127.0.0.1:8787->8787/tcp          （只绑回环）
+运行时 LC_CORS_ORIGIN = ""（空）
+server.js:94 → if (!origin || !CORS_ORIGINS.includes(origin)) return {};   （无通配 *，非白名单不给任何 CORS 头）
+自检项 [PASS] CORS: unknown origin gets no Allow-Origin header
+```
+
+### 26.6 容器内自检 —— 我重跑，68/68 通过
+
+`docker exec lc-backend node /app/scripts/selfcheck.mjs` → `SELFCHECK: PASS (68 checks)`，
+其中包含越权（B 删 A → 404）、过期 token → 401、`/v1/*`→410、415、413、CORS、限流 429+Retry-After 等。
+
+### 26.7 持久化 —— 关账（用「跨重启仍在」证明，不靠声明）
+
+```
+docker inspect → Mounts=volume:lc-backend_lc-data->/data
+当前容器 StartedAt=2026-11-07T12:23:23Z
+库内最早数据 users.first=2026-11-07T09:41:16Z / feedback.first=09:41:16Z
+```
+即容器**在 12:23 重启过**，而 09:41 的数据仍在 → volume 持久化真实生效。
+
+### 26.8 E2E 证据（反馈闭环 / 降级 / 恢复）—— 关账
+
+- `e64-success.xml`：`text='提交成功' bounds=[20,1570][1208,1653]`（我读文件核的）。
+- DB 实据（`node:sqlite` 只读查库）：`fb_be5c60c31e13488da0a1ca093925e05d`，
+  `reasons=e64-reason`、`contact_way=e64@example.com`、`remark=e64-desc`、`type=2`、`created_at=2026-11-07T12:21:59.483Z`
+  → **与脚本填的三个值逐字一致**，不是只看计数 +1。
+- 降级/恢复：`e82-degraded.xml` → `同步失败：连不上本地服务（需 adb reverse tcp:8787）`；
+  `e85-recovered-sync.xml` → `同步收藏点：同步完成：上传 0，拉取 0`。
+
+### 26.9 M3 遗留三项 —— 已关账（引用指向正确构建体）
+
+R2-013 A/B/C（`c08841a` 证据包）、R2-032 角注、R2-027 面板 —— 判词见 §17/§24；
+§24.4 已核 `d53d4bc` 与判据依据 `bfde9da` 的 6 份证据**逐字节相同**，不是「验了分支、合了别的」。
+
+### 26.10 **不关账 1 条**：登录/注册页缺「LC 侧截图 + 原始 dump」
+
+总监把 S5-2 判据改为「LC 侧截图 + dump + 页面标明新增」（原版无此页，不要求原版对照）。我按这一条核：
+
+- **页面标明新增** ✔：`LoginActivity:149` 说明整段、`:57` 标题「账号登录（本项目新增）」（§25 已核）。
+- **dump**：只在 `docs/fidelity/m4/verify-m4-stage3.txt` 里有一行 `login-page=返回|账号登录（本项目新增）|…`（摘要，非原始 XML）。
+- **截图**：`git ls-tree origin/develop docs/fidelity/m4` 只有 11 个文本/文档文件，**无 png**；
+  `E:\APPDetector\reports` 下按 `login|登录|注册|account` 搜 png，只有 M3 的 `a-account.png`（账户设置页，不是登录页）。
+
+→ 缺 **1 张登录页截图 + 1 份原始 dump XML**。修法很轻：装当前 develop 包 → 抽屉→账户设置→立即登录 → `screencap` + dump 落 `docs/fidelity/m4/login-page.{png,xml}` 并挂 SUMS。**不需要原版对照图**（造一张假的原版登录页比缺图严重，总监已明令禁止）。
+
+### 26.11 两条加固建议（不影响关账，不新立缺陷）
+
+1. **pepper 与库同卷**：`LC_TOKEN_PEPPER` 为空 → 走 fallback `/data/.token-pepper`（0600，44 B），与 `lc.sqlite` 同在 `lc-data` 卷。
+   `token.mjs` 注释写「DB 泄露不会拿到可用会话」，**这一条只在 pepper 走 env/secrets 时成立**；整卷泄露时 pepper 与哈希一起被带走，可离线验证。
+   建议：生产口径把 pepper 放 `/run/secrets`（代码已支持 `LC_TOKEN_PEPPER_FILE`），备份时与库一起备（总监已要求）。
+2. **`.gitignore` 没有挡 `.token-pepper` / `*.sqlite`**：当前仓库里确实没有这两个文件（`git ls-tree` 无命中），属隐患预防，建议加一行。
+
+### 26.12 复现命令（便于他人重跑）
+
+```powershell
+docker exec lc-backend node /app/scripts/selfcheck.mjs                  # 68 项
+docker exec lc-backend node -e "grep 源码/算法"                          # 见 26.0 的 cat-file 比对
+curl.exe -s -i -X POST http://127.0.0.1:8787/v2/auth/login -H 'Content-Type: application/json' --data '{"username":"<u>","password":"<wrong>"}'   # 第 6 次应 429 + retry-after
+docker logs lc-backend --since 20m | Select-String 'pwmark|token'        # 期望 0 命中
+```
+
+
+
+
+
 
 
 

@@ -15,9 +15,9 @@
 | ① | 升级/清数据后**首次同步直接登 B**，本地条数不减 | PASS | 构造 3 行 `owner_uid=0` 且 `remote_id>0`；`before=3 after=3`；B 服务端 `B_ACTIVE=0`；B 同步日志 `push=0 pull=0 purgedRemote=0` |
 | ② | A/B 崩窗口（本地新建且已推过的行，清 `remote_id` 后重推不新建） | PASS | `restored_remote_id=346`（与清 0 前同一 id）；全库 `TOTAL_ACTIVE=84 -> 84`；`client_key` 保留 `9df43a8c…` |
 | ③ | 坐 90 / 向 270 推→清本地→拉回仍为 90/270 | PASS | `set=(51, 90.0, 270.0, 347)` → `pulled=[(90.0, 270.0)]` |
-| ④a | 本机删 → 服务端**同一 remote_id** `deleted=0→1` | PASS | `rid=348`：`ROW_BEFORE=348:0 → ROW_AFTER=348:1` |
+| ④a | 本地库置墓碑 → 服务端**同一 remote_id** `deleted=0→1`（**同步机制**，非 UI 入口） | PASS | `rid=348`：`ROW_BEFORE=348:0 → ROW_AFTER=348:1` |
 | ④b | 服务端软删 → 本地同一行消失 | PASS | `remote_id=347`：本地 `1 -> 0`，`SOFTDELETED=347:0` |
-| ⑤a | B 侧收藏列表看不到 A 的行、长按无删除入口 | PASS | 覆盖层打开 `sublist_open=True`；`visA1=False visA2=False`；空列表文案命中；长按后无删除/确认框；本地 A 的 2 行仍在（`owner_uid=111`） |
+| ⑤a | B 侧收藏列表看不到 A 的行 | PASS | 覆盖层打开 `sublist_open=True`；`visA1=False visA2=False`；空列表文案命中；本地 A 的 2 行仍在（`owner_uid=111`）。注：覆盖层本就没有删除功能，「长按无确认框」是平凡真，**不能**当账号过滤的证据；过滤证据见「局限」第 1 条 |
 | ⑤b | 切回 A：本地两行仍在、界面可见、服务端行未被删 | PASS | `local=2 visA1=True visA2=True`；`A_SRV_ACTIVE=2 A_SRV_IDS=349,350` |
 | ⑥ | 孤儿墓碑（`owner_uid=0` + `remote_id>0`）能推出、服务端 `deleted=1`、本地归零 | PASS | `orphan_tombstone=(56, 350, 0, 1)` → `DELETED=1`、`local_left=0` |
 
@@ -27,7 +27,7 @@
 - **② 必须用本地新建且已推过一次的行**：`client_key` 已持久化；只用 `remote_id=0/rev=0/sync_state=pending` 模拟崩窗口，不删 `client_key`。
 - **③ 清本地后必须同时清增量游标**（`shared_prefs/lc_sync.xml`），否则 `since=cursor` 不返回老行，测出来的是「有旧游标的增量语义」而不是「新设备登录拉全量」。另外改坐向后要置 `sync_state='pending'` 才会进推送队列——只改 `sitting_deg/facing_deg` 的 clean 行不会被推。
 - **④/⑥ 只按 `remote_id` 单行判**，不用 `/health favorites`（全库聚合）也不看 `purgedRemote` 数字。
-- **⑤ 的删除入口**：可点路径是 `MainActivity` 的「收藏点 → 收藏列表」页面内覆盖层（行来自 `listInterest(LcSession.uid)`）；`InterestListActivity`（长按删除所在页）是 `exported=false` 且**全仓零启动点**，外部拉不起来，故真机判据落在覆盖层：A 的行不在列表对象里 → 无可长按目标；长按列表区域无任何确认框。
+- **⑤ 的可达入口**：`MainActivity` 的「收藏点 → 收藏列表」覆盖层（行来自 `listInterest(LcSession.uid)`）；`InterestListActivity` 是 `exported=false` 且**全仓零启动点**，`run-as am start` 也被 `SecurityException` 拒，用户进不去。
 
 ## 本轮修掉的三处测试脚本缺陷（不是产品缺陷）
 
@@ -37,6 +37,7 @@
 
 ## 局限与说明
 
-- ⑥ 会真实删掉一行服务端数据（本例 `remote_id=350`，A 的 `s33-a2`）：这是 **§32 允许孤儿墓碑推出的设计行为**，测试用当前账号 A 推 A 自己的孤儿墓碑，不构成跨账号删除。
+- ⑥ 会真实删掉一行服务端数据（本例 emote_id=350，A 的 s33-a2）：这是 **§32 允许孤儿墓碑推出的设计行为**，测试用当前账号 A 推 A 自己的孤儿墓碑，不构成跨账号删除。
+- **删除功能在可达 UI 里没有入口（M4-GAP-DELETE-UI，审核验 §35.3）**：可达覆盖层只有点击跳图、无长按无删除；唯一删除 UI 在不可达的 InterestListActivity:157/159。因此 ④ 只能记「同步机制通过」（本地库置墓碑 → 服务端 deleted=1），**不能记「用户能删除」**。§33 的『不可删』证据也随之换成代码链：markInterestDeletePending 全仓唯一调用点是 InterestListActivity:147 ← confirmDelete ← :123 长按 ← :72 listInterest(uid) 的行，该页不可达 ⇒ 账号过滤链闭合但与覆盖层无关。
 - ⑤ 未覆盖「收藏列表页存活期间切账号」的理论路径（`LIST-SNAPSHOT`，客户端已加 `onResume` 重载，未合入 `525704c`）；本条判据在 `383d54f` 合入后可补一轮衍生验证。
 - 本轮未复验 `LIMIT=200` 超限跳过与翻页认领（`adoptByRemoteIds` 只取第一页，属已知限制，客户端已在注释与摘要登记）。

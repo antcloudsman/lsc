@@ -1760,6 +1760,46 @@ FavoriteSync.java:161-164  owner != uid → continue；相等则 purge
 - 期望：本地条数不减少、服务端该账号 `favorites` 不增加、日志出现明确的跳过（不是 `adopted`）。
 - 若测试只在「先在 A 账号同步过一次」之后才切号，那 3 条已被 A 认领，**测不到这个洞**——两条路径都要跑，或至少说明自己跑的是哪条。
 
+**判据②的计数口径（2026-11-07 21:20 修正，服务端指出、我实测确认）**：
+我原来打算用 `/health` 的 `favorites` 判「B 账号不增加」——**错的**，那是全库口径：
+
+```
+/health favorites            = 46   ← 全库所有账号 deleted=0 合计
+SELECT COUNT(*) 含软删        = 96
+按账号：idm2wpqek 4 / dvchcdx 4 / e2e47712 3 / sb8397 2 / idemsnvqi 2 …
+```
+别人一跑测试，这个数就变，判据会被第三方数据污染。
+**改用（都只计 `deleted=0`）**：① `GET /v2/userCollectPoint/list` 用 B 的 token 取 `data.count`；
+② 库内 `SELECT COUNT(*) FROM favorites f JOIN users u ON u.id=f.user_id WHERE u.username_lc='<B>' AND f.deleted=0`。
+
+### 30.5 同一处还有两个连带问题（都已证实）
+
+**① `setOwnerUid()` 有定义、零调用点** —— `git grep -n 'setOwnerUid|owner_uid' origin/develop -- app/android/app/src/main/java` 里，`setOwnerUid` 只出现在 `GapDb.java:194` 的定义处，**没有任何调用**。
+也就是说 `owner_uid` 唯一的赋值途径就是同步开始时那次**批量认领**（`adoptUnownedRows`）。新建行、拉回来的行，在被下一次同步认领之前都是 `owner_uid=0`。
+
+**② `upsertRemoteInterest` 不写 `owner_uid`** —— 拉回来的行也是 0。
+所以风险不止「升级前的存量行」，还有：**A 账号拉回来的行（`owner_uid=0`）→ 用户切到 B → 下一次同步先把它们认领给 B → 对账时 B 的 list 没有它们 → purge**。
+比我 §30.3 写的范围更大：**只要「拉回之后、被下次同步认领之前」切了账号，就中招**。
+
+**修法补充**：`owner_uid` 应该在**创建时刻**写死（新建行调 `setOwnerUid(uid)`、`upsertRemoteInterest` 传当前 uid），而不是靠同步起点的批量认领来兜。批量认领只用于「升级前且 `remote_id=0`」的老行。
+
+### 30.6 B（崩窗口）判据的正确数据源 —— 不能用「拉回来的行」
+
+客户端提过「先 `delete from interest` 清本地再拉回，再清 `remote_id` 做崩窗口」。**这个顺序做 B 会得出错误结论**：
+
+```
+GapDb.java:208-221 clientKeyOf()
+  读到 client_key 为空 → 生成新 UUID 并写回
+服务端 list 不回显 idem_key（§28.4 实测 ITEM_FIELDS 无此字段）
+→ 拉回来的行 client_key 为 NULL
+→ 清 remote_id 后重推时 clientKeyOf 现场生成「新键」
+→ 服务端视为新键 → 建出重复行
+```
+
+即：用拉回的行测 B，看到的重复**不是崩窗口缺陷复现**，而是「拉回行没有键」导致的；反之若测试只核「id 不变」，也会因为新键必然新建而误判失败。
+**B 必须用「本地新建、且已推过一次」的行**（`client_key` 已生成持久化），再 `update interest set remote_id=0, rev=0, sync_state='pending'` 做崩窗口，才测的是那条缝。
+
+
 
 
 

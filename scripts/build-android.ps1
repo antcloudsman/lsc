@@ -7,6 +7,11 @@
   app-debug.apk, then installs and launches it on the connected device, checking
   `adb logcat` for FATAL exceptions. Exit code 0 = PASS, 1 = FAIL.
 
+  The device install step is delegated to tools\device\install-debug.ps1: adb push +
+  `pm install -r -t` first, then an automated fallback for Huawei's install risk
+  prompt / lock-screen auth dialog, with the app market disabled only for the
+  install window and always restored (`MARKET_RESTORED=...` in the log).
+
   Device leg can be skipped with -SkipDevice (build-only mode).
   Only the single device given by -DeviceId is used; nothing else is touched.
 
@@ -224,13 +229,29 @@ if ($SkipDevice) {
 
         Invoke-NativeText { & $adb -s $device logcat -c } | Out-Null
 
-        $installLog = Invoke-NativeText { & $adb -s $device install -r $apk }
-        Set-Content -LiteralPath (Join-Path $OutDir 'adb-install.log') -Value $installLog -Encoding UTF8
-        if ($installLog -notmatch '(?im)^Success') {
-            Add-Failure "adb install failed: $($installLog.Trim())"
+        # Install goes through tools\device\install-debug.ps1 (single implementation):
+        # main path is adb push + pm install (no UI); the tool falls back to driving the
+        # Huawei risk-prompt / auth dialog, and owns the app-market disable + restore.
+        $installTool = Join-Path $repoRoot 'tools\device\install-debug.ps1'
+        $installDir = Join-Path $OutDir 'install'
+        if (-not (Test-Path -LiteralPath $installTool)) {
+            Add-Failure "install tool missing: $installTool"
         } else {
-            Add-Pass 'adb install -r: Success'
-            $deviceReady = $true
+            $installHost = (Get-Process -Id $PID).Path
+            $installArgs = @(
+                '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $installTool,
+                '-ApkPath', $apk, '-Serial', $device, '-OutDir', $installDir
+            )
+            $installText = Invoke-NativeText { & $installHost @installArgs }
+            $installCode = $LASTEXITCODE
+            Set-Content -LiteralPath (Join-Path $OutDir 'adb-install.log') -Value $installText -Encoding UTF8
+            $marketLine = @($installText -split "`n" | Where-Object { $_ -match '^MARKET_RESTORED=' })
+            if ($installCode -eq 0) {
+                Add-Pass ("install-debug.ps1: install + verify OK ({0})" -f ($marketLine -join ' '))
+                $deviceReady = $true
+            } else {
+                Add-Failure ("install-debug.ps1 exited {0} ({1}); log: {2}" -f $installCode, ($marketLine -join ' '), (Join-Path $installDir 'install.log'))
+            }
         }
     }
 

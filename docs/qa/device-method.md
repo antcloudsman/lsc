@@ -181,3 +181,96 @@ pwsh -File tests\lib\test-logredact.ps1
 
 2026-11-06 实测：样本脱敏前 `key-hits=4 tk-params=2` → 脱敏后 `key-hits=0 tk-params=0`（4 处 `***REDACTED***`）；
 即使 `Keys` 为空（通用规则单独成立）`tk-params` 也归 0。`python tests\secrets\secret_gate.py` → `SECRET: PASS`。
+
+## 7. APK 安装风险提示自动化（`tools/device/install-debug.ps1`）
+
+> 2026-11-07 增补。现场背景：华为纯净模式/应用市场的「风险提示」「继续安装」页会拦安装，
+> 有时弹 `UnifiedAuthenticationDialogActivity` 要锁屏密码；更麻烦的是 **`com.huawei.appmarket`
+> 会自动升级已装应用**——原版 `space.xinzhi.globe` 就被它从 1.6.1 升到 1.6.3，gadget 取证包
+> 被覆盖。所以安装窗口内必须临时禁用市场，并在**所有退出路径**恢复。
+
+### 7.1 命令
+
+```powershell
+# 默认：安装 + 校验；安装窗口内临时禁用应用市场，finally 恢复
+powershell -File tools\device\install-debug.ps1 -ApkPath app\android\app\build\outputs\apk\debug\app-debug.apk
+
+# 指定设备 / 输出目录 / UI 超时
+powershell -File tools\device\install-debug.ps1 -ApkPath <apk> -Serial L2E0222531014833 -OutDir checks\install-01 -UiTimeoutSec 120
+
+# 锁屏 PIN 来自仓库外 secrets（默认路径见 7.5），也可临时用环境变量
+$env:DSH_SECRET_DEVICE_PIN = '<pin>'   # 不要写进命令行/脚本/文档
+
+# 装完一段时间内容易被市场回滚时：保留禁用（默认不保留；测试 S4 必须用默认跑）
+powershell -File tools\device\install-debug.ps1 -ApkPath <apk> -KeepMarketDisabledUntil '2026-11-08 09:00'
+```
+
+`scripts\build-android.ps1` 的真机 leg 已改为调用本脚本（单一实现），`-SkipDevice` 时不执行安装。
+
+### 7.2 三条路径与判定
+
+| 路径 | 触发 | 判据 |
+|---|---|---|
+| `pm` | 主路径，先跑 | `adb push` → `pm install -r -t`；`pm path` 或 `lastUpdateTime` 变化 |
+| `adb+ui` | `pm install` 失败/未生效 | 后台 job 跑 `adb install -r -t`，按 `mCurrentFocus` 驱动安装页按钮 |
+| `+pin` | 前台是 `UnifiedAuthenticationDialogActivity` | 注入锁屏 PIN + ENTER；再弹同一框 → `INSTALL_AUTH_BLOCKED` |
+
+按钮字典（按顺序匹配，先精确后包含；只点字典里的按钮，**不盲点坐标**）：
+
+```
+继续安装 / 仍要安装 / 确认安装 / 安装 / 允许 / 同意 / 我知道了 / 继续
+```
+
+前台判定：`dumpsys window` 里取 `mCurrentFocus`（等价于 `| grep mCurrentFocus`），
+`PackageInstaller` / `AppGallery` / `appmarket` / `install` 一律当安装页；
+`UnifiedAuthentication` / `Keyguard` 当认证页。UI dump 沿用 §1 的规矩：
+先 `rm -f` 再 dump，只有输出 `dumped to` 才 pull，绝不读旧文件。
+
+### 7.3 退出码
+
+| 码 | 含义 | 典型处理 |
+|---|---|---|
+| 0 | `INSTALL_OK` | `pm path` + `lastUpdateTime` 已校验 |
+| 1 | 未预期异常 | 看 `install.log` |
+| 2 | `BAD_INPUT` | APK 不存在/太小、参数非法 |
+| 3 | `ADB_UNAVAILABLE` | adb 不在 PATH |
+| 4 | `DEVICE_NOT_FOUND` | 无设备/多设备未指定 `-Serial` |
+| 10 | `INSTALL_FAILED` | pm 与 adb 两条路都失败 |
+| 11 | `VERIFY_FAILED` | 装上了但 `pm path`/`lastUpdateTime`/`versionCode` 校验不过 |
+| 12 | `UI_BUTTON_NOT_FOUND` | 安装页三次都匹配不到字典按钮（日志给 dump 路径） |
+| 13 | `INSTALL_AUTH_BLOCKED` | 认证页 PIN 失败/未配置，或 PIN 后又弹认证 |
+| 14 | `UI_TIMEOUT` | 保留码（当前循环超时归 10/12，由日志区分） |
+| 15 | `MARKET_RESTORE_FAILED` | 我们禁用了市场但没能恢复 |
+
+### 7.4 市场恢复契约（测试 S4 按这条判）
+
+- 启动时先记录市场初始状态（`pm list packages -d` 里有没有它）；**只恢复自己禁用过的**，
+  别人故意禁用的不动。
+- 整个安装包在 `try/finally` 里；`finally` 里 `pm enable`，并且再查一次
+  `pm list packages -d` 确认已经不在禁用列表。
+- Ctrl+C / 关窗口：注册了 `PowerShell.Exiting` 兜底 `pm enable`，正常恢复后注销。
+- 结束固定打一行：`MARKET_RESTORED=ok|fail|skipped`（`skipped` = 没装市场 / 本来就禁用 /
+  `-SkipMarketDisable` / `-KeepMarketDisabledUntil`，此时会写 `market-kept-disabled.txt` 给恢复命令）。
+  **默认跑必须看到 `MARKET_RESTORED=ok`，且 `pm list packages -d` 里不能再有 `com.huawei.appmarket`。**
+
+### 7.5 PIN 来源（不进仓库）
+
+- `E:\APPDetector\secrets\device.properties`（仓库外），一行 `device.lock_pin=<pin>`；
+  路径可用 `-PinFile` 或 `$env:LC_DEVICE_PIN_FILE` 改。
+- 或环境变量 `DSH_SECRET_DEVICE_PIN`（优先级更高）。
+- 脚本**从不打印/记录 PIN**；日志里只有「injected PIN + ENTER」。
+
+### 7.6 证据与日志
+
+```
+checks\device-install-<时间戳>\
+  install.log              # 全过程（focus 变化、按钮、路径、耗时、pure_mode_state）
+  ui-install-*.xml         # 每次驱动 UI 的 dump（12 号失败会指向具体文件）
+  adb-install.log          # 兜底 adb install 的输出
+  market-kept-disabled.txt # 仅 -KeepMarketDisabledUntil 时出现
+```
+
+`pure_mode_state` 只记录不改：`settings get secure pure_mode_state`，禁止脚本改系统设置。
+`-OriginalPackage`（默认 `space.xinzhi.globe`）的 versionName/versionCode/lastUpdateTime 也记进日志，
+便于排查「原版被市场升级」与取证基线 1.6.1 的差异——只记录、不断言。
+

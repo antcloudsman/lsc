@@ -37,7 +37,7 @@
 | `webgl-unavailable` | `initGL()` 返回 false | **回落 `setMode("2d")`**（唯一回落的一态） |
 | `dem-missing` | 任一 DEM 瓦片取不到（`tiles[i] === null`） | 不回落，停在 3D 但无 patch（灰底） |
 | `texture-fail <ok>/36` | 贴面瓦片成功率 `< 30/36` | 不回落，地形在、无影像贴面（走高程配色） |
-| `dem-edge` / `dem-edge-mesh` | DEM **局部**缺角（`demAt` 返回 null） | 不是整块失败：沿用上一帧高度 / 计数上报 |
+| `dem-edge` / `dem-edge-mesh` | DEM **局部**缺角（`demAt` 返回 null） | **不进 `last3dError`**，改写 `last3dWarn`（见 §1.5）：拖到 patch 边缘是正常操作，混进失败字段会把「成功」读成「失败」 |
 | `null` | 成功（贴面 ok 即清） | — |
 
 ## 2. 真机实测（构建指纹）
@@ -68,3 +68,31 @@ lastUpdateTime  02:43:26，device base.apk sha 与构建产物一致（装完即
 ## 4. 时间戳与轮次
 - 开工 `2026-11-08 02:28` / 收工 `02:47` / 返工 3 轮（`dem-load` 删除、`demAt`→null、网格夹取 `-0.001`→`-1.001` 各一轮）。
 - 期间两次被他人装包覆盖（`02:27:20`、`02:44:17`），已在证据里记录，未把别人的构建当自己的结果。
+
+## 1.5 `last3dWarn` 与 `last3dError` 拆开（总监 11-08 裁定 A 方案）
+
+- 背景：`buildMesh` 与 `render3D` 的局部降级原本写入 `last3dError`，而成功态判据是 `last3dError === null`。
+  **拖到 patch 边缘是正常操作**，一触发就把「成功」读成「3D 失败」，`ok` 那条会误判 FAIL —— 字段混用比没有这个字段更危险。
+- 现状（本提交后）：
+  - `last3dError`：**只放三态** `webgl-unavailable` / `dem-missing` / `texture-fail <ok>/36`，贴面成功置 `null`；
+  - `last3dWarn`：`dem-edge` / `dem-edge-mesh <n>`，**不影响成功态判定**，`getState()` 一并导出；
+  - 贴面成功同时清 `last3dWarn`。
+- 判据：`ok := last3dError === null`；局部降级看 `last3dWarn`，两者不互串。
+- 另清掉 `205` 行粘错的重复注释（`var meshNull = 0;` 后误粘了 `last3dError` 的旧说明，定点 edit 的痕迹，不影响运行）。
+
+## 1.6 本提交构建指纹
+
+```
+commit          9b7a486 + 本笔（feature/地图-m6-3d）
+APK             8,595,333 B
+apk.sha256      DF064302AD4932C9680BDE81EF5D26A6A9B523DAB2F48FD11C911ACC4093ADF7
+zip 条目        518
+真机            未在本提交上跑（设备按新协议由 LC测试 调度），故本文不写「已验」
+```
+
+### 1.6.1 给测试的注入口径（审地图 指出的缓存坑，必须照做）
+`demTile` 命中 `DEM[k]` 就直接 `resolve`，**不发网络请求**；只改 `TERRARIUM` 不会失败。三句一起发：
+```
+js("TERRARIUM='https://127.0.0.1:1/'; DEM={}; DEM_PENDING={}; DEM_ORDER=[]; ensurePatch(true)")
+```
+恢复：改回 `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/` 并再清三张表，或重载页面。

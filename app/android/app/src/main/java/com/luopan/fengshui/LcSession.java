@@ -88,6 +88,12 @@ final class LcSession {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(K_EXPIRES, null);
     }
 
+    /** 当前账号数字 uid（服务端 `user.uid`，与收藏点 `userId` 同源）；未登录返回 0。 */
+    static int uid(Context context) {
+        JSONObject u = user(context);
+        return u == null ? 0 : u.optInt("uid", 0);
+    }
+
     static boolean isLoggedIn(Context context) {
         return token(context) != null;
     }
@@ -149,3 +155,4 @@ final class LcSession {
         }
     }
 }
+

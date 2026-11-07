@@ -19,7 +19,7 @@ curl.exe -s http://127.0.0.1:8787/health
 契约自检（在容器内跑，不占宿主机 Node）：
 
 ```powershell
-docker compose exec -T api node --no-warnings scripts/selfcheck.mjs   # 期望 SELFCHECK: PASS (68 checks)
+docker compose exec -T api node --no-warnings scripts/selfcheck.mjs   # 期望 SELFCHECK: PASS (80 checks)
 ```
 
 停止 / 清空数据：

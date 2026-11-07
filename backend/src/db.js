@@ -139,12 +139,21 @@ ALTER TABLE settings ADD COLUMN user_id TEXT;
 ALTER TABLE shares ADD COLUMN user_id TEXT;
 `;
 
+// Idempotent create for favorites: the client keeps a stable per-row key and
+// resends it on every push, so a crash between "server accepted" and "client
+// stored remote_id" collapses to one row instead of a duplicate.
+const FAVORITES_IDEM_SCHEMA = `
+ALTER TABLE favorites ADD COLUMN idem_key TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_favorites_user_idem ON favorites(user_id, idem_key) WHERE idem_key IS NOT NULL;
+`;
+
 const MIGRATIONS = [
   { id: '001_init', sql: V1_SCHEMA },
   { id: '002_users_sessions', sql: USERS_SESSIONS_SCHEMA },
   { id: '003_favorites', sql: FAVORITES_SCHEMA },
   { id: '004_feedback', sql: FEEDBACK_SCHEMA },
   { id: '005_legacy_user_id', sql: LEGACY_CLAIM_SCHEMA },
+  { id: '006_favorites_idem', sql: FAVORITES_IDEM_SCHEMA },
 ];
 
 const INSERT_REV = "UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'rev'";
@@ -441,21 +450,45 @@ export class Store {
     return rows.map((row) => rowToFavorite(row, uid));
   }
 
-  createFavorite(userId, uid, fields) {
-    return this.tx(() => {
-      const now = nowIso();
-      const rev = this.bumpRev();
-      const createTime = fields.createTime || now;
-      const result = this.db.prepare(
-        `INSERT INTO favorites (user_id, name, address, latitude, longitude, des, images, icon, style, overlay, db_id, create_time, rev, deleted, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`
-      ).run(
-        userId, fields.name ?? null, fields.address ?? null, fields.latitude ?? null, fields.longitude ?? null,
-        fields.des ?? null, fields.images ?? null, fields.icon ?? null, fields.style ?? null,
-        fields.overlay ?? 0, fields.dbId ?? null, createTime, rev, now
-      );
-      return this.getFavorite(userId, uid, Number(result.lastInsertRowid));
-    });
+  /** Replay lookup for an idempotent create. Includes soft-deleted rows on purpose. */
+  findFavoriteByIdem(userId, uid, idemKey) {
+    if (!idemKey) return null;
+    const row = this.db.prepare('SELECT * FROM favorites WHERE user_id = ? AND idem_key = ?').get(userId, idemKey);
+    return rowToFavorite(row, uid);
+  }
+
+  /**
+   * Create a favorite. With an `idemKey`, a repeat of the same key returns the
+   * row created the first time instead of a duplicate: the unique index on
+   * (user_id, idem_key) is the authoritative guard, so this holds even when two
+   * retries race.
+   */
+  createFavorite(userId, uid, fields, idemKey = null) {
+    const existing = this.findFavoriteByIdem(userId, uid, idemKey);
+    if (existing) return { point: existing, deduplicated: true };
+    try {
+      const point = this.tx(() => {
+        const now = nowIso();
+        const rev = this.bumpRev();
+        const createTime = fields.createTime || now;
+        const result = this.db.prepare(
+          `INSERT INTO favorites (user_id, name, address, latitude, longitude, des, images, icon, style, overlay, db_id, create_time, rev, deleted, updated_at, idem_key)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`
+        ).run(
+          userId, fields.name ?? null, fields.address ?? null, fields.latitude ?? null, fields.longitude ?? null,
+          fields.des ?? null, fields.images ?? null, fields.icon ?? null, fields.style ?? null,
+          fields.overlay ?? 0, fields.dbId ?? null, createTime, rev, now, idemKey
+        );
+        return this.getFavorite(userId, uid, Number(result.lastInsertRowid));
+      });
+      return { point, deduplicated: false };
+    } catch (error) {
+      if (idemKey && String(error.message).includes('UNIQUE')) {
+        const raced = this.findFavoriteByIdem(userId, uid, idemKey);
+        if (raced) return { point: raced, deduplicated: true };
+      }
+      throw error;
+    }
   }
 
   updateFavorite(userId, uid, id, fields) {

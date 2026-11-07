@@ -41,7 +41,13 @@
 - 绘制代码**只有一份**：`drawCompass(ctx, size, heading, dial, alpha, tianzhi)`，尺寸与坐标系由 `size` 参数化（现 `CompassView` 的 `cx/cy/r` 全部按 `size` 比例算，`r = size/2 - 8*(size/922)`）。
 - **实例 1（屏幕浮层）**：`922×922`，CSS `922/dpr`，居中，随 `heading` 旋转（等价现 `drawArtwork` 的 `save/rotate/restore`）。
 - **实例 2（贴地纹理）**：`2456×2456`（原版 `floor(2×screen.width)`），注册为 `canvas` source，`animate:false`（**不自动重绘，必须显式重绘后 `setCoordinates`**），`raster-resampling:"linear"`。
-- **四角 `coordinates` 随视野变化的算法**（`getCoordinates()` 原版实现未取证，这里给我方可算的路径）：取屏幕中心经纬度 `(lat,lng)` 为锚，用现成的 `zMpp = 156543.03392·cos(lat)/2^zoom` 把「盘面半径(px)」换成地面米数，再按米换算四角经纬度；`bearing≠0` 时四角随 bearing 旋转。视野/缩放/bearing 任一变化时重算并 `setCoordinates` —— **不重算就等于把盘面钉死在旧位置，拖地图时盘面不跟手**。
+- **四角 `coordinates` 算法（已按逆向 §7.5 原版逐字改写，替换本方案早前的等价路径）**：
+  原版 `getCoordinates()` = `map.unproject([screen.width/2, screen.height/2]).toBounds(floor(screen.width / pixelsPerMeter))`，输出顺序 `[NW, NE, SE, SW]`。
+  三句拆解：①中心 = **屏幕中心**反投影经纬度（用 `window.screen.*`，不是 `innerWidth`）；②半径(米) = `floor(screen.width / pixelsPerMeter)`（**随缩放变**，不是固定米数）；③交给 MapLibre 当轴对齐 bounds。
+  **不在此处做 bearing 旋转** —— 原版把正方形 bounds 交给 source，旋转由地图投影矩阵处理；我方若在四角里再转一次，就是转两遍（本方案早前的写法已作废）。
+  与我方现有量的等价性：`pixelsPerMeter = 1/zMpp`，`zMpp = 156543.03392·cos(lat)/2^zoom` ⇒ `screen.width / pixelsPerMeter = screen.width × zMpp`。**对照点**：我方按此算出的米数必须能复现 `floor(screen.width / pixelsPerMeter)`。
+  视野/缩放变化时重算并 `setCoordinates` —— 不重算就等于把盘面钉死在旧位置，拖地图时盘面不跟手。
+- **待确认（会影响贴地范围一倍）**：`LngLat#toBounds(radius)` 的 `radius` 在 MapLibre 源码里是**中心 ± radius**（即半边长），若如此则贴地四边形**边长 = 2 × 屏宽米数**，而不是「边长 = 屏宽米数」。我没有拿到该函数源码出处，**不写结论**；第 4 步实现时必须以原版贴地实测范围定标，验收加一条：贴地四边形边长 ÷ 屏宽米数 ∈ {1, 2} 中与原版实测一致的那个。
 - 内存口径：两实例同存约 **24.1 + 3.4 ≈ 27.5 MB**；若紧张，可只在进入贴地时创建 2456 那张、退出即释放。
 
 ## 4. 像素一致性验证（三层，缺一不可）

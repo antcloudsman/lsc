@@ -128,26 +128,33 @@ final class FavoriteSync {
             }
         }
         // 方向二：远端已删 → 本机跟随删。
-        // 注意：增量拉取只返回 rev>cursor 的行，拿它当「全量存在集」会把老点全误删。
-        // 所以单独拉一次全量 id（since=0）做对账；limit=200，超过时记日志说明对账不完整。
+        // 注意：增量拉取只返回 rev>cursor 的行，拿它当「全量存在集」会把老点全误删，
+        // 所以单独拉一次全量 id（since=0）做对账。
+        // 删数据不可逆 → 命中 limit（可能被截断）时**整段跳过对账、一条都不删**，只记日志；
+        // 宁可延迟同步（旧数据晚消失），也不能把「没返回」误当成「已删除」。
+        // 服务端返回 tombstone（deleted=1 也回）后可去掉这个上限，登记为 M5 要求。
         int purgedRemote = 0;
+        boolean reconcileSkipped = false;
         try {
             JSONObject all = LcApi.listPoints(token, 0, 200);
             JSONArray allItems = all == null ? null : all.optJSONArray("items");
             if (allItems != null) {
-                java.util.Set<Long> live = new java.util.HashSet<>();
-                for (int i = 0; i < allItems.length(); i++) {
-                    JSONObject o = allItems.optJSONObject(i);
-                    if (o != null && o.optLong("id", 0) > 0) live.add(o.optLong("id", 0));
-                }
                 if (allItems.length() >= 200) {
-                    android.util.Log.w("LCSYNC", "full list hit limit 200, reconcile may be partial");
-                }
-                for (InterestPoint local : db.listInterest()) {
-                    long remote = db.remoteIdOf(local.id);
-                    if (remote <= 0 || live.contains(remote)) continue;
-                    db.purgeInterest(local.id);
-                    purgedRemote++;
+                    reconcileSkipped = true;
+                    android.util.Log.w("LCSYNC", "reconcile skipped (limit): full list returned "
+                            + allItems.length() + ", refusing to purge");
+                } else {
+                    java.util.Set<Long> live = new java.util.HashSet<>();
+                    for (int i = 0; i < allItems.length(); i++) {
+                        JSONObject o = allItems.optJSONObject(i);
+                        if (o != null && o.optLong("id", 0) > 0) live.add(o.optLong("id", 0));
+                    }
+                    for (InterestPoint local : db.listInterest()) {
+                        long remote = db.remoteIdOf(local.id);
+                        if (remote <= 0 || live.contains(remote)) continue;
+                        db.purgeInterest(local.id);
+                        purgedRemote++;
+                    }
                 }
             }
         } catch (Throwable t) {
@@ -161,6 +168,7 @@ final class FavoriteSync {
         return "同步完成：上传 " + pushed + "，拉取 " + pulled
                 + (deleted > 0 ? ("，删除 " + deleted) : "")
                 + (purgedRemote > 0 ? ("，跟随远端删除 " + purgedRemote) : "")
+                + (reconcileSkipped ? "，远端删除对账已跳过（超 200 条）" : "")
                 + (failed > 0 ? ("，失败 " + failed + "（已留在队列）") : "")
                 + (deleteFailed > 0 ? ("，删除失败 " + deleteFailed + "（已留墓碑）") : "")
                 + (conflicts > 0 ? ("，冲突收敛 " + conflicts) : "");
@@ -204,4 +212,5 @@ final class FavoriteSync {
         }
     }
 }
+
 

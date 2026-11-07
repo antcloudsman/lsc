@@ -32,13 +32,19 @@
 - **命令**：`pwsh -File tools\device\install-debug.ps1 -Apk <apk> -Device L2E0222531014833`（参数以脚本实际 `-?` 为准，实际参数原样记 SUMMARY）。
 - **期望**：一次 `Success`；全程无安装器 UI（脚本运行期间轮询 `mCurrentFocus` 不得出现 `packageinstaller`/`UnifiedAuthenticationDialogActivity`）；`lastUpdateTime` 与 `s0-baseline.txt` 不同；退出码 0。
 - **判据**：`lastUpdateTime` 变化 + 无 UI + 退出码 0 → PASS；任一不满足 → FAIL（记 dump + logcat）。
+- **纯净模式前提（2026-11-07 现场观察，待本轮确认）**：设备当前 `hw_mc.pure_mode.enable=true`、`pure_enhanced_mode_state=1`。14:5x 另一会话执行 `adb shell pm install -r -t /data/local/tmp/...` 时，前台停在 `com.android.packageinstaller/InstallStaging`——**说明纯净模式开启时 `pm` 主路径可能也会弹安装器 UI**。本轮 S1 如实记录「是否出现 UI + 出现的页码」；若出现，先判 FAIL 并请技术总监裁「S1 前提应为纯净模式关闭」还是「脚本需处理 pm 路径的 UI」。
 - **关键证据**：`s1/before-after-lastUpdateTime.txt`、`s1/focus-poll.txt`（每 300ms 采样）、`s1/logcat.txt`。
 
 ### S2 · `adb install` 触发纯净模式风险页（脚本自动点「继续安装/仍要安装」）
-- **构造**：走脚本的 UI 安装路径（若脚本默认走 `pm`，用脚本提供的强制 UI 参数；参数名以 `-?` 为准并记录）。本机纯净模式已知会拦 ADB 装包（`INSTALL_FAILED_ABORTED: User rejected permissions` 是 commit 阶段被拒，风险页是另一形态）。
+- **构造**：触发脚本的 UI 兜底路径（脚本只在 `pm install` 不成功时才走 `adb install`）。本机纯净模式已知会拦 ADB 装包（`INSTALL_FAILED_ABORTED: User rejected permissions` 是 commit 阶段被拒，风险页是另一形态）。
+  **注意**：脚本没有"强制 UI"参数，只能靠 `pm` 失败自然进入兜底；若真机上 `pm` 一直成功，则 S2 记 BLOCKED（环境不具备），并另外单独跑一次裸 `adb install` 记录风险页形态（不进脚本判据）。
 - **期望**：脚本自己识别风险页并点「继续安装」或「仍要安装」（`ui-*.xml` 里能看到被点节点的 text/bounds），最终装上；退出码 0；不得需要人工点击。
-- **判据**：装成功 + 有「自动点击那一下」的 dump 证据 + 无人工干预 → PASS；脚本卡在风险页（>90s 无进展）→ FAIL；页面根本没出现（纯净模式已关）→ 记 BLOCKED（环境不具备），不算脚本红，但要在 SUMMARY 写明如何复现。
-- **关键证据**：`s2/risk-page.xml`（点之前）、`s2/risk-page-after.xml`（点之后）、`s2/logcat.txt`、`s2/timing.txt`。
+- **判据（2026-11-07 真机实测口径，技术总监确认）**：正常流程**只会出现两页、每页各点一次「继续安装」**（风险页按钮 ≈ `(881,2524)`、安装确认页按钮 ≈ `(614,2362)`，坐标仅作对照，实际必须按 dump bounds）→ 之后 `Streamed Install Success`。
+  - 两页两下后装成功 → PASS；
+  - **出现第三页**，或点了「继续安装」后不前进（同一页反复出现 / 焦点不变）→ **FAIL**，留当页 dump + 焦点序列；
+  - 脚本卡在风险页（>90s 无进展）→ FAIL；
+  - 页面根本没出现（纯净模式已关 / `pm` 直接成功）→ BLOCKED，写清复现条件。
+- **关键证据**：`s2/risk-page.xml`（点之前）、`s2/risk-page-after.xml`（点之后）、`s2/page2.xml`（确认页）、`s2/logcat.txt`、`s2/timing.txt`、`s2/stdout.txt`（脚本自报的 tap 坐标序列）。
 
 ### S3 · `UnifiedAuthenticationDialogActivity`（认证对话框注 PIN）
 - **构造**：在会弹「请输入锁屏密码继续安装」的路径上跑（首次 `adb install` 或纯净模式风险页之后常见）。

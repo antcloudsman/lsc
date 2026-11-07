@@ -541,7 +541,8 @@ public class M3PageActivity extends Activity {
         avatarImg.setId(R.id.lc_m3_avatar_img);
         avatarImg.setImageResource(R.mipmap.lc_default_avatar);
         avatarImg.setPadding(0, dp(7), 0, dp(4));
-        list.addView(avatarImg, new LinearLayout.LayoutParams(120, 120));
+        // 头像延后：原版顺序是「昵称 339 -> 头像 502」，先记录引用，等昵称行之后插入
+        final android.widget.ImageView avatarRowImg = avatarImg;
 
         final String token = LcSession.token(this);
         final org.json.JSONObject user = LcSession.user(this);
@@ -607,6 +608,22 @@ public class M3PageActivity extends Activity {
         nameRow.setPadding(0, dp(5), 0, dp(4));
         nameRow.setOnClickListener(v -> showEditNameDialog(token, nickShown));
         addAccountRow(list, nameRow);
+        // 头像：160 行内放 120x120，垂直居中
+        LinearLayout avatarRow = new LinearLayout(this);
+        avatarRow.setOrientation(LinearLayout.VERTICAL);
+        avatarRow.setBackgroundColor(CARD_WHITE);
+        avatarRow.setMinimumHeight(160);
+        avatarRow.setGravity(Gravity.CENTER_VERTICAL);
+        avatarRow.addView(avatarRowImg, new LinearLayout.LayoutParams(120, 120));
+        list.addView(avatarRow);
+        {
+            View dv = new View(this);
+            dv.setBackgroundColor(0xFFF0F3F7);
+            LinearLayout.LayoutParams dlp0 = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 3);
+            dlp0.leftMargin = 39; dlp0.rightMargin = 39;
+            list.addView(dv, dlp0);
+        }
 
         TextView accountRow = new TextView(this);
         accountRow.setId(R.id.lc_m3_account_name);
@@ -794,9 +811,9 @@ public class M3PageActivity extends Activity {
         row.setOrientation(LinearLayout.VERTICAL);
         row.setBackgroundColor(CARD_WHITE);
         row.setMinimumHeight(160);
-        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setGravity(Gravity.TOP);   // 原版行节点高 79、内容顶端对齐；居中会把文字推下 42
         row.addView(content, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                LinearLayout.LayoutParams.MATCH_PARENT, 79));
         list.addView(row);
         View divider = new View(this);
         divider.setBackgroundColor(0xFFF0F3F7);

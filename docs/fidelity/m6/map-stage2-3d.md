@@ -35,10 +35,12 @@
 | 取值 | 触发条件 | 收尾行为 |
 |---|---|---|
 | `webgl-unavailable` | `initGL()` 返回 false | **回落 `setMode("2d")`**（唯一回落的一态） |
-| `dem-missing` | 任一 DEM 瓦片取不到（`tiles[i] === null`） | 不回落，停在 3D 但无 patch（灰底） |
+| `dem-missing` | 任一 DEM 瓦片取不到（`tiles[i] === null`） | 不回落；停在 3D 且 **保留上一块 patch**（`hasTexture` / `demZoom` 不变），继续显示旧地形 |
 | `texture-fail <ok>/36` | 贴面瓦片成功率 `< 30/36` | 不回落，地形在、无影像贴面（走高程配色） |
 | `dem-edge` / `dem-edge-mesh` | DEM **局部**缺角（`demAt` 返回 null） | **不进 `last3dError`**，改写 `last3dWarn`（见 §1.5）：拖到 patch 边缘是正常操作，混进失败字段会把「成功」读成「失败」 |
 | `null` | 成功（贴面 ok 即清） | — |
+
+> `dem-missing` 实测会出现 `warn="dem-edge"`：那是沿用旧块时相机目标落到旧块边缘所致，属**局部降级**，只进 `last3dWarn`，不进 `last3dError`。旧代码里它会混进 `err`，这一档会被读成两个错误——这正是拆字段的理由。
 
 ## 2. 真机实测（构建指纹）
 

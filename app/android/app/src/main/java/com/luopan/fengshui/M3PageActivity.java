@@ -139,7 +139,8 @@ public class M3PageActivity extends Activity {
         // 标题栏高度固定（原版正文从 y=265 起、状态栏 122 -> 143），
         // 否则「我的」158 高会把 bar 撑高、把标题一起推下去（实测标题 +31 就是这条）。
 
-        bar.setPadding(dp(12), 142, dp(12), dp(5));   // top=142（原 115+27）：只此一处，别在下面再覆盖
+        bar.setPadding(dp(12), 115, dp(12), dp(5));   // P=115：与「返回 y115 / 我的 y115」同顶（审核验按导数反推）
+        bar.setClipChildren(false);   // 「我的」底部到 272，超过定高 265，不关裁剪只有 150 高
         TextView back = new TextView(this);
         back.setId(R.id.lc_m3_back);
         back.setText("返回");
@@ -151,7 +152,7 @@ public class M3PageActivity extends Activity {
                 new android.widget.FrameLayout.LayoutParams(
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
-        backLp.gravity = Gravity.START | Gravity.CENTER_VERTICAL;
+        backLp.gravity = Gravity.START | Gravity.TOP;   // 居中无解：返回 y115 与 我的 y115 需同一 P
         bar.addView(back, backLp);
         TextView title = new TextView(this);
         title.setId(R.id.lc_m3_title);
@@ -163,7 +164,7 @@ public class M3PageActivity extends Activity {
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
         titleLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        titleLp.topMargin = 103;   // 原版标题 y154，随 bar 内距一起 +64
+        titleLp.topMargin = 39;   // 原版 154 - bar 顶 115
         titleLp.height = 79;   // 原版标题高 79（四页一致），wrap 只有 76
         title.setIncludeFontPadding(false);
         bar.addView(title, titleLp);
@@ -212,7 +213,7 @@ public class M3PageActivity extends Activity {
         LinearLayout list = new LinearLayout(this);
         list.setId(R.id.lc_m3_body);
         list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(dp(12), 0, dp(12), dp(10));
+        list.setPadding(dp(12), 33, dp(12), dp(10));   // 首行目标 353：实测 320，差 +33
         List<String> lines = readPage(page);
         // 三页有专属结构（不是纯文本列表）：投诉反馈两级、推荐给好友分享面板、账户设置未登录态
         if ("投诉反馈".equals(page)) {
@@ -319,9 +320,9 @@ public class M3PageActivity extends Activity {
             list.removeAllViews();
             buildComplaintForm(list);
         });
-        if (r1 != null) r1.setMinimumHeight(dp(53));
+        if (r1 != null) r1.setMinimumHeight(180);   // 原版 353->533 步进 180
         LinearLayout r2 = addRow(list, "订单投诉", "未选择任何订单", false, null);
-        if (r2 != null) r2.setMinimumHeight(dp(53));
+        if (r2 != null) r2.setMinimumHeight(180);
     }
 
     private void buildComplaintForm(LinearLayout list) {

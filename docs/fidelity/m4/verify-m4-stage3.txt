@@ -1,0 +1,40 @@
+# M4 Stage 3 客户端接入 · 真机证据（自建服务端 v2）
+# 设备 L2E0222531014833  Android 12  采证 2026-11-07 17:55-18:08
+# 分支 feature/client-m4-account（base develop d7d0062）
+# APK sha256 7e08837809286d69afe809f8b4c8ae2c05db429a72248b402f3723754c142216  size 8,822,244+
+# 前置：adb reverse tcp:8787 tcp:8787（服务端只绑宿主机 127.0.0.1）；容器 lc-backend healthy
+
+## 1) 注册 → 账户设置（登录态）
+login-page=返回|账号登录（本项目新增）|登录|注册|账号（3–32 位…）|密码（8–128 位）|登录|微信登录（D-031 待接入，暂不可用）|说明：本页为本项目新增的账号密码登录，不是原版页面…
+account-after=返回|账户设置|…本项目新增…|昵称：LCUI　（点此修改）|账号：lcui175727　uid：34|修改密码|同步收藏点（本地优先，失败留离线队列）|退出登录
+
+## 2) token 存储（run-as 读 prefs，只打印断言）
+has-token_enc=True          # 密文在 SharedPreferences（lc_session.xml）
+has-plaintext-token=False   # 无 40+ 字符明文 token
+has-username=True
+
+## 3) 投诉反馈提交（需登录）
+complaint-status=[提交成功]
+LCAPI: POST /v2/feedback/add -> 201
+服务端侧：feedback 7 → 8
+
+## 4) 收藏点云同步（本地优先 + 离线队列）
+本地保存一个收藏点 → agv 页 save 后：
+离线（adb reverse 移除）同步 → [同步失败：连不上本地服务（需 adb reverse tcp:8787）]
+  LCSYNC: push net id=1 ConnectException      ← 该行留在待同步队列
+恢复 reverse 后再同步 → [同步收藏点：同步完成：上传 1，拉取 1]
+  LCAPI: POST /v2/userCollectPoint/save -> 201
+  LCAPI: GET /v2/userCollectPoint/list?pageNum=1&limit=200 -> 200
+  LCSYNC: push=1 failed=0 conflict=0 pull=1 cursor=45
+服务端侧：favorites 11 → 12
+
+## 5) 退出登录
+account-loggedout=…|您当前未登录|立即登录|微信登录（D-031 待接入，暂不可用）
+LCAPI: POST /v2/auth/logout -> 200
+
+## 服务端侧独立印证（docker + /health）
+users 33→34  favorites 11→12  feedback 7→8   schema=005_legacy_user_id
+
+## 口径
+- 登录/注册页 = 本项目新增（原版无此页），不按原版 1:1 判；原版四入口按 D-029/030/031 只判占位+不可用说明。
+- 明文 HTTP 仅放行回环（res/xml/network_security_config.xml 只列 127.0.0.1 / localhost），全局 cleartext 未打开。

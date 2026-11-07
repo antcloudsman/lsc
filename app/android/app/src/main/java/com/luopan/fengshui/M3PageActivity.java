@@ -212,7 +212,10 @@ public class M3PageActivity extends Activity {
         } else if ("账户设置".equals(page)) {
             buildAccount(list);
         } else if ("关于我们".equals(page)) {
-            buildAbout(list, lines);
+            // M6 第 4 条：about 是**绝对分布**（154/995/1090/2331/2489/2496），
+            // ScrollView 流式布局必然整体偏高（测试实测 -700..-1950px）。
+            // 这里改成屏幕坐标系绝对定位，纵坐标一律取 dump 原值。
+            buildAboutAbsolute(root, lines);
         } else if ("联系我们".equals(page)) {
             buildContact(list, lines);
         } else if (webUrlOf(page) != null) {
@@ -246,12 +249,25 @@ public class M3PageActivity extends Activity {
 
         // M6 第 4 条：账户页贴底红按钮（1150x66 由列表内距折出，这里固定在最底部，不随滚动）
         if (bottomFixedButton != null) {
+            android.widget.FrameLayout bar2 = new android.widget.FrameLayout(this);
+            android.graphics.drawable.GradientDrawable lbg = new android.graphics.drawable.GradientDrawable();
+            lbg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            lbg.setColor(0xFFE93B4D);
+            lbg.setCornerRadius(12f);
+            bar2.setBackground(lbg);
+            bar2.setClickable(true);
+            android.widget.FrameLayout.LayoutParams txtLp =
+                    new android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+            txtLp.gravity = Gravity.CENTER;
+            bar2.addView(bottomFixedButton, txtLp);
             LinearLayout.LayoutParams blp2 = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 124);   // 像素实测 1150x124（dump 的 66 是窗口底截断值）
+                    LinearLayout.LayoutParams.MATCH_PARENT, 124);
             blp2.leftMargin = 39;
             blp2.rightMargin = 39;
-            blp2.bottomMargin = 64;   // 原版红条底 2635，屏底 2700，留 64px
-            root.addView(bottomFixedButton, blp2);
+            blp2.bottomMargin = 64;
+            root.addView(bar2, blp2);
         }
 
         // 帮助中心 / 用户协议：原版就是远端 WebView，且是**整页 WebActivity**（逆向 smali $b$a$c/$d），
@@ -627,6 +643,9 @@ public class M3PageActivity extends Activity {
         logout.setTextSize(16f);
         logout.setTextColor(android.graphics.Color.WHITE);
         logout.setGravity(Gravity.CENTER);
+        // 文字节点必须只有字那么宽（原版 183），红底宽度在**容器**上：
+        // 之前把背景直接设在文字节点上，dump 里文字宽度=整条 1150（测试实测 ΔR=+483）。
+        logout.setBackground(null);
         android.graphics.drawable.GradientDrawable logoutBg = new android.graphics.drawable.GradientDrawable();
         logoutBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
         logoutBg.setColor(0xFFE93B4D);
@@ -823,6 +842,65 @@ public class M3PageActivity extends Activity {
                 });
             }
             list.addView(tv);
+        }
+    }
+
+    /**
+     * M6 第 4 条：关于我们 —— **按 dump 的绝对纵坐标**摆放（屏幕坐标系）。
+     * dump：三维山水全景地图 y995、重庆新知空间科技有限公司 y1090、
+     * 测绘资质 y2331、v1.6.1 y2489、APP备案编号 y2496。
+     * 根容器已按 statusBar 加了顶部内距，所以这里减掉该内距，落点才等于 dump 的 y。
+     * 《用户协议》《隐私政策》在原版 dump 里是 [0,0][0,0]（排版在窗口帧外），
+     * 照原版**不参与可见布局**；真实坐标待 about-links.png 取证后再落，不臆造。
+     */
+    private void buildAboutAbsolute(LinearLayout root, List<String> lines) {
+        int statusBar = 0;
+        int sbId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (sbId > 0) statusBar = getResources().getDimensionPixelSize(sbId);
+
+        android.widget.FrameLayout stage = new android.widget.FrameLayout(this);
+        root.addView(stage, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+
+        int[] ys = {995, 1090, 2331, 2489, 2496};
+        for (int k = 0; k < ys.length; k++) {
+            String text = null;
+            for (String line : lines) {
+                if (line.trim().isEmpty() || line.trim().equals("关于我们")) continue;
+                if (line.contains("《")) continue;         // 两链接原版未参与布局
+                if (k == 0 && line.contains("三维山水全景地图")) text = line;
+                if (k == 1 && line.contains("重庆新知空间")) text = line;
+                if (k == 2 && line.contains("测绘资质")) text = line;
+                if (k == 3 && line.contains("v1.6.1")) text = line;
+                if (k == 4 && line.startsWith("APP备案编号")) text = line;
+            }
+            if (text == null) continue;
+            TextView tv = new TextView(this);
+            tv.setText(text.trim());
+            tv.setTextSize(15f);
+            tv.setGravity(Gravity.CENTER);
+            tv.setTextColor(TEXT_MAIN);
+            if (k == 2) {
+                // 测绘资质在原版是蓝色可点（点去 MeasureProve，D-025 本轮不跳转）
+                tv.setTextColor(LINK);
+                tv.setOnClickListener(v ->
+                        android.util.Log.d("LCM3", "measure prove page deferred by D-025"));
+            } else if (k == 4) {
+                tv.setTextColor(LINK);
+                tv.setOnClickListener(v -> {
+                    try {
+                        startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(BEIAN_URL)));
+                    } catch (Throwable t) {
+                        android.util.Log.e("LCM3", "beian open failed", t);
+                    }
+                });
+            }
+            android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+            lp.topMargin = Math.max(0, ys[k] - statusBar);
+            stage.addView(tv, lp);
         }
     }
 

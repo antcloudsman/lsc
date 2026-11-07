@@ -1549,6 +1549,55 @@ curl.exe -s -i -X POST http://127.0.0.1:8787/v2/auth/login -H 'Content-Type: app
 docker logs lc-backend --since 20m | Select-String 'pwmark|token'        # 期望 0 命中
 ```
 
+## 27. Stage 5 打回后：三条数据缺陷的**修复前基线**（2026-11-07 20:50，供修完对比）
+
+总监打回 Stage 5，客户端要修三处。为了让「修好了」可判、且不靠各自口述，我先用自己的账号把**修复前的故障数值**量出来，修完用同一条命令复跑对比。
+
+测试账号：`idemsnvqi`（我注册，仅用于本判据）。
+
+### 27.1 幂等：收藏 save 无幂等，反馈 add 有 —— **同一后端两套标准**
+
+```
+同一个 Idempotency-Key = idem-test-snvqi
+收藏 save 第1次 → 201  id=29
+收藏 save 第2次 → 201  id=30      ← 两条重复行（缺陷）
+反馈 add  第1次 → 201  id=fb_962844c6b5a94f7e944ba96081fbbd6e
+反馈 add  第2次 → 200  id=fb_962844c6b5a94f7e944ba96081fbbd6e   ← 同一行（现有参照实现）
+```
+
+**修复后的判据**：save 同 key 连发两次 → **同一 id**、第二次 HTTP 200（不是 201），且库里该 key 只有一行。
+
+### 27.2 坐向：服务端**能完整往返** `des`，丢的是客户端 —— 修复不需要改接口
+
+```
+save  des='坐90° 向270°'  → 201
+list 该条 → des='坐90° 向270°'   ← 服务端保存并原样回显，未截断
+```
+
+→ 所以 `GapDb.java:203-204` 硬编码 `sitting=0 / facing=180` 是**纯客户端问题**：解析 `des` 或让服务端补结构化字段都可以，但不能把「服务端没给」当理由。
+**修复后判据**：保存 `坐90° 向270°` → 换设备/重装后拉回 → 本地该条 `sitting=90 / facing=270`（不是 0/180）。
+
+### 27.3 删除：服务端**删除即生效**，客户端根本没调
+
+```
+DELETE /v2/userCollectPoint/delete?id=31 → 200
+删除后 list 不再含该条 → False(不含)     ← 服务端行为正确
+git grep deletePoint origin/develop -- app/android/app/src/main/java
+  → 只有 LcApi.java:90 的定义，零调用点   ← 客户端从不调（缺陷成立）
+```
+
+**修复后判据（两个方向都要通）**：①本机删 → 服务端 list 不再含该条；②另一台设备删该条 → 本机 pull 后本地也消失（不出现「本机删的在别的设备复活」「别处删的本机常驻」）。
+
+### 27.4 复现（修完直接跑这一段对比）
+
+```powershell
+# 用任意新账号登录拿 token 后：
+Invoke-WebRequest -Uri http://127.0.0.1:8787/v2/userCollectPoint/save -Method POST `
+  -Headers @{'Content-Type'='application/json'; token=$tok; 'Idempotency-Key'='<同一串>'} `
+  -Body '{"name":"X","lng":116.4,"lat":39.9,"type":0}'    # 连发两次，比 data.point.id
+```
+
+
 
 
 

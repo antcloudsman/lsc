@@ -2,7 +2,7 @@
 
 - 作者：LC产品
 | 6 | **一次改动改了什么 ≠ 合并后文件里现在有什么** | 有人看 `develop` 快照见两处 `adjustResize` 就判「这支加了两处」；实际 `git diff f11b84e...2d0e8ee` 的 manifest **只 +1 行**，`LoginActivity` 那处早在 `f11b84e` 就有 | **判断改动范围只看 `git diff <base>...<branch>`，看现状才看 HEAD**；拿「现状」推「本次改动」与拿「可见像素」推「控件几何」是同一类错 |｜评审：技术总监
-- 日期：2026-11-07｜版本：**v1.1**（按总监八条原文重做对账：7 达成/1 部分；空真扩为六问；客户端 a11y 改动清单按 `git diff` 写实）
+- 日期：2026-11-07｜版本：**v1.4**（第 3 条补「代码已到位、真机四条未跑」；新增 §1.11 P0 跨账号误删缺陷留痕；附录改 §1.12）
 - 基线：`develop` @ **`47cb0fc`**（含 E2E 补跑 `24de04b` 与 m4-plan v1.11）
 - 输入：`m4-plan.md` v1.11、`docs/qa/m4-e2e-result.md`、`docs/qa/install-debug-result.md`、`docs/qa/m4-timesheet.md`、`round2-report.md` v1.0.39、`backend/api.md`（v2 定稿）
 
@@ -10,22 +10,41 @@
 
 ## 1. done-when 逐条对账（按总监 2026-11-07 提供的**八条原文**）
 
-> **原文由总监提供、逐字引用**。上一版 v1.0 用的是我自拟的 12 条（各 Stage 的 done-when），已降级为附录 §1.9 索引，**判定一律以本节八条为准**。
+> **原文由总监提供、逐字引用**。上一版 v1.0 用的是我自拟的 12 条（各 Stage 的 done-when），已降级为附录 §1.12 索引，**判定一律以本节八条为准**。
 
 | # | done-when 原文（逐字） | 状态 | 证据 / 缺口 |
 |---|---|---|---|
 | 1 | 执行 `cd backend && docker compose up -d --build` 可一键启动服务，`/health` 返回 200，volume 持久化生效（重启后数据仍在），容器内自检全部通过 | **达成** | 服务端 `e5031cc`+`f0bb2f5`；总监独立复跑：`lc-backend Running`、`/health` 200、`schema=005_legacy_user_id`、`cases=2` 仍在、`SELFCHECK: PASS (68 checks)`；持久化用**同一行**实证 `id=18/rev=44` 重启后仍在、重启前 token 仍可用；`.token-pepper` 0600 |
 | 2 | 账号体系可用：注册、账号密码登录、登出、改密、会话过期五条均有自检脚本，密码以 scrypt/bcrypt 哈希存储，日志不含明文，token 不可猜测 | **达成** | 五链路 + `logout-all` + 会话列表/撤销（自检 68 项覆盖）；`scrypt N=32768,r=8,p=1` + `timingSafeEqual`；token **32B 随机**、库内只存 `sha256(token+pepper)`；服务端日志只记 pathname；客户端侧 `has-plaintext-token=False` **且** Keystore 成功路径有 `has-token_enc=True` 互证（按空真五问第②条，不能只看"无明文"） |
-| 3 | 客户端真机闭环：注册→登录→收藏点保存→服务端拉回→投诉反馈提交→登出，全链路有真机证据；服务不可用时本地兜底与提示可见 | **达成** | §3.1：六步全 PASS、**36 PASS / 1 判据误判**；反馈**两样同时成立**（`提交成功 [20,1570][1208,1653]` + DB `feedback 8→9`），另有总监独立查库的第二条记录（`form@example.com`/`form-reason`/`form-desc`，字段逐字）；降级 `同步失败：连不上本地服务` → 恢复 `同步完成` |
+| 3 | 客户端真机闭环：注册→登录→收藏点保存→服务端拉回→投诉反馈提交→登出，全链路有真机证据；服务不可用时本地兜底与提示可见 | **达成但有 3 处数据缺陷待修（不计通过）** | 六步真机全 PASS、36 PASS / 1 判据误判（§3.1）；反馈两样同时成立（`提交成功 [20,1570][1208,1653]` + 库内 `fb_be5c60c3…` 四字段逐字）；降级/恢复可见。**但「保存→拉回」是行为对、内容不对**，按纪律不算达标，三处缺陷（审客户端 `db0479c` 指出、总监逐条进代码核实）：①**重复建点**——`FavoriteSync.java:57-61` 在 `savePoint` 成功到 `markInterestSynced` 之间无中间态/无事务，崩在缝里本地仍 `pending`、`remote_id=0`，下次同步再建一条；服务端 `save`（`server.js:464-483`）不读幂等键，而反馈接口有（`:506-524`），同一后端两套标准＝漏做；②**换机坐向全错**——`GapDb.java:203-204` 拉回时硬编码 `sitting=0/facing=180`，推上去的 `des`（`FavoriteSync:50`「坐X° 向Y°」）被丢弃，属内容丢失；③**删除两端不同步**——`LcApi.deletePoint` 零调用点，本地硬删（`GapDb:136-138`），本机删的在别机复活、别机删的本机永远学不到。**修完 + 审核验复验前，本条不写「达成」。** **进展（2026-11-07 21:10）**：服务端幂等 `5dcc0bb`（`schema=006_favorites_idem`、自检 **80 checks**）、客户端修复 `8e4cfe1`+`bd30997`（幂等键/坐向还原/删除双向/**超限跳过对账**/**行级 `owner_uid` 账号隔离**）**代码已全部到位并进 develop**，但**真机四条判据未跑**（跨账号条数不减 / 崩窗口重跑 / 坐 90 向 270 还原 / 删除双向）——**只是代码到位，不等于达成**。 |
 | 4 | 微信登录只做取证、入口占位和 DI 登记，不实现 | **达成** | 取证 `account-reverse.md`（`loginType=wechat`）；占位 `微信登录`（`LoginActivity:124`、`M3PageActivity:458`），点击只说明「需开放平台登记包名+签名」；**D-031 已批准在册**；无任何外发请求 |
 | 5 | M3 遗留三项（R2-013 三项返工、R2-032 双图、R2-027 第 13 格定案）关闭 | **达成** | R2-013 A（`◆`=`ic_compass_vip.webp`，sha `5e2811b6…`）/ B 前 3 行回显 / C sheet 顶 `1011` 偏差 0；R2-032 角注关账；R2-027 第 13 格 `127`（统一量法）+ 整条于审核验 §24 关账 → **P1 13/13** |
 | 6 | 缺失模块清单逐项关闭或书面 DI | **达成（含书面转出）** | `m4-plan` §2 逐项处置：关闭 5 组（P1-18-A…F 核销、P1-33-A 范围订正、P1-DYN-A09 不可得、P1-13-A/B/C、P1-21-A）；DI 在册 **14 条**（D-016/019/020/021/022/023/024/025/026/027/028/029/030/031）；**三条经总监书面同意转 M5 首项**（P1-14-A…D、P1-4-F、P1-25-C），**未混入「已关闭」** |
 | 7 | API 契约 `backend/api.md` 升 v2 并定稿 | **达成** | 服务端已收「v2 定稿」（信封/成功码 200/`token`/13 字段/`type:int`/限流/`/v1/*` 410/越权 404）；LC审成文 定稿三份（契约与实现一致性、部署与备份含「`.token-pepper` 必须与 SQLite 一起备份」、安全说明与已知限制） |
-| 8 | 工时台账、copy/secret 门禁、fidelity report 全绿 | **部分（差一项证据）** | ①工时台账：`docs/qa/m4-timesheet.md` + 本摘要 §4（只收有时钟项、**禁止外推**）；②copy/secret：LC测试 在 `47cb0fc` 六门 **全 PASS**（copy/secret/desktop/numeric/mech_src/android，exit 0）；③**`fidelity.py report` 不在六门之内，本轮没有人独立复跑** → **待补一条证据**（在最新 develop 跑 `report` 并贴 exit code + checksheet 覆盖数），补齐后本条才算绿 |
+| 8 | 工时台账、copy/secret 门禁、fidelity report 全绿 | **达成** | ①工时台账：`docs/qa/m4-timesheet.md` + 本摘要 §4（只收有时钟项、**禁止外推**）；②copy/secret：LC测试 在 `47cb0fc` 六门 **全 PASS**（copy/secret/desktop/numeric/mech_src/android，exit 0）；③**`fidelity.py report`**：LC测试 在 `71ff5c8` 代码树独立复跑 → **`report_exit=0`**、`checksheet_id coverage 29/29`、`27/65 pair(s) compared`、26 条 known-red（registered）。**总监已核并据此裁定本条改「达成」。** |
 
-**结论**：八条里 **7 条达成、1 条部分**（第 8 条缺 `fidelity report` 独立复跑）。**在第 8 条补齐前，M4 不得判「全绿关账」。**
+**结论（总监 2026-11-07 打回后修订；第 8 条已据证据改达成）**：八条里 **7 条达成**（1/2/4/5/6/7/8）、**第 3 条「达成但有 3 处数据缺陷待修」不计通过**。**M4 仍不得关账**，唯一卡点：①客户端三处数据缺陷修完（`122a8d1`+`fddce8d`：幂等键/拉回坐向/**超限跳过对账**）+ **服务端 `save` 读 `Idempotency-Key`（未落地，限流中断三次）** + 审核验复验。其余两项（登录页 png/xml、`fidelity.py report`）**已补齐**。**第 3 条在第 3 条修复与复验前不许改成「达成」。**
 
-### 1.9 附录：各 Stage done-when（原 12 条，仅作索引，不替代八条）
+### 1.10 转 M5 与已知限制（总监 2026-11-07 裁定）
+
+| 项 | 内容 | 处置 |
+|---|---|---|
+| **P1-401-MIS** | 同步把 401/429 也显示成「连不上本地服务」（`M3PageActivity.java:528-533`） | **转 M5**（影响错误提示准确性，不影响数据正确性） |
+| **P1-401-CLR** | 401 后不清会话（`LcSession.java:63-74`） | **转 M5** |
+| **已知限制 1** | token pepper 现在走 fallback `/data/.token-pepper`，**与 SQLite 同卷** → 整卷泄露时「DB 泄露拿不到可用会话」不再成立 | 写进 M4 已知限制；**M5 改 `/run/secrets`**（代码已支持） |
+| **已知限制 2** | `.gitignore` 未挡 `.token-pepper` / `*.sqlite`（当前仓库确实没有，属预防性） | **现在就加**（预防性） |
+| **已知限制 3** | 装机 S3 未覆盖（本轮未出现认证对话框）→ `PIN_IN_LOG=False` 是空真 | M4 关账写「S3 未覆盖」，见 §5 第 1 问 |
+| **已知限制 4** | 登录/注册页为**新增页**，无原版对照图；判据为「LC 截图 + dump + 标明新增」 | **证据已补**（`bb75e34` → develop `ad8eb5e`）：`docs/fidelity/m4/login-page.png`（199,612 B / **1228×2700**）+ `login-page.xml`（8 个关键 id 齐：`lc_login_title/username/password/submit/sms/onetap/honor/wechat`，含「账号登录（本项目新增）」），SUMS **12/12** 我独立从提交 blob 复算 `ok=12 bad=0`；**未造原版对照图** |
+
+### 1.11 M4 期间的最高级缺陷记录（P0，留痕）
+
+| 编号（建议） | 缺陷 | 级别 | 机制（行号锚点） | 修复 | 判据 |
+|---|---|---|---|---|---|
+| **P0-XACCT-PURGE** | **换账号后整批硬删本地收藏** | **P0**（不可逆 + 静默 + 整批删真实数据，三特征全占；总监 2026-11-07 裁定高于 A/B） | `FavoriteSync.java:152-157`（`fddce8d`）对账时遍历**全部**本地行，无账号条件；`live` 只含本账号 list → 旧账号 `remote_id>0` 的行全部不在 live → `GapDb.java:199-201` 硬删。审核验 `354d246` §29 用 `git grep owner_uid` 零命中确认 | `bd30997`（develop）：`owner_uid` 列 + `ALTER` 迁移（`GapDb:92`）、`listInterest(uid)` 收窄（`:173` `owner_uid=0 OR owner_uid=?`）、对账循环内 `if (owner != uid) continue`（`FavoriteSync:161-163`）、`adoptUnownedRows(uid)`（`:38`）、**整行跳过、不置 `remote_id=0` 重推**（否则会把 A 的数据推进 B） | ①换账号同步后**本地条数不减**（`purgedRemote=3` 必须变 0）；②服务端 B 的 favorites 不增加；③切回 A 后原 3 条恢复可推拉且 `remote_id` 仍是 A 的 id |
+
+> 我已在 develop `bd30997` 独立核过守卫落地：`FavoriteSync:161-163` 的 `owner != uid → continue` 存在、`GapDb:173` 有 `owner_uid=0 OR owner_uid=?`、超限跳过 `reconcile skipped (limit)` 在 `:149`。**代码到位 ≠ 判据通过**，仍需真机四条。
+
+### 1.12 附录：各 Stage done-when（原 12 条，仅作索引，不替代八条）
 
 | Stage | 条数 | 对账结果（详见 v1.0 / `m4-plan` 各节） |
 |---|---|---|
@@ -150,5 +169,8 @@ M4-POST-01 `/v2/cases` 案例库云同步（待客户端接入再排期）、M4-
 
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
+| v1.4 | 2026-11-07 | **第 3 条补进展但不改状态**：服务端幂等 `5dcc0bb`（`schema=006_favorites_idem`、自检 **80 checks**）+ 客户端 `8e4cfe1`+`bd30997`（含**行级 `owner_uid` 账号隔离**、超限跳过对账）**代码全部进 develop**，但**真机四条未跑 → 仍不计通过**；新增 **§1.11 P0 缺陷留痕**——`P0-XACCT-PURGE` 换账号整批硬删本地收藏（不可逆+静默+整批，三特征全占；审核验 `354d246` §29 定位、`bd30997` 修复），我独立核过守卫落地（`FavoriteSync:161-163` `owner != uid → continue`、`GapDb:173` uid 收窄、`:149` 超限跳过）；附录顺延为 §1.12 | LC产品 |
+| v1.3 | 2026-11-07 | **第 8 条改「达成」**（据 LC测试 在 `71ff5c8` 独立复跑：`report_exit=0`、`checksheet coverage 29/29`、`27/65 compared`、26 known-red；六门在 `47cb0fc` 全 PASS）；**登录页证据已补并独立复核**：`login-page.png` 199,612 B / **1228×2700** + `login-page.xml` 8 个关键 id 齐，SUMS **12/12** 我从提交 blob 复算 `ok=12 bad=0`（`bb75e34` → develop `ad8eb5e`），**未造原版对照图**；结论改为「**7 条达成 + 第 3 条不计通过 → 仍不得关账**」，唯一卡点收敛为「客户端三处缺陷（已修 `122a8d1`+`fddce8d`，含**超限跳过对账**）+ 服务端 `save` 幂等未落地 + 审核验复验」 | LC产品 |
+| v1.2 | 2026-11-07 | **按总监打回修订（不许提前改通过）**：第 3 条由「达成」改为 **「达成但有 3 处数据缺陷待修」**——①`FavoriteSync.java:57-61` 无中间态/事务致崩在缝里重复建点、服务端 `save`（`server.js:464-483`）不读幂等键而反馈接口有（`:506-524`）；②`GapDb.java:203-204` 拉回硬编码 `sitting=0/facing=180`、推上去的 `des` 被丢 → 换机坐向全错；③`LcApi.deletePoint` 零调用点 → 删除两端不同步；结论改「**6 条干净达成 + 第 3 条不计通过 + 第 8 条部分 → M4 不得关账**」；新增 **§1.10**：两条 P1 转 M5（401/429 误报、401 不清会话）+ 四条已知限制（pepper 与库同卷 M5 改 `/run/secrets`、`.gitignore` 现在就加、S3 未覆盖、新增页无原版对照图） | LC产品 |
 | v1.1 | 2026-11-07 | **按总监给的八条原文重做对账**：§1 由我自拟的 12 条改为**八条原文逐字对账**（12 条降为 §1.9 附录索引，不替代）；结论 **7 条达成、1 条部分**——第 8 条「fidelity report 全绿」缺独立复跑证据（六门冒烟**不含** `fidelity.py report`），补证前 M4 不得判全绿；新增 §2「客户端改动清单」按 `git diff f11b84e...2d0e8ee` 写实（a11y 三处改动，`adjustResize` **只在 M3PageActivity**，登录页那处早在 `f11b84e`）；空真纪律由五问扩为**六问**（新增「一次改动改了什么 ≠ 合并后文件里现在有什么」） | LC产品 |
 | v1.0 | 2026-11-07 | M4 关账摘要建稿：done-when 12 条逐条对账（并声明「八条」原文缺口）、闭环结果与第三方印证、缺失模块关闭/DI/未核销三分类、人日只收有时钟记录项（179 min / 0.373，禁止外推）、**空真检查五问进纪律**、关账前待绿清单 | LC产品 |

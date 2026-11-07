@@ -199,7 +199,10 @@ var bearingBeforeSit = 0;
 var contourOn = false;         // 等高线（3D 高程着色叠加）
 var groundMode = false;        // 贴地：低机位 + 高俯仰
 var pitchBeforeGround = 45;
-var last3dError = null;         /* M6 第 8 条：最近一次 3D 失败原因（webgl-unavailable / dem-missing / texture-fail），成功时清空；getState() 可读，原生侧亦可由 onConsoleMessage 捕获 */
+var last3dError = null;
+var lastDemoElev = 0;            /* M6 第 8 条：最近一次有效相机目标高程，DEM 缺角时沿用 */
+var demoEdgeWarned = false;      /* dem-edge 只报一次，避免每帧刷屏 */
+var meshNull = 0;                /* 本次建面中 DEM 缺角顶点数（建面结束打印一次） */         /* M6 第 8 条：最近一次 3D 失败原因（webgl-unavailable / dem-missing / texture-fail），成功时清空；getState() 可读，原生侧亦可由 onConsoleMessage 捕获 */
 var drape = "img";             // 3D 贴面层（D-005：默认影像；ter 仍可用按钮切）
 var pick = null;               // 3D 立向点 {lng,lat,elev,world,heading}
 var pickEl = null;
@@ -380,7 +383,9 @@ function demIntersectScreen(sx, sy) {
     var px = ray.o.x + ray.d.x * t, py = ray.o.y + ray.d.y * t, pz = ray.o.z + ray.d.z * t;
     var g = worldToDem(px, pz);
     if (!g) continue;
-    var hh = demAt(patch.z, g.gx, g.gy) * VEXAG;
+    var hhv = demAt(patch.z, g.gx, g.gy);
+    if (hhv === null) continue;          /* DEM 缺角：该步无地形，跳过 */
+    var hh = hhv * VEXAG;
     if (py > hh) above = t;
     else { below = t; if (above < 0) above = 0; break; }
   }
@@ -390,7 +395,9 @@ function demIntersectScreen(sx, sy) {
     var mx = ray.o.x + ray.d.x * tm, my = ray.o.y + ray.d.y * tm, mz = ray.o.z + ray.d.z * tm;
     var gm = worldToDem(mx, mz);
     if (!gm) break;
-    var hm = demAt(patch.z, gm.gx, gm.gy) * VEXAG;
+    var hmv = demAt(patch.z, gm.gx, gm.gy);
+    if (hmv === null) break;             /* DEM 缺角：二分失去参照，保留当前区间 */
+    var hm = hmv * VEXAG;
     if (my > hm) above = tm; else below = tm;
   }
   var th = (above + below) / 2;
@@ -2036,7 +2043,10 @@ function demAt(z, gx, gy) {
   var fx = gx - x0, fy = gy - y0;
   var a = demPix(z, x0, y0), b = demPix(z, x0 + 1, y0);
   var c = demPix(z, x0, y0 + 1), d = demPix(z, x0 + 1, y0 + 1);
-  if (a === null || b === null || c === null || d === null) return 0;
+  /* M6 第 8 条：DEM 缺角返回 null，不返回 0（本文件 elevAt 早已立了"绝不返回 0 当哨兵"的规矩，
+   * demAt 之前反着做，导致 patch 边界缺角时网格高度与相机目标被当成海平面 → 画面静默变平/跳动）。
+   * 调用方必须显式处理 null。 */
+  if (a === null || b === null || c === null || d === null) return null;
   return a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) + c * (1 - fx) * fy + d * fx * fy;
 }
 
@@ -2257,12 +2267,14 @@ function startPatch(z, ox, oy) {
       setHud("地形构建失败");
       loadingKey = null;
     }
-  }, function () {
-    if (seq !== patchSeq) return;
-    console.log("LC3D ERROR dem-load");
-    setHud("DEM 加载失败");
-    loadingKey = null;
   });
+  /* M6 第 8 条：这里原本有一个 `function () { console.log("LC3D ERROR dem-load") }` 失败回调，
+   * 但上面每个 job 都 `.catch(function () { return null; })`，rejection 已被转成 resolve，
+   * Promise.all 的第二个回调永不触发 ⇒ 那是死分支。按总监裁定删除，失败只认三态：
+   *   webgl-unavailable  initGL() 返回 false（已回落 2D）
+   *   dem-missing        任一 DEM 瓦片取不到（tiles[i] === null）
+   *   texture-fail       贴面瓦片成功率 < 30/36
+   * 另加 dem-edge：DEM 局部缺角（demAt 返回 null），沿用上一帧高度，不是整块失败。 */
 }
 
 function buildMesh(p) {
@@ -2277,8 +2289,20 @@ function buildMesh(p) {
   var i, j;
   for (j = 0; j <= N; j++) {
     for (i = 0; i <= N; i++) {
-      H[j * (N + 1) + i] = demAt(p.z, p.ox * 256 + i * step, p.oy * 256 + j * step);
+      /* M6 第 8 条补：网格最后一行/列落在 (ox+3, oy+3) 那一格 —— 已越出本 patch 的 3x3 DEM 块，
+       * 必然缺角（97x2-1 = 193 个顶点，恰好是 i=96 与 j=96 两条边）。
+       * 原来它们被静默压成 0，等于每块地形远边永远是一条压平的黑边。这里把采样点夹回块内。 */
+      var sx = Math.min(p.ox * 256 + i * step, p.ox * 256 + PATCH_PX - 1.001);
+      var sy = Math.min(p.oy * 256 + j * step, p.oy * 256 + PATCH_PX - 1.001);
+      var hv = demAt(p.z, sx, sy);
+      if (hv === null) { hv = 0; meshNull++; }   /* 缺角按 0 建面，但计数并上报 */
+      H[j * (N + 1) + i] = hv;
     }
+  }
+  if (meshNull > 0) {
+    console.log("LC3D WARN dem-edge-mesh " + meshNull + "/" + vc);
+    if (!last3dError) last3dError = "dem-edge-mesh";
+    meshNull = 0;
   }
   /* F-06 山脊：高程曲率（顶点高出 8 邻域均值）→ 0..1，着色器按 uRidge 高亮。
    * 这是 DEM 派生近似，不是官方山脉边界；数值未标定，只用于「看山势」。 */
@@ -2572,7 +2596,9 @@ function pick3D(sx, sy) {
     var pz = ray.o.z + ray.d.z * t;
     var g = worldToDem(px, pz);
     if (!g) continue;
-    var hh = demAt(patch.z, g.gx, g.gy) * VEXAG;
+    var hhv = demAt(patch.z, g.gx, g.gy);
+    if (hhv === null) continue;          /* DEM 缺角：该步无地形，跳过 */
+    var hh = hhv * VEXAG;
     if (py > hh) { above = t; }
     else { below = t; if (above < 0) above = 0; break; }
   }
@@ -2584,7 +2610,9 @@ function pick3D(sx, sy) {
     var mz = ray.o.z + ray.d.z * tm;
     var gm = worldToDem(mx, mz);
     if (!gm) break;
-    var hm = demAt(patch.z, gm.gx, gm.gy) * VEXAG;
+    var hmv = demAt(patch.z, gm.gx, gm.gy);
+    if (hmv === null) break;             /* DEM 缺角：二分失去参照，保留当前区间 */
+    var hm = hmv * VEXAG;
     if (my > hm) above = tm; else below = tm;
   }
   var th = (above + below) / 2;
@@ -2695,7 +2723,21 @@ function render3D() {
     y: 0,
     z: (gy - cyPx) * patch.mpp
   };
-  demoElev = demAt(patch.z, gx, gy);
+  /* M6 第 8 条：DEM 缺角时不把相机目标高度当成 0（否则画面瞬间掉到海平面、且日志一条没有），
+   * 沿用上一帧高度并打一次性 WARN，使"DEM 边缘失败"可与"本来是平原"区分开。 */
+  var elevNow = demAt(patch.z, gx, gy);
+  if (elevNow === null) {
+    elevNow = lastDemoElev;
+    if (!demoEdgeWarned) {
+      demoEdgeWarned = true;
+      last3dError = last3dError || "dem-edge";
+      console.log("LC3D WARN dem-edge");
+    }
+  } else {
+    demoEdgeWarned = false;
+    lastDemoElev = elevNow;
+  }
+  demoElev = elevNow;
   target.y = demoElev * VEXAG;
 
   var b = bearing * Math.PI / 180, p = pitch * Math.PI / 180;

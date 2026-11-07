@@ -455,6 +455,45 @@ p(this, "getCoordinates", () => {
 - 地面贴图边长 ≈ **一个屏宽**（364 CSS px 当量），对比盘面直径 922 设备 px = 273 CSS px，约 **1.33 倍**；
 - 它**既不等于**「屏幕四角 unproject」得到的视野四边形（那个随 pitch 变形且更大），**也不等于**盘面半径换算（那只有约 136 CSS px 当量，偏小一半以上）。
 
+### 7.5.4 `toBounds(radius)` 的 radius 是**半边长**（修订 §7.5 的措辞）
+
+原版自带 `decoded/assets/webapp/lib/mapbox-gl.js` @155844 逐字（`LngLat.prototype.toBounds`）：
+
+```js
+toBounds() {
+    var r, i = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0,   // bearing
+        a = 360 * (arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 0) / 0x2637f09,
+        n = a / Math.cos(Math.PI / 180 * this.lat),
+        s = [{dx:-n, dy:-a}, {dx:n, dy:-a}, {dx:n, dy:a}, {dx:-n, dy:a}],
+        ...
+}
+```
+
+- `0x2637f09` = **40075017** = 地球周长（米）⇒ `a = 360·radius/40075017` 度 ≈ `radius/111319.5` 度 ≈ **radius 米**（纬度向）。
+- 四角 = 中心 **±** `n`（经度）/ **±** `a`（纬度）—— **是加减，不是乘**。
+
+⇒ **`radius` 是半边长**。地面四边形 **边长 = 2 × radius = 2 × 屏宽米数**。
+⇒ **修订 §7.5 第 3 条措辞**：那里写「bounds = 中心 .toBounds(该米数) —— 边长 = 该米数」**是错的**，正确是「**半径 = 该米数，边长 = 2×该米数**」。
+
+### 7.5.5 一个自洽性验证（这条能证明整套口径对）
+
+本机（CSS px 口径，见 §7.5.3）：
+
+| 量 | 值 |
+| --- | --- |
+| `window.screen.width` | 364 CSS px |
+| 地面半径 = `floor(364 / pixelsPerMeter)` 米 | 364 CSS px 当量 |
+| 地面**边长** = 2 × 364 | **728 CSS px 当量** |
+| 原版 canvas `size = floor(2 × screen.width)` | **728 CSS px** |
+| canvas CSS 显示尺寸 = `size` | **728 CSS px** |
+
+⇒ **地面边长（728 CSS px 当量）== canvas CSS 尺寸（728 CSS px）⇒ 画布与地面足迹 1:1，纹理不需要缩放。**
+这不是巧合：`size = 2 × screen.width` 正是因为足迹边长是 `2 × 屏宽`；若漏掉 §7.5.4 那个 ×2，画布会被拉伸一倍（或压缩一半）。
+
+**给实现方的两条判据**（比逐像素更容易先跑）：
+1. `canvas 元素 CSS 宽 == 2 × floor(screen.width / pixelsPerMeter) 对应到屏幕的像素数`（即 728 CSS px）—— 不等就说明半径/边长用错了一倍；
+2. 盘面绘制框屏宽 ÷ 728 ≈ 0.375（盘面 273 CSS px / 728）—— 偏离说明 canvas 内绘制尺度不对。
+
 # 未取证清单（逐条给原因）
 
 | 项 | 状态 | 原因 |

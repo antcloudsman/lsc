@@ -664,6 +664,37 @@ R 超 3/255 约 1.3。这与客户端自报的「R 残差 4.3」是同一个量�
 - **分享日志措辞**：入库日志（`verify-final.log`）里那行是旧措辞 `direct -> resolver`，代码与本次实测（`51793a9` 构建）已是
   `channel=WEIXIN_CIRCLE ACTION_SEND -> wechat resolver (D-026 downgrade)`；客户端补 `d026-share.log` 后与代码一致，本条不影响判词。
 
+### 14.4 证据入库完整性核查（2026-11-07 09:20，`53c8ec8`）
+
+对 `origin/feature/client-m3-stage3` = `53c8ec8` 的 `docs/fidelity/m3/stage3/` 逐条比对 `SHA256SUMS.txt` 与仓库树：
+
+```
+13 张 PNG   → 全部在树里（True）
+verify-final.log / verify2-final.log / loading-probe.log / d026-share.log → 均不在树里（False）
+```
+
+原因可查：`.gitignore` 含 `*.log`（`git show 53c8ec8:.gitignore` 命中 `/checks/`、`*.log`），
+且 `53c8ec8` 的 diff 只有 `README.md` 与 `SHA256SUMS.txt` 两个文件——**日志从未被 `git add` 进去**。
+即：`SHA256SUMS.txt` 里 4 条日志记录指向仓库中不存在的文件，证据包不自洽。
+
+**影响**：本判词（§14）不依赖这 4 份日志——七页数据全部由我在 `51793a9` 构建上自采；但「证据入库」这条硬条件对**日志**未满足。
+修法（二选一，客户端做）：`git add -f docs/fidelity/m3/stage3/*.log`，或在 `.gitignore` 加 `!docs/fidelity/m3/stage3/*.log` 白名单；
+修完把 `SHA256SUMS.txt` 的 sha 与真实文件对齐。
+
+**已修复复验（`37a7cc0`，2026-11-07 09:16）**：客户端用 `git add -f` 把 4 份日志强制入库，未动 `.gitignore`。
+我把 `docs/fidelity/m3/stage3/` 从 `37a7cc0` 用 `git archive | tar -x` 导出成真实文件后逐条比对：
+
+```
+文件数 = 19（13 PNG + 4 log + README.md + SHA256SUMS.txt）
+SHA256SUMS.txt 条目 checked=17 ok=17 bad=0   （sha256 与字节数同时比对）
+```
+
+`d026-share.log` 内容与本机实测一致：两个渠道 `channel=WEIXIN` / `channel=WEIXIN_CIRCLE`，
+`ACTION_SEND -> wechat resolver (D-026 downgrade)`，正文与 URL 逐字，前台均为 `HwResolverActivity`。
+**证据包硬条件已满足**；`verify-final.log` 里那条旧措辞 `direct -> resolver` 属历史记录，以 `d026-share.log` 为准，不影响判词。
+
+
+
 
 
 

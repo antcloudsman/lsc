@@ -28,13 +28,21 @@
 
 ## 3. 三个必须先定的技术选择
 
-**（a）分辨率：不能用 `clientWidth × dpr`。**
-`map.html` 的 `resizeGL()` 把 dpr 截到 `min(dpr, 2.5)`；盘面在屏上是 **922 device px**（`0.7378×1228+16`，CSS ≈263.4 at dpr 3.5）。若沿用该公式，backing 只有 `263.4×2.5 ≈ 658 px`，是原生 922 的 **71.4%**，文字必然糊。
-⇒ 盘面 canvas 的 `width/height` 固定为 **922**，CSS 尺寸 `922/dpr ≈ 263.4px`，不走 `resizeGL` 那套。
+**（a）分辨率：按原版口径 `floor(2×屏宽)`，不用 `clientWidth × dpr`。**
+原版画布（逆向 §7.1 逐字）：`size = floor(2 * screen.width)`、`ctx dpr = min(floor(dpr), 2)`。本机屏宽 1228 ⇒ **backing = 2456**，CSS 显示 1228（1.0×屏宽）。
+对比两个数：我方 `CompassView` 盘面是 **922 device px**（`0.7378×1228+16`）；若沿用 `resizeGL()` 的 `clientWidth×dpr`（dpr 截到 2.5），backing 只有 `263.4×2.5 ≈ 658 px`，仅原生 922 的 **71.4%**。
+⇒ 结论：**贴地纹理的 canvas 定 2456×2456（原版口径）**；屏幕浮层若只需覆盖 922 盘面，可另建 922 的 canvas（见 §3(d)）。两者的像素成本差 **7.1 倍**：2456² × 4B ≈ **24.1 MB**，922² × 4B ≈ 3.4 MB。
 
 **（b）数据单一化**：构建期由 `CompassData` 生成 `assets/compass/rings.json`（含 mechanics 同源 sha256 头），JS 只读这份；禁止在 JS 里手抄第二份表。
 
 **（c）触摸层去留**：建议保留原生透明层（见 §1），不改触摸语义。
+
+**（d）同一套绘制、两张 canvas 实例（贴地与屏幕显示两用）**
+- 绘制代码**只有一份**：`drawCompass(ctx, size, heading, dial, alpha, tianzhi)`，尺寸与坐标系由 `size` 参数化（现 `CompassView` 的 `cx/cy/r` 全部按 `size` 比例算，`r = size/2 - 8*(size/922)`）。
+- **实例 1（屏幕浮层）**：`922×922`，CSS `922/dpr`，居中，随 `heading` 旋转（等价现 `drawArtwork` 的 `save/rotate/restore`）。
+- **实例 2（贴地纹理）**：`2456×2456`（原版 `floor(2×screen.width)`），注册为 `canvas` source，`animate:false`（**不自动重绘，必须显式重绘后 `setCoordinates`**），`raster-resampling:"linear"`。
+- **四角 `coordinates` 随视野变化的算法**（`getCoordinates()` 原版实现未取证，这里给我方可算的路径）：取屏幕中心经纬度 `(lat,lng)` 为锚，用现成的 `zMpp = 156543.03392·cos(lat)/2^zoom` 把「盘面半径(px)」换成地面米数，再按米换算四角经纬度；`bearing≠0` 时四角随 bearing 旋转。视野/缩放/bearing 任一变化时重算并 `setCoordinates` —— **不重算就等于把盘面钉死在旧位置，拖地图时盘面不跟手**。
+- 内存口径：两实例同存约 **24.1 + 3.4 ≈ 27.5 MB**；若紧张，可只在进入贴地时创建 2456 那张、退出即释放。
 
 ## 4. 像素一致性验证（三层，缺一不可）
 

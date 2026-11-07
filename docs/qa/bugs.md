@@ -364,10 +364,10 @@ pwsh -File tests\at\run-final.ps1 -Apk app\android\app\build\outputs\apk\debug\a
 
 **期望**：本地 3 条一条不少（A 的行既不推、不对账、不删）；**实际**：3 → 0，`purgedRemote=3`。
 
-**根因**：本地行只记 `remote_id`，不记归属账号；对账以「当前账号 list 是否含该 id」为唯一依据，
+**根因**：本地行只记 `remote_id`、不记归属账号；对账以「当前账号 list 是否含该 id」为唯一依据，
 换账号后上一账号的 id 天然不在列表里 → 被判远端已删。
 
-**修法（技术总监 2026-11-06 裁定，三条固话）**
+**修法（技术总监 2026-11-06 裁定，三条固化）**
 1. 每行记 `owner_uid`（登录/切号时取 `/v2/auth/me` 的 `uid` 写入；`list` 项的 `userId` 可回填）；
 2. **不同账号的行：既不推、也不参加对账、也不删**；**不允许**把旧行 `remote_id` 置 0 后重推（会把 A 的数据塞进 B 账号）；
 3. 切回 A 账号时，A 的行恢复可推可拉。
@@ -379,3 +379,4 @@ pwsh -File tests\at\run-final.ps1 -Apk app\android\app\build\outputs\apk\debug\a
 
 **责任人/状态**：LC客户端，**新建（2026-11-06，P0，排 A/B 之前）**。
 **证据**：`E:\APPDetector\reports\M4-sync-boundary\README.md`（含本地 3 条的 `remote_id` 与同步日志 `purgedRemote=3`）。
+

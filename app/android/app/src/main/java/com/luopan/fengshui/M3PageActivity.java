@@ -431,10 +431,31 @@ public class M3PageActivity extends Activity {
             login.setOnClickListener(v ->
                     startActivityForResult(new android.content.Intent(this, LoginActivity.class), LoginActivity.REQ));
             list.addView(login);
-            // 原版第三方入口占位（本轮不实现，D-029/030/031）
+            // 原版四个登录入口占位（D-029/030/031）：文案取自 DEX 字符串池逐字
+            // （docs/fidelity/m4/login-strings-classes06.txt），点击只给不可用说明，不假装可用。
+            TextView boundPhone = new TextView(this);
+            boundPhone.setId(R.id.lc_m3_bind_phone);
+            boundPhone.setText("绑定手机");
+            boundPhone.setTextSize(14f);
+            boundPhone.setTextColor(Color.rgb(150, 130, 100));
+            boundPhone.setPadding(0, 8, 0, 8);
+            boundPhone.setOnClickListener(v -> android.widget.Toast.makeText(this,
+                    "绑定手机号需短信验证码服务（D-029），本轮不实现", android.widget.Toast.LENGTH_SHORT).show());
+            list.addView(boundPhone);
+
+            TextView oneTap = new TextView(this);
+            oneTap.setId(R.id.lc_m3_onetap);
+            oneTap.setText("一键登录");
+            oneTap.setTextSize(14f);
+            oneTap.setTextColor(Color.rgb(150, 130, 100));
+            oneTap.setPadding(0, 8, 0, 8);
+            oneTap.setOnClickListener(v -> android.widget.Toast.makeText(this,
+                    "一键登录需运营商号码认证（D-030），本轮不实现", android.widget.Toast.LENGTH_SHORT).show());
+            list.addView(oneTap);
+
             TextView wx = new TextView(this);
             wx.setId(R.id.lc_m3_wechat_entry);
-            wx.setText("微信登录（D-031 待接入，暂不可用）");
+            wx.setText("微信登录");
             wx.setTextSize(14f);
             wx.setTextColor(Color.rgb(150, 130, 100));
             wx.setPadding(0, 8, 0, 24);

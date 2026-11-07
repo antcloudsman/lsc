@@ -247,11 +247,22 @@ cases/settings/shares/changes(...)  -- v1 原样保留，另加 user_id 列供�
 - 服务端下发罗盘常量（仍以 `app/mechanics.json` 为唯一来源）。
 - 原版错误码表、`logoutOnAccountInvalid` 触发码、反馈 `type` 其余值域、收藏同步时机、`updateAvatar` key：**原版未取证**，不编造。
 
+**`/health` 的计数口径（实现判据时最容易读错的一处）**
+
+`/health` 里的 `users` / `sessions` / `favorites` / `feedback` / `cases` / `shares` 全是**全库聚合**，不是某个账号的：
+
+- `favorites` = **所有账号** `deleted = 0` 的合计；`sessions` = 所有账号未撤销且未过期的合计。
+- 因此在多人/多账号的库上，**它会被别人的写入带偏**，不能用来判「某个账号的行数有没有增加」。实测同一时刻：全库 `favorites = 46`，其中某账号 `1` 条、其余 `45` 条属于别的账号。
+- 判「某账号的行数」只用这两个口径（都只计 `deleted = 0`）：
+  1. 用该账号 token 打 `GET /v2/userCollectPoint/list` 取 `data.count`；
+  2. 库内 `SELECT COUNT(*) FROM favorites f JOIN users u ON u.id = f.user_id WHERE u.username_lc = '<username>' AND f.deleted = 0`。
+- 注意 `SELECT COUNT(*) FROM favorites`（不带 `deleted` 条件）含软删除行，**也不等于** `/health.favorites`；三个数各是各的口径。
+
 ## 9. 运行与自检（容器内）
 
 ```powershell
 cd <repo>\backend
-docker compose up -d --build                 # 一键起；启动时自动跑 001–005 迁移
+docker compose up -d --build                 # 一键起；启动时自动跑 001–006 迁移
 docker compose ps                            # 期望 Up (healthy)
 curl.exe -s http://127.0.0.1:8787/health     # {"status":"ok",...,"schema":"006_favorites_idem"}
 docker compose exec -T api node --no-warnings scripts/selfcheck.mjs   # 期望 SELFCHECK: PASS (80 checks)

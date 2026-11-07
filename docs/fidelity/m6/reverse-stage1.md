@@ -350,6 +350,48 @@ setGround: e => { this._isGround !== e && (this._isGround = e, this.isLock || th
 
 ---
 
+## 6.7 补证：「重新打开跟随」是哪个控件（总监追问的第二句）
+
+| 项 | 结论 | 证据 |
+| --- | --- | --- |
+| 跟随的 setter | `N(Z)`（字段 `l`，getter `A()`） | `g.smali:996` |
+| 跟随的 toggle 方法 | `g.p0()` = `N(!A())` + `M()`（重推 mode 位） | `g.smali:2118-2137` |
+| **用户可见控件 = Compose 左列的「跟随」** | `CompassToolsKt;->o1(g)`：先 `g.p0()`，再 `track("compass_rotate", …)` | `CompassToolsKt.smali:14725-14750` |
+| 「跟随」文案与状态 | 同一 handler 的埋点构造器 `p1(g, JSONObject)` 里 `put("type","跟随")`、`put("state", g.A())` | `CompassToolsKt.smali:14776-14798` |
+
+⇒ **复位关掉跟随之后，用户用「跟随」开关重新打开**（不是「罗盘锁定」）。
+
+对照：「罗盘锁定」是**另一个**控件，toggle 不同：
+
+| 控件 | handler | toggle | 字段 | mode 位 | web |
+| --- | --- | --- | --- | --- | --- |
+| 罗盘复位 | `CompassToolsKt;->I0(g)` @:684 | `g.I()` @:780 | 一串（见 6.2） | 重算 | `resetCompass` + `resetNorth` |
+| **罗盘锁定** | `CompassToolsKt;->J0(g)` @:725（埋点 `name="罗盘锁定"`） | `g.q0()` @:2165 = `P(!B())` + `M()` | `e` / `B()` | `0x10` | `setLock` |
+| **跟随** | `CompassToolsKt;->o1(g)` @:14725（埋点 `type="跟随"`） | `g.p0()` @:2118 = `N(!A())` + `M()` | `l` / `A()` | `0x1` | `map.setBearing(r)` |
+| 指针开关 | `CompassToolsKt;->Q0(vm)` @:1116 | `b3(!M0())` | `MainViewModel.h0` | — | `setPointerVisible` |
+
+⇒ 四个控件各自独立，**没有一个是「复位」的替身**。`I()` 里两句 `P(false)` + `N(false)` 表示复位会把**锁定与跟随同时关掉**；重开走各自开关。
+
+## 6.8 补证：顶部 8px 红三角与「指针开关」**不是同一件事**
+
+| 对象 | 是什么 | 由谁控制 | 证据 |
+| --- | --- | --- | --- |
+| 8px 红三角 | `.compass-line-marker`，**十字线的一部分**（`.compass-line` 的子元素） | 随十字线一起显示，**没有独立开关** | `index.946c1624e0.bundle.js` @200694 CSS |
+| 指针 | `<img class="pointer" src="pointer.png">`，竖向 23×94 | `setPointerVisible({show})` → `pointer.style.opacity` | JS @52142 / @49733 |
+
+指针的显隐逻辑（`CompassToolsKt$CompassTools$3$1` = `CompassToolsKt$a`，`LaunchedEffect`）：
+
+```kotlin
+val show = if (controller.q() && !controller.p()) false else viewModel.M0()
+MapWebApiKt.setPointerVisible(controller, show)
+```
+
+逐字：`g.q()` 为真且 `g.p()` 为假 → **强制隐藏**；否则 `show = MainViewModel.M0()`（即 `h0`）。
+（`g.q()` / `g.p()` 即 P1-33-C 里三态开关「地图 / 实景」的两个布尔。）
+
+⇒ **我方把「顶部红三角」当成 `showPointer` 的唯一可见效果，是载体搞错了**：红三角属于十字线（第 1 条），指针开关应当控 `pointer.png` 那张竖向指针图。
+⇒ 所以「删掉红三角 → 指针开关变空操作」这个担心，正确解法**不是**留着红三角，而是**把指针开关改成控竖向指针图**（原版载体）。删红三角与接指针图应同批做。
+
 # 未取证清单（逐条给原因）
 
 | 项 | 状态 | 原因 |

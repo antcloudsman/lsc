@@ -4,8 +4,8 @@
 
 | 项 | 值 |
 | --- | --- |
-| 分支 | `feature/client-r2013-rework`（基线 `92d5f4b`；P2 主体已先合入 `da4b606`） |
-| APK | `gradle assembleDebug`（JDK 17.0.21+9 / Gradle 8.7），sha256 `d7a8315691a27e3c82d225eb37ef794799f759437e1fc2e1c50ac9ae58e65da1`（9,117,212 B），`lastUpdateTime=2026-11-07 09:57` |
+| 分支 | `feature/client-r2013-rework`（基线 `86d1eaa`；P2 主体已先合入 `da4b606`） |
+| APK | `gradle assembleDebug`（JDK 17.0.21+9 / Gradle 8.7），sha256 `a6b43a6ae37eb33a53da60eb26d9a676ca9517dd7751fc38e2ac9f98797135db`（8,641,720 B），`lastUpdateTime=2026-11-07 09:57` |
 | 证据日志 | `verify-stage4.txt`（每步前台校验 `mResumedActivity`，dump 走 `/data/local/tmp`） |
 
 ## R2-001 启动页
@@ -43,7 +43,10 @@
 
 - **C（顶边/滚动）**：sheet 顶边 `[0,1011]`，与原版像素扫描值 **1011 一致（偏差 0，上一版 380 差 −631）**；首屏可见 10 行（第 11 行被裁），滚动后到第 14 行 `正兼向度数指标`，14 行齐。
 - **B（前 3 行数值）**：`先天八卦_卦位 → 向：乾　坐：坤`、`后天八卦_卦位 → 向：离　坐：坎`、`先天八卦洛书数 → 向：乾 1　坐：坤 8`（值随 heading）；第 4–14 行保持「点击查看 ›」。
-- **A（VIP 徽标）已完成**：`◆` 字符已换成原版素材 `ic_compass_vip.webp`（sha256 `5e2811b6…`，132×112，取自 APK `res/Dn.webp`），节点 `lc_read_vip` 渲染 `77×65`（FIT_CENTER，等比 76.6×65），位置在圈层名之后、`点击查看 ›` 之前、垂直居中；dump 中已无「◆」文本节点。
+- **A（VIP 徽标）已完成**：`◆` 字符已换成原版素材 `ic_compass_vip.webp`（sha256 `5e2811b6…`，132×112，取自 APK `res/Dn.webp`），节点 `lc_read_badge` 渲染 `77×65`（FIT_CENTER，等比 76.6×65），位置在圈层名之后、`点击查看 ›` 之前、垂直居中；dump 中已无「◆」文本节点。
 - 证据：`r2-013-sheet-top.png`、`r2-013-sheet-scrolled.png`、`verify-r2-013.txt`。
+
+
+
 
 

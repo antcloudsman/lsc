@@ -1799,6 +1799,29 @@ GapDb.java:208-221 clientKeyOf()
 即：用拉回的行测 B，看到的重复**不是崩窗口缺陷复现**，而是「拉回行没有键」导致的；反之若测试只核「id 不变」，也会因为新键必然新建而误判失败。
 **B 必须用「本地新建、且已推过一次」的行**（`client_key` 已生成持久化），再 `update interest set remote_id=0, rev=0, sync_state='pending'` 做崩窗口，才测的是那条缝。
 
+## 31. P0 修复清单（`bd30997` 全量核对，2026-11-07 21:35）
+
+总监已裁三条。我把 `interest` 表的**所有写入路径**过了一遍，避免只改一处又漏一处：
+
+| 位置 | 路径 | 现在是否写 `owner_uid` |
+|---|---|---|
+| `GapDb:119-129` `insertInterest(...)` → `:128 insert` | 本地新建收藏点 | **不写**（升到 `DEFAULT 0`） |
+| `GapDb:309-319` `upsertRemoteInterest(...)` 新建分支 → `:319 insert` | 服务端拉回落地 | **不写** |
+| `GapDb:299-304` `upsertRemoteInterest(...)` 更新分支 | 已存在行的拉取刷新 | **不写**（只改 name/lat/lng/rev） |
+| `GapDb:201-204` `adoptUnownedRows(uid)` | 同步起点批量认领 | 写 `uid`，但**条件是 `owner_uid=0` 一个**（缺陷本身） |
+| `GapDb:194-197` `setOwnerUid(...)` | — | **零调用点** |
+| `GapDb:173` `listPendingInterest` 的 `owner_uid=0 OR owner_uid=?` | 推送选择 | 把无归属行当成本账号的 |
+
+**完整修法（四处 + 一处收窄）**：
+1. `insertInterest` 加 `owner_uid = 当前 uid`（签名加 uid 或由调用方 `setOwnerUid` 补）；
+2. `upsertRemoteInterest` **新建分支**加 `owner_uid = 当前 uid`；
+3. `upsertRemoteInterest` **更新分支**同样写 `owner_uid`（否则拉回的行永远无归属，下次切号仍被认领）；
+4. `adoptUnownedRows` 收窄为 `owner_uid=0 AND remote_id=0`；
+5. `listPendingInterest` 的 `owner_uid=0` 分支同步收窄为只放 `remote_id=0` 的行，否则无归属的旧行会被推进当前账号（串数据）。
+
+修完我按 §30.4 的三条 + §30.6 的 B 数据源判；**`adoptUnownedRows` 的返回计数**也能当旁证（只认领 `remote_id=0` 后，升级场景的 `adopted` 应为 0 而不是 3）。
+
+
 
 
 

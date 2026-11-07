@@ -147,18 +147,20 @@ public final class CompassReadSheet {
 
         TextView rightView = new TextView(a);
         if (clickable) {
-            // 原版：钻石图标 + 蓝字「点击查看 ›」。
-            // 钻石必须**单独一个控件**：拼进同一个 TextView 会让节点文本变成「◆  点击查看 ›」，
-            // 判据要的「点击查看 ›」就不再逐字（第一版就是这么错的）。
+            // 原版：金色钻石 VIP 徽标 + 蓝字「点击查看 ›」。
+            // 素材 = APK 的 `mipmap-xxxhdpi/ic_compass_vip.webp`（132×112，逆向 `2026-11-07` 全量位图比对
+            // 误差 13.41 vs 次名 19.97 定位）；原版真实绘制框 76×65 px（a11y 的 74×54 是被裁框）。
+            // 之前用字符「◆」不是原版形态，R2-013-A 已改为此素材。
             LinearLayout tail = new LinearLayout(a);
             tail.setOrientation(LinearLayout.HORIZONTAL);
             tail.setGravity(Gravity.CENTER_VERTICAL);
-            TextView gem = new TextView(a);
-            gem.setText("◆");
-            gem.setTextSize(14f);
-            gem.setTextColor(GOLD);
-            gem.setPadding(0, 0, p(a, 6), 0);
-            tail.addView(gem);
+            android.widget.ImageView gem = new android.widget.ImageView(a);
+            gem.setId(R.id.lc_read_vip);
+            gem.setImageResource(R.drawable.lc_compass_vip);
+            gem.setScaleType(android.widget.ImageView.ScaleType.FIT_XY);
+            LinearLayout.LayoutParams gemLp = new LinearLayout.LayoutParams(76, 65);
+            gemLp.rightMargin = p(a, 6);
+            tail.addView(gem, gemLp);
             rightView.setText(right);
             rightView.setTextColor(BLUE);
             rightView.setOnClickListener(onClick);

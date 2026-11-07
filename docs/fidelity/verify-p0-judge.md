@@ -2046,6 +2046,20 @@ git grep 'InterestListActivity.class|".InterestListActivity"' → 只有两处 M
 6. **删除无用户入口**（`M4-GAP-DELETE-UI`，35.3）。
 7. `listDeletePending` 放行 `owner_uid=0` 是为清理既有孤儿墓碑，长期应随 tombstone 一并简化。
 
+### 35.6 `adoptByRemoteIds` 命中路径 —— 客户端实测 + 我的服务端侧独立印证（通过）
+
+客户端补上了唯一没人验过的一半（命中→写回）。他报的数我不采信转述，直接查库核对那次「命中」是不是真命中：
+
+```
+favorites id=354 → user_id=user_e1473e63… / uid=111（sa84982）/ deleted=0 / rev=252
+```
+→ 本地那行 `remote_id=354` 确实在 **uid=111 自己的 list 里**，所以「命中」成立，`adopted by remote ids=1`、`owner_uid 0→111`、`push=0`、`purgedRemote=0` 是正确行为，不是把别的账号的行认领走。
+
+两个方向现在都有实证：
+- **不命中 → 不动**：测试 P0-①（3 行 owner_uid=0、remote 343/344/345 不在 B 的 list 里）→ `adopted` 无、`purgedRemote=0`、3→3、`B_ACTIVE=0`；
+- **命中 → 写回**：本次（354 在 uid=111 的 list 里）→ `adopted=1`、`owner_uid 0→111`、未推未删。
+
+
 
 
 

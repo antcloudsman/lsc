@@ -157,7 +157,8 @@ final class FavoriteSync {
                     // 幽灵行消解（审核验 §33.2 + 服务端提案）：`owner_uid=0 && remote_id>0` 的升级存量行，
                     // 归属不由本地猜，由**服务端回答**——该 remote_id 出现在本账号的 list 里，
                     // 就是「这个 id 是我的」，据此认领；不在就保持 0、不推不对账。
-                    // 复用这次全量请求，零额外流量。
+                    // 复用这次请求，零额外流量。**限制**：这是第一页 `limit=200`；`count>=200` 时整轮跳过（不认领、不删），
+                    // 因为「没取全」与「不属于我」客户端区分不了。翻页 + tombstone 属 M5（见 GapDb.adoptByRemoteIds 注释）。
                     int adoptedByRemote = db.adoptByRemoteIds(uid, live);
                     if (adoptedByRemote > 0) {
                         android.util.Log.d("LCSYNC", "adopted by remote ids=" + adoptedByRemote + " uid=" + uid);
@@ -229,6 +230,7 @@ final class FavoriteSync {
         }
     }
 }
+
 
 
 

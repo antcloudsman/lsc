@@ -4,8 +4,8 @@
 
 | 项 | 值 |
 | --- | --- |
-| 分支 | `feature/client-stage4-p2`（基线 `5d2db1a`） |
-| APK | `gradle assembleDebug`（JDK 17.0.21+9 / Gradle 8.7），sha256 `86e9fc190ea37187309ed3d61273fe1a72ecfa16c29bc8d7f9084bd20e09589f`，`lastUpdateTime=2026-11-07 09:30:58` |
+| 分支 | `feature/client-r2013-rework`（基线 `92d5f4b`；P2 主体已先合入 `da4b606`） |
+| APK | `gradle assembleDebug`（JDK 17.0.21+9 / Gradle 8.7），sha256 `d7a8315691a27e3c82d225eb37ef794799f759437e1fc2e1c50ac9ae58e65da1`（9,117,212 B），`lastUpdateTime=2026-11-07 09:57` |
 | 证据日志 | `verify-stage4.txt`（每步前台校验 `mResumedActivity`，dump 走 `/data/local/tmp`） |
 
 ## R2-001 启动页
@@ -17,10 +17,10 @@
 
 | 元素 | 原版 `orig/_launch-probe.png` | 本实现 `r2-001-splash.png` |
 | --- | --- | --- |
-| 图标暗部 | y 517–597，x 510–716 | y 515–597，x 510–718 |
-| 标题带 | y 731–779，x 402–824（宽 422） | y 731–780，x 402–824（宽 422） |
+| 图标暗部 | y 517–597，x 510–716 | y 517–597，x 510–718 |
+| 标题带 | y 731–779，x 402–824（宽 422） | y 731–779，x 402–824（宽 422） |
 
-偏差 ≤2 px；状态栏已隐藏（`SYSTEM_UI_FLAG_FULLSCREEN|HIDE_NAVIGATION|IMMERSIVE_STICKY`），顶边无黑带。
+偏差 ≤2 px（x 右缘 +2 px 属图标抗锯齿边缘）。**顶部 `y0..121` = `(255,255,255)`**（原版同值）：上一版是主题黑底 `(0,0,0)`，改法为 `Theme.Luopan.Splash`（Light.Fullscreen + 白 window/status/nav + cutout shortEdges）+ `FLAG_LAYOUT_IN_SCREEN`，窗口真正铺到 y=0，LOGO_TOP 由 313 调到 435 保持内容带位置。
 
 ## R2-008 超清页文案
 
@@ -43,5 +43,7 @@
 
 - **C（顶边/滚动）**：sheet 顶边 `[0,1011]`，与原版像素扫描值 **1011 一致（偏差 0，上一版 380 差 −631）**；首屏可见 10 行（第 11 行被裁），滚动后到第 14 行 `正兼向度数指标`，14 行齐。
 - **B（前 3 行数值）**：`先天八卦_卦位 → 向：乾　坐：坤`、`后天八卦_卦位 → 向：离　坐：坎`、`先天八卦洛书数 → 向：乾 1　坐：坤 8`（值随 heading）；第 4–14 行保持「点击查看 ›」。
-- **A（◆ 图形）未完成**：当前仍是金色字符 `◆`；全量扫描 APK 解码资源 PNG/WebP 无 74×54（`total 0`），`assets/INDEX.md` 无对应条目 → 等逆向定位 drawable，定位不到记 DI，**不自画**。
+- **A（VIP 徽标）已完成**：`◆` 字符已换成原版素材 `ic_compass_vip.webp`（sha256 `5e2811b6…`，132×112，取自 APK `res/Dn.webp`），节点 `lc_read_vip` 渲染 `77×65`（FIT_CENTER，等比 76.6×65），位置在圈层名之后、`点击查看 ›` 之前、垂直居中；dump 中已无「◆」文本节点。
 - 证据：`r2-013-sheet-top.png`、`r2-013-sheet-scrolled.png`、`verify-r2-013.txt`。
+
+

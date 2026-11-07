@@ -6,4 +6,17 @@
         <item name="colorPrimaryDark">@color/bg</item>
         <item name="colorAccent">@color/gold</item>
     </style>
+    <!-- R2-001 启动页：全屏白底（原版 `_launch-probe.png` 顶部 y0..121 纯白；bg 素材顶部是透明，
+         必须让窗口底色为白，不能沿用 Theme.Black 的黑底） -->
+    <style name="Theme.Luopan.Splash" parent="@android:style/Theme.Light.NoTitleBar.Fullscreen">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
 </resources>
+

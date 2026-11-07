@@ -24,6 +24,8 @@ luopan.exe
 
 # ---- 构建日志与临时文件 ----
 *.log
+# 白名单：fidelity 证据包里的全量操作日志属「证据」而非「构建日志」，必须入库（否则 SUMS 引用空文件）
+!docs/fidelity/**/*.log
 build-activity.log
 /tmp/
 .DS_Store

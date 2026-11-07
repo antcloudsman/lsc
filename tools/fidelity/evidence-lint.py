@@ -197,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--skip-dirs", default="assets-vectors,assets,findings,probes,.git", help="comma-separated dir names to skip")
     ap.add_argument("--strict-root", action="store_true", help="warn when xml root is not <hierarchy>")
     ap.add_argument("--expect-size", help="declared screenshot size WxH, e.g. 1228x2700 (mismatch = warn)")
+    ap.add_argument("--allow", help="allowlist JSON with entries {path, reason, by, verdict} (4 keys required)")
     ap.add_argument("--json", help="write JSON report to this path")
     args = ap.parse_args(argv)
 
@@ -212,6 +213,21 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError:
             print(f"ERROR: bad --expect-size {args.expect_size!r}", file=sys.stderr)
             return 2
+
+    allow: list[dict] = []
+    if args.allow:
+        if not os.path.isfile(args.allow):
+            print(f"ERROR: allowlist not found: {args.allow}", file=sys.stderr)
+            return 2
+        with open(args.allow, encoding="utf-8") as fh:
+            doc = json.load(fh)
+        allow = doc.get("allow", []) if isinstance(doc, dict) else doc
+        for idx, entry in enumerate(allow):
+            missing = [k for k in ("path", "reason", "by", "verdict") if not entry.get(k)]
+            if missing:
+                print(f"ERROR: allowlist entry #{idx + 1} missing {missing}", file=sys.stderr)
+                return 2
+        print(f"ALLOWLIST: {len(allow)} entry(ies) from {args.allow}")
 
     findings: list[dict] = []
     counts = {"xml": 0, "png": 0, "other": 0}
@@ -230,8 +246,23 @@ def main(argv: list[str] | None = None) -> int:
         except FileNotFoundError:
             continue
 
+    allowed_map = {os.path.normcase(os.path.abspath(e["path"])): e for e in allow}
+    for f in findings:
+        entry = allowed_map.get(os.path.normcase(os.path.abspath(f["path"])))
+        if entry:
+            f["level"] = "allowed"
+            f["allow_reason"] = entry["reason"]
+            f["allow_by"] = entry["by"]
+            f["allow_verdict"] = entry["verdict"]
+
     fails = [f for f in findings if f["level"] == "fail"]
     warns = [f for f in findings if f["level"] == "warn"]
+    alloweds = [f for f in findings if f["level"] == "allowed"]
+
+    for f in alloweds:
+        print("ALLOWED {} {}: {} [by {}; verdict {}]".format(
+            f["kind"], f["path"], f.get("allow_reason"), f.get("allow_by"), f.get("allow_verdict")
+        ))
 
     for f in fails + warns:
         label = "FAIL" if f["level"] == "fail" else "WARN"
@@ -240,7 +271,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(
         f"EVIDENCE-LINT: scanned xml={counts['xml']} png={counts['png']} other={counts['other']} "
-        f"fail={len(fails)} warn={len(warns)}"
+        f"fail={len(fails)} warn={len(warns)} allowed={len(alloweds)}"
     )
 
     if args.json:

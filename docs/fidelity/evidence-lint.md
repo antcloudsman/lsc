@@ -60,12 +60,44 @@ python tools/fidelity/evidence-lint.py --root docs/fidelity/m6
 - 退出码：`0` 无 FAIL；`1` 有 FAIL（`--strict` 时 WARN 也算）；`2` 参数/路径错误。
 - 默认跳过目录：`assets-vectors,assets,findings,probes,.git`（素材与生成物不是「采集证据」）。
 
+### 3.1 具名例外清单（技术总监 2026-11-08 裁定）
+
+**证据文件不删、不改**（动了就毁审计痕迹）。确实要放过某份垃圾证据时，登记到
+`tools/fidelity/evidence-lint-allow.json`，由工具把该条从 FAIL 降为 **ALLOWED** 并打印理由：
+
+```json
+{"allow": [
+  {"path": "docs/fidelity/m3/help-offline.xml",
+   "reason": "47 B，仅一行 shell 报错，非 dump；据此推出的结论已作废",
+   "by": "LC技术总监 2026-11-08 认定",
+   "verdict": "非证据·作废；保留文件仅作审计痕迹，任何判据/台账不得引用"}
+]}
+```
+
+- **四键必填**：`path` / `reason` / `by` / `verdict`，缺一直接 `ERROR` 并退出 2（防止用空理由蒙混）。
+- 用法：`--allow tools/fidelity/evidence-lint-allow.json`。
+- 判定分层：`FAIL` = 必须处理；`ALLOWED` = 有具名认定、可不处理但**永远打印**；`WARN` = 需人看。
+- 哪天有人质疑「为什么放过它」，看这份 JSON 即可。
+
 ## 4 当前基线（2026-11-08，`develop` 树）
 
+**带具名例外清单（推荐口径，Stage 4 用这条）**：
+
 ```
-python tools/fidelity/evidence-lint.py --root docs/fidelity --expect-size 1228x2700
-EVIDENCE-LINT: scanned xml=155 png=130 other=127 fail=1 warn=0
+python tools/fidelity/evidence-lint.py --root docs/fidelity \
+  --expect-size 1228x2700 --allow tools/fidelity/evidence-lint-allow.json
+ALLOWLIST: 1 entry(ies)
+ALLOWED xml docs/fidelity/m3/help-offline.xml: 47 B，仅一行 shell 报错… [by LC技术总监…; verdict 非证据·作废…]
+EVIDENCE-LINT: scanned xml=155 png=130 other=136 fail=0 warn=0 allowed=1
+exit=0
+```
+
+**不带清单（反证：证明例外是「具名豁免」而不是「判据失效」）**：
+
+```
+EVIDENCE-LINT: scanned xml=155 png=130 other=136 fail=1 warn=0 allowed=0
 FAIL xml docs/fidelity/m3/help-offline.xml: cat: /sdcard/a.xml: No such file or directory
+exit=1
 ```
 
 - **全库唯一垃圾证据就是 `help-offline.xml`**，与 LC审核验 独立扫描（347 个 xml、183 个 png）的结论一致：**孤例，不是系统性问题**。
@@ -100,4 +132,5 @@ EVIDENCE-LINT: scanned xml=3 png=5 fail=6 warn=0
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-08 | 增具名例外清单 `--allow`（四键必填，FAIL→ALLOWED 但永远打印）；基线更新为 `fail=0 / allowed=1 / exit 0`（带清单）与 `fail=1`（不带，反证）；证据文件不删不改 |
 | 2026-11-08 | 建工具与规则；首次全量基线：`xml=155 / png=130 / fail=1（help-offline.xml）/ warn=0`；自测 6 FAIL 2 PASS 通过 |

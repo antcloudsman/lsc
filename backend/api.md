@@ -158,7 +158,8 @@
 - 同 key 再次（含崩在「服务端已建、客户端未写回 `remote_id`」的缝里重推）：HTTP **200**，`data.point` 是**第一次建的那一行**，`data.deduplicated=true`，**库里不新增行**；
 - **同 key 但 body 不同**：仍返回第一次那一行（200），**不静默按新内容改写**——宁可让客户端据 `data.point` 收敛，也不静默丢内容；
 - 不带 key：两次提交就是两行（不做隐式去重）。
-- 唯一索引 `(user_id, idem_key)` 是最终仲裁，两个重试并发也只会建一行。
+- 唯一索引是**偏索引**：`CREATE UNIQUE INDEX idx_favorites_user_idem ON favorites(user_id, idem_key) WHERE idem_key IS NOT NULL`，它是最终仲裁，两个重试并发也只会建一行。
+  选偏索引是**工程取舍，不是正确性的必要条件**（已实测）：SQLite 的唯一索引里所有 NULL 互不相等，所以普通唯一索引 `(user_id, idem_key)` 同样允许「多条不带键」的行、同样拒绝重复的非空键。偏索引的好处是语义显式（只对「有键」的行建立唯一性）且不索引大量 NULL 行；**不要**因此以为换回普通索引就会破坏「不带 key 建两行」。
 - **`Idempotency-Key` 只作用于新建分支**：客户端每行复用同一个 key，更新（带 `id`）时即使带该 key 也**照常更新**，不会被当成重放而丢掉编辑。
 - 软删除的行**保留** `idem_key`：对已删行用同 key 重推仍返回该行（`deleted:true`），不复活，与 §3.2「删除不复活」一致。
 

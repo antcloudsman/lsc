@@ -420,20 +420,12 @@ public class CompassView extends View {
             canvas.drawLine(cx, cy - r * 0.085f, cx, cy - r * 0.045f, paint);
         }
 
-        // Fixed crosshair + top pointer (screen space).
-        paint.setColor(Color.argb(120, 180, 50, 50));
-        paint.setStrokeWidth(1f);
-        canvas.drawLine(cx, cy - r, cx, cy + r, paint);
-        paint.setColor(Color.argb(80, 180, 50, 50));
-        canvas.drawLine(cx - r, cy, cx + r, cy, paint);
-        paint.setColor(Color.rgb(200, 40, 40));
-        paint.setStyle(Paint.Style.FILL);
-        float top = cy - r;
-        // K-01 / map-bridge §10.3：罗盘模式的「指针开关」由这里承担（两针分离）；
-        // 地图层的 #needle 仍由 toggleNeedle() 管，这里只关/开本浮层的北针（红三角）。
-        if (showPointer) {
-            canvas.drawPath(triangle(cx, top, 10f), paint);
-        }
+        // M6 第 1 条：十字经线 + 中心 8px 红三角都移到独立的全屏层 `CompassCrosshairView`
+        // （原版是 CSS 伪元素、viewport 对齐、纯红 2 CSS px、贯穿全屏；中心另有 8px 红三角）。
+        // 本类**不再画这两样**——原来的 argb(120/80,180,50,50)+1px 只覆盖圆径 906px，
+        // 「画了但看不见」的直接原因；顶部那颗 20×16 三角按原版更正为「移到中心 8px」，
+        // 由 `MainActivity` 把「指针开关」同步给 crosshairView，避免两层各画一个。
+        // （`showPointer` 字段保留：它是 K-01 / P1-33-C 的状态位，只是不再由本类绘制三角。）
 
         // Center readout.
         CompassData.Reading rd = CompassData.read(heading);
@@ -516,14 +508,8 @@ public class CompassView extends View {
         canvas.drawText(s, x, by, p);
     }
 
-    private static android.graphics.Path triangle(float cx, float top, float half) {
-        android.graphics.Path path = new android.graphics.Path();
-        path.moveTo(cx, top);
-        path.lineTo(cx - half, top + 16f);
-        path.lineTo(cx + half, top + 16f);
-        path.close();
-        return path;
-    }
+    // M6 第 1 条：顶部三角的 `triangle()` 已删除——三角移入 `CompassCrosshairView`（中心 8px），
+    // 本类不再需要该图元；留着会变成无人调用的死代码。
 
     private static int wuxingColor(String wx) {
         switch (wx) {

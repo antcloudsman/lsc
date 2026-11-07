@@ -884,7 +884,13 @@ public class M3PageActivity extends Activity {
             if (text == null) continue;
             TextView tv = new TextView(this);
             tv.setText(text.trim());
-            tv.setTextSize(15f);
+            // M6 第 4 条：字号按**字形 ink** 反算（不是节点框）：
+            // 三维山水 422/8/3.375≈15.6 → 16sp；重庆新知 516/12/3.375≈12.7 → 13sp；
+            // 测绘资质 209/4/3.375≈15.5sp；v1.6.1 ink 高 25 ≈ 10.5sp；备案编号 ink 621×31 单行。
+            float[] sps = {16f, 13f, 15.5f, 10.5f, 12.5f};
+            tv.setTextSize(sps[Math.min(k, sps.length - 1)]);
+            tv.setSingleLine(true);   // 五项在原版都是单行（备案编号此前被折成两行，宽 330）
+
             tv.setGravity(Gravity.CENTER);
             tv.setTextColor(TEXT_MAIN);
             if (k == 2) {

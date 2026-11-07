@@ -107,6 +107,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** F-04 路网：原版 MapManager.showRoad 默认 true；状态持久化在 MapManager prefs。 */
     private boolean roadNetOn = true;
 
+    /** M6 第 8 条：3D 状态**由原生持有**（原版在 MainViewModel 的 MutableState，网页重载不丢），
+     *  map.html 的 `mode` 只是投影；`onPageFinished` 按它重放 `setMode('3d')`。
+     *  值只从 `getState().mode` 回读，不做乐观赋值——原版 `initGL()` 失败会回落 2d，猜就错了。 */
+    private boolean is3D = false;
+
     /** F-17（LC 自建）：罗盘显示参数（底盘透明度 / 天干地支辅助线）。 */
     private CompassDisplayStore compassDisplay;
 
@@ -1278,6 +1283,33 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * 原实现靠 onPageFinished 重放一次，这里再补一个 pendingUiMode：未就绪时先记下，
      * 页面就绪后再发，避免「浮层已开、地图仍停在 full 态」的不同步。
      */
+    /**
+     * M6 第 8 条：从网页回读真实 3D 状态到原生 `is3D`。
+     *
+     * 为什么不在点击时直接 `is3D = !is3D`：原版 `switch3D` 之后 WebGL 初始化失败会回落 2d
+     * （`last3dError = "webgl-unavailable"`），乐观赋值会让原生记着「3D 开着」而屏幕是 2D，
+     * 重载后还会把 2D 页面重放成 3D。所以只认 `getState().mode`。
+     * 延迟 700ms：`toggle3D` 内部要拉 DEM 与贴面瓦片，立刻读会读到切换前的值。
+     */
+    private void sync3DStateFromPage() {
+        if (compassMapView == null) return;
+        compassMapView.postDelayed(() -> {
+            try {
+                compassMapView.evaluateJavascript("(typeof getState==='function')&&(getState().mode||'2d')",
+                        value -> {
+                            if (value == null) return;
+                            boolean now3d = value.contains("3d");
+                            if (now3d != is3D) {
+                                is3D = now3d;
+                                android.util.Log.d("LC3DSTATE", "native is3D=" + is3D + " from page state=" + value);
+                            }
+                        });
+            } catch (Throwable t) {
+                android.util.Log.w("LC3DSTATE", "read-back failed: " + t.getClass().getSimpleName());
+            }
+        }, 700);
+    }
+
     private void applyMapUiMode(String mode) {
         if (compassMapView == null) return;
         if (!mapPageReady) {
@@ -1492,9 +1524,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     toast(label + "：原版为工具子页，本步未实现");
                 }
                 break;
-            case "贴地": js("toggleGround()"); break;
+            case "贴地":
+                js("toggleGround()");
+                // 贴地会强制进 3D（原版同一个 ground 位），状态一样要回读
+                sync3DStateFromPage();
+                break;
             case "定位": js("locate()"); break;
-            case "3D": js("toggle3D()"); break;
+            case "3D":
+                js("toggle3D()");
+                // M6 第 8 条：切完回读网页真实 mode（WebGL 不可用会回落 2d，不能乐观置 true）
+                sync3DStateFromPage();
+                break;
             case "+": js("zoomIn()"); break;
             case "−": js("zoomOut()"); break;
             case "指北针": js("toggleNeedle()"); break;
@@ -1519,6 +1559,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // 函数由 map.html 侧提供，落地前用守卫写法，避免未定义函数抛 JS 错。
                 if (compassView != null) compassView.reset();
                 compassMapView.evaluateJavascript("(typeof resetCompass==='function')&&resetCompass()", null);
+                // 复位会退 2D，原生状态跟着回读一次
+                sync3DStateFromPage();
                 break;
             case "罗盘锁定":
                 // B-05：锁定＝显式冻结开关（原版左列独立项），与「拖动/翻坐向」彻底分开。
@@ -3555,6 +3597,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     applyPendingMapView();
                     // F-04：页面重载后按持久化状态重放路网开关。
                     view.evaluateJavascript("try{setRoadNet(" + roadNetOn + ")}catch(e){}", null);
+                    // M6 第 8 条：3D 状态同样按原生重放（页面级 `var mode` 一重载就回 2d，
+                    // 用户会以为「3D 自己关了」；不许改用 localStorage —— 那会变成两份状态）
+                    if (is3D) view.evaluateJavascript("try{setMode('3d')}catch(e){}", null);
                     // R2-026：地图就绪后补一次左上地名（罗盘态不显示，不必取）。
                     if (!compassMode) refreshPlaceName();
                 }

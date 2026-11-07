@@ -1859,6 +1859,30 @@ FavoriteSync:43  for (p : db.listDeletePending(uid))   ← 永远拿不到这一
 
 孤儿行（`owner_uid=0`、`remote_id>0`）从此**永远不会再同步**，只能本地看。这是「不猜归属」的必然代价，属于正确的保守选择，记进已知限制即可；若以后要救，只能让用户手动「认领到当前账号」。
 
+## 33. 同类问题第二个：**界面列表没有按账号过滤**（`c9ab189`，已证实）
+
+§32 修的是「同步队列」，但**展示层**还是全表：
+
+```
+GapDb:133-137   List<InterestPoint> listInterest() {  query(T_INTEREST, null, "delete_pending=0", …)  }
+                ← 只有 delete_pending=0 一个条件，没有 owner_uid
+调用点：InterestListActivity:72、MainActivity:1722、MainActivity:3167   ← 都是 UI
+```
+
+后果两条，都不是「防过头」，是「没防到」：
+
+1. **切到 B 后，界面上仍然能看到 A 的收藏点**（以及 `owner_uid=0` 的孤儿行），还能点开编辑。
+2. **在 B 的会话里删掉 A 的行**（因为它显示着）：
+   `markInterestDeletePending` 把 `delete_pending=1` 打上 → UI 立刻消失（`listInterest` 过滤了）→ 但 `listDeletePending(B)` 因 `owner_uid=A` 拿不到它，**墓碑挂在本地不推**；
+   等 A 再登录同步时，`listDeletePending(A)` 会取到它并**真的把 A 在服务端的行删掉**。
+   即：**在 B 的界面点一次删除，A 的数据在 A 下次同步时被删**。这不是串数据（走向对了），是**跨账号的破坏性副作用**，而且删的时候用户以为自己删的是 B 的。
+
+**修法**：`listInterest` 增加 owner 维度（`listInterest(uid)`），UI 只显示当前账号 + 可选的「本地历史/未归属」分区；`InterestListActivity` 与 `MainActivity` 两处调用点传当前 uid。
+若短期不想动 UI，最低限度要让主人不同的行**不可点删除**（否则就是上面第 2 条）。
+
+**注意**：`FavoriteSync:157` 的对账循环用的是同一个 `listInterest()`，那边已有 `if (owner != uid) continue;` 兜住，**别为了改 UI 把那处守卫删掉**。
+
+
 
 
 

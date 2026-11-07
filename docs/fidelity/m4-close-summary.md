@@ -2,7 +2,7 @@
 
 - 作者：LC产品
 | 6 | **一次改动改了什么 ≠ 合并后文件里现在有什么** | 有人看 `develop` 快照见两处 `adjustResize` 就判「这支加了两处」；实际 `git diff f11b84e...2d0e8ee` 的 manifest **只 +1 行**，`LoginActivity` 那处早在 `f11b84e` 就有 | **判断改动范围只看 `git diff <base>...<branch>`，看现状才看 HEAD**；拿「现状」推「本次改动」与拿「可见像素」推「控件几何」是同一类错 |｜评审：技术总监
-- 日期：2026-11-07｜版本：**v1.2**（Stage 5 打回：第 3 条改「达成但有 3 处数据缺陷待修」、第 8 条仍部分；新增 §1.10 转 M5 与已知限制 4 条）
+- 日期：2026-11-07｜版本：**v1.3**（第 8 条据 `fidelity.py report` exit 0 + 六门改「达成」；登录页 png/xml 证据已补；第 3 条仍不计通过）
 - 基线：`develop` @ **`47cb0fc`**（含 E2E 补跑 `24de04b` 与 m4-plan v1.11）
 - 输入：`m4-plan.md` v1.11、`docs/qa/m4-e2e-result.md`、`docs/qa/install-debug-result.md`、`docs/qa/m4-timesheet.md`、`round2-report.md` v1.0.39、`backend/api.md`（v2 定稿）
 
@@ -21,9 +21,9 @@
 | 5 | M3 遗留三项（R2-013 三项返工、R2-032 双图、R2-027 第 13 格定案）关闭 | **达成** | R2-013 A（`◆`=`ic_compass_vip.webp`，sha `5e2811b6…`）/ B 前 3 行回显 / C sheet 顶 `1011` 偏差 0；R2-032 角注关账；R2-027 第 13 格 `127`（统一量法）+ 整条于审核验 §24 关账 → **P1 13/13** |
 | 6 | 缺失模块清单逐项关闭或书面 DI | **达成（含书面转出）** | `m4-plan` §2 逐项处置：关闭 5 组（P1-18-A…F 核销、P1-33-A 范围订正、P1-DYN-A09 不可得、P1-13-A/B/C、P1-21-A）；DI 在册 **14 条**（D-016/019/020/021/022/023/024/025/026/027/028/029/030/031）；**三条经总监书面同意转 M5 首项**（P1-14-A…D、P1-4-F、P1-25-C），**未混入「已关闭」** |
 | 7 | API 契约 `backend/api.md` 升 v2 并定稿 | **达成** | 服务端已收「v2 定稿」（信封/成功码 200/`token`/13 字段/`type:int`/限流/`/v1/*` 410/越权 404）；LC审成文 定稿三份（契约与实现一致性、部署与备份含「`.token-pepper` 必须与 SQLite 一起备份」、安全说明与已知限制） |
-| 8 | 工时台账、copy/secret 门禁、fidelity report 全绿 | **部分（差一项证据）** | ①工时台账：`docs/qa/m4-timesheet.md` + 本摘要 §4（只收有时钟项、**禁止外推**）；②copy/secret：LC测试 在 `47cb0fc` 六门 **全 PASS**（copy/secret/desktop/numeric/mech_src/android，exit 0）；③**`fidelity.py report` 不在六门之内，本轮没有人独立复跑** → **待补一条证据**（在最新 develop 跑 `report` 并贴 exit code + checksheet 覆盖数），补齐后本条才算绿 |
+| 8 | 工时台账、copy/secret 门禁、fidelity report 全绿 | **达成** | ①工时台账：`docs/qa/m4-timesheet.md` + 本摘要 §4（只收有时钟项、**禁止外推**）；②copy/secret：LC测试 在 `47cb0fc` 六门 **全 PASS**（copy/secret/desktop/numeric/mech_src/android，exit 0）；③**`fidelity.py report`**：LC测试 在 `71ff5c8` 代码树独立复跑 → **`report_exit=0`**、`checksheet_id coverage 29/29`、`27/65 pair(s) compared`、26 条 known-red（registered）。**总监已核并据此裁定本条改「达成」。** |
 
-**结论（总监 2026-11-07 打回后修订）**：八条里 **6 条干净达成**（1/2/4/5/6/7）、**第 3 条「达成但有 3 处数据缺陷待修」不计通过**、**第 8 条「部分」**（缺 `fidelity.py report` 独立复跑）。**M4 不得关账**，须等：①客户端修完三处数据缺陷（幂等键/拉回坐向/删除同步）+ 服务端 `save` 读幂等键 + 审核验复验；②登录页 `login-page.png` + `.xml` 入库挂 SUMS；③`fidelity.py report` 出 exit 0 + 覆盖数。**任何一条都不许提前改成「通过」。**
+**结论（总监 2026-11-07 打回后修订；第 8 条已据证据改达成）**：八条里 **7 条达成**（1/2/4/5/6/7/8）、**第 3 条「达成但有 3 处数据缺陷待修」不计通过**。**M4 仍不得关账**，唯一卡点：①客户端三处数据缺陷修完（`122a8d1`+`fddce8d`：幂等键/拉回坐向/**超限跳过对账**）+ **服务端 `save` 读 `Idempotency-Key`（未落地，限流中断三次）** + 审核验复验。其余两项（登录页 png/xml、`fidelity.py report`）**已补齐**。**第 3 条在第 3 条修复与复验前不许改成「达成」。**
 
 ### 1.10 转 M5 与已知限制（总监 2026-11-07 裁定）
 
@@ -34,7 +34,7 @@
 | **已知限制 1** | token pepper 现在走 fallback `/data/.token-pepper`，**与 SQLite 同卷** → 整卷泄露时「DB 泄露拿不到可用会话」不再成立 | 写进 M4 已知限制；**M5 改 `/run/secrets`**（代码已支持） |
 | **已知限制 2** | `.gitignore` 未挡 `.token-pepper` / `*.sqlite`（当前仓库确实没有，属预防性） | **现在就加**（预防性） |
 | **已知限制 3** | 装机 S3 未覆盖（本轮未出现认证对话框）→ `PIN_IN_LOG=False` 是空真 | M4 关账写「S3 未覆盖」，见 §5 第 1 问 |
-| **已知限制 4** | 登录/注册页为**新增页**，无原版对照图；判据为「LC 截图 + dump + 标明新增」 | 不许造原版对照图 |
+| **已知限制 4** | 登录/注册页为**新增页**，无原版对照图；判据为「LC 截图 + dump + 标明新增」 | **证据已补**（`bb75e34` → develop `ad8eb5e`）：`docs/fidelity/m4/login-page.png`（199,612 B / **1228×2700**）+ `login-page.xml`（8 个关键 id 齐：`lc_login_title/username/password/submit/sms/onetap/honor/wechat`，含「账号登录（本项目新增）」），SUMS **12/12** 我独立从提交 blob 复算 `ok=12 bad=0`；**未造原版对照图** |
 
 ### 1.9 附录：各 Stage done-when（原 12 条，仅作索引，不替代八条）
 
@@ -161,6 +161,7 @@ M4-POST-01 `/v2/cases` 案例库云同步（待客户端接入再排期）、M4-
 
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
+| v1.3 | 2026-11-07 | **第 8 条改「达成」**（据 LC测试 在 `71ff5c8` 独立复跑：`report_exit=0`、`checksheet coverage 29/29`、`27/65 compared`、26 known-red；六门在 `47cb0fc` 全 PASS）；**登录页证据已补并独立复核**：`login-page.png` 199,612 B / **1228×2700** + `login-page.xml` 8 个关键 id 齐，SUMS **12/12** 我从提交 blob 复算 `ok=12 bad=0`（`bb75e34` → develop `ad8eb5e`），**未造原版对照图**；结论改为「**7 条达成 + 第 3 条不计通过 → 仍不得关账**」，唯一卡点收敛为「客户端三处缺陷（已修 `122a8d1`+`fddce8d`，含**超限跳过对账**）+ 服务端 `save` 幂等未落地 + 审核验复验」 | LC产品 |
 | v1.2 | 2026-11-07 | **按总监打回修订（不许提前改通过）**：第 3 条由「达成」改为 **「达成但有 3 处数据缺陷待修」**——①`FavoriteSync.java:57-61` 无中间态/事务致崩在缝里重复建点、服务端 `save`（`server.js:464-483`）不读幂等键而反馈接口有（`:506-524`）；②`GapDb.java:203-204` 拉回硬编码 `sitting=0/facing=180`、推上去的 `des` 被丢 → 换机坐向全错；③`LcApi.deletePoint` 零调用点 → 删除两端不同步；结论改「**6 条干净达成 + 第 3 条不计通过 + 第 8 条部分 → M4 不得关账**」；新增 **§1.10**：两条 P1 转 M5（401/429 误报、401 不清会话）+ 四条已知限制（pepper 与库同卷 M5 改 `/run/secrets`、`.gitignore` 现在就加、S3 未覆盖、新增页无原版对照图） | LC产品 |
 | v1.1 | 2026-11-07 | **按总监给的八条原文重做对账**：§1 由我自拟的 12 条改为**八条原文逐字对账**（12 条降为 §1.9 附录索引，不替代）；结论 **7 条达成、1 条部分**——第 8 条「fidelity report 全绿」缺独立复跑证据（六门冒烟**不含** `fidelity.py report`），补证前 M4 不得判全绿；新增 §2「客户端改动清单」按 `git diff f11b84e...2d0e8ee` 写实（a11y 三处改动，`adjustResize` **只在 M3PageActivity**，登录页那处早在 `f11b84e`）；空真纪律由五问扩为**六问**（新增「一次改动改了什么 ≠ 合并后文件里现在有什么」） | LC产品 |
 | v1.0 | 2026-11-07 | M4 关账摘要建稿：done-when 12 条逐条对账（并声明「八条」原文缺口）、闭环结果与第三方印证、缺失模块关闭/DI/未核销三分类、人日只收有时钟记录项（179 min / 0.373，禁止外推）、**空真检查五问进纪律**、关账前待绿清单 | LC产品 |

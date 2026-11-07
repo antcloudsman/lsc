@@ -1821,6 +1821,45 @@ GapDb.java:208-221 clientKeyOf()
 
 修完我按 §30.4 的三条 + §30.6 的 B 数据源判；**`adoptUnownedRows` 的返回计数**也能当旁证（只认领 `remote_id=0` 后，升级场景的 `adopted` 应为 0 而不是 3）。
 
+## 32. `9d0170e` 代码复核：五处全改对，但留了一个「孤儿行删不掉」的尾巴
+
+### 32.1 五处逐条核对（`git show 9d0170e:…`，不看汇报）
+
+```
+GapDb:209   adoptUnownedRows → update(…, "owner_uid=0 AND remote_id=0", null)   ✓ 收窄
+GapDb:123   insertInterest            v.put("owner_uid", ownerUid)            ✓ 本地新建写死
+GapDb:328   upsertRemoteInterest 新建  v.put("owner_uid", ownerUid)            ✓ 拉回落地
+GapDb:312   upsertRemoteInterest 更新  if (ownerUid > 0) v.put("owner_uid", …) ✓ 我 §31 指的漏点，已补
+GapDb:177   listPendingInterest       where += " AND owner_uid=?"              ✓ 去掉 =0 放行
+GapDb:240   listDeletePending         where += " AND owner_uid=?"              ← 见 32.2
+git grep setOwnerUid → 无命中（已删除）                                        ✓
+客户端无「remote_id 置 0 重推」（只有 adopt 条件里出现该字段名）                 ✓
+```
+→ **P0 三条判据（本地条数不减 / 不串数据 / 切回 A 可推拉）在这个版本上代码层面成立**，等真机证据。
+
+### 32.2 残留：`owner_uid=0 且 remote_id>0` 的老行**删不掉**
+
+按新逻辑，这类行「永不认领、永不推送、永不参与对账」——这是对的（本地无法判断主人）。但删除链路也被一起卡住了：
+
+```
+GapDb:136   listInterest:  "delete_pending=0"          ← 用户删掉后列表就不再显示
+GapDb:227   markInterestDeletePending: set delete_pending=1
+GapDb:240   listDeletePending(uid): "delete_pending=1 AND owner_uid=?"   ← 孤儿行 owner_uid=0 不匹配
+FavoriteSync:43  for (p : db.listDeletePending(uid))   ← 永远拿不到这一行
+```
+
+后果：用户在本地删了一条孤儿行 → **界面消失、但墓碑永远推不出去** → 服务端那行还在 → 别的设备仍显示它（复活），本机则永远留一条 `delete_pending=1` 的死行。
+
+**修法很小、且安全性有现成保障**：把 `listDeletePending` 改成也接受 `owner_uid=0`（`delete_pending=1 AND (owner_uid=0 OR owner_uid=?)`）。
+理由是删除本身**不会串数据**：`FavoriteSync:46` 只发 `id`，服务端按 token 判归属，不是自己的返回 404；而 `FavoriteSync:50-53` 已经**把 404 当删除完成并本地 purge**。所以非本账号的行最多得到 404 → 本地清掉墓碑，不会误删别人的数据。
+
+**注意**：推送队列（`listPendingInterest`）**不能**这样放开——推会把行塞进当前账号，是串数据。两条队列要区别对待。
+
+### 32.3 另外记一条已知限制（不进缺陷）
+
+孤儿行（`owner_uid=0`、`remote_id>0`）从此**永远不会再同步**，只能本地看。这是「不猜归属」的必然代价，属于正确的保守选择，记进已知限制即可；若以后要救，只能让用户手动「认领到当前账号」。
+
+
 
 
 

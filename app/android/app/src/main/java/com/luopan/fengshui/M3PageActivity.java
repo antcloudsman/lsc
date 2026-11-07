@@ -127,9 +127,10 @@ public class M3PageActivity extends Activity {
         back.setPadding(0, dp(4), dp(10), dp(4));
         back.setOnClickListener(v -> finish());
         bar.addView(back);
-        // M6 第 4 条：投诉反馈一级页右上「我的」[1056,115][1213,272] = 157×157。
-        // 跳转目标未取证（complaint.xml 只给节点），按裁定**只渲染、不接线**：不猜目标，
-        // 设 clickable=false，避免留下一个点了没反应的入口。
+        // M6 第 4 条：投诉反馈一级页右上「我的」[1056,115][1213,272] = **158×158**、
+        // complaint.xml 里 `clickable=true` + `focusable=true`（dump 只支持“可点”，不支持“不可点”）。
+        // 跳转目标未取证 → 按裁定做成**可点 + 明确的未接入提示**（与 D-031 微信入口同口径），
+        // 不许假可点、也不许静默无响应。
         if ("投诉反馈".equals(page)) {
             TextView mineBtn = new TextView(this);
             mineBtn.setId(R.id.lc_m3_mine);
@@ -137,8 +138,11 @@ public class M3PageActivity extends Activity {
             mineBtn.setTextSize(17f);
             mineBtn.setTextColor(TEXT_MAIN);
             mineBtn.setGravity(Gravity.CENTER);
-            mineBtn.setClickable(false);
-            bar.addView(mineBtn, new LinearLayout.LayoutParams(157, 157));
+            mineBtn.setClickable(true);
+            mineBtn.setOnClickListener(v -> android.widget.Toast.makeText(this,
+                    "「我的」跳转目标未取证（D-034），本轮未接入",
+                    android.widget.Toast.LENGTH_SHORT).show());
+            bar.addView(mineBtn, new LinearLayout.LayoutParams(158, 158));
         }
         TextView title = new TextView(this);
         title.setId(R.id.lc_m3_title);

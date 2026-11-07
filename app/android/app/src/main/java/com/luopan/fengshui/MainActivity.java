@@ -2072,9 +2072,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         final String mail = "account@xinzhi.space";
         final int cardW = 891, cardH = 567;
 
+        // 白卡：891x567、圆角 56（dump root FrameLayout [168,1127][1059,1694]）
+        android.graphics.drawable.GradientDrawable cardBg = new android.graphics.drawable.GradientDrawable();
+        cardBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        cardBg.setColor(android.graphics.Color.WHITE);
+        cardBg.setCornerRadius(56f);
+
+        android.widget.FrameLayout card = new android.widget.FrameLayout(this);
+        card.setBackground(cardBg);
+
         android.widget.LinearLayout col = new android.widget.LinearLayout(this);
         col.setOrientation(android.widget.LinearLayout.VERTICAL);
         col.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        // 左右内距 154px（(891-583)/2），顶部 72px（标题 dump y 1199 - 卡顶 1127）
         col.setPadding(154, 72, 154, 0);
 
         TextView title = new TextView(this);
@@ -2092,7 +2102,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         value.setGravity(android.view.Gravity.CENTER);
         android.widget.LinearLayout.LayoutParams vlp = new android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 79);
-        vlp.topMargin = 72;
+        vlp.topMargin = 72;   // 正文 dump y 1350 - (卡顶 1127 + 顶部 72 + 标题 79) = 72
         col.addView(value, vlp);
 
         TextView copy = new TextView(this);
@@ -2115,20 +2125,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             android.util.Log.d("LCM3", "copy mail ok text=" + mail + " via dialog");
         });
-        android.widget.LinearLayout.LayoutParams blp = new android.widget.LinearLayout.LayoutParams(583, 111);
-        blp.topMargin = 52;
+        // 蓝钮：dump [322,1458][905,1615] → 583x157，距卡顶 331（=1127+331=1458）
+        android.widget.LinearLayout.LayoutParams blp = new android.widget.LinearLayout.LayoutParams(583, 157);
+        blp.topMargin = 29;   // 331 - (72 + 79 + 72 + 79) = 29
         col.addView(copy, blp);
 
-        android.graphics.drawable.GradientDrawable cardBg = new android.graphics.drawable.GradientDrawable();
-        cardBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        cardBg.setColor(android.graphics.Color.WHITE);
-        cardBg.setCornerRadius(56f);
-        android.widget.LinearLayout card = new android.widget.LinearLayout(this);
-        card.setOrientation(android.widget.LinearLayout.VERTICAL);
-        card.setBackground(cardBg);
-        card.addView(col, new android.widget.LinearLayout.LayoutParams(cardW, cardH));
+        card.addView(col, new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT));
+
+        // 关闭钮：dump [911,1127][1059,1275] = 148x148，**卡片右上角内侧**（右缘 1059 = 卡右缘），clickable=true
+        TextView close = new TextView(this);
+        close.setId(R.id.lc_m3_dialog_close);
+        close.setText("×");
+        close.setTextSize(22f);
+        close.setTextColor(0xFF8E8E8E);
+        close.setGravity(android.view.Gravity.CENTER);
+        android.widget.FrameLayout.LayoutParams xlp = new android.widget.FrameLayout.LayoutParams(148, 148);
+        xlp.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+        final android.app.Dialog[] holder = new android.app.Dialog[1];
+        close.setOnClickListener(v -> { if (holder[0] != null) holder[0].dismiss(); });
+        card.addView(close, xlp);
 
         android.app.Dialog d = new android.app.Dialog(this);
+        holder[0] = d;
         d.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
         android.widget.FrameLayout wrap = new android.widget.FrameLayout(this);
         wrap.addView(card, new android.widget.FrameLayout.LayoutParams(cardW, cardH));
@@ -2143,7 +2163,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             d.getWindow().setAttributes(lp);
         }
         d.show();
-        android.util.Log.d("LCM3", "contact dialog shown " + cardW + "x" + cardH);
+        android.util.Log.d("LCM3", "contact dialog shown " + cardW + "x" + cardH + " (close 148x148, btn 583x157)");
     }
 
     // ---------------- R2-004：POI 详情面板 ----------------

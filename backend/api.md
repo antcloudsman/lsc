@@ -195,7 +195,7 @@
 1. API 只绑 `127.0.0.1`：compose 只发布 `127.0.0.1:8787`，容器内 `HOST=0.0.0.0` 仅用于端口映射。
 2. 密码：`scrypt`（`node:crypto`，`N=32768,r=8,p=1`，16B salt，64B 输出）+ `timingSafeEqual`；**禁止**明文、`md5/sha1/sha256(pwd)`、可逆加密。
 3. token：32 字节随机 `base64url`；DB 只存 `sha256(token+pepper)`；`LC_TOKEN_PEPPER` 走环境变量或仓库外 secrets，不入库。
-4. 限流（内存滑窗，单进程，重启清零；`LC_RATE_LIMIT=0` 可关，仅本地调试用）：登录 每 IP 30/分 + 每 IP 300/时 + 每用户 5/分（**连续输错 6 次即 429**，返回 `Retry-After` 秒数）；注册 每 IP 30/时；改密 每用户 5/时；反馈 每用户 5/时。超限 429。
+4. 限流（内存滑窗，单进程，重启清零；`LC_RATE_LIMIT=0` 可关，仅本地调试用）：登录 每 IP 60/分 + 每 IP 600/时 + **每用户 5/分（连续输错 6 次即 429）**；注册 每 IP 100/时；改密 每用户 5/时；反馈 每用户 5/时。超限 429 并带 `Retry-After` 秒数。IP 级配额留有自检反复跑的余量，真正的输入爆破控制在「每用户 5/分」。
 5. CORS：默认**不发** `Access-Control-Allow-Origin`；`LC_CORS_ORIGIN` 为逗号分隔白名单，按请求 `Origin` **精确匹配**才回填（并带 `Vary: Origin`），不用 `*`。
 6. 日志：`Authorization`/`token`/`password` 永不打印；`/v2/auth/*` 不打印 body；统一 JSON 行 `{event:"http",rid,method,path,status,ms,user}`，**只记 pathname、不记 query**（避免 token 落日志）。
 7. 请求体上限：认证类 16 KB、业务类 256 KB；超限 413。

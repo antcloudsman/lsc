@@ -41,10 +41,12 @@ const PASSWORD_MAX = 128;
 const FEEDBACK_TYPE_KNOWN = 2; // 原版取证到的唯一值（FeedbackViewModel.P）
 
 const RATE_LIMITS = {
-  loginIp: { limit: 30, windowMs: 60_000 },
-  loginIpHour: { limit: 300, windowMs: 60 * 60_000 },
+  // Per-IP budgets are loose enough to run selfcheck repeatedly; the per-user
+  // login window (5/min) is the actual brute-force control.
+  loginIp: { limit: 60, windowMs: 60_000 },
+  loginIpHour: { limit: 600, windowMs: 60 * 60_000 },
   loginUser: { limit: 5, windowMs: 60_000 },
-  registerIp: { limit: 30, windowMs: 60 * 60_000 },
+  registerIp: { limit: 100, windowMs: 60 * 60_000 },
   passwordUser: { limit: 5, windowMs: 60 * 60_000 },
   feedbackUser: { limit: 5, windowMs: 60 * 60_000 },
 };

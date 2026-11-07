@@ -426,6 +426,35 @@ p(this, "getCoordinates", () => {
 
 `coordinates` 的正确性可用一条可判的量验：**盘面绘制框的屏幕宽度 ÷ 屏宽 ≈ 1**（因为地面边长 = 屏宽米数，铺回屏幕应约等于屏宽）；pitch 变化时该比例应**基本不变**（轴对齐正方形在透视下仍是四边形，但边长对应关系稳定）。若实现得到的是梯形/四角不等距，说明误用了「屏幕四角 `unproject`」。
 
+### 7.5.3 单位口径：`window.screen.width` 是 **CSS px**，不是设备 px（直接影响画布尺寸与贴图大小）
+
+原版 webapp `index.html` 的 viewport 逐字：
+
+```html
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+```
+
+`width=device-width` + `initial-scale=1` ⇒ CSS 视口宽 = 设备宽 ÷ dpr。Android WebView 里 `window.screen.width` 返回的是**CSS px**。
+
+本机（1228×2700，density 3.375）：
+
+| 量 | 按 CSS px 口径（**正确**） | 若误把 1228 当 CSS px（**错误**） |
+| --- | --- | --- |
+| `window.screen.width` | **364**（1228/3.375） | 1228 |
+| `size = floor(2 × screen.width)` | **728** CSS px | 2456 |
+| `dpr = min(floor(devicePixelRatio), 2)` | `floor(3.375)=3 → min(3,2)=` **2** | 同 2 |
+| canvas backing = `size × dpr` | **1456 × 1456** px，约 **8.5 MB**（4 B/px） | 4912 × 4912，约 96 MB |
+| canvas CSS 显示尺寸 | **728 px**（= 2 × 屏宽） | 2456 px |
+| 地面贴图边长（`radius` 见 §7.5） | `floor(364 / pixelsPerMeter)` 米 ⇒ 屏幕上约 **一个屏宽（364 CSS px 当量）** | 同样按 364 才对 |
+
+⇒ **修正一处待办数值**：`docs/fidelity/m6/map-canvas-migration.md` 里按「`screen.width=1228` ⇒ canvas 2456×2456、24.1 MB」推算的那组数**偏大**。按 CSS px 口径应为 **728 CSS px / backing 1456 / 约 8.5 MB**。
+（2456 是「把 `size` 当设备 px」得出的，不是原版值；原版 `size` 是 CSS px。）
+
+⇒ **贴地范围口径再明确一次**（纠正「按盘面半径换算」这个说法）：
+- 半径 = **屏宽那一截像素 ÷ pixelsPerMeter**（米），不是盘面半径；
+- 地面贴图边长 ≈ **一个屏宽**（364 CSS px 当量），对比盘面直径 922 设备 px = 273 CSS px，约 **1.33 倍**；
+- 它**既不等于**「屏幕四角 unproject」得到的视野四边形（那个随 pitch 变形且更大），**也不等于**盘面半径换算（那只有约 136 CSS px 当量，偏小一半以上）。
+
 # 未取证清单（逐条给原因）
 
 | 项 | 状态 | 原因 |

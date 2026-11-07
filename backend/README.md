@@ -5,7 +5,7 @@
 - 技术栈：Node 22（`node:http` + `node:sqlite`），**零 npm 依赖**，镜像基于 `node:22-bookworm-slim`
 - 端口：`127.0.0.1:8787`（compose 仅绑定回环，避免未鉴权接口暴露）
 - 数据：Docker volume `lc-backend_lc-data` → `/data/lc.sqlite`
-- 契约：[`api.md`](api.md)（v1，所有字段/错误码/同步语义以此为准）
+- 契约：[`api.md`](api.md)（**v2，现行**：账号密码鉴权 / token / 收藏点 / 投诉反馈）；v1 归档在 [`api-v1.md`](api-v1.md)（只读，`/v1/*` 已废弃）
 
 ## 一键起
 
@@ -38,7 +38,8 @@ docker compose down -v    # 删除案例与设置数据
 
 ```
 backend/
-  api.md              # API v1 契约（字段、错误码、同步/分享语义）
+  api.md              # API v2 契约（现行；账号/会话/收藏点/反馈）
+api-v1.md           # API v1 契约（归档只读）
   docker-compose.yml  # 一键服务，含 healthcheck
   Dockerfile          # node:22-bookworm-slim，非 root 运行
   package.json        # 无 dependencies，仅脚本

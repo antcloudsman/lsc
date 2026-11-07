@@ -29,11 +29,16 @@ powershell -File scripts\build-android.ps1 -SkipDevice   # 只构建 APK
 1. 自动解析 JDK 17（`-JavaHome` → `JAVA_HOME` → 本机已知路径 → Android Studio jbr）与 Gradle 8.7
 2. 缺 `app\android\local.properties` 时按 `ANDROID_HOME`/默认 SDK 路径生成（该文件本就被忽略）
 3. `gradle assembleDebug --no-daemon`，校验 APK 存在且 > 100 KB，复制到输出目录
-4. 真机：`adb logcat -c` → `install -r` → `am start -W` → 等待（默认 5 s）→ `pidof` 存活检查
-   → `logcat -d` 扫描 `FATAL EXCEPTION` / `E AndroidRuntime` → 拉一张设备截图作证据
+4. 真机：`adb logcat -c` → **`tools\device\install-debug.ps1`** 安装（`pm install` 主路径，失败才驱动
+   「风险提示/继续安装」UI 与锁屏认证，安装窗口内临时禁用应用市场并在 `finally` 恢复）→ `am start -W`
+   → 等待（默认 5 s）→ `pidof` 存活检查 → `logcat -d` 扫描 `FATAL EXCEPTION` / `E AndroidRuntime`
+   → 拉一张设备截图作证据
 
 参数：`-DeviceId`（默认 `$env:LC_DEVICE_ID`，否则唯一在线设备）、`-SkipDevice`、
 `-LogWaitSeconds`、`-OutDir`。
+
+> 安装相关细节（按钮字典、退出码、`MARKET_RESTORED`、PIN 来源）见 `docs\qa\device-method.md` §7；
+> 安装脚本也可单跑：`powershell -File tools\device\install-debug.ps1 -ApkPath <apk>`。
 
 > 本轮真机只有 `L2E0222531014833` 且优先给 LC地图；抢设备时用 `-SkipDevice`，或在 `smoke.ps1` 上传 `-SkipDevice`。
 

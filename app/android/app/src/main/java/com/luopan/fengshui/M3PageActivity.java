@@ -145,6 +145,13 @@ public class M3PageActivity extends Activity {
         back.setPadding(0, dp(4), dp(10), dp(4));
         back.setOnClickListener(v -> finish());
         bar.addView(back);
+        TextView title = new TextView(this);
+        title.setId(R.id.lc_m3_title);
+        title.setText(page);
+        title.setTextSize(18f);
+        title.setTextColor(TEXT_MAIN);
+        bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
         // M6 第 4 条：投诉反馈一级页右上「我的」[1056,115][1213,272] = **158×158**、
         // complaint.xml 里 `clickable=true` + `focusable=true`（dump 只支持“可点”，不支持“不可点”）。
         // 跳转目标未取证 → 按裁定做成**可点 + 明确的未接入提示**（与 D-031 微信入口同口径），
@@ -162,12 +169,6 @@ public class M3PageActivity extends Activity {
                     android.widget.Toast.LENGTH_SHORT).show());
             bar.addView(mineBtn, new LinearLayout.LayoutParams(158, 158));
         }
-        TextView title = new TextView(this);
-        title.setId(R.id.lc_m3_title);
-        title.setText(page);
-        title.setTextSize(18f);
-        title.setTextColor(TEXT_MAIN);
-        bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         root.addView(bar);
 
         // 依赖标注（有则显示）
@@ -753,7 +754,7 @@ public class M3PageActivity extends Activity {
         if (clickable) row.setOnClickListener(onClick);
         // M6 第 4 条：原版行是白卡上的条目（底 #F0F3F7 + 白卡 + 1px 分隔），行高 48dp。
         row.setBackgroundColor(CARD_WHITE);
-        row.setMinimumHeight(dp(48));
+        row.setMinimumHeight(163);   // 原版账户页步进 163px
         list.addView(row);
         // 原版分隔 = 3px、色 #F0F3F7（与页面底同色）、左右内缩 39px（审客户端 quantify）
         View divider = new View(this);

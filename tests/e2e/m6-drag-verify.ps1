@@ -14,6 +14,7 @@ $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if (-not $OutDir) { $OutDir = Join-Path $root ('checks\m6-drag-' + (Get-Date -Format 'yyyyMMdd-HHmmss')) }
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 $script:fails = 0
+function AdbLine([string]$cmd) { ((& adb -s $Device shell $cmd 2>&1) -join "`n") }
 function Log($s) { $l = (Get-Date -Format 'HH:mm:ss') + ' ' + $s; Write-Host $l; Add-Content -LiteralPath (Join-Path $OutDir 'run.log') -Value $l -Encoding UTF8 }
 function Verdict([string]$id, [string]$title, [bool]$ok, [string]$detail) {
     if (-not $ok) { $script:fails++ }
@@ -62,9 +63,11 @@ foreach ($z in 18, 12) {
     )
     foreach ($d in $dirs) {
         $c1 = ReadState
+        if (-not $c1) { Verdict ("2a-z$z-" + $d.N) 'bearing=0 拖动符号' $false 'getState 读取失败（map 未加载或 js 注入被拒）'; continue }
         Invoke-Adb2 @('exec-out', 'screencap', '-p') > (Join-Path $OutDir ("2a-z{0}-{1}-before.png" -f $z, $d.N))
         Swipe $d.dx $d.dy
         $c2 = ReadState
+        if (-not $c2) { Verdict ("2a-z$z-" + $d.N) 'bearing=0 拖动符号' $false 'after getState 读取失败'; continue }
         Invoke-Adb2 @('exec-out', 'screencap', '-p') > (Join-Path $OutDir ("2a-z{0}-{1}-after.png" -f $z, $d.N))
         $dlng = $c2.Lng - $c1.Lng; $dlat = $c2.Lat - $c1.Lat
         # 同向=手指方向与内容方向一致 ⇒ 中心位移与手指相反
@@ -80,6 +83,7 @@ foreach ($b in 30, 90) {
     Js "sitMode=0;bearing=$b;applyTransform()" | Out-Null
     Start-Sleep -Milliseconds 700
     $c1 = ReadState
+    if (-not $c1) { Verdict ("2b-bearing$b") 'bearing≠0 时内容与手指平行同向' $false 'getState 读取失败'; continue }
     Invoke-Adb2 @('exec-out', 'screencap', '-p') > (Join-Path $OutDir ("2b-b$b-before.png"))
     Swipe 0 -300
     $c2 = ReadState
@@ -96,5 +100,6 @@ foreach ($b in 30, 90) {
 }
 Js 'sitMode=0;bearing=0;applyTransform()' | Out-Null
 
+Log ("lastUpdate=" + ((AdbLine "dumpsys package $pkg" | Select-String 'lastUpdateTime=' | Select-Object -First 1).Line))
 Log ("fails=" + $script:fails + " out=" + $OutDir)
 if ($script:fails -eq 0) { exit 0 } else { exit 1 }

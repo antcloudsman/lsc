@@ -227,6 +227,7 @@
 | M4-STAGE5-产品（P0 留痕 v1.17） | `2026-11-07T21:10+08:00` | `2026-11-07T21:14+08:00` | 0.008（**4 分钟**） | 0 | 新增 §1.11 **P0-XACCT-PURGE 留痕**（换账号整批硬删本地收藏：不可逆+静默+整批三特征全占）；我独立核 `bd30997` 守卫落地（`FavoriteSync:161-163` `owner != uid → continue`、`GapDb:173` `owner_uid=0 OR owner_uid=?`、`:149` 超限跳过）；第 3 条补「服务端 `5dcc0bb`/客户端 `bd30997` 代码到位但真机四条未跑」，**不改达成** |
 | M4-STAGE5-产品（P0 归属更正 v1.18） | `2026-11-07T21:31+08:00` | `2026-11-07T21:35+08:00` | 0.008（**4 分钟**） | 0 | 按 LC测试 实测反例更正：**`bd30997` 只含对账守卫**，认领收窄是 `e200eb6`（`GapDb:209`，已进 develop）、**`listInterest(uid)` 是 `6c289fd` 未合主线**（`merge-base exit=1`，`GapDb:133` 仍无参）；补实测对比（`9d0170e` `purgedRemote=0`/3→3/D active=0 通过 vs `bd30997` adopted=2/purged=2/3→0 失败）；§1.11 与我此前的错误表述一并更正 |
 | M4-STAGE5-产品（已知限制 5 v1.19） | `2026-11-07T21:36+08:00` | `2026-11-07T21:39+08:00` | 0.006（**3 分钟**） | 0 | 按总监指定措辞加**已知限制 5**：「幽灵行认领（`adoptByRemoteIds`）**仅 200 条以内有效；超限整轮跳过（不误写不误删）；翻页与 tombstone 属 M5**」，禁止写成「已支持全量认领」；我独立核码：只处理 `owner_uid=0 AND remote_id>0`、命中才写、**只 UPDATE 无 DELETE**；同步 §1.11（§33=`61c132c` 已合、认领=`8c26d53` 已合，develop `525704c`）与第 3 条五条判据表述 |
+| M4-STAGE5-产品（LIST-SNAPSHOT 入册 v1.20） | `2026-11-07T21:38+08:00` | `2026-11-07T21:41+08:00` | 0.006（**3 分钟**） | 0 | 登记审核验 `edc9a92` §34 的待定级残留 `LIST-SNAPSHOT`：`InterestListActivity` 无 `onResume`，仅 `:61 onCreate`/`:151` 删除后 `reload()`；我独立核 `git grep -c onResume`（只有 `MainActivity`/`TrackListActivity` 命中，该文件零命中）；定级待裁、建议 P2、不阻塞；修法一行 `onResume` |
 
 ---
 

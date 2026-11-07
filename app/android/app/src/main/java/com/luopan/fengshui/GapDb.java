@@ -230,7 +230,12 @@ class GapDb extends SQLiteOpenHelper {
      * 且**仅当该 remote_id 出现在当前账号的 list 里**才认领 —— 这是服务端在说「这个 id 是我的」，不是本地猜。
      * 不在集合里的保持 `owner_uid=0`（不推、不对账、不删），等它真正的主人登录或 M5 tombstone 处理。
      *
-     * @param liveIds 当前账号 `GET list` 返回的全部 id
+     * <p><b>限制（别当全量认领）</b>：调用方目前只取**第一页 `limit=200`**；`count >= 200` 时
+     * `FavoriteSync` 整轮跳过对账与认领 —— 是**安全侧失败**（不误写、不误删、不动数据），只是功能不完整。
+     * 所以本方法实际覆盖「≤200 条」。**翻页枚举与 tombstone（`list` 回 `deleted=1`）属 M5**，
+     * 两者要一起做才有意义：没有 tombstone 时无法区分「属于别人」与「远端已删」，宁可留幽灵行。
+     *
+     * @param liveIds 当前账号 `GET list` 返回的 id 集合（当前实现仅为第一页）
      * @return 认领行数
      */
     int adoptByRemoteIds(int uid, java.util.Set<Long> liveIds) {

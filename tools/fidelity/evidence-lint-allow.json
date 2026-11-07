@@ -1,0 +1,11 @@
+{
+  "note": "evidence-lint 具名例外清单。四键必填：path（相对仓库根或绝对路径）/ reason（为什么放过）/ by（谁认定）/ verdict（结论：作废·仅留审计痕迹 等）。证据文件本身不删不改，只在这里登记。",
+  "allow": [
+    {
+      "path": "docs/fidelity/m3/help-offline.xml",
+      "reason": "47 B，内容仅一行 shell 报错「cat: /sdcard/a.xml: No such file or directory」，是当年抓取失败把报错存成文件的产物，不是 uiautomator dump；据此推出的「原版离线不可读」结论已作废",
+      "by": "LC技术总监 2026-11-08 认定（LC产品、LC审核验 独立复读一致）",
+      "verdict": "非证据·作废；保留文件仅作审计痕迹，任何判据/台账不得引用"
+    }
+  ]
+}

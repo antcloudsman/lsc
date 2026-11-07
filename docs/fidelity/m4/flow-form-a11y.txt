@@ -1,0 +1,10 @@
+form-fg= mResumedActivity: ActivityRecord{a1bb1f9 u0 com.luopan.fengshui/.M3PageActivity t1026276}
+stable-ids: reason=1 contact=1 desc=1
+edittext-count=3
+form-texts=返回|投诉反馈|提交接本项目自建服务端 /v2/feedback/add（type=2），需先登录。|申请原因|联系方式|请输入您的联系方式|问题描述|请输入详细问题描述，以便我们提供更好的服务|问题截图|确认提交的信息准确无误，如果提交错误信息可能导致问题无法有效解决|提交
+  lc_m3_reason = [form-reason]
+  lc_m3_contact = [form@example.com]
+  lc_m3_desc = [form-desc]
+submit-btn=1
+submit-status=[提交成功]
+final-fg= mResumedActivity: ActivityRecord{a59a60b u0 com.huawei.android.launcher/.unihome.UniHomeLauncher t5}

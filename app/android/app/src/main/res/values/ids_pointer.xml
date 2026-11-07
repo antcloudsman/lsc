@@ -82,4 +82,7 @@
     <item name="lc_login_honor" type="id" />
     <item name="lc_m3_bind_phone" type="id" />
     <item name="lc_m3_onetap" type="id" />
+    <item name="lc_m3_reason" type="id" />
+    <item name="lc_m3_contact" type="id" />
+    <item name="lc_m3_desc" type="id" />
 </resources>

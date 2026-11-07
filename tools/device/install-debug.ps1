@@ -40,6 +40,8 @@ param(
   [string]$Device = '',
   [int]$TimeoutSec = 180,
   [string]$PinFile = 'E:\APPDetector\secrets\device-pin.txt',
+  [string]$OutDir = '',
+  [string]$KeepMarketDisabledUntil = '',
   [switch]$SkipMarketDisable
 )
 
@@ -48,6 +50,7 @@ $package = 'com.luopan.fengshui'
 $market = 'com.huawei.appmarket'
 $script:serial = ''
 $script:marketDisabledByUs = $false
+$marketFail = $false
 
 function Resolve-Serial {
   param([string]$want)
@@ -96,17 +99,47 @@ function Get-LastUpdate {
   if ($r) { return $r.Line.Trim() } else { return 'lastUpdateTime=(未安装)' }
 }
 
+function Get-VersionCode {
+  param([string]$pkg)
+  $r = Invoke-Adb "dumpsys package $pkg" | Select-String -Pattern 'versionCode=' | Select-Object -First 1
+  if (-not $r) { return '' }
+  $m = [regex]::Match($r.Line, 'versionCode=(\d+)')
+  if ($m.Success) { return $m.Groups[1].Value }
+  return ''
+}
+
 $buttons = @('继续安装', '仍要安装', '确认安装', '安装', '允许', '同意', '我知道了', '继续', '跳过', '以后再说')
 $authHint = '锁屏密码|请输入密码|verify your password'
 
-if (-not (Test-Path -LiteralPath $Apk)) { Write-Host "APK_NOT_FOUND: $Apk"; exit 2 }
-$apkFull = (Resolve-Path -LiteralPath $Apk).Path
-$script:serial = Resolve-Serial $Device
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+if (-not $OutDir) { $OutDir = Join-Path $repoRoot ('checks\install-debug-' + (Get-Date -Format 'yyyyMMdd-HHmmss')) }
+
+# 预检失败也要留 MARKET_RESTORED=skipped（市场未被我们动过），便于证据目录统一判读
+try {
+  if (-not (Test-Path -LiteralPath $Apk)) { throw "APK_NOT_FOUND: $Apk" }
+  $apkFull = (Resolve-Path -LiteralPath $Apk).Path
+  $script:serial = Resolve-Serial $Device
+} catch {
+  Write-Host 'MARKET_RESTORED=skipped'
+  Write-Host ("ERROR: " + $_.Exception.Message)
+  exit 2
+}
+
 $before = Get-LastUpdate
+$beforeVersion = Get-VersionCode $package
 $marketWasDisabled = ((Invoke-Adb 'pm list packages -d') -join "`n") -match [regex]::Escape($market)
+$pureMode = (Invoke-Adb 'settings get secure pure_mode_state' | Select-Object -First 1)
+$origVersion = (Invoke-Adb 'dumpsys package space.xinzhi.globe' | Select-String -Pattern 'versionName=' | Select-Object -First 1)
+$origUpdated = (Invoke-Adb 'dumpsys package space.xinzhi.globe' | Select-String -Pattern 'lastUpdateTime=' | Select-Object -First 1)
 Write-Host "device=$script:serial apk=$apkFull"
 Write-Host "before: $before"
+Write-Host ("VERSIONCODE_BEFORE={0}" -f $(if ($beforeVersion) { $beforeVersion } else { '<none>' }))
 Write-Host "market_was_disabled=$marketWasDisabled"
+Write-Host ("pure_mode_state={0}" -f $(if ($pureMode) { "$pureMode".Trim() } else { '<unset>' }))
+Write-Host ("ORIGINAL: space.xinzhi.globe {0} {1}" -f $(if ($origVersion) { $origVersion.Line.Trim() } else { 'versionName=<none>' }), $(if ($origUpdated) { $origUpdated.Line.Trim() } else { 'lastUpdateTime=<none>' }))
+if ($origVersion -and $origVersion.Line -notmatch '1\.6\.1') {
+  Write-Host ("WARN_VERSION_DRIFT: baseline frozen at 1.6.1, device has " + $origVersion.Line.Trim())
+}
 
 try {
   if (-not $SkipMarketDisable -and -not $marketWasDisabled) {
@@ -162,11 +195,21 @@ try {
 }
 finally {
   if ($script:marketDisabledByUs) {
-    Invoke-Adb "pm enable $market" | Out-Null
-    Start-Sleep -Milliseconds 500
-    $still = ((Invoke-Adb 'pm list packages -d') -join "`n") -match [regex]::Escape($market)
-    if ($still) { Write-Host 'MARKET_RESTORED=fail'; $marketFail = $true }
-    else { Write-Host 'MARKET_RESTORED=ok'; $marketFail = $false }
+    if ($KeepMarketDisabledUntil) {
+      New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+      $keptFile = Join-Path $OutDir 'market-kept-disabled.txt'
+      ("kept_disabled_until={0}`nrestore=adb -s {1} shell pm enable {2}`nreason=operator requested" -f $KeepMarketDisabledUntil, $script:serial, $market) |
+        Set-Content -Path $keptFile -Encoding UTF8
+      Write-Host ("MARKET_RESTORED=deferred until {0}" -f $KeepMarketDisabledUntil)
+      Write-Host ("MARKET_KEPT_DISABLED_FILE={0}" -f $keptFile)
+      $marketFail = $false
+    } else {
+      Invoke-Adb "pm enable $market" | Out-Null
+      Start-Sleep -Milliseconds 500
+      $still = ((Invoke-Adb 'pm list packages -d') -join "`n") -match [regex]::Escape($market)
+      if ($still) { Write-Host 'MARKET_RESTORED=fail'; $marketFail = $true }
+      else { Write-Host 'MARKET_RESTORED=ok'; $marketFail = $false }
+    }
   } else {
     Write-Host 'MARKET_RESTORED=skipped'
     $marketFail = $false
@@ -180,8 +223,12 @@ Write-Host "after: $after"
 if ($authBlocked) { Write-Host 'INSTALL_AUTH_BLOCKED'; exit 3 }
 if ($marketFail) { Write-Host 'MARKET_RESTORE_FAIL'; exit 15 }
 
+$afterVersion = Get-VersionCode $package
+Write-Host ("VERSIONCODE_AFTER={0}" -f $(if ($afterVersion) { $afterVersion } else { '<none>' }))
 $installed = ($jobOut -match 'Success') -or ($before -ne $after)
 if ($installed) {
+  if (-not $afterVersion) { Write-Host 'VERSIONCODE_MISSING'; exit 2 }
+  if ($before -eq $after) { Write-Host 'WARN_LASTUPDATE_UNCHANGED' }
   $path = (Invoke-Adb "pm path $package" | Select-Object -First 1)
   Write-Host "pm: $path"
   Write-Host ("INSTALL_OK taps={0}" -f $taps)

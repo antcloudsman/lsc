@@ -17,6 +17,24 @@ def nodes(path):
                     'id': n.get('resource-id') or '', 'cls': n.get('class') or ''})
     return out
 
+def carrier(path):
+    tree = ET.parse(path)
+    root = tree.getroot().find('node')
+    if root is None:
+        return ('unknown', '', False, False)
+    b = root.get('bounds') or ''
+    m = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', b)
+    area = 0
+    if m:
+        area = (int(m.group(3)) - int(m.group(1))) * (int(m.group(4)) - int(m.group(2)))
+    has_content = any(n.get('resource-id') == 'android:id/content' for n in tree.getroot().iter('node'))
+    full = area >= 1228 * 2400
+    return (root.get('class') or '', b, has_content, full)
+
+ref_c = carrier(sys.argv[1])
+act_c = carrier(sys.argv[2])
+print('CARRIER_REF=%s %s content=%s fullscreen=%s' % ref_c)
+print('CARRIER_ACT=%s %s content=%s fullscreen=%s' % act_c)
 ref = nodes(sys.argv[1])
 act = nodes(sys.argv[2])
 # 按文本多重集配对（同文本出现多次时按顺序一一配）

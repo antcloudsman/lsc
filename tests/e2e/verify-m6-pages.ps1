@@ -66,6 +66,11 @@ foreach ($pg in $Pages) {
     $out = & python (Join-Path $root 'tests\lib\compare_page.py') $ref (Join-Path $OutDir ("act-$pg.xml")) --step 2>&1
     $txt = ($out | ForEach-Object { "$_" }) -join "`n"
     Add-Content -LiteralPath (Join-Path $OutDir 'compare.log') -Value ("== $pg ==`n" + $txt) -Encoding UTF8
+    if ($pg -eq 'contact') {
+        $blue = (& python (Join-Path $root 'tests\lib\blue_button.py') (Join-Path $OutDir 'act-contact.png') 168 1127 1059 1694 2>&1 | ForEach-Object { "$_" }) -join "`n"
+        Add-Content -LiteralPath (Join-Path $OutDir 'compare.log') -Value ("contact蓝填充: " + $blue) -Encoding UTF8
+        Log ("[contact] " + $blue)
+    }
     $verdict = if ($txt -match 'VERDICT=PASS') { 'PASS' } else { 'FAIL' }
     if ($verdict -eq 'FAIL') { $script:fails++ }
     $maxd = [regex]::Match($txt, 'max_bounds_delta=(\d+)').Groups[1].Value

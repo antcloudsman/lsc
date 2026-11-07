@@ -136,7 +136,7 @@ public class M3PageActivity extends Activity {
         // M6 第 4 条：标题栏改 FrameLayout —— 返回贴左、标题**居中且 wrap_content**（原版宽 216）、我的贴右。
         // 用 LinearLayout 时标题靠 weight 撑满，dump 宽度永远是整栏，Δ 表必挂（测试实测 ΔR=+465）。
         android.widget.FrameLayout bar = new android.widget.FrameLayout(this);
-        bar.setPadding(40, 115, 40, 0);   // 原版返回钮 y115、左 0；标题栏底 = 正文起点 265
+        bar.setPadding(40, 142, 40, 0);   // 原版返回钮 y115、左 0；标题栏底 = 正文起点 265
         // 标题栏高度固定（原版正文从 y=265 起、状态栏 122 -> 143），
         // 否则「我的」158 高会把 bar 撑高、把标题一起推下去（实测标题 +31 就是这条）。
 
@@ -164,7 +164,7 @@ public class M3PageActivity extends Activity {
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
         titleLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        titleLp.topMargin = 39;   // 原版标题 y154 - bar 顶 115
+        titleLp.topMargin = 103;   // 原版标题 y154，随 bar 内距一起 +64
         titleLp.height = 79;   // 原版标题高 79（四页一致），wrap 只有 76
         title.setIncludeFontPadding(false);
         bar.addView(title, titleLp);

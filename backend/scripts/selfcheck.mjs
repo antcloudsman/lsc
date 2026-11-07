@@ -173,6 +173,95 @@ async function main() {
   const incremental = await call('GET', `/v2/userCollectPoint/list?since=${cursor}`, { token: tokenA3 });
   check(envelopeOk(incremental) && incremental.json?.data?.count === 0, 'since=cursor returns no changes (incremental sync)');
 
+  // ---- 5b. idempotent create (verifier §27 ①) --------------------------
+  // Same Idempotency-Key twice -> same id, second call 200 (not 201), one row.
+  const idemKey = `idem-fav-${stamp}`;
+  const idemFirst = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, headers: { 'idempotency-key': idemKey }, body: { name: '自检·幂等', des: '坐90° 向270°' },
+  });
+  check(envelopeOk(idemFirst, 201) && idemFirst.json?.data?.deduplicated === false, 'idempotent create: first save -> 201 deduplicated=false');
+  const idemId = idemFirst.json?.data?.point?.id;
+  const idemSecond = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, headers: { 'idempotency-key': idemKey }, body: { name: '自检·幂等', des: '坐90° 向270°' },
+  });
+  check(
+    idemSecond.status === 200 && envelopeOk(idemSecond, 200) && idemSecond.json?.data?.point?.id === idemId,
+    'idempotent create: same key twice -> same id, second call 200'
+  );
+  check(idemSecond.json?.data?.deduplicated === true, 'idempotent create: replay is flagged deduplicated=true');
+  const idemDifferent = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, headers: { 'idempotency-key': idemKey }, body: { name: '同 key 但内容不同', des: '坐1° 向2°' },
+  });
+  check(
+    idemDifferent.status === 200 && idemDifferent.json?.data?.point?.id === idemId
+      && idemDifferent.json?.data?.point?.name === '自检·幂等'
+      && idemDifferent.json?.data?.point?.des === '坐90° 向270°',
+    'idempotent create: same key with different body returns the original row untouched'
+  );
+  const idemList = await call('GET', '/v2/userCollectPoint/list', { token: tokenA3 });
+  const idemRows = idemList.json?.data?.items?.filter((p) => p.name === '自检·幂等' || p.name === '同 key 但内容不同') ?? [];
+  check(idemRows.length === 1 && idemRows[0].id === idemId, 'idempotent create: exactly one row exists for the key');
+  // Verifier §27 judge is DB-level: the key must appear exactly once in the table.
+  {
+    let counter = null;
+    try {
+      counter = new DatabaseSync(DB_PATH);
+      const row = counter.prepare('SELECT COUNT(*) AS n FROM favorites WHERE idem_key = ?').get(idemKey);
+      check(Number(row.n) === 1, `idempotent create: DB holds exactly 1 row for the key (got ${row.n})`);
+    } catch (error) {
+      fail(`could not count rows for ${idemKey} in ${DB_PATH}: ${error.message}`);
+    } finally {
+      counter?.close();
+    }
+  }
+  const idemOtherKey = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, headers: { 'idempotency-key': `${idemKey}-b` }, body: { name: '自检·幂等', des: '坐90° 向270°' },
+  });
+  check(
+    envelopeOk(idemOtherKey, 201) && idemOtherKey.json?.data?.point?.id !== idemId,
+    'idempotent create: a different key creates a new row'
+  );
+  const noKeyTwiceA = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, body: { name: '自检·无键' },
+  });
+  const noKeyTwiceB = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, body: { name: '自检·无键' },
+  });
+  check(
+    noKeyTwiceA.json?.data?.point?.id !== noKeyTwiceB.json?.data?.point?.id,
+    'without Idempotency-Key two creates stay two rows (no silent dedupe)'
+  );
+  // An UPDATE that carries the same key must still apply (the key belongs to the create).
+  const idemUpdate = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, headers: { 'idempotency-key': idemKey }, body: { id: idemId, des: '坐90° 向270°（已改）' },
+  });
+  check(
+    envelopeOk(idemUpdate) && idemUpdate.json?.data?.point?.des === '坐90° 向270°（已改）',
+    'update with the row key still applies (key is not treated as a replay)'
+  );
+  // Clean up the extra rows so later count assertions keep their original meaning.
+  for (const extraId of [
+    idemId,
+    idemOtherKey.json?.data?.point?.id,
+    noKeyTwiceA.json?.data?.point?.id,
+    noKeyTwiceB.json?.data?.point?.id,
+  ]) {
+    if (extraId) await call('DELETE', `/v2/userCollectPoint/delete?id=${extraId}`, { token: tokenA3 });
+  }
+  const afterIdemCleanup = await call('GET', '/v2/userCollectPoint/list', { token: tokenA3 });
+  check(afterIdemCleanup.json?.data?.count === 2, 'idempotency rows cleaned up (2 originals remain)');
+  // A deleted keyed row keeps its key: replay returns it (deleted) instead of resurrecting it.
+  const idemAfterDelete = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, headers: { 'idempotency-key': idemKey }, body: { name: '自检·幂等' },
+  });
+  check(
+    idemAfterDelete.status === 200 && idemAfterDelete.json?.data?.point?.id === idemId
+      && idemAfterDelete.json?.data?.point?.deleted === true,
+    'replay of a deleted keyed create returns the deleted row (no resurrection)'
+  );
+  const afterDeleteReplay = await call('GET', '/v2/userCollectPoint/list', { token: tokenA3 });
+  check(afterDeleteReplay.json?.data?.count === 2, 'replaying a deleted key does not create a row');
+
   const conflict = await call('POST', '/v2/userCollectPoint/save', {
     token: tokenA3, body: { id: p1id, rev: p1rev + 5, name: 'stale' },
   });

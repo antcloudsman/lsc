@@ -150,6 +150,18 @@
 - `userId` 服务端按 token 覆盖，**忽略客户端传值**（防越权）；`dbId` 原样存。
 - 原版还有 `AddCollectParameter`（含 `addr/country/province/city/district/street/adCode/altitude/sceneCode/notify/notifyConfig/token`）作为**另一条写入链路**，调用方未定位：本文只登记，不实现（【原版未取证】）。
 
+### 3.3 新建幂等（【我方新增】，与 `/v2/feedback/add` 同一套）
+
+`POST /v2/userCollectPoint/save` 的**新建分支**（不带 `id`）可选读请求头 **`Idempotency-Key`**（≤128 字符，客户端用每行稳定的 `client_key`）：
+
+- 首次：HTTP **201**，`data.deduplicated=false`；
+- 同 key 再次（含崩在「服务端已建、客户端未写回 `remote_id`」的缝里重推）：HTTP **200**，`data.point` 是**第一次建的那一行**，`data.deduplicated=true`，**库里不新增行**；
+- **同 key 但 body 不同**：仍返回第一次那一行（200），**不静默按新内容改写**——宁可让客户端据 `data.point` 收敛，也不静默丢内容；
+- 不带 key：两次提交就是两行（不做隐式去重）。
+- 唯一索引 `(user_id, idem_key)` 是最终仲裁，两个重试并发也只会建一行。
+- **`Idempotency-Key` 只作用于新建分支**：客户端每行复用同一个 key，更新（带 `id`）时即使带该 key 也**照常更新**，不会被当成重放而丢掉编辑。
+- 软删除的行**保留** `idem_key`：对已删行用同 key 重推仍返回该行（`deleted:true`），不复活，与 §3.2「删除不复活」一致。
+
 ## 4. 投诉反馈（【原版】`type:int`）
 
 | 方法 | 路径 | 入参 |
@@ -217,7 +229,7 @@ feedback(id TEXT PK, user_id TEXT, attachments TEXT, contact_way TEXT, order_num
 cases/settings/shares/changes(...)  -- v1 原样保留，另加 user_id 列供显式认领
 ```
 
-- `schema_migrations` 幂等迁移，已实现并在启动时执行：`001_init` → `002_users_sessions` → `003_favorites` → `004_feedback` → `005_legacy_user_id`（`ALTER TABLE cases/settings/shares ADD COLUMN user_id`）。跑过的库只记录不重跑，**v1 旧卷可直接升级**（实测：旧卷 `cases=2` 原样保留，迁移表 5 条）。
+- `schema_migrations` 幂等迁移，已实现并在启动时执行：`001_init` → `002_users_sessions` → `003_favorites` → `004_feedback` → `005_legacy_user_id`（`ALTER TABLE cases/settings/shares ADD COLUMN user_id`）→ `006_favorites_idem`（`favorites` 加 `idem_key` + 唯一索引，见 §3.3）。跑过的库只记录不重跑，**v1 旧卷可直接升级**（实测：旧卷 `cases=2` 原样保留）。
 - 收藏点用自身 `rev` 做增量，**不写 `changes` 变更日志**（`changes` 仍是 v1 案例库的游标表；v2 未开放 `/v2/cases`，案例库数据只保留待客户端接入时再排期）。
 - v1 的 `cases/settings/shares` 保留，`user_id` 初始为 `NULL`，**不自动归属**（`owner_id` 不是身份凭证）；用一次性脚本显式认领：
   `docker compose exec api node --no-warnings scripts/claim-owner.mjs <owner_id> <username>` → 打印 `CLAIM: ok … cases/settings/shares` 条数。
@@ -240,8 +252,8 @@ cases/settings/shares/changes(...)  -- v1 原样保留，另加 user_id 列供�
 cd <repo>\backend
 docker compose up -d --build                 # 一键起；启动时自动跑 001–005 迁移
 docker compose ps                            # 期望 Up (healthy)
-curl.exe -s http://127.0.0.1:8787/health     # {"status":"ok",...,"schema":"005_legacy_user_id"}
-docker compose exec -T api node --no-warnings scripts/selfcheck.mjs   # 期望 SELFCHECK: PASS (68 checks)
+curl.exe -s http://127.0.0.1:8787/health     # {"status":"ok",...,"schema":"006_favorites_idem"}
+docker compose exec -T api node --no-warnings scripts/selfcheck.mjs   # 期望 SELFCHECK: PASS (80 checks)
 ```
 
 `selfcheck.mjs` 覆盖（容器内跑，不是宿主机）：

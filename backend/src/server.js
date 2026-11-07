@@ -232,6 +232,13 @@ function extractToken(req) {
   return null;
 }
 
+/** Shared reader for the optional `Idempotency-Key` header (<=128 chars). */
+function readIdemKey(req) {
+  const raw = req.headers['idempotency-key'];
+  if (typeof raw !== 'string') return null;
+  return raw.trim().slice(0, 128) || null;
+}
+
 function requireAuth(req, ctx) {
   const token = extractToken(req);
   if (!token) fail(401, 'token 无效或已过期');
@@ -465,7 +472,12 @@ async function route(req, res, ctx) {
     const auth = requireAuth(req, ctx);
     const body = await readJson(req, LIMIT_BUSINESS_BYTES);
     const fields = normalizeFavorite(body);
-    if (body.id !== undefined && body.id !== null && body.id !== '') {
+    const hasId = body.id !== undefined && body.id !== null && body.id !== '';
+    // Idempotency-Key applies to the CREATE branch only: for a row created with
+    // key K, later updates also carry K (the client reuses one stable key per
+    // row), and treating those as replays would silently drop the edit.
+    const idemKey = hasId ? null : readIdemKey(req);
+    if (hasId) {
       const id = asInt(body.id, 'id', { min: 1 });
       const existing = store.getFavorite(auth.user.id, auth.user.uid, id);
       if (!existing) fail(404, '收藏点不存在');
@@ -478,7 +490,10 @@ async function route(req, res, ctx) {
       ok(res, req, { point: store.updateFavorite(auth.user.id, auth.user.uid, id, fields) });
       return;
     }
-    ok(res, req, { point: store.createFavorite(auth.user.id, auth.user.uid, fields) }, 201);
+    const created = store.createFavorite(auth.user.id, auth.user.uid, fields, idemKey);
+    // A replay returns the row created by the first request with the same key,
+    // so it answers 200 (not 201) and echoes the original content untouched.
+    ok(res, req, { point: created.point, deduplicated: created.deduplicated }, created.deduplicated ? 200 : 201);
     return;
   }
 
@@ -503,9 +518,7 @@ async function route(req, res, ctx) {
     if (attachments !== undefined && attachments !== null && attachments !== '') {
       fail(400, 'attachments 本轮仅支持空值（图片上传属 DI）');
     }
-    const idemKey = typeof req.headers['idempotency-key'] === 'string'
-      ? req.headers['idempotency-key'].trim().slice(0, 128) || null
-      : null;
+    const idemKey = readIdemKey(req);
     if (idemKey) {
       const existing = store.findFeedbackByIdem(auth.user.id, idemKey);
       if (existing) {

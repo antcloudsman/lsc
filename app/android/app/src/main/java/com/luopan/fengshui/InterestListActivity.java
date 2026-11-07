@@ -69,7 +69,7 @@ public class InterestListActivity extends Activity {
 
     private void reload() {
         list.removeAllViews();
-        List<InterestPoint> items = db.listInterest();
+        List<InterestPoint> items = db.listInterest(LcSession.uid(this));
         if (items.isEmpty()) {
             list.addView(LcUi.emptyView(this, R.id.lc_interest_empty,
                     getString(R.string.lc_interest_empty)));
@@ -154,3 +154,4 @@ public class InterestListActivity extends Activity {
                 .show();
     }
 }
+

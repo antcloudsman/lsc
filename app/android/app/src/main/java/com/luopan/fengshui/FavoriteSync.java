@@ -154,7 +154,7 @@ final class FavoriteSync {
                         JSONObject o = allItems.optJSONObject(i);
                         if (o != null && o.optLong("id", 0) > 0) live.add(o.optLong("id", 0));
                     }
-                    for (InterestPoint local : db.listInterest()) {
+                    for (InterestPoint local : db.listInterest(uid)) {
                         long remote = db.remoteIdOf(local.id);
                         if (remote <= 0 || live.contains(remote)) continue;
                         // 账号隔离：只有「属于当前账号」的行才允许进远端已删判定。
@@ -221,6 +221,7 @@ final class FavoriteSync {
         }
     }
 }
+
 
 
 

@@ -2163,9 +2163,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 文字节点宽度取 wrap_content（原版 `复制邮箱` 文本 [520,1497][708,1576] = 188 宽，
         // 蓝色填充才是 583）；填充层仍 583x111，文字在其中居中。
         android.widget.FrameLayout.LayoutParams fillLp = new android.widget.FrameLayout.LayoutParams(
-                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, 111);
-        fillLp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
-        fillLp.topMargin = 23;
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, 79);   // 原版文本节点高 79（填充才是 111）
+        fillLp.gravity = android.view.Gravity.CENTER;
         btnBox.addView(copy, fillLp);
         android.widget.LinearLayout.LayoutParams blp = new android.widget.LinearLayout.LayoutParams(583, 157);
         blp.topMargin = 29;

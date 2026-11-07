@@ -202,7 +202,10 @@ var pitchBeforeGround = 45;
 var last3dError = null;
 var lastDemoElev = 0;            /* M6 第 8 条：最近一次有效相机目标高程，DEM 缺角时沿用 */
 var demoEdgeWarned = false;      /* dem-edge 只报一次，避免每帧刷屏 */
-var meshNull = 0;                /* 本次建面中 DEM 缺角顶点数（建面结束打印一次） */         /* M6 第 8 条：最近一次 3D 失败原因（webgl-unavailable / dem-missing / texture-fail），成功时清空；getState() 可读，原生侧亦可由 onConsoleMessage 捕获 */
+var meshNull = 0;                /* 本次建面中 DEM 缺角顶点数（建面结束打印一次） */
+var last3dWarn = null;           /* M6 第 8 条：局部降级（dem-edge / dem-edge-mesh），**不算失败**；
+                                  * 失败只有三态：webgl-unavailable / dem-missing / texture-fail。
+                                  * 拖到 patch 边缘属正常操作，若混进 last3dError 会把「成功」读成「失败」。 */
 var drape = "img";             // 3D 贴面层（D-005：默认影像；ter 仍可用按钮切）
 var pick = null;               // 3D 立向点 {lng,lat,elev,world,heading}
 var pickEl = null;
@@ -2301,7 +2304,7 @@ function buildMesh(p) {
   }
   if (meshNull > 0) {
     console.log("LC3D WARN dem-edge-mesh " + meshNull + "/" + vc);
-    if (!last3dError) last3dError = "dem-edge-mesh";
+    last3dWarn = "dem-edge-mesh " + meshNull;
     meshNull = 0;
   }
   /* F-06 山脊：高程曲率（顶点高出 8 邻域均值）→ 0..1，着色器按 uRidge 高亮。
@@ -2395,6 +2398,7 @@ function buildPatchTexture(p) {
     if (ok >= 30) {
       p.texCanvas = cv;
       last3dError = null;                       /* 贴面成功即清失败标记 */
+      last3dWarn = null;                        /* 贴面成功也清掉局部降级标记 */
       console.log("LC3D texture ok " + ok + "/36 " + drape + " z" + zt);
     } else {
       last3dError = "texture-fail " + ok + "/36";
@@ -2730,7 +2734,7 @@ function render3D() {
     elevNow = lastDemoElev;
     if (!demoEdgeWarned) {
       demoEdgeWarned = true;
-      last3dError = last3dError || "dem-edge";
+      last3dWarn = "dem-edge";
       console.log("LC3D WARN dem-edge");
     }
   } else {
@@ -2876,7 +2880,7 @@ function getState() {
     sitMode: sitMode, sitNorth: sitMode !== 0,
     contour: contourOn, ground: groundMode, needle: needleOn,
     base: base, drape: drape, roadNet: roadNet,
-    ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError,
+    ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError, last3dWarn: last3dWarn,
     wayback: wbOn, waybackRelease: wbRelease,
     cache: tileCacheOn, cacheCount: tileCacheKeys.length,
     measure: (function () {

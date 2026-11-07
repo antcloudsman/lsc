@@ -37,7 +37,7 @@
 | `webgl-unavailable` | `initGL()` 返回 false | **回落 `setMode("2d")`**（唯一回落的一态） |
 | `dem-missing` | 任一 DEM 瓦片取不到（`tiles[i] === null`） | 不回落，停在 3D 但无 patch（灰底） |
 | `texture-fail <ok>/36` | 贴面瓦片成功率 `< 30/36` | 不回落，地形在、无影像贴面（走高程配色） |
-| `dem-edge` / `dem-edge-mesh` | DEM **局部**缺角（`demAt` 返回 null） | 不是整块失败：沿用上一帧高度 / 计数上报 |
+| `dem-edge` / `dem-edge-mesh` | DEM **局部**缺角（`demAt` 返回 null） | **不进 `last3dError`**，改写 `last3dWarn`（见 §1.5）：拖到 patch 边缘是正常操作，混进失败字段会把「成功」读成「失败」 |
 | `null` | 成功（贴面 ok 即清） | — |
 
 ## 2. 真机实测（构建指纹）
@@ -68,3 +68,52 @@ lastUpdateTime  02:43:26，device base.apk sha 与构建产物一致（装完即
 ## 4. 时间戳与轮次
 - 开工 `2026-11-08 02:28` / 收工 `02:47` / 返工 3 轮（`dem-load` 删除、`demAt`→null、网格夹取 `-0.001`→`-1.001` 各一轮）。
 - 期间两次被他人装包覆盖（`02:27:20`、`02:44:17`），已在证据里记录，未把别人的构建当自己的结果。
+
+## 1.5 `last3dWarn` 与 `last3dError` 拆开（总监 11-08 裁定 A 方案）
+
+- 背景：`buildMesh` 与 `render3D` 的局部降级原本写入 `last3dError`，而成功态判据是 `last3dError === null`。
+  **拖到 patch 边缘是正常操作**，一触发就把「成功」读成「3D 失败」，`ok` 那条会误判 FAIL —— 字段混用比没有这个字段更危险。
+- 现状（本提交后）：
+  - `last3dError`：**只放三态** `webgl-unavailable` / `dem-missing` / `texture-fail <ok>/36`，贴面成功置 `null`；
+  - `last3dWarn`：`dem-edge` / `dem-edge-mesh <n>`，**不影响成功态判定**，`getState()` 一并导出；
+  - 贴面成功同时清 `last3dWarn`。
+- 判据：`ok := last3dError === null`；局部降级看 `last3dWarn`，两者不互串。
+- 另清掉 `205` 行粘错的重复注释（`var meshNull = 0;` 后误粘了 `last3dError` 的旧说明，定点 edit 的痕迹，不影响运行）。
+
+## 1.6 本提交构建指纹
+
+```
+commit          9b7a486 + 本笔（feature/地图-m6-3d）
+APK             8,595,333 B
+apk.sha256      DF064302AD4932C9680BDE81EF5D26A6A9B523DAB2F48FD11C911ACC4093ADF7
+zip 条目        518
+真机            已由 LC测试 在 0113714 构建上复验（sha f31603d8… / lastUpdateTime 03:03:58），
+                证据 docs/qa/m6-stage2-verify.md（feature/lc-test-m4-e2e = cfb5835）；实测值见 §2.1
+```
+
+### 1.6.1 给测试的注入口径（审地图 指出的缓存坑，必须照做）
+`demTile` 命中 `DEM[k]` 就直接 `resolve`，**不发网络请求**；只改 `TERRARIUM` 不会失败。三句一起发：
+```
+js("TERRARIUM='https://127.0.0.1:1/'; DEM={}; DEM_PENDING={}; DEM_ORDER=[]; ensurePatch(true)")
+```
+恢复：改回 `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/` 并再清三张表，或重载页面。
+
+## 2.1 真机复验实测值（LC测试，0113714 构建）
+
+`
+成功         last3dError=null              warn=null        mode=3d tex=true
+dem-missing  last3dError="dem-missing"     warn="dem-edge"  mode=3d tex=true  demZoom=11
+texture-fail last3dError="texture-fail 0/36" warn=null     mode=3d tex=false demZoom=11
+恢复后       last3dError=null              warn=null        mode=3d tex=true
+`
+
+### 一条必须写进判据的行为（与之前口头推断不一致，以实测为准）
+dem-missing **不回落、也不清空 patch**：mode 仍为 3d、hasTexture 仍为 	rue、demZoom 仍是**上一块**的值。
+原因是代码在 startPatch 失败分支里只 loadingKey = null; return;，**旧的 patch 对象原样留着**，渲染继续用上一块地形。
+因此判据**不能**写「dem-missing ⇒ patch == null / 灰底」——那会把正确实现判 FAIL。正确写法：
+- mode === "3d"；
+- last3dError 前缀匹配 dem-missing；
+- **patch 保持上一块**（hasTexture 与 demZoom 不变），画面继续显示旧地形。
+
+warn="dem-edge" 在该档出现是因为沿用旧 patch 时相机目标落到了旧块边缘，属 §1.5 定义的局部降级，**不影响成功态判定**（这正是拆字段的目的）。
+webgl-unavailable 无法注入（需 GPU 不可用），仍按代码路径登记，不写「已验证」。

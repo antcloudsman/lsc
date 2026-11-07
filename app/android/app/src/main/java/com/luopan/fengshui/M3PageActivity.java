@@ -341,8 +341,9 @@ public class M3PageActivity extends Activity {
      * - `setPackage("com.tencent.mm")` + text/plain：落到微信自己的选择器「发送给朋友 / 添加到微信收藏」→ 可用；
      * - `setClassName(... ui.tools.ShareToTimeLineUI)`（带/不带 Ktitle/Kdescription/Klink）：微信弹
      *   「获取资源失败，无法分享至朋友圈。」——普通 `ACTION_SEND` 走不通朋友圈，原版用的微信 SDK 通道本项目不引入。
-     * 因此两个渠道都落到微信的 `ACTION_SEND` 入口；**朋友圈与微信的分流是已知差异**（原版靠微信 SDK），
-     * 正文（UMWeb description）与渠道标签逐字不变。`SHARE_URL` 是原版 UMWeb 的落地页，随日志留痕。
+     * 因此两个渠道都落到微信的 `ACTION_SEND` 入口；**朋友圈与微信的分流是已知差异**（D-026：不接 SDK、
+     * 页面不加提示、降级只在日志与台账体现），正文（UMWeb description）与渠道标签逐字不变。
+     * `SHARE_URL` 是原版 UMWeb 的落地页，随日志留痕。
      */
     private void shareTo(String label, boolean timeline) {
         android.content.Intent send = new android.content.Intent(android.content.Intent.ACTION_SEND);
@@ -352,8 +353,10 @@ public class M3PageActivity extends Activity {
         send.setPackage("com.tencent.mm");
         try {
             startActivity(send);
+            // D-026：不接友盟/微信 SDK（原版 SHARE_MEDIA.WEIXIN_CIRCLE），朋友圈分流降级为微信系统分享面板；
+            // 日志必须能看出「哪个渠道 → ACTION_SEND → 微信 resolver」。
             android.util.Log.d("LCM3", "share " + label + " channel=" + (timeline ? "WEIXIN_CIRCLE" : "WEIXIN")
-                    + " direct -> resolver, text=" + SHARE_TEXT + " url=" + SHARE_URL);
+                    + " ACTION_SEND -> wechat resolver (D-026 downgrade), text=" + SHARE_TEXT + " url=" + SHARE_URL);
         } catch (Throwable t) {
             android.util.Log.d("LCM3", "share " + label + " fallback chooser: " + t);
             android.content.Intent plain = new android.content.Intent(android.content.Intent.ACTION_SEND);

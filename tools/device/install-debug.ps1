@@ -193,6 +193,9 @@ function Get-Focus {
 function Get-FocusKind([string]$Component) {
     if (-not $Component) { return 'none' }
     if ($Component -match 'UnifiedAuthentication|unifiedauth|AuthenticationDialog|Keyguard') { return 'auth' }
+    # Real-device flow (2026-11-07): risk page -> confirm page -> .InstallSuccess.
+    # The success page has no install button; treat it as "done", never tap it.
+    if ($Component -match 'InstallSuccess') { return 'done' }
     if ($Component -match '(?i)packageinstaller|appmarket|appgallery|install') { return 'ui' }
     if ($Component -match [regex]::Escape($PackageName)) { return 'app' }
     return 'other'
@@ -500,6 +503,12 @@ try {
                 $script:lastFocusLogged = $focus
             }
 
+            if ($kind -eq 'done') {
+                # .InstallSuccess: installation is complete, nothing to press.
+                Start-Sleep -Seconds 1
+                continue
+            }
+
             if ($kind -eq 'auth') {
                 Invoke-AuthPin $focus
                 continue
@@ -553,6 +562,13 @@ try {
         if (-not $pathChanged -and -not $timeChanged -and $script:lastUpdateBefore) {
             Fail 11 ("neither pm path nor lastUpdateTime changed (lastUpdateTime={0}); cannot prove this APK was installed" -f $post.lastUpdate)
         }
+    }
+
+    # Leave the device on a clean foreground: dismiss the system InstallSuccess page.
+    $focusAfter = Get-Focus
+    if ((Get-FocusKind $focusAfter) -eq 'done') {
+        Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null
+        Log 'dismissed InstallSuccess page (BACK)'
     }
 
     $elapsed = ((Get-Date) - $started).TotalMilliseconds

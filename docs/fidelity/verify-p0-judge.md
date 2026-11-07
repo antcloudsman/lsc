@@ -1257,6 +1257,23 @@ P1-33-D 判据第②条应改写成「**按 D-028 实现后交集 = 0（有意�
 `154 / 644 / 1294 / 1480 / 1666 / 1852 / 2038 / 2224`；我方 `mleft1 全地图工具` 在 `[33,357][191,515]`，
 正好落在原版那个 287×273 元素的位置，属 P1-33-D 的实现范围，等客户端按原版逐项对齐。
 
+## 23. develop `1ad400d` 代码级预检（2026-11-07 11:47，等双图）
+
+`git show 1ad400d:app/android/app/src/main/assets/map.html` 逐条对 §12 第 13 条：
+
+| 判据 | 位置 | 原文 | 换算到设备 px |
+|---|---|---|---|
+| 面板外框 | `:52-53` | `left:38px; right:60px; top:160px; height:246px` | 128.25 / 1026.0 / 540 / 830.3 |
+| 面板底 | `:55` | `background:#f6f5f5f5`（含 `box-sizing:border-box`、`padding:11px 10px 7px`） | 浅色近中性白 |
+| 卡高 / 行距 | `:57-58` + `:59-61` | `grid-auto-rows:38.8px; row-gap:8.6px`、`.srcCard{height:38.8px}` | 卡 131 / 间隙 29 / **行距 160** |
+| 标签条 | `:69-72` | `width:100%; box-sizing:border-box; height:11.5px; min-height:11.5px; background:#1c2532` | 高 38.8≈**39**，整宽，(28,37,50)，白字 |
+| 选中态 | `:63` | `.srcCard.on .srcName { background:#1c45a5 }` | (28,69,165) |
+| 第 13 格 | `:74-76` | `height:37.6px; min-height:37.6px; align-self:start; background:#e1e8eb` | **127** / (225,232,235) |
+| 置灰 | `:62` `:65` | `.srcCard.off{opacity:.55}`、`.srcCard.off .srcThumb{filter:grayscale(1)}` | finding 明写保留，不算差 |
+
+一句提醒（不影响判据）：`:51` 注释仍写「面板左边 128 会盖住工具列 128..201（73 px）」，与我方实际左列 `x33..191`、交集 `128..191`（63 px）对不上，是早期数字的残留；注释虽不进产物，但按本轮「不拿实现冒充原版」的纪律，建议顺手改掉。
+
+
 
 
 

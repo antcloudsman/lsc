@@ -2000,7 +2000,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             item.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
             item.setIncludeFontPadding(false);
             item.setOnClickListener(v -> {
-                hideDrawer();
+                // M6 第 4 条：原版「联系我们」是**叠在抽屉上的对话框**，所以这一项不能先关抽屉，
+                // 否则关掉卡片会落回地图而不是抽屉（原版关掉后抽屉仍在）。
+                if (!"联系我们".equals(label)) hideDrawer();
                 openDrawerTarget(label);
             });
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(

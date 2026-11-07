@@ -154,6 +154,14 @@ final class FavoriteSync {
                         JSONObject o = allItems.optJSONObject(i);
                         if (o != null && o.optLong("id", 0) > 0) live.add(o.optLong("id", 0));
                     }
+                    // 幽灵行消解（审核验 §33.2 + 服务端提案）：`owner_uid=0 && remote_id>0` 的升级存量行，
+                    // 归属不由本地猜，由**服务端回答**——该 remote_id 出现在本账号的 list 里，
+                    // 就是「这个 id 是我的」，据此认领；不在就保持 0、不推不对账。
+                    // 复用这次全量请求，零额外流量。
+                    int adoptedByRemote = db.adoptByRemoteIds(uid, live);
+                    if (adoptedByRemote > 0) {
+                        android.util.Log.d("LCSYNC", "adopted by remote ids=" + adoptedByRemote + " uid=" + uid);
+                    }
                     for (InterestPoint local : db.listInterest(uid)) {
                         long remote = db.remoteIdOf(local.id);
                         if (remote <= 0 || live.contains(remote)) continue;
@@ -221,7 +229,6 @@ final class FavoriteSync {
         }
     }
 }
-
 
 
 

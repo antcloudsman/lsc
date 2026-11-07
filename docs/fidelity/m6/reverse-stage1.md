@@ -555,6 +555,57 @@ show = if (g.q() && !g.p()) false else viewModel.M0()
 
 ⇒ 两处旁证与 §6.9.2 的恒定值一致，未见与「用户开关」相符的行为。
 
+## 8. 第 8 条 3D 按钮「点了应该发生什么」（已取证，含 VIP 门槛）
+
+### 8.1 点击链路（全部已证）
+
+```
+CompassToolsKt;->T0(vm, activity)                    ui/tools/CompassToolsKt.smali:1245
+  ├ TAHelper.track("compass_ck", "name", "3D")        :1255-:1261
+  └ vm.D3(context, null)                              :1270（synthetic，默认参 → 见下）
+       └ MainViewModel.C3(context, flag = null)        viewmodel/MainViewModel.smali:3885
+```
+
+### 8.2 `C3(context, flag: Boolean?)` 逐段（已证，`MainViewModel.smali:3885-4056`）
+
+```kotlin
+fun C3(context, flag: Boolean? = null) {
+    // ① VIP 门槛：不是 3D 态 + 不是 VIP + open3dTimes > 0  → 跳 VIP 页，直接 return
+    if (!is3D() && !AccountManager.getCurrentAccount().isVip() && AppConfig.getOpen3dTimes() > 0) {
+        OpenVipActivity.a(context, "3D")          // 埋点/参数串是 "3D"
+        return                                     // ← 不进入 3D
+    }
+    // ② 目标态：无参时取反
+    val target = flag ?: !is3D()
+    y2(target)                                     // 写 3D 状态位
+    // ③ 通知 Web 层
+    MapWebApiKt.switch3D(controller, is3D(), false)   // JSON: {open: Bool, anim: false}
+    // ④ 收尾
+    if (is3D()) AppConfig.setOpen3dTimes(AppConfig.getOpen3dTimes() + 1)   // 免费次数 +1
+    else        controllerOrNull?.c()                                       // 退出 3D 的收尾
+}
+```
+
+关键三条：
+
+| 事实 | 值 | 出处 |
+| --- | --- | --- |
+| **3D 是 VIP 门槛功能** | 非 VIP 且 `open3dTimes > 0` → 跳 `OpenVipActivity`，**不进入 3D** | `MainViewModel.smali:3903-3951` |
+| **首次免费** | `getOpen3dTimes() == 0` 时放行（`if-lez` 跳过 VIP 分支）；每次成功进入 **+1** | `:3939` / `:4024-4036` |
+| JS 桥参数 | `switch3D(controller, open=is3D(), anim=false)` → `{open, anim}` | `map/MapWebApiKt.smali` `switch3D(...,ZZ)` |
+
+### 8.3 对我方的三条结论
+
+1. **我方现在没有 VIP 门槛与试用计数**。原版「非 VIP 且已用掉免费次数 → 点 3D 只弹 VIP 页」这条行为，我方完全没有；所以用户按 3D 一定会进 3D，与原版不一致。**若要 1:1，需要补：`is3D` 状态位、`open3dTimes` 计数（原版落 `AppConfig`，即 MMKV）、以及 VIP 判定与跳转。**
+   但**我方没有 VIP 体系**（M2 已把 VIP 相关记 DI），故这条要么跟着 VIP 一起进 DI，要么明确「我方无 VIP 门槛，3D 恒可用」并登记为**有意差异**。**两条都不许默认**。
+2. **`compass_ck`/`name="3D"` 这个埋点名确认了**：原版把 3D 按钮归在罗盘工具组（与「罗盘复位/罗盘锁定/贴地/等高线/截屏/读盘」同一事件），所以**它是罗盘工具区的一颗按钮，不是地图控件**。
+3. **`anim=false`**：原版切 3D 时**不做过渡动画**（第二个参数固定 false）。我方若加了动画，是与原版不同的**新增行为**。
+
+### 8.4 仍未取证
+
+- `switch3D` 在 JS 侧的具体动作（`setMode("3d")` 的等价物、是否强制 `zoom>=9`、是否切贴面）——原版 `webapp` 里对应的 handler 名未定位到（我方 `toggle3D` 是自拟名）。
+- `controller.c()`（退出 3D 的收尾）具体做什么，未读。
+
 # 未取证清单（逐条给原因）
 
 | 项 | 状态 | 原因 |

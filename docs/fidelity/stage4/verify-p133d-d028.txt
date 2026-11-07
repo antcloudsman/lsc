@@ -1,0 +1,22 @@
+# P1-33-D / D-028：底图源面板开合时只隐与面板相交的两枚左列按钮
+# 设备 L2E0222531014833  Android 12  采证 2026-11-07 11:27-11:28
+# 分支 feature/client-p133d（base develop bf73529）
+# 构建：clean assembleDebug → 8,565,428 B / sha256 1eb5f046bc37a507e96efb980a931bd12a4083482abe64f68661bb3d4b1b8846 / 517 条目
+# 判据（产品 v1.34 / 总监裁定）：只动 mleft2 截屏、mleft3 超清优化；全地图工具(y357..515)在面板纵向范围外不动；不收窄
+
+before            mleft1=1 mleft2=1 mleft3=1 place=1
+src-panel open    mleft1=1 mleft2=0 mleft3=0 place=0
+src-panel close   mleft1=1 mleft2=1 mleft3=1 place=1
+
+日志 LCATTR：
+  panel-covered id=<mleft2> visible=false
+  panel-covered id=<mleft3> visible=false
+  src-panel open=true
+  panel-covered id=<mleft2> visible=true
+  panel-covered id=<mleft3> visible=true
+  src-panel open=false
+
+实现：MainActivity.onMapUiEvent 的 src-panel 分支调用 setPanelCoveredLeftItems(open)，
+只 findViewById(mleft2/mleft3) 切可见性；恢复时按 compassMode 保持隐藏（罗盘态整列本来隐藏）。
+预期交集：面板 x128..1026 × y540..1370 与左列 158 宽按钮，隐藏后交集 0。
+D-028：原版面板态 x33..127 仍可见（面板盖住按钮右半截），我方整枚隐藏——已登记。

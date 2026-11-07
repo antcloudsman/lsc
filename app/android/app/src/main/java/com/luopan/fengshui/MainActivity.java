@@ -2130,7 +2130,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (placeView != null) {
                 placeView.setVisibility(open || compassMode ? View.GONE : View.VISIBLE);
             }
+            // D-028：面板矩形 x128..1026 / y540..1370 只与左列「截屏」(mleft2 [33,637][191,795]) 和
+            // 「超清优化」(mleft3 [33,1294][191,1452]) 相交；「全地图工具」在 y357..515，纵向范围外不动。
+            // 原版面板由上层的 web 树绘制、会盖住这两枚右半截；我们面板在 WebView 里，只能开合时隐藏/恢复。
+            setPanelCoveredLeftItems(open);
             android.util.Log.d("LCATTR", "src-panel open=" + open);
+        }
+    }
+
+    /**
+     * D-028：底图源面板开合时，隐藏/恢复左列里与面板矩形相交的两枚原生按钮。
+     * 只动 mleft2/mleft3；罗盘态左列本来整列隐藏，恢复时也按 compassMode 保持隐藏。
+     */
+    private void setPanelCoveredLeftItems(boolean covered) {
+        int[] ids = {R.id.lc_g1_mleft2, R.id.lc_g1_mleft3};
+        for (int id : ids) {
+            View v = findViewById(id);
+            if (v != null) {
+                v.setVisibility(covered || compassMode ? View.GONE : View.VISIBLE);
+                android.util.Log.d("LCATTR", "panel-covered id=" + id + " visible=" + (!covered && !compassMode));
+            }
         }
     }
 

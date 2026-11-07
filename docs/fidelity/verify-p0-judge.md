@@ -1307,6 +1307,30 @@ meta 记录 `build.commit = 1ad400d…`、`apk.sha256 = 9928856c…`、`apk.byte
 - **P2：5/5 收口**（R2-001 过账、R2-008 附 P2-8-A、R2-032 关账且未回归、R2-034 按 D-006、R2-035 判 NC）。
 - 遗留非阻塞：P1-33-E（左右列搬进 web 层，M3 关账后做）、D-028 差异登记、`map.html:51` 注释旧数字。
 
+### 24.4 develop 侧落库核对（2026-11-07 18:22，总监要求「判 develop 版」）
+
+我判的 `bfde9da` 与 develop `d53d4bc` 里的证据**是否同一份**，逐 blob 核过：
+
+```
+SAME  docs/fidelity/lc/map-layer-sheet.png      2435963da9
+SAME  docs/fidelity/lc/map-layer-sheet.xml      4c54028ba0
+SAME  docs/fidelity/lc/map-layer-sheet.meta.json 2243440506
+SAME  docs/fidelity/lc/map-home-01.png          020e8293a5
+SAME  docs/fidelity/lc/map-home-01.xml          c891a2f5b7
+SAME  docs/fidelity/lc/map-home-01.meta.json    ba89762499
+```
+
+→ 6/6 逐字节相同，**§24 的判词直接适用于 develop，不需要重判**。
+
+代码侧另核两处：
+
+- `MainActivity.java`：`d53d4bc` 与 `21519fa` **同 blob**（`15eeb047…`），D-028 那两行未变；
+- `map.html`：`d53d4bc` 与采集时的 `1ad400d` blob **不同**（`bc93429b…` vs `24000d72…`），原因是后合的 `b965676` 只改了注释。
+  我做了注释剔除比对：去掉 `/* */` 与 `//` 后 **2719 行逐行相同**，CSS/DOM 语义无变化。
+  **但要注意**：`map.html` 是 APK 内资产，注释进产物，所以 `d53d4bc` 自建的 APK **不会是** `8,565,452 B / 9928856C…`；
+  证据的 `meta.build.commit = 1ad400d` 是如实记录，两者行为一致、字节不同——以后引用这组证据时不要写成「develop 版 APK sha 9928856C」。
+
+
 
 
 

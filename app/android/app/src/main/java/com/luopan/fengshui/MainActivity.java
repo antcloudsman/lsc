@@ -2092,8 +2092,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         title.setTextSize(17f);
         title.setTextColor(0xFF23272B);
         title.setGravity(android.view.Gravity.CENTER);
+        // 宽度按**文字自身**（dump: 标题 [506,1199][722,1278] = 216、正文 [328,1350][899,1429] = 571），
+        // 用 MATCH_PARENT 会得到 583 宽、Δx 184px，复验按 Δ≤2px 必挂。
         col.addView(title, new android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 79));
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 79));
 
         TextView value = new TextView(this);
         value.setText(mail);
@@ -2101,7 +2103,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         value.setTextColor(0xFF23272B);
         value.setGravity(android.view.Gravity.CENTER);
         android.widget.LinearLayout.LayoutParams vlp = new android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 79);
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 79);
         vlp.topMargin = 72;   // 正文 dump y 1350 - (卡顶 1127 + 顶部 72 + 标题 79) = 72
         col.addView(value, vlp);
 
@@ -2126,9 +2128,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             android.util.Log.d("LCM3", "copy mail ok text=" + mail + " via dialog");
         });
         // 蓝钮：dump [322,1458][905,1615] → 583x157，距卡顶 331（=1127+331=1458）
+        // 蓝钮分两层（审客户端订正 + 总监裁定）：可点容器 = dump 583x157（距卡顶 331）；
+        // 蓝色填充 = 像素实测 583x111，相对容器上下各内缩 23/19 —— 整块 157 涂蓝会高 46px。
+        android.widget.FrameLayout btnBox = new android.widget.FrameLayout(this);
+        btnBox.setClickable(true);
+        btnBox.setOnClickListener(v -> copy.performClick());
+        android.widget.FrameLayout.LayoutParams fillLp = new android.widget.FrameLayout.LayoutParams(583, 111);
+        fillLp.topMargin = 23;
+        btnBox.addView(copy, fillLp);
         android.widget.LinearLayout.LayoutParams blp = new android.widget.LinearLayout.LayoutParams(583, 157);
-        blp.topMargin = 29;   // 331 - (72 + 79 + 72 + 79) = 29
-        col.addView(copy, blp);
+        blp.topMargin = 29;
+        col.addView(btnBox, blp);
 
         card.addView(col, new android.widget.FrameLayout.LayoutParams(
                 android.widget.FrameLayout.LayoutParams.MATCH_PARENT,

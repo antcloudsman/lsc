@@ -777,7 +777,10 @@ git merge-base --is-ancestor c80c486 origin/develop   # 1 = 未合
 按总监要求回到原版界面证据 `docs/fidelity/orig/map-layer-sheet.png`（1228×2700）逐像素看：
 
 - 面板为 3 列 × 4 行共 12 张源卡（`中科星图 / 吉林一号·全球 / 吉林一号·全国 / 世纪空间 / 天地图卫星 / 天地图地图 / 天地图地形 / 高德卫星 / 高德地图 / 腾讯卫星 / 腾讯地图 / 腾讯地形`）；
-- **第 13 格是一个大面积浅灰圆角块 + 居中深灰「+」，没有任何文字**（像素：浅灰块行范围 y 1186–1371，高约 186；加号笔画为灰度 120–190 的单色十字，2× 放大图 `E:\APPDetector\reports\M3-stage4\plus-tile-2x.png`）；
+- **第 13 格是一个大面积浅灰圆角块 + 居中深灰「+」，没有任何文字**（像素：浅灰块 `x 161..420 / y 1219..1345` = **260×127**，灰 `(225,232,235)`；加号笔画为灰度 120–190 的单色十字，2× 放大图 `E:\APPDetector\reports\M3-stage4\plus-tile-2x.png`）；
+  **订正（2026-11-07 11:05，自查）**：我原来写「块行范围 y 1186–1371、高约 186」是**错的**——当时用「RGB 三通道 ≥223 的亮区」当阈值，把第 13 格的浅灰块和面板白底 `(238,243,240)` 连成了一块，量出 186 的假高度。
+  改用灰色靶 `(225,232,235) ±14` 后逐行统计（`count>100` 的行）= `1219..1345`，**高 127**；宽度取该行最长连通段 = `161..420`，**宽 260**。
+  与地图报的「第 13 格 260×127」一致。顺带确认内容区左起 `x=161`（面板左 128 + 内边距 33）、列距 286、卡 260×160。
 - 面板**没有标题、没有副标题**（无「底图源」字样，也没有 D-006 那类说明）。
 
 **定案（按原版，不拿实现反推）**：
@@ -817,6 +820,30 @@ git merge-base --is-ancestor c80c486 origin/develop   # 1 = 未合
    `y≈840..880 / x≈164..417`），与地图实现的 `rgb(28,69,165)` 差 ≤6，判据可锁定这个值（±8）。
 3. **待确认项**：地图文档写的「点面板外地图收起（原版就是这样）」目前**没有取证**——
    像素只能证明「面板内没有任何关闭控件」（已证实），点按行为需原版 before/after dump；未取证前只能写成 LC 的交互决策。
+
+#### 16.1.3 develop `dc589ad` 代码级预检（2026-11-07 11:05，判据未定案前的静态核对）
+
+全部取自 `git show dc589ad:<path>`，不依赖设备；像素级验收等地图交双图后再做。
+
+| 判据 | 位置 | 原文 | 结论 |
+|---|---|---|---|
+| 几何 `[128,540]–[1027,1371]` | `map.html:52-53` | `#srcPanel { position:absolute; left:38px; right:60px; top:160px; height:246px;` | CSS×3.375 → 左 **128.2**、右 **1026**、上 **540**、高 **830**（±2 内）✔ |
+| 浅色卡 | `map.html:55` | `background:#f6f5f5f5; border-radius:5px; padding:11px 10px 8px;` | ✔（原版采样 `(238,243,240)`） |
+| 无深色遮罩 | `map.html:52-53` | `#srcPanel` 自身无背景，DOM 里也没有独立遮罩节点（`:109-111`） | ✔ |
+| 无关闭控件 | `map.html:109-111` | `<div id="srcPanel"><div class="box">` / `<div id="srcBox"></div>` / `</div></div>` | ✔ 无 `关闭`／`×` |
+| 选中态蓝条 | `map.html:61` | `.srcCard.on .srcName { background:#1c45a5; color:#fff; }` | ✔ `#1c45a5` = `(28,69,165)`，原版实测 `(29,72,171)`，Δ≤6 |
+| 第 13 格灰块 | `map.html:70-72` | `.srcPlus { height:37.6px; background:#e1e8eb;` | ✔ `#e1e8eb` = `(225,232,235)` = 原版实测值（我 §16.1 记的 `#e7e9ea` 作废） |
+| 角注文案 | `map.html:108` / `MainActivity:680` | `数据来自天地图地形 审图号： 待核对` | ✔ 无「·」、冒号后一空格 |
+| attribution 事件 | `map.html:1644` | `emit({ type: "attribution", text: text });`（在 `updateSrcInfo()` 内，`:1635-1645`） | ✔ 每次切源走这条 |
+| src-panel 事件 | `map.html:1581` / `:1590` | `emit({ type: "src-panel", open: true, shown: shown, plus: true });` / `emit({ type: "src-panel", open: false });` | ✔ 开/关都在；`:1598`、`:1607` 两处关闭也复用 `closeSources()` |
+| native 透传 | `LCAndroid.java:50-54` | `if ("attribution".equals(type) \|\| "src-panel".equals(type)) { … uiListener.onUiEvent(type, o); return; }` | ✔ 在 `pick` 范围校验之前 |
+| native 处理 | `MainActivity:3446` / `:2119-2135` | `bridge.setUiListener((type, payload) -> runOnUiThread(() -> onMapUiEvent(type, payload)));` / `placeView.setVisibility(open \|\| compassMode ? View.GONE : View.VISIBLE);` | ✔ 角注即刷新；地名仅在开合时切换，罗盘态保持隐藏 |
+
+两条提醒（不构成本轮判据）：
+1. `:1581` 的 `src-panel` 多带了 `shown` / `plus` 两个字段。native 只读 `open`，当前无害；但契约文档要写明「附加字段不构成契约」，免得以后 native 依赖它们。
+2. `onPageFinished`（`:3450-3467`）只补角注与地名文本（`:3465 refreshPlaceName()`），**不重置 `placeView` 可见性**。若出现「面板开着 → WebView 重载」的路径，DOM 面板会回到 `display:none` 而 native 收不到 `open=false`，地名会一直隐藏到下次开关面板。
+   **待确认**：`dc589ad` 的 `map.html` 里没有 `location.reload()` 调用（只有 `:3451` 注释提到），所以目前找不到触发路径；若后续加了 reload，需要在 `onPageFinished` 里补 `placeView` 复位。
+
 
 
 

@@ -1,0 +1,46 @@
+# R2-001 启动页 + R2-013 读盘 sheet · 新基线真机取证（客户端）
+# 设备 L2E0222531014833  Android 12  1228x2700  采证 2026-11-07 09:55-09:58
+# 分支 feature/client-r2013-rework（base develop 86d1eaa）
+# APK sha256 a6b43a6ae37eb33a53da60eb26d9a676ca9517dd7751fc38e2ac9f98797135db  size=8641720
+# 装机校验：adb pull $(pm path com.luopan.fengshui) 的 sha256 与本地一致（A6B43A6A…）；采前确认前台为本包
+
+## R2-001 启动页（冷启 am start SplashActivity）
+splash-fg=com.luopan.fengshui/.SplashActivity
+splash-log: show logo top=435 w=660 hold=1500
+after-hold-fg=com.luopan.fengshui/.MainActivity
+
+顶部带（原版要求 (255,255,255)）：
+  y=0   平均 (255,255,255)
+  y=60  平均 (255,255,255)
+  y=120 平均 (255,255,255)
+  y=121 平均 (255,255,255)
+内容带（暗像素阈值 RGB 和 <200）：
+  图标带 y 517..597  x 510..718   原版 517..597 / 510..716
+  标题带 y 731..779  x 402..824   原版 731..779 / 402..824
+结论：顶部白 0 偏差；两条内容带 ≤2px（x 右缘 +2px 属 ICON 抗锯齿边缘）
+# 修法：SplashActivity 用 Theme.Luopan.Splash（Light.Fullscreen + 白 window/status/nav + cutout shortEdges），
+# 并补 FLAG_LAYOUT_IN_SCREEN，窗口真正铺到 y=0；LOGO_TOP 相应 313→435 保持内容带位置。
+
+## R2-013 读盘 sheet
+入口：主界面 → 左列「罗盘」(112,1745) → 罗盘态「读盘」(69,2133][143,2172) → sheet
+heading 注入 180°（无传感器噪声）
+
+sheet-bounds = [0,1011][1228,2578]        # 原版像素值 1011，偏差 0
+首屏可见 10 行：
+  先天八卦_卦位 / 后天八卦_卦位 / 先天八卦洛书数 / 地盘正针二十四山 / 穿山七十二龙 /
+  地盘正针百二十分金 / 透地平分六十龙 / 人盘中针二十四山 / 天盘缝针二十四山 / 天盘缝针百二十分金
+前 3 行数值：
+  先天八卦_卦位    → 向：乾　坐：坤
+  后天八卦_卦位    → 向：离　坐：坎
+  先天八卦洛书数  → 向：乾 1　坐：坤 8
+VIP 徽标节点（lc_read_badge，首屏 7 枚可见）：
+  [861,1674][938,1739]  = 77x65  （原版 76x65 ±1；素材 ic_compass_vip.webp sha 5e2811b6…）
+  其后每行同尺寸，行距 150
+滚动 swipe(614,2200→614,1500) 后：
+  末行「正兼向度数指标」出现，14 行齐
+图标判定：dump 中已无「◆」文本节点，徽标是 ImageView（lc_read_badge），不是字符
+
+
+徽标 id 断言（copy 门禁把 lc_read_vip 判 VIP 规则，develop 已改名）：old-id-count=0，diamond-text-count=0，badge-count=7
+
+

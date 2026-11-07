@@ -155,7 +155,7 @@
         <activity
             android:name=".SplashActivity"
             android:exported="true"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+            android:theme="@style/Theme.Luopan.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -169,3 +169,4 @@
     </application>
 
 </manifest>
+

@@ -31,7 +31,7 @@ public class SplashActivity extends Activity {
 
     /** logo 尺寸/位置：按原版 `_launch-probe.png` 像素对齐（标题带 y731–779、x402–824，宽 422）。 */
     private static final int LOGO_WIDTH = 660;
-    private static final int LOGO_TOP = 313;
+    private static final int LOGO_TOP = 435;
 
     private boolean moved;
 
@@ -44,7 +44,8 @@ public class SplashActivity extends Activity {
         getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.WHITE));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
                 | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                | WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                | WindowManager.LayoutParams.FLAG_FULLSCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
         getWindow().setStatusBarColor(Color.WHITE);
         getWindow().setNavigationBarColor(Color.WHITE);
 
@@ -97,6 +98,8 @@ public class SplashActivity extends Activity {
         goMain();
     }
 }
+
+
 
 
 

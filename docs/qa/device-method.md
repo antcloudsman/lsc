@@ -215,6 +215,12 @@ powershell -File tools\device\install-debug.ps1 -ApkPath <apk> -KeepMarketDisabl
 | `adb+ui` | `pm install` 失败/未生效 | 后台 job 跑 `adb install -r -t`，按 `mCurrentFocus` 驱动安装页按钮 |
 | `+pin` | 前台是 `UnifiedAuthenticationDialogActivity` | 注入锁屏 PIN + ENTER；再弹同一框 → `INSTALL_AUTH_BLOCKED` |
 
+真实拦截只有两页（2026-11-07 真机实证，总监跑通）：① 风险提示页
+`com.android.packageinstaller/.InstallStaging`（「风险提示 / 来历不明的应用…/ 取消 / 继续安装」）；
+② 安装确认页 `.PackageInstallerActivity`（「继续安装」）。两页都点「继续安装」，随后
+`Performing Streamed Install -> Success`，`lastUpdateTime` 变化，前台出现 `.InstallSuccess`。
+脚本**只用文本匹配**点按钮（bounds 由 dump 现算），日志里出现的 (881,2524) / (614,2362) 只是当次证据，
+不是写死坐标；`.InstallSuccess` 归类为 `done`，不点任何按钮，装完用 BACK 收掉该页。
 按钮字典（按顺序匹配，先精确后包含；只点字典里的按钮，**不盲点坐标**）：
 
 ```
@@ -273,4 +279,5 @@ checks\device-install-<时间戳>\
 `pure_mode_state` 只记录不改：`settings get secure pure_mode_state`，禁止脚本改系统设置。
 `-OriginalPackage`（默认 `space.xinzhi.globe`）的 versionName/versionCode/lastUpdateTime 也记进日志，
 便于排查「原版被市场升级」与取证基线 1.6.1 的差异——只记录、不断言。
+
 

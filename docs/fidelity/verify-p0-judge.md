@@ -1421,6 +1421,135 @@ M3PageActivity.java   develop 411463ff84dd…  ==  7214861 411463ff84dd…   SAM
 
 **「4/4」的准确表述（我方判词口径）**：**登录页四入口 4/4**；账户设置按原版语义（`您当前未登录`/`立即登录` + 三个本项目新增引导项 `绑定手机`/`一键登录`/`微信登录`），**不计入 1:1、不含 `验证码登录`/`荣耀登录`**。产品在 `m4-plan.md` v1.10 的写法与此一致。
 
+## 26. M4 Stage 5 安全与链路独立复核（基线 `f285cf0`，2026-11-07 20:30–20:45）
+
+纪律：**全部自己跑**，不采信 68 项自报；运行中的容器才是我要验的对象（不是宿主机某个工作区）。
+
+### 26.0 先纠一条我自己的错
+
+我第一次比对「容器源码 vs develop」时，把 `git rev-parse <rev>:<path>` 的 **git blob sha1** 拿去和容器文件的 **sha256** 比，得出 6 个文件全 DIFF —— 那是**两种哈希算法在比**，无效。
+改用「`git cat-file blob` 导出原始字节 → 算 sha256 → 与 `docker cp` 出来的容器文件 sha256 比」：
+
+```
+server.js       dev=7e2808a0ce4c  ctr=7e2808a0ce4c  SAME
+db.js           dev=b55cc6f1c7a6  ctr=b55cc6f1c7a6  SAME
+password.mjs    dev=cdea3d8fdb53  ctr=cdea3d8fdb53  SAME
+token.mjs       dev=a5b43aa03544  ctr=a5b43aa03544  SAME
+ratelimit.mjs   dev=3860e496cd5d  ctr=3860e496cd5d  SAME
+selfcheck.mjs   dev=300098d9e48b  ctr=300098d9e48b  SAME
+```
+
+→ **容器跑的就是 develop `f285cf0` 的后端源码，6/6 一致**。同时提醒：`E:\APPDetector\output\backend\src` 只有 `db.js`+`server.js` 两个旧文件（那是地图那条工作区），**不能拿它当后端代码看**。
+
+### 26.1 账号五条链路 —— 全会话实测（关账）
+
+我注册两个测试用户 A/B 后逐条打接口（`http://127.0.0.1:8787`）：
+
+| 链路 | 实测 |
+|---|---|
+| 注册 | `POST /v2/auth/register` → **201**，返回 `token` 43 字符（base64url of 32 B） |
+| 登录 | 正确密码 → **200**；错误密码 → **401**（连续 5 次后转 429，见 26.3） |
+| 登出 | `/auth/me` 200 → `POST /auth/logout` 200 → 同一 token `/auth/me` → **401** |
+| 改密 | 两会话（t1/t2）改密 → `200 {"changed":true,"revoked_sessions":3}`；**t1（其他会话）→401**、t2（改密者）→200；**旧密码登录 401、新密码登录 200** |
+| 会话过期 | 把该会话 `expires_at` 写成 `2020-01-01` → `/auth/me` **401**，再调仍 **401**（`requireAuth` 会顺手 revoke） |
+
+代码锚点：`server.js:241` `if (Date.parse(found.session.expires_at) <= Date.now()) { … revokeSession … fail(401) }`；
+`server.js:405` 改密后 `revokeAllSessions(userId, { exceptSessionId: auth.session.id })`（设计上保留本人当前会话，符合常见做法）。
+
+### 26.2 越权 —— 关账
+
+```
+B 的 list 条数 = 0，不含 A 的收藏          B 修改 A 的收藏 id → 404 收藏点不存在
+B 删除 A 的收藏 id → 404                     A 的记录仍在（id=26 / rev=52，未被改动）
+B 的 feedback/list 不含 A 的反馈             无 token → 401   坏 token → 401
+```
+采用 404（不是 403）避免用状态码枚举他人资源是否存在，正确。
+
+### 26.3 限流 —— 关账
+
+```
+对同一用户名连续错误密码：第1–5次 401 → 第6次 429
+curl -i 原始头：HTTP/1.1 429 Too Many Requests   retry-after: 46
+限流生效期间即使密码正确也 429（先限流后校验）
+另一个用户名不受影响 → 200（按 user 维度隔离，不是全局限死）
+```
+配置锚点：`RATE_LIMITS.loginUser = { limit: 5, windowMs: 60000 }`；`server.js:217-223 guard()` 写 `retry-after`。
+
+### 26.4 密码哈希 / token / 日志脱敏 —— 关账
+
+- **密码**：库里 40/40 用户 `password_hash` 前缀均为 `scrypt$N=32768,r=8,p`，无明文、无其他格式。
+  实现 `password.mjs`：scrypt N=32768 r=8 p=1、16 B salt、64 B key、`timingSafeEqual` 比对；
+  未知用户名走 `burnPasswordTime()` 假验证，避免时序区分账号是否存在。
+- **token**：`token.mjs` 用 `randomBytes(32)`（256 bit）→ base64url 43 字符；**库里只存 `sha256(token+pepper)`**，
+  65/65 条 `token_hash` 均为 64 位 hex；比对用 `safeEqualHex()`（`timingSafeEqual`）；支持服务端撤销。
+- **日志**：`docker logs lc-backend --since 20m` 共 145 行，搜我自造的密码标记（`pwmark`/`Aa1!`/`Bb2!`）与两个 token 明文 → **命中 0**；
+  日志字段只有 `rid/method/path/status/ms/user`（`user` 也不记 uid）。
+
+### 26.5 网络暴露与 CORS —— 关账
+
+```
+docker ps → 127.0.0.1:8787->8787/tcp          （只绑回环）
+运行时 LC_CORS_ORIGIN = ""（空）
+server.js:94 → if (!origin || !CORS_ORIGINS.includes(origin)) return {};   （无通配 *，非白名单不给任何 CORS 头）
+自检项 [PASS] CORS: unknown origin gets no Allow-Origin header
+```
+
+### 26.6 容器内自检 —— 我重跑，68/68 通过
+
+`docker exec lc-backend node /app/scripts/selfcheck.mjs` → `SELFCHECK: PASS (68 checks)`，
+其中包含越权（B 删 A → 404）、过期 token → 401、`/v1/*`→410、415、413、CORS、限流 429+Retry-After 等。
+
+### 26.7 持久化 —— 关账（用「跨重启仍在」证明，不靠声明）
+
+```
+docker inspect → Mounts=volume:lc-backend_lc-data->/data
+当前容器 StartedAt=2026-11-07T12:23:23Z
+库内最早数据 users.first=2026-11-07T09:41:16Z / feedback.first=09:41:16Z
+```
+即容器**在 12:23 重启过**，而 09:41 的数据仍在 → volume 持久化真实生效。
+
+### 26.8 E2E 证据（反馈闭环 / 降级 / 恢复）—— 关账
+
+- `e64-success.xml`：`text='提交成功' bounds=[20,1570][1208,1653]`（我读文件核的）。
+- DB 实据（`node:sqlite` 只读查库）：`fb_be5c60c31e13488da0a1ca093925e05d`，
+  `reasons=e64-reason`、`contact_way=e64@example.com`、`remark=e64-desc`、`type=2`、`created_at=2026-11-07T12:21:59.483Z`
+  → **与脚本填的三个值逐字一致**，不是只看计数 +1。
+- 降级/恢复：`e82-degraded.xml` → `同步失败：连不上本地服务（需 adb reverse tcp:8787）`；
+  `e85-recovered-sync.xml` → `同步收藏点：同步完成：上传 0，拉取 0`。
+
+### 26.9 M3 遗留三项 —— 已关账（引用指向正确构建体）
+
+R2-013 A/B/C（`c08841a` 证据包）、R2-032 角注、R2-027 面板 —— 判词见 §17/§24；
+§24.4 已核 `d53d4bc` 与判据依据 `bfde9da` 的 6 份证据**逐字节相同**，不是「验了分支、合了别的」。
+
+### 26.10 **不关账 1 条**：登录/注册页缺「LC 侧截图 + 原始 dump」
+
+总监把 S5-2 判据改为「LC 侧截图 + dump + 页面标明新增」（原版无此页，不要求原版对照）。我按这一条核：
+
+- **页面标明新增** ✔：`LoginActivity:149` 说明整段、`:57` 标题「账号登录（本项目新增）」（§25 已核）。
+- **dump**：只在 `docs/fidelity/m4/verify-m4-stage3.txt` 里有一行 `login-page=返回|账号登录（本项目新增）|…`（摘要，非原始 XML）。
+- **截图**：`git ls-tree origin/develop docs/fidelity/m4` 只有 11 个文本/文档文件，**无 png**；
+  `E:\APPDetector\reports` 下按 `login|登录|注册|account` 搜 png，只有 M3 的 `a-account.png`（账户设置页，不是登录页）。
+
+→ 缺 **1 张登录页截图 + 1 份原始 dump XML**。修法很轻：装当前 develop 包 → 抽屉→账户设置→立即登录 → `screencap` + dump 落 `docs/fidelity/m4/login-page.{png,xml}` 并挂 SUMS。**不需要原版对照图**（造一张假的原版登录页比缺图严重，总监已明令禁止）。
+
+### 26.11 两条加固建议（不影响关账，不新立缺陷）
+
+1. **pepper 与库同卷**：`LC_TOKEN_PEPPER` 为空 → 走 fallback `/data/.token-pepper`（0600，44 B），与 `lc.sqlite` 同在 `lc-data` 卷。
+   `token.mjs` 注释写「DB 泄露不会拿到可用会话」，**这一条只在 pepper 走 env/secrets 时成立**；整卷泄露时 pepper 与哈希一起被带走，可离线验证。
+   建议：生产口径把 pepper 放 `/run/secrets`（代码已支持 `LC_TOKEN_PEPPER_FILE`），备份时与库一起备（总监已要求）。
+2. **`.gitignore` 没有挡 `.token-pepper` / `*.sqlite`**：当前仓库里确实没有这两个文件（`git ls-tree` 无命中），属隐患预防，建议加一行。
+
+### 26.12 复现命令（便于他人重跑）
+
+```powershell
+docker exec lc-backend node /app/scripts/selfcheck.mjs                  # 68 项
+docker exec lc-backend node -e "grep 源码/算法"                          # 见 26.0 的 cat-file 比对
+curl.exe -s -i -X POST http://127.0.0.1:8787/v2/auth/login -H 'Content-Type: application/json' --data '{"username":"<u>","password":"<wrong>"}'   # 第 6 次应 429 + retry-after
+docker logs lc-backend --since 20m | Select-String 'pwmark|token'        # 期望 0 命中
+```
+
+
 
 
 

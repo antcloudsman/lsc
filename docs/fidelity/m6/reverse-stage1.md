@@ -392,6 +392,40 @@ MapWebApiKt.setPointerVisible(controller, show)
 ⇒ **我方把「顶部红三角」当成 `showPointer` 的唯一可见效果，是载体搞错了**：红三角属于十字线（第 1 条），指针开关应当控 `pointer.png` 那张竖向指针图。
 ⇒ 所以「删掉红三角 → 指针开关变空操作」这个担心，正确解法**不是**留着红三角，而是**把指针开关改成控竖向指针图**（原版载体）。删红三角与接指针图应同批做。
 
+## 7.5 `getCoordinates()` 四角到底怎么算（A 路线第 4 步前置，已取证）
+
+逐字（`index.946c1624e0.bundle.js` @41153，赋值式 `p(this,"getCoordinates", …)`）：
+
+```js
+p(this, "getCoordinates", () => {
+    let e = this.map
+        .unproject([window.screen.width / 2, window.screen.height / 2])
+        .toBounds(Math.floor(window.screen.width / this.map.transform.pixelsPerMeter));
+    return [ e.getNorthWest().toArray(), e.getNorthEast().toArray(),
+             e.getSouthEast().toArray(), e.getSouthWest().toArray() ];
+});
+```
+
+拆开：
+
+1. **中心点** = `map.unproject([screen.width/2, screen.height/2])` —— **屏幕中心**映射回经纬度（`window.screen.width/height`，物理屏幕 CSS 尺寸，不是 `innerWidth`）。
+2. **半径（米）** = `Math.floor(window.screen.width / map.transform.pixelsPerMeter)`
+   - `pixelsPerMeter` 是 MapLibre 内部量（当前 zoom + 纬度下的「每米多少像素」），除完把**像素换成米**。
+   - ⇒ 半径 = **屏幕宽度换算成的米数**（不是一个固定米数，**随缩放变**）。
+3. **bounds** = 中心 `.toBounds(该米数)` —— 以中心为准、边长 = 该米数的正方形。
+4. 输出顺序 **[NW, NE, SE, SW]**（左上→右上→右下→左下），正是 MapLibre `canvas`/`image` source 要求的 `coordinates` 顺序。
+
+### 7.5.1 结论（回答审地图的「未取证」）
+
+- **不是「屏幕四角 `unproject`」**（那会得到梯形，随 pitch 变形且四角不等距）；
+- **是「屏幕中心 `unproject` + 半径 = 屏宽换算米数的正方形」**（轴对齐、正方形、随 zoom 缩放）；
+- 效果：盘面在地面上的**实物尺寸随缩放变化**，从而**屏幕上的视觉大小基本恒定**（约一个屏宽见方）。这与「罗盘浮层不该随地图缩放变大变小」的直觉一致。
+- 依赖 MapLibre 内部 API `map.transform.pixelsPerMeter`；我方若用 MapLibre 同版本可直接照抄，**若版本不同该字段可能不可用，需等价换算**（`pixelsPerMeter` 可由 `transform.worldSize / (2π·R·cos(lat)) · 512` 一类关系推出，属实现细节，我方落地时核对一次）。
+
+### 7.5.2 给 A 路线第 4 步的验收口径
+
+`coordinates` 的正确性可用一条可判的量验：**盘面绘制框的屏幕宽度 ÷ 屏宽 ≈ 1**（因为地面边长 = 屏宽米数，铺回屏幕应约等于屏宽）；pitch 变化时该比例应**基本不变**（轴对齐正方形在透视下仍是四边形，但边长对应关系稳定）。若实现得到的是梯形/四角不等距，说明误用了「屏幕四角 `unproject`」。
+
 # 未取证清单（逐条给原因）
 
 | 项 | 状态 | 原因 |

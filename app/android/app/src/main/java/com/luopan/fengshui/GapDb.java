@@ -232,12 +232,20 @@ class GapDb extends SQLiteOpenHelper {
         getWritableDatabase().update(T_INTEREST, v, "id=?", new String[]{String.valueOf(localId)});
     }
 
+    /**
+     * 待推删除的墓碑（`delete_pending=1`）。
+     *
+     * 与 {@link #listPendingInterest(int)} **区别对待**：删除队列放行 `owner_uid=0` 的孤儿行。
+     * 理由：孤儿行（升级前存量、`remote_id>0`、归属未知）按设计「不推不认领」，于是它永远匹配不到当前账号；
+     * 如果删除也卡住，用户删了以后墓碑推不出去 → 服务端那行还在 → 别的设备复活、本机留死行（审核验 §32）。
+     * **删除不会串数据**：这里只发 `id`，服务端按 token 判归属，不是自己的返 404，而 FavoriteSync 已把 404 当作删除完成。
+     */
     List<InterestPoint> listDeletePending(int ownerUid) {
         List<InterestPoint> out = new ArrayList<>();
         String where = "delete_pending=1";
         String[] args = null;
         if (ownerUid > 0) {
-            where += " AND owner_uid=?";
+            where += " AND (owner_uid=0 OR owner_uid=?)";
             args = new String[]{String.valueOf(ownerUid)};
         }
         try (Cursor c = getReadableDatabase().query(T_INTEREST, null, where, args, null, null, "id ASC")) {

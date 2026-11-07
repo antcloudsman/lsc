@@ -40,6 +40,8 @@
 | `dem-edge` / `dem-edge-mesh` | DEM **局部**缺角（`demAt` 返回 null） | **不进 `last3dError`**，改写 `last3dWarn`（见 §1.5）：拖到 patch 边缘是正常操作，混进失败字段会把「成功」读成「失败」 |
 | `null` | 成功（贴面 ok 即清） | — |
 
+> **可量化判据**：`dem-missing` 注入后的画面应与注入前**逐像素相同**（LC测试 实测 `mean_abs_diff = 0.00`、差异像素 0%）。若出现灰底或画面变化，即实现与本文不符。
+>
 > `dem-missing` 实测会出现 `warn="dem-edge"`：那是沿用旧块时相机目标落到旧块边缘所致，属**局部降级**，只进 `last3dWarn`，不进 `last3dError`。旧代码里它会混进 `err`，这一档会被读成两个错误——这正是拆字段的理由。
 
 ## 2. 真机实测（构建指纹）

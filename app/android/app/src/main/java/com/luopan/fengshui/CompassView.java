@@ -224,8 +224,17 @@ public class CompassView extends View {
         }
     }
 
+    /**
+     * 罗盘复位（M6 第 6 条）。按原版 `g.I()` 逐项对齐（逆向 `reverse-stage1.md` §6.2）：
+     * `N(false)` = **跟随传感器关**、`V(0.0f)` = 固定旋转角 0 → 盘面停在 0°、不再跟传感器；
+     * 另有 `L(0)`=scale 1.0、`K(100)`=透明度 100、`Q(0.0)`=磁偏角 0、`S(Zero)`=屏幕偏移 (0,0)。
+     * 本类只承载「朝向/偏移」这两项，其余是地图层参数，由 `js("resetCompass()")` 负责。
+     *
+     * **不要把 followSensor 写回 true**：原版复位就是把「跟随」关掉（用户用左列「跟随」开关
+     * 重新打开，`g.p0()` → `N(!A())`，与我们这条路径互不干扰）。
+     */
     public void reset() {
-        followSensor = true;
+        followSensor = false;
         headingOffset = 0f;
         moving = false;
         heading = 0f;

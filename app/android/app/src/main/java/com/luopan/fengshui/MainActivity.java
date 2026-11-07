@@ -2149,7 +2149,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 蓝钮分两层（审客户端订正 + 总监裁定）：可点容器 = dump 583x157（距卡顶 331）；
         // 蓝色填充 = 像素实测 583x111，相对容器上下各内缩 23/19 —— 整块 157 涂蓝会高 46px。
         android.widget.FrameLayout btnBox = new android.widget.FrameLayout(this);
-        btnBox.setBackground(btnBg);   // 蓝填充 583x111 挂在容器上
+        // 蓝填充必须是**内层 583x111**（上 23 / 下 24），挂在 157 高的容器上会变成 157 高
+        View fill = new View(this);
+        fill.setBackground(btnBg);
+        android.widget.FrameLayout.LayoutParams fillOnly =
+                new android.widget.FrameLayout.LayoutParams(583, 111);
+        fillOnly.topMargin = 23;
+        fillOnly.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        btnBox.addView(fill, fillOnly);
         btnBox.setClickable(true);
         btnBox.setOnClickListener(v -> copy.performClick());
         // 文字节点宽度取 wrap_content（原版 `复制邮箱` 文本 [520,1497][708,1576] = 188 宽，
@@ -2170,7 +2177,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 关闭钮：dump [911,1127][1059,1275] = 148x148，**卡片右上角内侧**（右缘 1059 = 卡右缘），clickable=true
         TextView close = new TextView(this);
         close.setId(R.id.lc_m3_dialog_close);
-        close.setText("×");
+        close.setText("");   // 原版关闭是无文本图标：节点里不该出现「×」
         close.setTextSize(22f);
         close.setTextColor(0xFF8E8E8E);
         close.setGravity(android.view.Gravity.CENTER);

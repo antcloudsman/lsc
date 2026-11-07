@@ -160,6 +160,8 @@ public class M3PageActivity extends Activity {
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
         titleLp.gravity = Gravity.CENTER;
+        titleLp.height = 79;   // 原版标题高 79（四页一致），wrap 只有 76
+        title.setIncludeFontPadding(false);
         bar.addView(title, titleLp);
 
         // M6 第 4 条：投诉反馈一级页右上「我的」[1056,115][1213,272] = **158×158**、
@@ -180,7 +182,10 @@ public class M3PageActivity extends Activity {
             android.widget.FrameLayout.LayoutParams mineLp =
                     new android.widget.FrameLayout.LayoutParams(158, 158);
             mineLp.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
-            mineLp.rightMargin = 15;   // 原版 [1056,115][1213,272]：右缘 1213，屏 1228 留 15
+            mineLp.rightMargin = 15;
+            // 实测偏差：右移 41、上移 31（我方 [1014,146][1172,304] -> 原版 [1056,115][1213,272]）
+            mineBtn.setTranslationX(41f);
+            mineBtn.setTranslationY(-31f);   // 原版 [1056,115][1213,272]：右缘 1213，屏 1228 留 15
             bar.addView(mineBtn, mineLp);
         }
         root.addView(bar);
@@ -642,7 +647,7 @@ public class M3PageActivity extends Activity {
         TextView logout = new TextView(this);
         logout.setId(R.id.lc_m3_logout);
         logout.setText("退出登录");
-        logout.setTextSize(16f);
+        logout.setTextSize(13.5f);   // 原版 183 宽 = 4×45.75px ≈ 13.5sp
         logout.setTextColor(android.graphics.Color.WHITE);
         logout.setGravity(Gravity.CENTER);
         // 文字节点必须只有字那么宽（原版 183），红底宽度在**容器**上：
@@ -776,7 +781,7 @@ public class M3PageActivity extends Activity {
         row.setPadding(0, 24, 0, 24);
         TextView tv = new TextView(this);
         tv.setText(name);
-        tv.setTextSize(17f);
+        tv.setTextSize(15f);   // 原版「问题反馈」204 宽 = 4×51px ≈ 15sp（17sp 会画成 228）
         tv.setTextColor(TEXT_MAIN);
         row.addView(tv, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));

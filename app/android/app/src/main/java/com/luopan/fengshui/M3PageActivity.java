@@ -320,9 +320,10 @@ public class M3PageActivity extends Activity {
             list.removeAllViews();
             buildComplaintForm(list);
         });
-        if (r1 != null) r1.setMinimumHeight(180);   // 原版 353->533 步进 180
+        // pitch = minHeight + 分隔高度(3)：目标步进 180 -> minHeight 177
+        if (r1 != null) r1.setMinimumHeight(177);
         LinearLayout r2 = addRow(list, "订单投诉", "未选择任何订单", false, null);
-        if (r2 != null) r2.setMinimumHeight(180);
+        if (r2 != null) r2.setMinimumHeight(177);
     }
 
     private void buildComplaintForm(LinearLayout list) {
@@ -802,7 +803,9 @@ public class M3PageActivity extends Activity {
         if (clickable) row.setOnClickListener(onClick);
         // M6 第 4 条：原版行是白卡上的条目（底 #F0F3F7 + 白卡 + 1px 分隔），行高 48dp。
         row.setBackgroundColor(CARD_WHITE);
-        row.setMinimumHeight(163);   // 原版账户页步进 163px
+        // pitch = minHeight + 分隔高度(3)：账户页目标步进 163 -> minHeight 160
+        // （此前设 163 会让 pitch=166，第 6 行落到 1169，比原版 1154 多 15px）
+        row.setMinimumHeight(160);
         list.addView(row);
         // 原版分隔 = 3px、色 #F0F3F7（与页面底同色）、左右内缩 39px（审客户端 quantify）
         View divider = new View(this);

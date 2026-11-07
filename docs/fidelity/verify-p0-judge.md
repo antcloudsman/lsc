@@ -777,7 +777,10 @@ git merge-base --is-ancestor c80c486 origin/develop   # 1 = 未合
 按总监要求回到原版界面证据 `docs/fidelity/orig/map-layer-sheet.png`（1228×2700）逐像素看：
 
 - 面板为 3 列 × 4 行共 12 张源卡（`中科星图 / 吉林一号·全球 / 吉林一号·全国 / 世纪空间 / 天地图卫星 / 天地图地图 / 天地图地形 / 高德卫星 / 高德地图 / 腾讯卫星 / 腾讯地图 / 腾讯地形`）；
-- **第 13 格是一个大面积浅灰圆角块 + 居中深灰「+」，没有任何文字**（像素：浅灰块行范围 y 1186–1371，高约 186；加号笔画为灰度 120–190 的单色十字，2× 放大图 `E:\APPDetector\reports\M3-stage4\plus-tile-2x.png`）；
+- **第 13 格是一个大面积浅灰圆角块 + 居中深灰「+」，没有任何文字**（像素：浅灰块 `x 161..420 / y 1219..1345` = **260×127**，灰 `(225,232,235)`；加号笔画为灰度 120–190 的单色十字，2× 放大图 `E:\APPDetector\reports\M3-stage4\plus-tile-2x.png`）；
+  **订正（2026-11-07 11:05，自查）**：我原来写「块行范围 y 1186–1371、高约 186」是**错的**——当时用「RGB 三通道 ≥223 的亮区」当阈值，把第 13 格的浅灰块和面板白底 `(238,243,240)` 连成了一块，量出 186 的假高度。
+  改用灰色靶 `(225,232,235) ±14` 后逐行统计（`count>100` 的行）= `1219..1345`，**高 127**；宽度取该行最长连通段 = `161..420`，**宽 260**。
+  与地图报的「第 13 格 260×127」一致。顺带确认内容区左起 `x=161`（面板左 128 + 内边距 33）、列距 286、卡 260×160。
 - 面板**没有标题、没有副标题**（无「底图源」字样，也没有 D-006 那类说明）。
 
 **定案（按原版，不拿实现反推）**：
@@ -786,6 +789,63 @@ git merge-base --is-ancestor c80c486 origin/develop   # 1 = 未合
    - 原版第 4 个源是 **「世纪空间」且带缩略图**；我方现为「世纪空间卫星」+「无缩略图」占位。
    - 原版面板无标题/副标题；我方有「底图源」标题与「原版 12 源；无 key 的置灰（D-006）…」副标题 → 记 **P1-27-B**（用户可见文案含决策号，前轮已提，未改）。
 3. `orig/map-layer-sheet.xml` 本身**不含面板节点**（它是地图页 dump：`百魔洞景区`/`搜索`/左右列工具），所以第 13 格只能以 PNG 像素为准——`docs/fidelity/m3/` 里若有该面板的 xml 可直接复核，否则下次采证补一份带面板节点的 dump。
+
+#### 16.1.1 R2-027 追加判据：面板外观五项（2026-11-07 10:45，总监认可，同属 R2-027 原始发现「全屏遮罩」范围）
+
+范围依据：`round2-report.md:174` 的原始发现原文是「底图源面板呈现方式不同（**全屏遮罩**+文字列表）」，
+所以「面板底色 / 遮罩 / 关闭控件 / 几何 / 选中态」是这条没修完的部分，**不新立条目**。
+
+原版证据统一取 `docs/fidelity/orig/map-layer-sheet.png`（1228×2700，原版 `space.xinzhi.globe` 实拍）；
+我方现状统一取 `71be770:app/android/app/src/main/assets/map.html`。
+
+| # | 判据 | 原版实测 | 我方现状（行号 + 原文） |
+|---|---|---|---|
+| 1 | 面板是**浅色卡片**、无描边 | 行间空隙采样 `(614,720)=(238,243,240)`、`(614,880)=(232,245,234)`、`(614,1040)=(242,242,241)`、`(150,600)=(245,244,244)` | `:51-52` `background:#201a14f5; border:1px solid #5a4a30;` |
+| 2 | 面板外**无深色遮罩**（地图保持原亮度） | `y=1300` 行、`x<128` 列、`x>1027` 右侧工具列亮度与整屏连续 | `:49-50` `top:0; bottom:0;` / `background:#00000099;` |
+| 3 | 面板内**无任何关闭控件** | 整张面板只有 3×4 卡片 + 第 13 格「+」，无 `×`／「关闭」 | `:112` `<button class="srcItem" onclick="closeSources()">关闭</button>` |
+| 4 | 面板几何 **`[128,540]–[1027,1371]`**（宽 900 / 高 832，占屏高 30.8%） | 行剖面 `y=720/880/1040/1200` 最长亮区恒为 `x 128..1027`；列剖面 `x=300/700/900` 亮区恒为 `y 540..1371` | `:49-50` `left:60px; right:60px; top:0; bottom:0;`（垂直全高） |
+| 5 | 选中态 = **卡片标签条变蓝** | 世纪空间卡（第 4 源）标签条为蓝色，其余卡为深色 | `:63` `.srcCard.on { border-color:#dcbe82; box-shadow:0 0 0 1px #dcbe82 inset; }` |
+
+复现（无需设备）：判据阈值 RGB 三通道均 ≥223 记为面板背景；原版面板矩形 = 4 条行剖面与 3 条列剖面的交集。
+
+#### 16.1.2 两处口径核对（2026-11-07 11:00，地图提「面板左缘压工具列」时我实测）
+
+1. **原版面板确实会压住左侧工具控件**（地图的判断成立，但压的是哪一个要说清）：
+   - 「全地图工具」蓝按钮：`x 44..238`（蓝像素外接框，y≈490..560）；面板左上角从 `(128,540)` 起
+     → 按钮的**右下角被面板切掉**（`y=550` 该行蓝色只剩 `x 44..123`）。
+   - 「截屏」按钮（深色）：`x 39..127`（`y=660/700/740` 深色连续段），**正好完整露出**；
+     `HD 超清优化` 同为 `x 39..127`（`y=1320`）。
+   - 结论：重叠本身与原版同向，**不算新缺陷**；验收看「有没有控件被切到不可辨认/不可点」，不看重叠像素数。
+2. **选中态蓝标签条色值有出处**：原版选中条实测 `(29,72,171)`（以 `(28,69,165)` 为靶、`|Δ|<60` 命中
+   `y≈840..880 / x≈164..417`），与地图实现的 `rgb(28,69,165)` 差 ≤6，判据可锁定这个值（±8）。
+3. **待确认项**：地图文档写的「点面板外地图收起（原版就是这样）」目前**没有取证**——
+   像素只能证明「面板内没有任何关闭控件」（已证实），点按行为需原版 before/after dump；未取证前只能写成 LC 的交互决策。
+
+#### 16.1.3 develop `dc589ad` 代码级预检（2026-11-07 11:05，判据未定案前的静态核对）
+
+全部取自 `git show dc589ad:<path>`，不依赖设备；像素级验收等地图交双图后再做。
+
+| 判据 | 位置 | 原文 | 结论 |
+|---|---|---|---|
+| 几何 `[128,540]–[1027,1371]` | `map.html:52-53` | `#srcPanel { position:absolute; left:38px; right:60px; top:160px; height:246px;` | CSS×3.375 → 左 **128.2**、右 **1026**、上 **540**、高 **830**（±2 内）✔ |
+| 浅色卡 | `map.html:55` | `background:#f6f5f5f5; border-radius:5px; padding:11px 10px 8px;` | ✔（原版采样 `(238,243,240)`） |
+| 无深色遮罩 | `map.html:52-53` | `#srcPanel` 自身无背景，DOM 里也没有独立遮罩节点（`:109-111`） | ✔ |
+| 无关闭控件 | `map.html:109-111` | `<div id="srcPanel"><div class="box">` / `<div id="srcBox"></div>` / `</div></div>` | ✔ 无 `关闭`／`×` |
+| 选中态蓝条 | `map.html:61` | `.srcCard.on .srcName { background:#1c45a5; color:#fff; }` | ✔ `#1c45a5` = `(28,69,165)`，原版实测 `(29,72,171)`，Δ≤6 |
+| 第 13 格灰块 | `map.html:70-72` | `.srcPlus { height:37.6px; background:#e1e8eb;` | ✔ `#e1e8eb` = `(225,232,235)` = 原版实测值（我 §16.1 记的 `#e7e9ea` 作废） |
+| 角注文案 | `map.html:108` / `MainActivity:680` | `数据来自天地图地形 审图号： 待核对` | ✔ 无「·」、冒号后一空格 |
+| attribution 事件 | `map.html:1644` | `emit({ type: "attribution", text: text });`（在 `updateSrcInfo()` 内，`:1635-1645`） | ✔ 每次切源走这条 |
+| src-panel 事件 | `map.html:1581` / `:1590` | `emit({ type: "src-panel", open: true, shown: shown, plus: true });` / `emit({ type: "src-panel", open: false });` | ✔ 开/关都在；`:1598`、`:1607` 两处关闭也复用 `closeSources()` |
+| native 透传 | `LCAndroid.java:50-54` | `if ("attribution".equals(type) \|\| "src-panel".equals(type)) { … uiListener.onUiEvent(type, o); return; }` | ✔ 在 `pick` 范围校验之前 |
+| native 处理 | `MainActivity:3446` / `:2119-2135` | `bridge.setUiListener((type, payload) -> runOnUiThread(() -> onMapUiEvent(type, payload)));` / `placeView.setVisibility(open \|\| compassMode ? View.GONE : View.VISIBLE);` | ✔ 角注即刷新；地名仅在开合时切换，罗盘态保持隐藏 |
+
+两条提醒（不构成本轮判据）：
+1. `:1581` 的 `src-panel` 多带了 `shown` / `plus` 两个字段。native 只读 `open`，当前无害；但契约文档要写明「附加字段不构成契约」，免得以后 native 依赖它们。
+2. `onPageFinished`（`:3450-3467`）只补角注与地名文本（`:3465 refreshPlaceName()`），**不重置 `placeView` 可见性**。若出现「面板开着 → WebView 重载」的路径，DOM 面板会回到 `display:none` 而 native 收不到 `open=false`，地名会一直隐藏到下次开关面板。
+   **待确认**：`dc589ad` 的 `map.html` 里没有 `location.reload()` 调用（只有 `:3451` 注释提到），所以目前找不到触发路径；若后续加了 reload，需要在 `onPageFinished` 里补 `placeView` 复位。
+
+
+
 
 ### 16.2 P2 三条判词（证据包 `docs/fidelity/stage4/`，我自校 SUMS：6/6 ok）
 
@@ -880,6 +940,253 @@ git grep -n '原生最高级\|云端超分\|LC 会按' origin/develop -- app/and
 1. `P1-33-A` 只覆盖「图标」，撤回 3 个候选后为 **22/22 完成**（15 + 7 确认；`地图` 不属图标）；
 2. 右列这 4 枚记 **P1-33-C「应为开关控件」**——总监定「本轮不实现」，客户端已做（`a3780db`），判词另立；
 3. R2-033 判据只覆盖「按钮 chrome」：158×158、深色圆角底、图标/文字排布——这四枚 chrome 达标的仍算达标，开关形态另案。
+
+## 18. 主线 `71be770` 复验：R2-001 代码等价 / R2-027 范围判定 / R2-032 文案基准（2026-11-07 10:12–10:48）
+
+被验基线：develop `71be770`（`origin/develop`，含 §17 判词、客户端白带修复、地图 `1c5543a`、服务端采集前置 `45ea7b3`）。
+我的构建：worktree `E:\APPDetector\wt\lcs-verify-71be770`（`71be770` detached，`git status --porcelain` 空），
+`gradle assembleDebug --no-daemon` → `BUILD SUCCESSFUL in 40s`，
+`app-debug.apk` **8,668,733 B**，sha256 `605f01f936e244d39931b73073aeafa64233924d8e338c74c0c54e681d05ae69`。
+
+### 18.1 R2-001 —— 主线代码与 `c08841a` **零差异**（像素复跑待设备窗口）
+
+```
+git -C E:\APPDetector\develop-int diff --stat 71be770 c08841a -- \
+  app/android/app/src/main/java/com/luopan/fengshui/SplashActivity.java \
+  app/android/app/src/main/res/values/themes.xml \
+  app/android/app/src/main/AndroidManifest.xml
+→ （空，无输出）
+```
+
+行号逐条回到 `71be770` 核对（`git show 71be770:<path>`）：
+
+| 位置 | 原文 |
+|---|---|
+| `SplashActivity.java:34` | `private static final int LOGO_TOP = 435;` |
+| `SplashActivity.java:44` | `getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.WHITE));` |
+| `SplashActivity.java:45-48` | `getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS` / `\| WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS` / `\| WindowManager.LayoutParams.FLAG_FULLSCREEN` / `\| WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);` |
+| `SplashActivity.java:49` | `getWindow().setStatusBarColor(Color.WHITE);` |
+| `AndroidManifest.xml:158` | `android:theme="@style/Theme.Luopan.Splash">`（`:161` 为 `LAUNCHER`） |
+| `themes.xml:11` | `<style name="Theme.Luopan.Splash" parent="@android:style/Theme.Light.NoTitleBar.Fullscreen">`（`:12-19` 白窗口底/白状态栏/`windowLightStatusBar`/`windowDrawsSystemBarBackgrounds`） |
+
+证据包一致性：`git diff --stat 71be770 c08841a -- docs/fidelity/stage4` → **只有 `README.md` 少 2 行**，其余 10 件二进制与文本逐字节相同；
+我在 `71be770` 上重算 `docs/fidelity/stage4/SHA256SUMS.txt` = **10/10 ok**（sha256 + 字节数双匹配），
+所以 §17 里我量过的 `r2-001-splash.png` / `r2-013-sheet-*.png` 就是主线这一份，不存在「验的分支、合的是另一份」。
+
+判定：§17.1 的判词（顶部 `y0..121` = `(255,255,255)`、图标带 ≤1px、标题带 0）**可以直接平移到主线**，因为实现字节级一致。
+**但按「主线过账」口径，像素复跑仍欠一次**：设备当前被 LC地图 占用（`mCurrentFocus=com.android.packageinstaller/.InstallStaging`，
+`com.luopan.fengshui lastUpdateTime=2026-11-07 10:10:26`），我不抢窗口、不采伪证。
+状态：**代码已具备（已证实）／主线像素 待确认**。
+
+### 18.2 R2-027 范围判定：两处挂账 **属于 R2-027**，不另立新条目
+
+原版证据（`reports/M3-stage4/orig-layer-sheet.png`，1228×2700，脱壳原版 `space.xinzhi.globe` 实拍）：
+
+1. 面板是**浅色浮动卡片**。连通亮区（阈值 RGB≥223）剖面：`y=720/880/1040/1200` 最长亮区恒为 **`x 128..1027`（宽 900）**；
+   列剖面 `x=300/700/900` 亮区恒为 **`y 540..1371`（高 832）**。即面板 = `[128,540]-[1027,1371]`，占屏高 **30.8%**。
+   底色采样：`(614,720)=(238,243,240)`、`(614,880)=(232,245,234)`、`(614,1040)=(242,242,241)`、`(150,600)=(245,244,244)`
+   → 浅色半透明白，**不是深色**。
+2. 面板外地图**未压暗**：`y=1300` 行面板下方、`x<128` 列面板左侧、`x>1027` 右侧工具列，像素亮度与整屏连续（同图角注行、右侧「图层/叠加/山脉/水系/探索」均正常亮度）。
+3. 面板内**无任何关闭控件**：整张面板只有 3 列×4 行卡片 + 第 13 格「+」，无 `×`、无「关闭」、无同义按钮。
+
+我方（`71be770:app/android/app/src/main/assets/map.html`）：
+
+| 行 | 原文 | 与原版差 |
+|---|---|---|
+| `:49-50` | `#srcPanel { position:absolute; left:60px; right:60px; top:0; bottom:0;` / `background:#00000099; z-index:20; display:none; }` | 全高（`top:0 bottom:0`）深色遮罩，原版无遮罩且卡片高仅 832/2700 |
+| `:51-52` | `#srcPanel .box { position:absolute; left:0; right:0; top:8px; max-height:88%; overflow:auto;` / `background:#201a14f5; border:1px solid #5a4a30; border-radius:10px; padding:8px; }` | 深棕面板 + 描边，原版白色无描边 |
+| `:112` | `<button class="srcItem" onclick="closeSources()">关闭</button>` | 原版无关闭控件 |
+| `:63` | `.srcCard.on { border-color:#dcbe82; box-shadow:0 0 0 1px #dcbe82 inset; }` | 原版选中态是**卡片标签条变蓝**（世纪空间卡），不是金色描边 |
+
+判定依据（范围，不是缺陷新立）：R2-027 的原始发现文字是
+**「底图源面板呈现方式不同（全屏遮罩+文字列表）」**（`round2-report.md:174`，改法行写「改回 3×4 缩略图网格（12 格 + 「+」），卡片底部条为源名」）。
+「全屏遮罩」就是这条要修的对象，我方现在仍是 `top:0;bottom:0` + `#00000099` + 深色卡片 + 关闭按钮
+→ 这两处（面板底色/遮罩、关闭按钮）**不是新缺陷，是 R2-027 尚未修完的部分**。
+
+**R2-027 维持不关账**，判据补 4 行（建议由总监并入 R2-027，不单独立项）：
+1. 面板为浅色卡片：底色 ≈ `(238,243,240)`（半透明白），无描边；
+2. 面板外无深色遮罩，地图保持原亮度；
+3. 面板几何：`x 128..1027`、`y 540..1371`（宽 900 / 高 832，占屏高 30.8%），不是全高；
+4. 选中态：选中卡的**标签条变蓝**（原版世纪空间卡），不是金色描边。
+（原版「点面板外关闭」这一**行为**不在像素证据内，属待确认；见 18.4 N-18-2。）
+
+### 18.3 R2-032 文案基准：原版用**空格**分隔，不是「·」
+
+原版 5 张不同状态截图（`orig/map-home-01.png`、`orig/right-layer-sheet.png`、`orig/map-3d-mode.png`、
+`orig/tool-contour-01.png`、`orig/search-result-01.png`）底部角注**全部**是同一串：
+
+```
+数据来自世纪空间 审图号： GS(2026)1219号
+```
+
+- 来源与「审图号」之间是**空格**：文字列剖面 `x 357..561`（`数据来自世纪空间`）→ `561..573` 间隙 **12px** → `x 573..` 起
+  （`审图号`）；该间隙内**没有任何「·」像素簇**（若为 `·` 会是一段 4–6px 的独立亮簇）。
+- 「审图号：」后面还有一个空格。
+- 5 张不同图层/工具状态截图同串 → 原版角注**不随源切换**；我方「按源显示」是换天地图后的必要适配（D-027 允许），
+  但**分隔符与冒号后空格要回到原版形态**。
+
+我方现状：
+
+```
+71be770:app/android/app/src/main/java/com/luopan/fengshui/MainActivity.java:664
+        attrView.setText("数据来自天地图地形 · 审图号：待核对");
+71be770:app/android/app/src/main/assets/map.html:109
+<div id="srcInfo">数据来自天地图地形 · 审图号：待核对</div>
+```
+
+→ **R2-032 判据订正**为：`数据来自{当前源} 审图号： {号或「待核对」}`（空格分隔、冒号后一个空格），
+其余（按源显示、不编造官方号、`syncAttributionBar()` 覆盖静态串）不变。这条只改标点，不影响 D-027 的「不编造号」结论。
+
+### 18.4 核验中发现的新线索（不自行立条，交总监决定）
+
+- **N-18-1** 面板选中态：我方金色描边 vs 原版蓝标签条 —— 已并入 18.2 第 4 行判据，不另立。
+- **N-18-2** 原版「点面板外关闭」是**行为**：像素只能证明「面板内没有关闭控件」（已证实），
+  「点空白关闭」本身需真机点按取证（**待确认**，缺：原版一次「点面板外 → 面板消失」的 dump 前后对比）。
+- **N-18-3** 同 commit 的 APK 体积差（**2026-11-07 10:55 已量，见 §19**）：我用 `71be770` 自建 = **8,668,733 B**（sha `605f01f9…`），
+  地图报的 `71be770` 自建 = **9,246,205 B**，总监报 `7b07870` = **8,827,064 B**；
+  我在全新 worktree 建 `7b07870` = **8,563,936 B**（sha `39b832dc…`，517 条目），与 `71be770` 只差被删死素材那条。
+  → 两个偏大的包都掺了树外内容（`git status --porcelain --untracked-files=all` 应非空或 `app/build` 陈旧），见 §19.2。
+- **N-18-4** APK 资产里残留**未被引用的重复素材**（已证实，不影响功能，属清理项）：
+  `git ls-tree 71be770 app/android/app/src/main/assets/map/source-thumb/` 同时有
+  `ic_base_map_xintu_satellite.png` 与 `xintu_satellite.png`，**blob 都是 `8e2ff583d665ef6582179ea7c354b0f0107e8acf`（104,638 B）**；
+  `git grep -n 'xintu_satellite' 71be770` 的 3 处引用全指向 `ic_base_map_xintu_satellite.png`（`map.html:1531/1537`）。
+  素材库 `docs/fidelity/assets/map/source-thumb/` 已按「内容唯一」只留一份（总监的删除生效），
+  但 **APK 里那份副本没删**，多打进包 104,638 B。`assets.py verify` 只扫素材库、不扫 APK 资产目录，所以没拦住。
+  建议单独一笔清理（删 `xintu_satellite.png` 并在 `assets-sources.json` 备注只保留 `ic_base_map_xintu_satellite`）。
+
+### 18.5 状态更新（本节口径）
+
+- **P1：12/13**，R2-027 仍不关账，原因从「未合入」更新为**「面板呈现方式剩余差异（18.2 四条）」**（`1c5543a`/`702c5bb` 已合入）。
+- **P2**：R2-001 **已过账**（总监 2026-11-07 10:38 认可「代码 + 证据字节等价」，不再为一张图占设备窗口）；R2-032 待按 18.3 改文案 + 双图；R2-008/R2-034/R2-035 结论不变。
+
+## 19. 体积溯源：干净树构建的真实数字（2026-11-07 10:40–10:55）
+
+背景：同一 develop 上出现三个互相矛盾的 APK 体积（我 8,668,733 / 总监 8,827,064 / 地图 9,246,205），
+总监要求我说明自己的树与 `apk.sha256`，并查出体积差来源。
+
+### 19.1 我的两个数字都是**全新 worktree + 干净树**建的
+
+环境（两次构建完全相同）：Temurin JDK `17.0.21+9`、Gradle `8.7`、`gradle assembleDebug --no-daemon`、
+天地图 key 走仓库外 `E:/APPDetector/secrets/tdt.properties` 构建期注入（两次同一份 key）。
+
+| 树（`git worktree add --detach` 新建） | commit | 构建时工作树 | APK 字节 | sha256 | zip 条目数 |
+|---|---|---|---|---|---|
+| `E:\APPDetector\wt\lcs-verify-71be770` | `71be770` | `git status --porcelain` **空**（无已跟踪改动；构建期间我在**仓库根**写了 `_probe*.py` 探针，均不在 `app/android` 下，不是 gradle 输入） | **8,668,733** | `605f01f936e244d39931b73073aeafa64233924d8e338c74c0c54e681d05ae69` | **518** |
+| `E:\APPDetector\wt\lcs-verify-7b07870` | `7b07870`（删死素材那笔） | `dirty_lines=0` | **8,563,936** | `39b832dc20884f553986620406e3d7ad42a3c4cb5d471d319913da1df72ebc54` | **517** |
+
+两包差异（`zipfile` 逐条目比对）：
+
+```
+entries 71be770=518  7b07870=517
+only in 71be770: ['assets/map/source-thumb/xintu_satellite.png']
+same-name size diffs: 1 -> classes3.dex 501228 vs 501212（16 B，dex 构建非确定性）
+```
+
+即：**8,668,733 − 8,563,936 = 104,797 B**，与被删死素材 104,638 B 对得上（另 159 B 为 zip 压缩/dex 抖动）。
+→ 我的构建是内容可复现的，同一 commit 两次构建不会漂几百 KB。
+
+### 19.2 两处体积差都指向「构建树不干净」，不是构建环境差
+
+| 报告方 | 字节 | 对比我的干净树 | 差 |
+|---|---|---|---|
+| 我（`7b07870` 全新 worktree） | 8,563,936 | — | 基线 |
+| 总监（`7b07870`） | 8,827,064 | 8,563,936 | **+263,128** |
+| 我（`71be770` 全新 worktree） | 8,668,733 | — | — |
+| 地图（`71be770`） | 9,246,205 | 8,668,733 | **+578,269** |
+
+同机、同 JDK、同 Gradle 下，同一 commit 的干净树不会差 263 KB / 578 KB；
+而我的两次构建同内容只差 16 B dex。**结论：这两个包都掺了树外内容**（最可能是 `app/build` 里的陈旧产物
+或 `app/android/app/src/main/assets/` 下未提交素材，例如 `feature/地图-3d-terrain` 的 K-01 贴图）。
+
+复核方式（交给实现方在各自树执行）：
+
+```powershell
+git status --porcelain --untracked-files=all -- app/android   # 必须为空
+unzip -l app-debug.apk | Measure-Object -Line                # 干净树 71be770=518 条、7b07870=517 条
+```
+
+### 19.3 口径结论
+
+`collect` 的 `[PASS] installed apk matches --apk` 只证明「设备上装的就是你给的包」，
+**不证明「这个包是干净树建的」**。体积/条目数要当第二条指纹：干净树构建 + 记录
+`commit + 构建命令 + apk.sha256 + 字节数 + zip 条目数`，四项齐全才可作为判据。
+在此之前，任何以「装的是我的包」为依据的性能/体积类结论一律按 **待确认** 处理。
+
+## 20. R2-027 面板态 + R2-032 角注态复验（`verify/map-dc589ad` = `4bf0ee3`，2026-11-07 11:14–11:40）
+
+证据：`docs/fidelity/lc/map-layer-sheet.{png,xml,meta.json}`、`map-home-01.{png,xml,meta.json}`。
+指纹（我从 `meta.json` 读出并复算）：`build.commit = dc589ad…`、`apk.sha256 = 15a8ae8e31ca…a559cf2`、`apk.bytes = 8,565,088`、
+`device_apk.sha256` 与 `apk.sha256` **相同**；我重算 png `dfb27b70…`、xml `9b6136a1…`，与 meta 记录**一致**。
+原版对照仍用 `docs/fidelity/orig/map-layer-sheet.png`（1228×2700）。
+
+### 20.1 R2-032 角注 —— **关账**
+
+- dump 有原生节点 `text="数据来自天地图卫星 审图号： 待核对"`，`bounds=[0,2544][1228,2578]`；
+  **无「·」**、冒号后**一个空格**，与 §12 第 12 条逐字一致。
+- 事件链成立的证据（不靠日志口供）：`MainActivity:680` 的**初始兜底串**是「天地图地形」，
+  我实际采到的是「天地图**卫星**」（`map-home-01.xml`）；页面加载后才切换过底图源，
+  `syncAttributionBar()` 只在 `onPageFinished` 跑一次 → 这条文本只能是 `emit({type:"attribution"})`
+  经 `LCAndroid:50-54` → `onMapUiEvent` 写进去的。
+- 夹具：`map.html:1644` emit、`LCAndroid.java:50-54` 透传、`MainActivity:2120-2126` `attrView.setText` 均已在 §16.1.3 核对过。
+
+### 20.2 R2-027 面板态 —— **不关账**（3 处实测差 + 1 处跨模块层级差）
+
+通过项（我自己量，不采信自报值）：
+
+| 判据 | 原版 | 我方实测 | 结论 |
+|---|---|---|---|
+| 面板外框 | `[128,540]–[1027,1371]` | `x 128..1026`（899）/ `y 540..1370`（830，`x=1020` 列 bg 行 544..1365 取圆角内） | ✔ 逐边 ≤2 |
+| 卡宽 / 列距 | 260 / 286 | 白卡列 `162..421 / 448..706 / 733..992` = 260/259/260，列距 286/285 | ✔ |
+| 第 13 格宽 | 260（`x161..420`） | 260（`x162..421`） | ✔ |
+| 选中态蓝条 | `(29,72,171)`，高 68 | `y 829..896` 高 **68**，色 **`(28,69,165)`**（±0 全条一致） | ✔ |
+| 无关闭控件 | 面板内无任何关闭控件 | `map-layer-sheet.xml`：`关闭` 命中 **0** | ✔ |
+| 面板开时地名 | — | `台基厂` 命中 **0**（`open=true` 生效） | ✔ |
+| 无深色遮罩 | 面板外地图正常亮度 | 面板外像素正常（DOM 无遮罩节点，见 §16.1.3） | ✔ |
+| 缩略图置灰 | 原版 12 卡全彩 | 我方 9 卡 grayscale（饱和度 ≈0.9–1.0）、3 卡彩色 | **不算缺陷**：`findings-map.md:37` 原文写明「保留 D-006 的置灰与『需授权』说明」，属 finding 明写的保留项 |
+
+失败项（全部有量化差值）：
+
+1. **卡片标签条样式反了**（原版深条白字，我方白条深字）：
+
+```
+原版：标签条行 667..705 高 39，底色 (28,37,50)，字为白色
+我方：标签条行 669..735 高 67，底色 (251,250,250)，字为深灰 (#333)
+```
+   实现出处：`map.html:66-68` `.srcName { … background:#fff; … }`（`color:#333` 由 `:59` 的 `.srcCard{color:#333}` 继承）。
+   连带：原版卡片视觉高 = 缩略图 92 + 标签条 39 = **131**，行距 160（行间空隙 ≈29）；
+   我方 = 92 + 67 = **159**、行间无空隙 → 「卡 260×160」这个数其实是**行距**，不是卡高，判据要一并订正。
+
+2. **第 13 格高度 −7**：原版 `y 1219..1345` = **127**；我方 `y 1224..1343` = **120**（同一灰度靶 `(225,232,235)`、同一 `count>100` 量法；列剖面 `x=300` 亦为 1222..1343）。
+   CSS 写的是 `:70-72 .srcPlus { height:37.6px }`，×3.375 应 ≈127；实际只渲染到 120 **−7（−5.5%）**，超出 ±2。
+   成因未定（`.box` 有 `overflow:hidden`，最后一格可能被 246 CSS 的内容高裁掉），**待实现方查**。
+
+3. **层级：左列原生按钮压在面板之上**（原版是面板压按钮）：
+
+```
+原版 (140,700)  = (233,233,233)  ← 面板（浅色）
+我方 (140,700)  = (49,49,49)     ← 原生左列按钮（深色）
+原版 (140,1350) = (231,232,232)  ← 面板
+我方 (140,1350) = (49,49,49)     ← 原生「超清优化」按钮
+```
+   dump 对得上：`lc_g1_mleft2 截屏 [33,637][191,795]`、`lc_g1_mleft3 超清优化 [33,1294][191,1452]`，
+   与面板 `x128..1026 / y540..1370` 在 `x128..191`（63 px）相交；原版对应控件是 `x39..127`，**正好止于面板左缘 128**，从不与面板重叠。
+   这是第 5 条外观判据之外的新差，**跨客户端（native 视图）与地图（web 面板）**，需总监裁定：并入 R2-027 还是单独立项。
+   现成手段：`src-panel open=true` 事件已经在，客户端可据此裁/隐左列；地图侧无法把 WebView 抬到 native 之上。
+
+4. **面板底容差**：我方 `(246,245,244)` vs 参考 `(238,243,240)` → 每通道差 `(8,2,4)`、**ΔE2000 = 3.39**（产品新阈值「≤3」判我不过）。
+   但原版自身 8 个采样点之间 **ΔE 最大 8.81**、相对参考点最大 **5.2** —— 面板底是「半透明白叠在地图」的合成值，不是一个固定色。
+   我方距原版**最亮样本** `(245,244,244)` 仅 **ΔE 0.58**。
+   **建议判据改成范围**：「与原版任一样本 ΔE2000 ≤3」或「每通道 ≤8 且 ΔE ≤4」，否则原版自己都过不了。改后我这条判过，不需要重采。
+
+### 20.3 复现
+
+```powershell
+# 面板外框 / 卡列 / 第13格 / 标签条（无需设备）
+# 阈值：面板底 (246,245,244) ±5；第13格灰 (225,232,235) ±10；蓝条 (28,69,165) ±30
+# 行距 160、列距 286、标签条：原版深 (28,37,50) 39 高 / 我方白 (251,250,250) 67 高
+# 原生压面板：对比 (140,700) 与 (140,1350) 两点
+```
+
 
 
 

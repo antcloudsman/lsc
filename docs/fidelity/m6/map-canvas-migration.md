@@ -28,10 +28,12 @@
 
 ## 3. 三个必须先定的技术选择
 
-**（a）分辨率：按原版口径 `floor(2×屏宽)`，不用 `clientWidth × dpr`。**
-原版画布（逆向 §7.1 逐字）：`size = floor(2 * screen.width)`、`ctx dpr = min(floor(dpr), 2)`。本机屏宽 1228 ⇒ **backing = 2456**，CSS 显示 1228（1.0×屏宽）。
-对比两个数：我方 `CompassView` 盘面是 **922 device px**（`0.7378×1228+16`）；若沿用 `resizeGL()` 的 `clientWidth×dpr`（dpr 截到 2.5），backing 只有 `263.4×2.5 ≈ 658 px`，仅原生 922 的 **71.4%**。
-⇒ 结论：**贴地纹理的 canvas 定 2456×2456（原版口径）**；屏幕浮层若只需覆盖 922 盘面，可另建 922 的 canvas（见 §3(d)）。两者的像素成本差 **7.1 倍**：2456² × 4B ≈ **24.1 MB**，922² × 4B ≈ 3.4 MB。
+**（a）分辨率：按原版口径 `floor(2×screen.width)`，且 `screen.width` 是 CSS px。**
+原版画布（逆向 §7.1/§7.5.3）：`size = floor(2 * screen.width)`、`ctx dpr = min(floor(dpr), 2)`；viewport 是 `width=device-width, initial-scale=1`，故 **`screen.width` = 364 CSS px**（1228 / 3.375），**不是 1228**。
+⇒ `size = floor(2×364) = 728` CSS px；`dpr = min(floor(3.375),2) = 2` ⇒ **backing = 1456×1456 ≈ 8.5 MB**。
+**本方案早前写「2456 / 24.1 MB」是把 `screen.width` 当设备 px，偏大 1.69×（面积 2.87×），已作废。**
+对照：我方盘面 `CompassView` 是 **922 device px = 273 CSS px**；若用 `resizeGL()` 的 `clientWidth×dpr`（dpr 截 2.5），盘面 backing 只有 `263.4×2.5 ≈ 658`，仅 922 的 **71.4%**，文字必糊——所以屏幕浮层按 **922 device px** 定，不跟 `resizeGL` 走。
+⇒ 定稿：**屏幕浮层 canvas = 922（device px，≈3.4 MB）；贴地纹理 canvas = 728 CSS / backing 1456（≈8.5 MB）**。两者差 2.5 倍，不是 7.1 倍。
 
 **（b）数据单一化**：构建期由 `CompassData` 生成 `assets/compass/rings.json`（含 mechanics 同源 sha256 头），JS 只读这份；禁止在 JS 里手抄第二份表。
 
@@ -40,15 +42,17 @@
 **（d）同一套绘制、两张 canvas 实例（贴地与屏幕显示两用）**
 - 绘制代码**只有一份**：`drawCompass(ctx, size, heading, dial, alpha, tianzhi)`，尺寸与坐标系由 `size` 参数化（现 `CompassView` 的 `cx/cy/r` 全部按 `size` 比例算，`r = size/2 - 8*(size/922)`）。
 - **实例 1（屏幕浮层）**：`922×922`，CSS `922/dpr`，居中，随 `heading` 旋转（等价现 `drawArtwork` 的 `save/rotate/restore`）。
-- **实例 2（贴地纹理）**：`2456×2456`（原版 `floor(2×screen.width)`），注册为 `canvas` source，`animate:false`（**不自动重绘，必须显式重绘后 `setCoordinates`**），`raster-resampling:"linear"`。
+- **实例 2（贴地纹理）**：`728` CSS px（原版 `floor(2×screen.width)`，`screen.width=364` CSS）⇒ backing `728×2 = 1456`（dpr 截 2），注册为 `canvas` source，`animate:false`（**不自动重绘，必须显式重绘后 `setCoordinates`**），`raster-resampling:"linear"`。
 - **四角 `coordinates` 算法（已按逆向 §7.5 原版逐字改写，替换本方案早前的等价路径）**：
   原版 `getCoordinates()` = `map.unproject([screen.width/2, screen.height/2]).toBounds(floor(screen.width / pixelsPerMeter))`，输出顺序 `[NW, NE, SE, SW]`。
   三句拆解：①中心 = **屏幕中心**反投影经纬度（用 `window.screen.*`，不是 `innerWidth`）；②半径(米) = `floor(screen.width / pixelsPerMeter)`（**随缩放变**，不是固定米数）；③交给 MapLibre 当轴对齐 bounds。
   **不在此处做 bearing 旋转** —— 原版把正方形 bounds 交给 source，旋转由地图投影矩阵处理；我方若在四角里再转一次，就是转两遍（本方案早前的写法已作废）。
   与我方现有量的等价性：`pixelsPerMeter = 1/zMpp`，`zMpp = 156543.03392·cos(lat)/2^zoom` ⇒ `screen.width / pixelsPerMeter = screen.width × zMpp`。**对照点**：我方按此算出的米数必须能复现 `floor(screen.width / pixelsPerMeter)`。
   视野/缩放变化时重算并 `setCoordinates` —— 不重算就等于把盘面钉死在旧位置，拖地图时盘面不跟手。
-- **待确认（会影响贴地范围一倍）**：`LngLat#toBounds(radius)` 的 `radius` 在 MapLibre 源码里是**中心 ± radius**（即半边长），若如此则贴地四边形**边长 = 2 × 屏宽米数**，而不是「边长 = 屏宽米数」。我没有拿到该函数源码出处，**不写结论**；第 4 步实现时必须以原版贴地实测范围定标，验收加一条：贴地四边形边长 ÷ 屏宽米数 ∈ {1, 2} 中与原版实测一致的那个。
-- 内存口径：两实例同存约 **24.1 + 3.4 ≈ 27.5 MB**；若紧张，可只在进入贴地时创建 2456 那张、退出即释放。
+- **已确认（原 `待确认`，逆向从原版自带 `lib/mapbox-gl.js` 定死）**：`LngLat#toBounds(radius)` 的 `radius` 是**半边长**（bounds = 中心 ± radius）。
+  ⇒ 贴地四边形**边长 = 2 × 屏宽米数**；而画布 `size = 2 × screen.width`，两者相等 ⇒ **画布与地面正方形 1:1 对映**（不做二次缩放），这也解释了原版为什么把画布取成 2×屏宽。
+  验收口径（可先跑，比逐像素省事）：**贴地四边形边长 ÷ `screen.width` 的米数当量 = 2**；pitch 0→60° 变化时，盘面绘制框屏幕宽度 ÷ 屏宽应基本不变；若出现梯形或四角不等距，就是误用了「屏幕四角 `unproject`」。
+- 内存口径：两实例同存约 **8.5 + 3.4 ≈ 11.9 MB**；若紧张，可只在进入贴地时创建 1456 backing 那张、退出即释放。
 
 ## 4. 像素一致性验证（三层，缺一不可）
 

@@ -659,7 +659,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         bottom.addView(compassToolBar);
 
         attrView = new TextView(this);
-        attrView.setText("数据来自天地图地形（等价替代原版世纪空间）· 审图号：未确认");
+        // R2-032：按源分源显示，用户可见文案里不留内部替换说明，也不编造官方审图号；
+        // 页面就绪后 syncAttributionBar() 会用 getAttribution() 的真实来源覆盖这句。
+        attrView.setText("数据来自天地图地形 · 审图号：待核对");
         attrView.setTextColor(Color.rgb(150, 130, 100));
         attrView.setTextSize(9f);
         attrView.setPadding(dp(10), dp(1), dp(10), dp(1));
@@ -2070,6 +2072,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (poiPanel != null) poiPanel.setVisibility(View.GONE);
     }
 
+    /**
+     * R2-032：底部角注按「当前底图源」显示。
+     * 原版是「数据来自世纪空间 审图号：GS(2026)1219号」；我方图源换成天地图后，
+     * 来源名与审图号状态取 map.html 的 getAttribution()（按源分源），不写死、不编造官方号。
+     */
+    private void syncAttributionBar() {
+        if (compassMapView == null || attrView == null) return;
+        compassMapView.evaluateJavascript(
+                "(function(){try{return getAttribution().text;}catch(e){return '';}})()",
+                v -> {
+                    String t = decodeJsString(v);
+                    if (t != null && !t.trim().isEmpty()) {
+                        attrView.setText(t);
+                        android.util.Log.d("LCATTR", "bar=" + t);
+                    }
+                });
+    }
+
     // ---------------- R2-030 山脉：地图内半屏图层（不跳 Activity） ----------------
 
     /** 点一次开、再点一次关；关闭按钮走 hideMountainLayer()，前台始终是 MainActivity。 */
@@ -3385,6 +3405,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // 这里不能恒发 'map'，必须按原生当前态重放，否则出现「浮层开着、页面却是 map 态」的不同步。
                 // 重载后地图侧的 heading/坐向也丢了，立即重推一次（传感器下一帧还会再推）。
                 updateReading();
+                // R2-032：页面就绪后把底部角注同步成当前底图源（按源分源显示）
+                syncAttributionBar();
                 if (view == compassMapView) {
                     mapPageReady = true;
                     // uiMode 按原生当前态重放（若冷启时点过罗盘，这里有 pendingUiMode 兜底补发）。

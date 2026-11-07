@@ -1549,6 +1549,157 @@ curl.exe -s -i -X POST http://127.0.0.1:8787/v2/auth/login -H 'Content-Type: app
 docker logs lc-backend --since 20m | Select-String 'pwmark|token'        # 期望 0 命中
 ```
 
+## 27. Stage 5 打回后：三条数据缺陷的**修复前基线**（2026-11-07 20:50，供修完对比）
+
+总监打回 Stage 5，客户端要修三处。为了让「修好了」可判、且不靠各自口述，我先用自己的账号把**修复前的故障数值**量出来，修完用同一条命令复跑对比。
+
+测试账号：`idemsnvqi`（我注册，仅用于本判据）。
+
+### 27.1 幂等：收藏 save 无幂等，反馈 add 有 —— **同一后端两套标准**
+
+```
+同一个 Idempotency-Key = idem-test-snvqi
+收藏 save 第1次 → 201  id=29
+收藏 save 第2次 → 201  id=30      ← 两条重复行（缺陷）
+反馈 add  第1次 → 201  id=fb_962844c6b5a94f7e944ba96081fbbd6e
+反馈 add  第2次 → 200  id=fb_962844c6b5a94f7e944ba96081fbbd6e   ← 同一行（现有参照实现）
+```
+
+**修复后的判据**：save 同 key 连发两次 → **同一 id**、第二次 HTTP 200（不是 201），且库里该 key 只有一行。
+
+### 27.2 坐向：服务端**能完整往返** `des`，丢的是客户端 —— 修复不需要改接口
+
+```
+save  des='坐90° 向270°'  → 201
+list 该条 → des='坐90° 向270°'   ← 服务端保存并原样回显，未截断
+```
+
+→ 所以 `GapDb.java:203-204` 硬编码 `sitting=0 / facing=180` 是**纯客户端问题**：解析 `des` 或让服务端补结构化字段都可以，但不能把「服务端没给」当理由。
+**修复后判据**：保存 `坐90° 向270°` → 换设备/重装后拉回 → 本地该条 `sitting=90 / facing=270`（不是 0/180）。
+
+### 27.3 删除：服务端**删除即生效**，客户端根本没调
+
+```
+DELETE /v2/userCollectPoint/delete?id=31 → 200
+删除后 list 不再含该条 → False(不含)     ← 服务端行为正确
+git grep deletePoint origin/develop -- app/android/app/src/main/java
+  → 只有 LcApi.java:90 的定义，零调用点   ← 客户端从不调（缺陷成立）
+```
+
+**修复后判据（两个方向都要通）**：①本机删 → 服务端 list 不再含该条；②另一台设备删该条 → 本机 pull 后本地也消失（不出现「本机删的在别的设备复活」「别处删的本机常驻」）。
+
+### 27.4 复现（修完直接跑这一段对比）
+
+```powershell
+# 用任意新账号登录拿 token 后：
+Invoke-WebRequest -Uri http://127.0.0.1:8787/v2/userCollectPoint/save -Method POST `
+  -Headers @{'Content-Type'='application/json'; token=$tok; 'Idempotency-Key'='<同一串>'} `
+  -Body '{"name":"X","lng":116.4,"lat":39.9,"type":0}'    # 连发两次，比 data.point.id
+```
+
+## 28. save 幂等复验（`047b2be`，2026-11-07 21:05）——**行为全过，但这是分支构建，不能直接当关账依据**
+
+### 28.1 先报环境事实：容器现在跑的**不是 develop**
+
+```
+develop   backend/src/server.js  sha256 = 7e2808a0ce4c   （还是 §26 那一版，无幂等）
+容器      /app/src/server.js     sha256 = 17e97436f557
+容器      /app/src/db.js         sha256 = f54c0e05983f
+分支 047b2be:backend/src/server.js = 17e97436f557  SAME
+分支 047b2be:backend/src/db.js     = f54c0e05983f  SAME
+git merge-base --is-ancestor 047b2be origin/develop  → exit 1（未合入）
+```
+
+即：容器是 `feature/服务端-save-idem`（`047b2be`）重建的，**不是 develop 构建**。
+按本轮纪律「证据要指向正确构建体」，下面的结果只能算**分支级预检**；要关账必须先把 `047b2be` 合进 develop、重建容器，再用同一段重跑。
+
+### 28.2 判据 A（幂等）—— 我自己跑，全过
+
+用新账号 `idm2wpqek`，同一 `Idempotency-Key = idem2-wpqek`：
+
+```
+1) 同 key 同内容 第1次 → 201  id=259  deduplicated=false
+   同 key 同内容 第2次 → 200  id=259  deduplicated=true      ← 同 id + 200，符合判据
+2) 同 key 不同内容 第3次 → 200  id=259  name=IDM2-A-wpqek    ← 仍是首行、内容未被改（我最担心的坑，处理正确）
+3) 换新 key 同内容      → 201  id=260                        ← 新键即新行，符合
+4) 不带 key 连发两次    → 201/201  id=261/262                ← 无键时不去重，符合契约
+```
+
+库级核对（`node:sqlite` 只读）：
+
+```
+ROWS  : id=259 idem_key=idem2-wpqek / id=260 idem_key=idem2-wpqek-b   （同名两条，键不同，符合判据 3）
+DUP_KEYS = []                                                          ← 同一 key 只有一行
+IDX   : CREATE UNIQUE INDEX idx_favorites_user_idem ON favorites(user_id, idem_key) WHERE idem_key IS NOT NULL
+MIGRATIONS : 001_init … 006_favorites_idem
+/health : schema=006_favorites_idem
+```
+
+偏索引 `WHERE idem_key IS NOT NULL` 是对的——但它**不是**为了防「无键撞车」：我在容器里用 `:memory:` 库实测（SQLite **3.53.4**），
+普通 `UNIQUE(user_id, idem_key)` 下连插两条 `idem_key=NULL` **两条都成功**（`PLAIN_UNIQUE_NULL_TWICE=ALLOWED`，`PLAIN_NULL_ROWS=2`），
+而同键非 NULL 插入会被拦（`PLAIN_SAME_KEY_TWICE=BLOCKED`）——因为 SQL 标准里 NULL 互不相同。
+所以偏索引的真实价值是：**只索引有键的行**（更小、更快）+ 把「有键才去重」写进 schema 让人看得见，不是正确性的必需品。
+**我在本节的初版写成「否则无键多次新建会互相撞唯一约束」，那句是错的，已撤回**（下一次谁要改这个索引，别拿那句话当依据）。
+
+### 28.3 结论
+
+- **判据 A：分支级通过**（4 条子用例 + 库级唯一索引 + 迁移 006）。
+- **关账前置未满足**：`047b2be` 不在 develop，容器也不是 develop 构建。**合并 + 重建 + 我复跑 §28.2** 之后才计入。
+- 给客户端的判读口径（与服务端说明一致）：**重放是 200 + `deduplicated:true`**，判「是否新建」别看 201。
+
+### 28.4 一条附带观察：幂等键**不回显**给客户端（低风险，先记不判）
+
+`db.js:222-243 rowToFavorite()` 返回的字段里**没有** `idem_key`（`listFavorites` 是 `SELECT *` 但映射时丢弃）。
+后果：客户端只能靠本地持久化的 `client_key` 维持幂等，**跨安装/换机后该行没有 key 可恢复**。
+目前不构成重复建点路径 —— 因为跨安装后本地那些「`remote_id=0` 的新建行」本身已不存在，拉回来的行都带 `remote_id`、走更新分支，不需要键。
+**待确认**：若将来出现「`remote_id` 丢失但本地行仍在」的场景（比如本地库部分损坏），才会重新暴露。到时再决定要不要在响应里回显 `idem_key`。
+
+服务端补了一条更准确的边界：「重装且本地数据从备份恢复、但没恢复 `client_key` 列」才会重复建——**这是客户端持久化责任，不是接口缺陷**。
+我同意**不要**把 `idem_key` 加进 `list` 响应：它是去重内部标记，回显会让客户端产生「可重建键」的错误预期，且目前没有消费者。
+
+## 29. 跨账号同步整批误删 —— 代码机制已证实（2026-11-07 21:15）
+
+测试在真机撞到：本地 3 条（`remote_id=23/24/25`，属于旧账号 `clean` 态）→ 换账号 `sb8397` 同步 → `purgedRemote=3`，本地 **3 → 0**。我把代码读到行号，机制成立且**不可逆**。
+
+### 29.1 三段代码咬合
+
+```
+FavoriteSync.java:152-157（fddce8d）
+  for (InterestPoint local : db.listInterest()) {        ← 遍历全部本地行，不带账号条件
+      long remote = db.remoteIdOf(local.id);
+      if (remote <= 0 || live.contains(remote)) continue;  ← live = 本次 list 返回的 id 集合
+      db.purgeInterest(local.id);                          ← 不在集合里就删
+      purgedRemote++;
+  }
+
+GapDb.java:199-201
+  void purgeInterest(long localId) {
+      getWritableDatabase().delete(T_INTEREST, "id=?", …);  ← 硬删，不是打标记
+  }
+```
+
+而服务端 `list` **只返回当前 token 那个账号的行**（我 §26.2 实测：B 的 list `count=0`，A 的行不可见）。
+→ 换账号后，旧账号所有 `remote_id>0` 的行都不在 `live` 里，**整批被硬删**。
+
+`git grep -n 'owner_uid\|ownerUid\|currentUid\|\.uid' fddce8d -- FavoriteSync.java` → **无命中**，确认没有任何账号守卫。
+
+### 29.2 影响面与当前状态
+
+- **未进主线**：`git grep -n 'purgeInterest\|purgedRemote' origin/develop` → 无命中。这段只在 `feature/client-m4-sync-fix`（`122a8d1`+`fddce8d`）。
+  → 只要**别原样合这支**，缺陷不会进 develop；修好再合即可。
+- 严重度：**不可逆删除本地用户数据**，高于 A/B（A/B 最坏是多一行/少一行，可见可手删）。
+
+### 29.3 复验判据（修完按这三条判）
+
+1. **切账号同步后本地条数不减少**：假设 A 有 3 条 `clean` 行 → 登出 → B 登录 → 同步 → 本地仍 3 条（状态可降级为「别的账号」但不许删）。
+2. **不许串数据**：同一次同步后，服务端 B 的 `favorites` 计数**不增加**（A 的行没被推到 B）；用 `/health` 前后对比或直接查库按 `user_id` 计数。
+3. **切回 A 账号**：那 3 条恢复为正常可同步状态（`remote_id` 仍是 A 的 id），执行一次同步后与 A 服务端一致。
+
+⚠️ 客户端方案里若写「换账号后把旧行 `remote_id` 置 0 重推」，**这条要打回**：那是把 A 的数据推到 B 账号，属另一种串数据。正确做法是**整行既不推也不对账**（`owner_uid != 当前 uid` 即跳过）。
+
+
+
+
 
 
 

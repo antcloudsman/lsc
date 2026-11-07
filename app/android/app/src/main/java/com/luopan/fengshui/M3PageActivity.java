@@ -54,8 +54,8 @@ public class M3PageActivity extends Activity {
 
     /** 需要标注服务端依赖的页（D-022）。 */
     private static final String[][] DEPENDENCIES = {
-            {"账户设置", "本页的登录/绑定/注销需服务端账号体系支持，当前未接入（D-022）——以下为原版界面文案。"},
-            {"投诉反馈", "本页的提交需服务端工单接口，当前未接入（D-022）——以下为原版界面文案。"},
+            {"账户设置", "账号密码登录/注册为本项目新增（原版无此页）；原版手机号验证码/一键/荣耀/微信入口见 D-029/030/031（占位，不可用）。"},
+            {"投诉反馈", "提交接本项目自建服务端 /v2/feedback/add（type=2），需先登录。"},
             {"帮助中心", "原版为在线帮助（远端 WebView），离线时无法加载正文（D-023）。"},
             {"用户协议", "原版为远端 WebView（正文由第三方托管），离线时无法加载（D-023）。"},
     };
@@ -256,22 +256,52 @@ public class M3PageActivity extends Activity {
         submit.setBackground(bg);
         submit.setPadding(0, 24, 0, 24);
         submit.setOnClickListener(v -> {
-            if (reason.getText().toString().trim().isEmpty()
-                    || contact.getText().toString().trim().isEmpty()
-                    || desc.getText().toString().trim().isEmpty()) {
+            final String r = reason.getText().toString().trim();
+            final String c = contact.getText().toString().trim();
+            final String d = desc.getText().toString().trim();
+            if (r.isEmpty() || c.isEmpty() || d.isEmpty()) {
                 submitStatus.setTextColor(Color.rgb(220, 170, 90));
                 submitStatus.setText("请先填写申请原因、联系方式与问题描述");
                 android.util.Log.d("LCM3", "complaint validate fail");
                 return;
             }
-            boolean online = isNetworkOnline();
-            submitStatus.setTextColor(Color.rgb(200, 90, 80));
-            if (!online) {
-                submitStatus.setText("提交失败：当前网络不可用（原版提交依赖服务端，D-022）");
-            } else {
-                submitStatus.setText("提交失败：服务端未接入（D-022），未发送请求");
+            final String token = LcSession.token(this);
+            if (token == null) {
+                submitStatus.setTextColor(Color.rgb(220, 170, 90));
+                submitStatus.setText("提交前请先登录：抽屉 → 账户设置 → 立即登录");
+                android.util.Log.d("LCM3", "complaint needs login");
+                return;
             }
-            android.util.Log.d("LCM3", "complaint submit blocked, online=" + online);
+            submitStatus.setTextColor(Color.rgb(200, 190, 170));
+            submitStatus.setText("提交中…");
+            submit.setEnabled(false);
+            // M4：接自建服务端 /v2/feedback/add（type=2 问题反馈）；失败按错误码/网络分开展示，不伪造成功。
+            new Thread(() -> {
+                try {
+                    org.json.JSONObject data = LcApi.addFeedback(token, c, r, d);
+                    final int id = data == null ? 0 : data.optInt("id", 0);
+                    android.util.Log.d("LCM3", "feedback ok id=" + id);
+                    runOnUiThread(() -> {
+                        submit.setEnabled(true);
+                        submitStatus.setTextColor(Color.rgb(120, 170, 120));
+                        submitStatus.setText("提交成功" + (id > 0 ? "（反馈 id " + id + "）" : ""));
+                    });
+                } catch (LcApi.ApiError e) {
+                    android.util.Log.w("LCM3", "feedback api " + e.code);
+                    runOnUiThread(() -> {
+                        submit.setEnabled(true);
+                        submitStatus.setTextColor(Color.rgb(200, 90, 80));
+                        submitStatus.setText("提交失败：" + e.getMessage() + "（code " + e.code + "）");
+                    });
+                } catch (Throwable t) {
+                    android.util.Log.w("LCM3", "feedback net " + t.getClass().getSimpleName());
+                    runOnUiThread(() -> {
+                        submit.setEnabled(true);
+                        submitStatus.setTextColor(Color.rgb(200, 90, 80));
+                        submitStatus.setText("提交失败：连不上本地服务（需 adb reverse tcp:8787 tcp:8787）");
+                    });
+                }
+            }, "lc-feedback").start();
         });
         list.addView(submit, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -368,39 +398,205 @@ public class M3PageActivity extends Activity {
     }
 
     /**
-     * 账户设置（M3-01）：原版登出态不可得（不可逆），按**未登录态**实现，
-     * 字符串只允许已取证的 `您当前未登录` / `立即登录`；登录链路按 D-022 标注。
+     * 账户设置（M3-01 + M4）。两种态：
+     * - 未登录：`您当前未登录` / `立即登录`（原版文案），微信入口占位（D-031）；
+     * - 已登录（**本项目新增**，原版只有登录态且有真实账号）：头像 + 昵称 + 账号 + 改密 + 退出登录。
+     *
+     * 验收口径（产品 §5-6）：登录/账户的「账号密码」部分是本项目新增，不按原版 1:1 判；
+     * 原版手机号验证码/一键/荣耀/微信入口按 D-029/030/031 只判「占位 + 不可用说明」。
      */
     private void buildAccount(LinearLayout list) {
-        // 默认头像 = 原版 `pages/account/icons/ic_default_avatar.png`（S- 判据：本页 1 枚，候选）。
-        // 未登录态整页布局原版拿不到（需登出，不可逆，D-022），这里只做「头像 + 未登录 + 立即登录」最小结构。
         android.widget.ImageView avatarImg = new android.widget.ImageView(this);
         avatarImg.setId(R.id.lc_m3_avatar_img);
         avatarImg.setImageResource(R.mipmap.lc_default_avatar);
         avatarImg.setPadding(0, 24, 0, 12);
         list.addView(avatarImg, new LinearLayout.LayoutParams(120, 120));
-        TextView avatar = new TextView(this);
-        avatar.setId(R.id.lc_m3_avatar);
-        avatar.setText("您当前未登录");
-        avatar.setTextSize(17f);
-        avatar.setTextColor(Color.rgb(235, 228, 215));
-        avatar.setPadding(0, 16, 0, 16);
-        list.addView(avatar);
-        TextView login = new TextView(this);
-        login.setId(R.id.lc_m3_login);
-        login.setText("立即登录");
-        login.setTextSize(16f);
-        login.setTextColor(Color.rgb(220, 190, 130));
-        login.setPadding(0, 8, 0, 24);
-        login.setOnClickListener(v -> {
-            TextView note = new TextView(this);
-            note.setText("登录需服务端账号体系，当前未接入（D-022）");
-            note.setTextSize(13f);
-            note.setTextColor(Color.rgb(200, 190, 170));
-            list.addView(note);
-            android.util.Log.d("LCM3", "account login blocked by D-022");
+
+        final String token = LcSession.token(this);
+        final org.json.JSONObject user = LcSession.user(this);
+        if (token == null || user == null) {
+            TextView avatar = new TextView(this);
+            avatar.setId(R.id.lc_m3_avatar);
+            avatar.setText("您当前未登录");
+            avatar.setTextSize(17f);
+            avatar.setTextColor(Color.rgb(235, 228, 215));
+            avatar.setPadding(0, 16, 0, 16);
+            list.addView(avatar);
+            TextView login = new TextView(this);
+            login.setId(R.id.lc_m3_login);
+            login.setText("立即登录");
+            login.setTextSize(16f);
+            login.setTextColor(Color.rgb(220, 190, 130));
+            login.setPadding(0, 8, 0, 24);
+            login.setOnClickListener(v ->
+                    startActivityForResult(new android.content.Intent(this, LoginActivity.class), LoginActivity.REQ));
+            list.addView(login);
+            // 原版第三方入口占位（本轮不实现，D-029/030/031）
+            TextView wx = new TextView(this);
+            wx.setId(R.id.lc_m3_wechat_entry);
+            wx.setText("微信登录（D-031 待接入，暂不可用）");
+            wx.setTextSize(14f);
+            wx.setTextColor(Color.rgb(150, 130, 100));
+            wx.setPadding(0, 8, 0, 24);
+            wx.setOnClickListener(v -> android.widget.Toast.makeText(this,
+                    "微信登录需微信开放平台登记包名+签名（D-031），本项目本包无法通过校验", android.widget.Toast.LENGTH_SHORT).show());
+            list.addView(wx);
+            return;
+        }
+
+        String nick = user.optString("display_name", "");
+        if (nick.trim().isEmpty()) nick = user.optString("username", "");
+        final String nickShown = nick;
+        TextView nameRow = new TextView(this);
+        nameRow.setId(R.id.lc_m3_nickname);
+        nameRow.setText("昵称：" + nickShown + "　（点此修改）");
+        nameRow.setTextSize(17f);
+        nameRow.setTextColor(Color.rgb(235, 228, 215));
+        nameRow.setPadding(0, 16, 0, 12);
+        nameRow.setOnClickListener(v -> showEditNameDialog(token, nickShown));
+        list.addView(nameRow);
+
+        TextView accountRow = new TextView(this);
+        accountRow.setId(R.id.lc_m3_account_name);
+        accountRow.setText("账号：" + user.optString("username", "")
+                + "　uid：" + user.optInt("uid", 0));
+        accountRow.setTextSize(14f);
+        accountRow.setTextColor(Color.rgb(200, 190, 170));
+        accountRow.setPadding(0, 0, 0, 20);
+        list.addView(accountRow);
+
+        TextView changePw = new TextView(this);
+        changePw.setId(R.id.lc_m3_changepw);
+        changePw.setText("修改密码");
+        changePw.setTextSize(16f);
+        changePw.setTextColor(Color.rgb(220, 190, 130));
+        changePw.setPadding(0, 8, 0, 16);
+        changePw.setOnClickListener(v -> showChangePasswordDialog(token));
+        list.addView(changePw);
+
+        TextView sync = new TextView(this);
+        sync.setId(R.id.lc_m3_sync);
+        sync.setText("同步收藏点（本地优先，失败留离线队列）");
+        sync.setTextSize(16f);
+        sync.setTextColor(Color.rgb(220, 190, 130));
+        sync.setPadding(0, 8, 0, 16);
+        sync.setOnClickListener(v -> {
+            sync.setEnabled(false);
+            sync.setText("同步中…");
+            new Thread(() -> {
+                try {
+                    final String msg = FavoriteSync.sync(this);
+                    runOnUiThread(() -> {
+                        sync.setEnabled(true);
+                        sync.setText("同步收藏点：" + msg);
+                    });
+                } catch (Throwable t) {
+                    android.util.Log.w("LCM3", "sync failed " + t.getClass().getSimpleName());
+                    runOnUiThread(() -> {
+                        sync.setEnabled(true);
+                        sync.setText("同步失败：连不上本地服务（需 adb reverse tcp:8787）");
+                    });
+                }
+            }, "lc-sync").start();
         });
-        list.addView(login);
+        list.addView(sync);
+
+        TextView logout = new TextView(this);
+        logout.setId(R.id.lc_m3_logout);
+        logout.setText("退出登录");
+        logout.setTextSize(16f);
+        logout.setTextColor(Color.rgb(220, 120, 100));
+        logout.setPadding(0, 8, 0, 24);
+        logout.setOnClickListener(v -> doLogout(token));
+        list.addView(logout);
+    }
+
+    /** 修改昵称（PATCH /v2/auth/me），成功后更新本地会话并刷新本页。 */
+    private void showEditNameDialog(final String token, String current) {
+        final android.widget.EditText et = new android.widget.EditText(this);
+        et.setText(current);
+        et.setSelection(et.getText().length());
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("修改昵称")
+                .setView(et)
+                .setPositiveButton("保存", (d, w) -> {
+                    final String next = et.getText().toString().trim();
+                    if (next.isEmpty()) return;
+                    new Thread(() -> {
+                        try {
+                            org.json.JSONObject data = LcApi.updateDisplayName(token, next);
+                            org.json.JSONObject u = data == null ? null : data.optJSONObject("user");
+                            if (u != null) LcSession.save(this, token, u, LcSession.expiresAt(this));
+                            runOnUiThread(this::recreate);
+                        } catch (Throwable t) {
+                            runOnUiThread(() -> android.widget.Toast.makeText(this,
+                                    "修改失败：" + t.getMessage(), android.widget.Toast.LENGTH_SHORT).show());
+                        }
+                    }, "lc-changename").start();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    /** 修改密码（POST /v2/auth/password，成功后服务端撤销其它会话；本地会话保留）。 */
+    private void showChangePasswordDialog(final String token) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(32, 16, 32, 0);
+        final android.widget.EditText cur = new android.widget.EditText(this);
+        cur.setHint("当前密码");
+        cur.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        final android.widget.EditText next = new android.widget.EditText(this);
+        next.setHint("新密码（8–128 位）");
+        next.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        box.addView(cur);
+        box.addView(next);
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("修改密码")
+                .setView(box)
+                .setPositiveButton("确定", (d, w) -> {
+                    final String c = cur.getText().toString();
+                    final String n = next.getText().toString();
+                    if (n.length() < 8) {
+                        android.widget.Toast.makeText(this, "新密码需 8–128 位", android.widget.Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    new Thread(() -> {
+                        try {
+                            LcApi.changePassword(token, c, n);
+                            runOnUiThread(() -> android.widget.Toast.makeText(this,
+                                    "密码已修改", android.widget.Toast.LENGTH_SHORT).show());
+                        } catch (Throwable t) {
+                            runOnUiThread(() -> android.widget.Toast.makeText(this,
+                                    "修改失败：" + t.getMessage(), android.widget.Toast.LENGTH_SHORT).show());
+                        }
+                    }, "lc-changepw").start();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    /** 退出登录：先调服务端撤销会话（失败也清本地），清空 token 后回未登录态。 */
+    private void doLogout(final String token) {
+        new Thread(() -> {
+            try {
+                LcApi.logout(token);
+            } catch (Throwable t) {
+                android.util.Log.w("LCM3", "logout api failed: " + t.getClass().getSimpleName());
+            } finally {
+                LcSession.clear(this);
+                android.util.Log.d("LCM3", "logged out, token cleared");
+                runOnUiThread(this::recreate);
+            }
+        }, "lc-logout").start();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == LoginActivity.REQ && resultCode == RESULT_OK) {
+            recreate();
+        }
     }
 
     private void addLabel(LinearLayout list, String text) {
@@ -574,3 +770,4 @@ public class M3PageActivity extends Activity {
         return out;
     }
 }
+

@@ -38,7 +38,7 @@ import java.util.List;
 class GapDb extends SQLiteOpenHelper {
 
     static final String NAME = "lc_gap.db";
-    static final int VERSION = 1;
+    static final int VERSION = 2;
 
     static final String T_INTEREST = "interest";
     static final String T_TOOL = "tool";
@@ -56,7 +56,10 @@ class GapDb extends SQLiteOpenHelper {
                 + "lng REAL NOT NULL,"
                 + "sitting_deg REAL NOT NULL,"
                 + "facing_deg REAL NOT NULL,"
-                + "created_at INTEGER NOT NULL)");
+                + "created_at INTEGER NOT NULL,"
+                + "remote_id INTEGER NOT NULL DEFAULT 0,"
+                + "rev INTEGER NOT NULL DEFAULT 0,"
+                + "sync_state TEXT NOT NULL DEFAULT 'pending')");
         db.execSQL("CREATE TABLE " + T_TOOL + " ("
                 + "key TEXT PRIMARY KEY,"
                 + "sort INTEGER NOT NULL,"
@@ -69,9 +72,12 @@ class GapDb extends SQLiteOpenHelper {
         // 逐版本迁移，禁止删表重建（收藏点不可丢）。
         for (int v = oldVersion; v < newVersion; v++) {
             switch (v) {
-                // case 1:
-                //     db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN ...");
-                //     break;
+                case 1:
+                    // M4 v2：收藏点云同步状态（本地优先 + 离线队列）
+                    db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN remote_id INTEGER NOT NULL DEFAULT 0");
+                    db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN rev INTEGER NOT NULL DEFAULT 0");
+                    db.execSQL("ALTER TABLE " + T_INTEREST + " ADD COLUMN sync_state TEXT NOT NULL DEFAULT 'pending'");
+                    break;
                 default:
                     break;
             }
@@ -138,6 +144,82 @@ class GapDb extends SQLiteOpenHelper {
         }
     }
 
+    // ---------------- 收藏点云同步（M4：本地优先 + 离线队列） ----------------
+
+    /** 待同步（新建未推 / 推送失败）的本地收藏点；sync_state<>'clean' 即离线队列。 */
+    List<InterestPoint> listPendingInterest() {
+        List<InterestPoint> out = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, null,
+                "sync_state<>'clean'", null, null, null, "id ASC")) {
+            while (c.moveToNext()) out.add(row(c));
+        }
+        return out;
+    }
+
+    long remoteIdOf(long localId) {
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, new String[]{"remote_id"},
+                "id=?", new String[]{String.valueOf(localId)}, null, null, null)) {
+            return c.moveToFirst() ? c.getLong(0) : 0L;
+        }
+    }
+
+    int revOf(long localId) {
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, new String[]{"rev"},
+                "id=?", new String[]{String.valueOf(localId)}, null, null, null)) {
+            return c.moveToFirst() ? c.getInt(0) : 0;
+        }
+    }
+
+    void markInterestSynced(long localId, long remoteId, int rev) {
+        ContentValues v = new ContentValues();
+        v.put("remote_id", remoteId);
+        v.put("rev", rev);
+        v.put("sync_state", "clean");
+        getWritableDatabase().update(T_INTEREST, v, "id=?", new String[]{String.valueOf(localId)});
+    }
+
+    /** 拉取落地：按 remote_id 更新或插入；不覆盖本地待同步行（让本地先推）。 */
+    long upsertRemoteInterest(long remoteId, String name, double lat, double lng, int rev, long createdAtMs) {
+        SQLiteDatabase db = getWritableDatabase();
+        try (Cursor c = db.query(T_INTEREST, new String[]{"id", "sync_state"},
+                "remote_id=?", new String[]{String.valueOf(remoteId)}, null, null, null)) {
+            if (c.moveToFirst()) {
+                long id = c.getLong(0);
+                if ("clean".equals(c.getString(1))) {
+                    ContentValues v = new ContentValues();
+                    v.put("name", name == null ? "" : name);
+                    v.put("lat", lat);
+                    v.put("lng", lng);
+                    v.put("rev", rev);
+                    db.update(T_INTEREST, v, "id=?", new String[]{String.valueOf(id)});
+                }
+                return id;
+            }
+        }
+        ContentValues v = new ContentValues();
+        v.put("name", name == null ? "" : name);
+        v.put("lat", lat);
+        v.put("lng", lng);
+        v.put("sitting_deg", 0);
+        v.put("facing_deg", 180);
+        v.put("created_at", createdAtMs);
+        v.put("remote_id", remoteId);
+        v.put("rev", rev);
+        v.put("sync_state", "clean");
+        return db.insert(T_INTEREST, null, v);
+    }
+
+    private static InterestPoint row(Cursor c) {
+        return new InterestPoint(
+                c.getLong(c.getColumnIndexOrThrow("id")),
+                c.getString(c.getColumnIndexOrThrow("name")),
+                c.getDouble(c.getColumnIndexOrThrow("lat")),
+                c.getDouble(c.getColumnIndexOrThrow("lng")),
+                c.getDouble(c.getColumnIndexOrThrow("sitting_deg")),
+                c.getDouble(c.getColumnIndexOrThrow("facing_deg")),
+                c.getLong(c.getColumnIndexOrThrow("created_at")));
+    }
+
     // ---------------- 工具管理 ----------------
 
     /** 按本地 sort 升序返回 16 项；label 来自 ToolCatalog（不落库，避免文案漂移）。 */
@@ -201,3 +283,4 @@ class GapDb extends SQLiteOpenHelper {
         }
     }
 }
+

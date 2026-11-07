@@ -58,6 +58,23 @@
     <item name="lc_splash_root" type="id" />
     <item name="lc_splash_bg" type="id" />
     <item name="lc_splash_logo" type="id" />
+    <!-- M4：账号登录/注册（本项目新增） -->
+    <item name="lc_login_root" type="id" />
+    <item name="lc_login_back" type="id" />
+    <item name="lc_login_title" type="id" />
+    <item name="lc_login_username" type="id" />
+    <item name="lc_login_password" type="id" />
+    <item name="lc_login_display" type="id" />
+    <item name="lc_login_submit" type="id" />
+    <item name="lc_login_status" type="id" />
+    <item name="lc_login_wechat" type="id" />
+    <item name="lc_login_note" type="id" />
+    <item name="lc_m3_nickname" type="id" />
+    <item name="lc_m3_account_name" type="id" />
+    <item name="lc_m3_logout" type="id" />
+    <item name="lc_m3_changepw" type="id" />
+    <item name="lc_m3_sync" type="id" />
+    <item name="lc_m3_editname" type="id" />
+    <item name="lc_m3_wechat_entry" type="id" />
 </resources>
-
 

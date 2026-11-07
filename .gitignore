@@ -23,9 +23,8 @@ luopan.exe
 *.jks
 
 # ---- 构建日志与临时文件 ----
+# 证据日志一律以 .txt 入库（check-staged-paths.ps1 永久拒 *.log）：见 docs/fidelity/*/SHA256SUMS.txt
 *.log
-# 白名单：fidelity 证据包里的全量操作日志属「证据」而非「构建日志」，必须入库（否则 SUMS 引用空文件）
-!docs/fidelity/**/*.log
 build-activity.log
 /tmp/
 .DS_Store

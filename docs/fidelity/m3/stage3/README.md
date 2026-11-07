@@ -14,8 +14,8 @@
 | 桌面包 | 同一工作树 `scripts/build-desktop.ps1` → DESKTOP: PASS（docker cargo build，1100×780 截图 266376 B，mechanics 19 值 0 估计） |
 | 单源/文案门禁 | `tests/copy/copy_gate.py` → COPY: PASS（钉子 `contact.txt:1` / `agreement.txt:2`）；`tests/numeric/run_all.py` → PASS |
 
-> 说明：除 `d026-share.log` 外，本目录截图与三份日志均采自 `51793a9` 的 APK（`f3f789fb…`）。
-> `d026-share.log` 采自 `f17ac7a` 的 APK（`d21d719c…`）——两者只差分享日志文案，UI 与行为不变。
+> 说明：除 `d026-share.txt` 外，本目录截图与三份日志均采自 `51793a9` 的 APK（`f3f789fb…`）。
+> `d026-share.txt` 采自 `f17ac7a` 的 APK（`d21d719c…`）——两者只差分享日志文案，UI 与行为不变。
 
 ## 采证纪律
 
@@ -40,10 +40,10 @@
 | `i-share-wx.png` | M3-05 微信渠道 | 点 `微信` → 微信 `ACTION_SEND` resolver「发送给朋友 / 添加到微信收藏」 |
 | `i-share-circle.png` | M3-05 朋友圈渠道（D-026） | 点 `微信朋友圈` → **同一个**微信 resolver（降级）；两个渠道落同一面板，故两张截图逐字节相同（sha 相同，非复制错误） |
 | `h-sublist-after-back.png` | P1-21-A | 收藏列表子页 `lc_fav_sublist` 打开后 `input keyevent 4` → dump 为 `GONE`，日志 `LCFAV: sublist close by back-key`，前台 `MainActivity` |
-| `verify-final.log` | A–G 逐页 | 账户 / 投诉 / 关于 / 联系 / 分享 / 帮助 / 用户协议 / 离线态全量输出 |
-| `verify2-final.log` | H–K | P1-21-A / 分享渠道 / 联系我们 / 投诉离线 |
-| `loading-probe.log` | M3-06 加载中 | 打开后 200ms 截图 + 1s 后 dump |
-| `d026-share.log` | M3-05 / D-026 | `f17ac7a` 真机补录：微信 `channel=WEIXIN`、朋友圈 `channel=WEIXIN_CIRCLE`，两行都是 `ACTION_SEND -> wechat resolver (D-026 downgrade)`，前台 `HwResolverActivity`；正文与 URL 逐字 |
+| `verify-final.txt` | A–G 逐页 | 账户 / 投诉 / 关于 / 联系 / 分享 / 帮助 / 用户协议 / 离线态全量输出 |
+| `verify2-final.txt` | H–K | P1-21-A / 分享渠道 / 联系我们 / 投诉离线 |
+| `loading-probe.txt` | M3-06 加载中 | 打开后 200ms 截图 + 1s 后 dump |
+| `d026-share.txt` | M3-05 / D-026 | `f17ac7a` 真机补录：微信 `channel=WEIXIN`、朋友圈 `channel=WEIXIN_CIRCLE`，两行都是 `ACTION_SEND -> wechat resolver (D-026 downgrade)`，前台 `HwResolverActivity`；正文与 URL 逐字 |
 
 ## 分享正文出处（逐字）
 

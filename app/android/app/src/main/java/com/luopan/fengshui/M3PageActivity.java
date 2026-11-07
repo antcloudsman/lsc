@@ -84,7 +84,8 @@ public class M3PageActivity extends Activity {
 
     /**
      * 远端 WebView 页。URL 只在此处出现一次，出处记在 fidelity 文档里（不进 values/、不散落）：
-     * 帮助中心 = ApiHelper.HELP_CENTER（yuque 组织 wiki）；用户协议 = ApiHelper.USER_AGREEMENT。
+     * 原版帮助中心 = ApiHelper.HELP_CENTER（yuque 组织 wiki，远端）；我方已改**本地资源**（M6 第 5 条，离线可读）。
+ * 用户协议仍为原版远端 ApiHelper.USER_AGREEMENT。
      * 两者都是原版的远端行为；离线/失败时页面必须可见标注（D-023）。
      */
     private static final String HELP_URL = "file:///android_asset/lc-help/index.html";

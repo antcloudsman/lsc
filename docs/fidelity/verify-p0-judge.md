@@ -2098,6 +2098,57 @@ favorite-addpoint-01               → 2（是「添加点」页的两行输入/
 - 因此它应登记为**有意差异（DI）**，写成「可达删除入口已补（我方形态，非原版）；原版『编辑』入口形态待 M5 取证后按原版调整」，**不能写成「形态有出处」**；
 - 代码不必因为这条改（新文案本来就是中性的），只需把理由与台账措辞改对；否则下一个人会拿「长按有出处」当依据，把 M5 的「按原版做」提前关掉。
 
+## 36. 删除 UI 四条判据复验（`9e42ef1`，2026-11-08 00:10）—— 通过，④ 可升级为「可达 UI（我方形态）」
+
+证据 `E:\APPDetector\reports\M4-stage5-9e42ef1\`（delui / regress / orphanui 三组）。我不看它的 table.md 结论，直接读库与 dump：
+
+**⑧a 已同步行**
+```
+delui-synced.db   id=65 remote=356 rev=255 owner=115 clean name=dsyn59356
+delui-after-ui.db id=65 remote=356 delete_pending=1        ← 只打墓碑，行还在
+delui-after-sync.db → 空                                    ← 同步后本地归零，无残留
+服务端 ROW_356 = {uid:115, username_lc:du82313, deleted:1}  ← 同一 remote_id 真被软删
+run.log: sublist delete id=65 remote=tombstone ; del=1 delFail=0
+```
+**⑧b 未同步行**
+```
+delui-unsynced.db  id=66 remote=0 owner=115 pending name=dun59356
+delui-after-ui.db  → id=66 已不存在（物理删，不是打墓碑）
+run.log: sublist delete id=66 remote=local-only ; delreq 0->0（未发任何删除请求）
+```
+**⑧c B 侧**
+```
+delui-B-list.xml / delui-B-longpress.xml → 'dsyn' 命中 0、「暂无收藏点」=1、删除/确认框 = 0
+```
+**⑦ 孤儿行 UI**（orphanui）
+```
+orphanui-list.xml → 可见 A 的行、孤儿行不可见（run.log vis_ou=False vis_other=True）
+服务端 ROW_365 = {uid:119, deleted:0} 未被动
+同步日志 adopted by remote ids=1 uid=119 → 孤儿行的 remote 365 本来就属 uid 119，被正匹配认领（这是 hit 路径，设计意图），未推未删
+```
+
+**④ 的正式措辞**：**「删除可经可达 UI 完成（我方形态）」**——四条判据我独立复核通过；形态归我方新增，登记 DI。
+
+**给 D-033 的登记文字**：`覆盖层长按删除 = 我方新增入口；原版收藏 dump 的 long-clickable 全 0、原版有「编辑」按钮 [1079,1393][1182,1472]；原版入口形态待 M5 取证后按原版调整。不得写成「与原版一致」。`
+
+### 36.1 两条证据质量小注（不影响结论）
+
+1. ⑧b 的 `un_row=[(66, 0, 'pending')]` 是**删除前快照**，和 `un_left=0` 并列容易被后来人读成「行还在」。我核了 `delui-after-ui.db`：id=66 已不在 → 行为正确，只是日志字段语义要标注「删前」。
+2. 孤儿行一旦 `remote_id` 命中当前账号，同步后会被**认领并重新出现在列表**（orphanui 这次就是 `adopted=1`）。这是消解幽灵行的设计意图，**不是「孤儿行应该永久不可见」**——别把这条当回归失败。
+
+### 36.2 Stage 5 我方结论（可交总监关账）
+
+| 项 | 结论 |
+|---|---|
+| 五条 done-when | #1/#2/#3/#4/#5 我独立证实；#7 抽样读过；**#6（缺失清单逐项）、#8（工时台账+门禁）我未独立核实**，按「由测试/总监执行」记账 |
+| 真机六项 + 删除 UI 四项 | 全部有实证，我逐库复核通过 |
+| §33 | 验证对象 = 覆盖层；B 侧不可见 + 入口存在后长按无框（非平凡） |
+| P0 两条方向 | 不命中→不动（3→3、B_ACTIVE=0）；命中→写回（adopted=1、owner 0→111、服务端 354 uid=111 未动） |
+| 已知限制 | 7 条（S3 未覆盖、认领仅首页、pepper 同卷、无 TLS、两条 P1、删除为我方形态 D-033、delete 队列放行孤儿属临时） |
+
+**结论：从我这一侧，M4 可以关账**——唯一保留项是 #6/#8 我没独立核实，这两条要么由你确认，要么在关账说明里写「由产品/测试执行、审核验未复核」。
+
+
 
 
 

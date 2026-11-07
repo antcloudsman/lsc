@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 字符串载体（dex / smali / 资源值 XML）里有无 `◆`（U+25C6） | **无**（`mem_smali` 7698 个 smali、`mem_dump` 30 个 dex、`decoded/res` 全部 XML 均无命中） | `probes/r2-013_vip_badge_scan.py` |
 | 二进制文件里有无该字节序列 | 有 6 个（`.png/.webp/.pag/.zip`），**属字节巧合**，不是字符串资源；脚本已把两类分开统计 | 同上输出：`字符串载体命中 0 个；二进制文件命中 6 个` |
-| 截图里它长什么样 | 金色钻石，内有字母 **V**；行结构是「圈层名 + 这枚徽标 + `点击查看 ›`」 | `orig/r2-013-vip-badge-compare.png` |
+| 截图里它长什么样 | 金色钻石，内有字母 **V**；行结构是「圈层名 + 这枚徽标 + `点击查看 ›`」 | `probes/r2-013/r2-013-vip-badge-compare.png` |
 
 → 定性：**带 V 的 VIP 徽标位图**，因此「按 74×54 找 drawable」这个判据本身要订正（见 §3）。
 
@@ -73,5 +73,5 @@ verify: 103 file(s), 103 manifest entr(ies), 103 provenance row(s); sha256 + pro
 
 ## 6. 证据文件
 
-- `orig/r2-013-vip-badge-compare.png`：第一行为原版该行上下文（含 `点击查看`），第二行左为截图原位放大 4×、右为素材等比放大——两者同一图形。
+- `probes/r2-013/r2-013-vip-badge-compare.png`：第一行为原版该行上下文（含 `点击查看`），第二行左为截图原位放大 4×、右为素材等比放大——两者同一图形。
 - `assets/compass/ic_compass_vip.webp`：落库素材本体（2074 B，sha256 见 §2）。

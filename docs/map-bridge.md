@@ -297,7 +297,7 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 | 方法 | 参数 | 行为 |
 |---|---|---|
 | `setUiMode(mode)` | `'full'\|'map'\|'compass'` | `full`=现状（保留 `#controls` 等，无头 AT/回退）；`map`=隐藏 `#controls/#hint/#heading-label/#srcInfo/#fsExit/#hud`，保留瓦片/canvas 与 `#needle`，地图可拖动缩放；`compass`=在 `map` 基础上再隐藏 `#needle`（罗盘浮层自绘准星/北针）。返回实际模式。 |
-| `getAttribution()` | — | 返回 `{source, review, original:"世纪空间", equivalent:true, text}`；`text` 形如「数据来自天地图地形（等价替代原版世纪空间）· 审图号：未确认」。 |
+| `getAttribution()` | — | 返回 `{source, review, original:"世纪空间", equivalent:true, text}`；`text` 形如「数据来自{当前源} 审图号： {待核对\|需授权\|…}」（R2-032：无「·」、冒号后一个空格，与原版 `数据来自世纪空间 审图号： GS(2026)1219号` 同排法；原版号不照抄）。 |
 | `getState().uiMode` | — | 当前模式，供 AT 断言。 |
 | hash `&uimode=full\|map\|compass` | — | 启动与 `hashchange` 应用，供无头截图/复现。 |
 
@@ -307,7 +307,18 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 
 1. **半透明透出**：`map`/`compass` 模式下 map 隐藏全部自带 chrome（`#controls/#hint/#heading-label/#needle/#srcInfo/#fsExit/#hud`），不画任何遮罩，只留瓦片/canvas；圆盘 face 按 `docs/evidence/original-apk/measurements.md` 的实测：**圆心区 face α 合成上界 0.15（无整盘填充），线稿 α 0.90–1.00**，不要用 `argb(210)` 整盘填充。验收：罗盘模式截图中心区域可辨认底图纹理；`#controls` 的 `display==="none"`。
 2. **仍可拖动缩放**：`#controls` 不占位、文本层 `pointer-events:none`、`#map{touch-action:none}`；`CompassView` 圆盘**外**的触摸必须透传回 WebView（客户端只消费圆内）。验收：圆外 50px 拖动后 `getState().lng/lat` 变化；`zoomIn()/zoomOut()` 生效；一次拖动不触发 `pick`。
-3. **审图号/数据来源**：`getAttribution().text` 必须是「数据来自X（等价替代原版世纪空间）· 审图号：未确认」；**禁止**出现原版 `GS(2026)1219`（该号与世纪空间绑定，LC 用天地图属等价替代，不得照抄）。原生底部栏用该 `text` 渲染；`#srcInfo` 在 `map/compass` 隐藏但 `textContent` 保留，`captureMap()` 的角注合成仍可读。
+3. **审图号/数据来源**：`getAttribution().text` 必须是「数据来自{当前源} 审图号： {待核对/…}」（按源分源；**不编造**天地图官方号）；**禁止**出现原版 `GS(2026)1219`（该号与世纪空间绑定）。原生底部栏用该 `text` 渲染，并由 `attribution` 事件在切源时同步；`#srcInfo` 在 `map/compass` 隐藏但 `textContent` 保留，`captureMap()` 的角注合成仍可读。
+
+### 10.2.1 事件（web → native，2026-11-07 约定）
+
+桥：`window.LCAndroid.onEvent(json)`。原生侧必须**透传**下列两类（此前 `LCAndroid` 只认 `pick/marker/elev/pick-clear`，其余被 `ignore type=` 丢弃）：
+
+| 事件 | 载荷 | 触发时机 | 原生侧动作 |
+|---|---|---|---|
+| `src-panel` | `{"type":"src-panel","open":true\|false}` | 底图源面板开 / 关 | `open=true` 隐藏左上地名 `placeView`，`open=false` 恢复；仅面板开合时切换，不留常驻改动 |
+| `attribution` | `{"type":"attribution","text":"..."}` | 每次 `setBase()` 末尾（`updateSrcInfo()`） | `attrView.setText(text)`，否则底部角注只在 `onPageFinished` 同步一次、切源后与实际底图不一致 |
+
+面板**没有关闭控件**（原版即如此）：点面板外的地图即收起（`pointerdown` 捕获）。
 
 **指针开关（两针分离，AT 判据按模式分）**：地图模式右列「指针开关」→ `toggleNeedle()`，作用于 map 的 `#needle`；`compass` 模式下 `#needle` 已隐藏，`toggleNeedle()` **只改内部状态、屏幕无效果**，此时「指针开关」由原生 `CompassView.setShowPointer(bool)` 承担（罗盘自绘的北针/准星）。AT 判定：地图模式断言 `#needle` 的 `display`；罗盘模式只能靠截图（浮层自绘，`uiautomator` 取不到内部控件，见 README §8）。`getState().needle` 始终表示 map 页指针状态，**不代表**罗盘浮层北针。
 
@@ -320,7 +331,8 @@ adb -s L2E0222531014833 logcat -d | Select-String "LC3D"
 ### 10.5 不变项与副作用
 
 - `setHeading/setSitFace/setBase/setMode/toggle3D/setPitch/rotateBearing/setView/zoomIn/zoomOut/locate/clearMarkers/getState/getFps` 语义不变。
-- `#srcInfo` 文案格式从「底图：X · 审图号：Y」改为「数据来自X（等价替代原版世纪空间）· 审图号：Y」；`MainActivity.captureMap()` 读 `textContent`，不受 `display:none` 影响。
+- `#srcInfo` 文案格式：R2-032 起为「数据来自{当前源} 审图号： {值}」（R2-027/§16 订正：无「·」、冒号后一个空格）；`MainActivity.captureMap()` 读 `textContent`，不受 `display:none` 影响。
+- 底图源面板：R2-027 起按原版几何 `x128..1027 / y540..1371`（900×832 设备 px）、浅色卡、无深色遮罩、无关闭控件、选中态蓝标签条；面板左缘会盖住工具列 128..201（73 px），原版同样如此。
 - `map/compass` 模式下 `#hud` **恒为 `display:none`**（不是丢失）：D-009 要求的「垂直放大 2.5× + 贴面类型」由原生 3D 态在合适位置显示，不在 WebView 内重复。
 - 双 WebView 删除后，`setHeading/setSitFace` 只推一个实例（客户端改）。
 

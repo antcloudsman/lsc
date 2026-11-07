@@ -87,7 +87,8 @@ public class M3PageActivity extends Activity {
      * 帮助中心 = ApiHelper.HELP_CENTER（yuque 组织 wiki）；用户协议 = ApiHelper.USER_AGREEMENT。
      * 两者都是原版的远端行为；离线/失败时页面必须可见标注（D-023）。
      */
-    private static final String HELP_URL = "https://xinzhispace.yuque.com/org-wiki-xinzhispace-zrccm1/mh7qvx?#";
+    private static final String HELP_URL = "file:///android_asset/lc-help/index.html";
+    /** 帮助中心改为**本地资源**（离线可读）：原版是远端 WebView，且其「离线」证据 help-offline.xml 仅 47 B 的抓取失败文件，已作废。 */
     private static final String AGREEMENT_URL = "https://agreement.yuan9.cn/agreement/swssqjdt/yhxyb.html";
     /** 隐私政策：原版 WebActivity.i.b(ctx, "privacy.html", "隐私政策") —— 与用户协议同一 base。 */
     private static final String PRIVACY_URL = "https://agreement.yuan9.cn/agreement/swssqjdt/privacy.html";

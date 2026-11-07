@@ -1747,6 +1747,36 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             favoriteSubList.setVisibility(View.GONE);   // 回地图收藏态
             android.util.Log.d("LCFAV", "sublist close by item pos=" + pos);
         });
+        // M4-GAP-DELETE-UI（审核验 §35.3）：可达列表原先只有「点击跳图」，没有删除入口——
+        // 唯一删除 UI 在不可达的 InterestListActivity（exported=false、零启动点）。
+        // 这里补长按删除：与 InterestListActivity 同样的两条路径——
+        // 已同步行（remote_id>0）打删除墓碑等同步推给服务端，没同步过的行直接物理删。
+        favSubListView.setOnItemLongClickListener((p, v, pos, id) -> {
+            if (pos >= table.size()) return true;
+            final InterestPoint ip = table.get(pos);
+            final String label = ip.name == null || ip.name.isEmpty() ? "收藏点" : ip.name;
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("删除收藏点")
+                    .setMessage("确定删除「" + label + "」？\n已同步到云端的收藏点会同时从服务端删除。")
+                    .setPositiveButton("删除", (d, w) -> {
+                        GapDb db = new GapDb(this);
+                        try {
+                            if (db.remoteIdOf(ip.id) > 0) {
+                                db.markInterestDeletePending(ip.id);   // 墓碑：下次同步推 DELETE
+                            } else {
+                                db.deleteInterest(ip.id);              // 从未同步：直接删
+                            }
+                            android.util.Log.d("LCFAV", "sublist delete id=" + ip.id
+                                    + " remote=" + (db.remoteIdOf(ip.id) > 0 ? "tombstone" : "local-only"));
+                        } finally {
+                            db.close();
+                        }
+                        openFavoriteList();   // 重建列表，让用户看到结果
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+            return true;
+        });
         favoriteSubList.setVisibility(View.VISIBLE);
         android.util.Log.d("LCFAV", "sublist open rows=" + rows.size());
     }

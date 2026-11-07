@@ -627,6 +627,44 @@ R 超 3/255 约 1.3。这与客户端自报的「R 残差 4.3」是同一个量�
 本次复验用的指纹是：**commit `12f3c58` + 构建命令 + APK sha（仅作构建体标识，非身份） + `lastUpdateTime` + 全量 `LCFAV` 日志**。
 若要真包内指纹，需要在 `BuildConfig` 里注入 commit 并在页面/日志输出，属新增小改动，需另行派单。
 
+## 14. M3 Stage 3 七页判词（`51793a9`，2026-11-07 08:45–09:12）
+
+被测包：`feature/client-m3-stage3` = `51793a9`（+ `f17ac7a` 证据入库），干净 worktree `E:\APPDetector\wt\m3-stage3` 自建，
+`gradle assembleDebug --no-daemon` → `BUILD SUCCESSFUL in 1m 3s`；APK 7,285,748 B、sha256
+`E93AECC8E0C3C00142EF371CAE940591DF1E74EB377495AE4FE852312A7F69DD`，`lastUpdateTime=2026-11-07 08:46:07`。
+
+**采证纪律与一次作废**：Activity 非导出，`am start -n .M3PageActivity` 直接失败（前台回落桌面，随后点击落到桌面图标——
+一次窗口采到 `com.stczhhx.forestrysurvey` 的全是废数据，已作废）。七页最终**全部经抽屉进入**采证。
+另发现 `uiautomator dump /sdcard/a.xml` 在本机写不出文件（返回 dumped 但 `ls` 不存在），改用 `/data/local/tmp/a.xml` 后正常；
+期间 `com.android.commands.uiautomator` 因 `UiAutomationService already registered` 崩过多次，**不是应用崩溃**（应用侧无 FATAL）。
+
+### 14.1 抽屉（8 项）
+
+`地图设置 / 账户设置 / 投诉反馈 / 关于我们 / 联系我们 / 推荐给好友 / 帮助中心 / 用户协议` 共 8 项，逐字在位；
+底部版本号节点 `三维山水全景地图V 1.6.1 @[150,2495][518,2574]`（原版 `orig/drawer-menu-03.xml` `[150,2495][616,2574]`，文案逐字、宽度差 98）。
+无「开具发票」。
+
+### 14.2 逐页判词
+
+| # | 页面 | 结论 | 关键实测 |
+|---|---|---|---|
+| M3-01 | 账户设置 | **关账** | `返回 / 账户设置 / 本页的登录/绑定/注销需服务端账号体系支持，当前未接入（D-022）——以下为原版界面文案。/ 您当前未登录 / 立即登录`；头像见截图 `a-account.png`（dump 中 ImageView 无 id，按截图判） |
+| M3-02 | 投诉反馈 | **关账** | 两级：列表 `问题反馈 / 订单投诉 / 未选择任何订单` → 表单 `申请原因 / 联系方式 / 问题描述 / 问题截图 / 提交`（3 个 EditText）；空提交日志 `complaint validate fail`；填满后 `complaint submit blocked, online=true`（D-022，不伪造成功）；断网态见 `k-complaint-offline.png` |
+| M3-03 | 关于我们 | **关账** | 7 个正文节点与 `orig/about.xml` 逐字一致：`三维山水全景地图` / `重庆新知空间科技有限公司` / `测绘资质` / `v1.6.1` / `APP备案编号：渝ICP备20003923号-12A` / ` 《用户协议》 ` / ` 《隐私政策》 `（链接前后各一空格）；两节点版本号（非抽屉那行）；`测绘资质` 点击后前台仍 `M3PageActivity` + 日志 `measure prove page deferred by D-025`；备案编号 → `com.android.chrome/ChromeTabbedActivity`；`《用户协议》` → `M3WebActivity` 标题「用户协议」、正文加载，BACK 回 `M3PageActivity` |
+| M3-04 | 联系我们 | **关账** | `邮箱地址 / account@xinzhi.space / 复制邮箱`；点复制日志 `copy mail ok text=account@xinzhi.space`；无 tel/mailto（smali 侧确认不存在，不擅自加） |
+| M3-05 | 推荐给好友 | **关账（按 D-026）** | 面板 `选择要分享到的平台 / 微信 / 微信朋友圈 / 取消分享`；点朋友圈 → 系统 `HwResolverActivity`；日志 `share 微信朋友圈 channel=WEIXIN_CIRCLE ACTION_SEND -> wechat resolver (D-026 downgrade), text=我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~ url=https://sj.qq.com/appdetail/space.xinzhi.globe` ——标签与正文逐字、降级可复现，按总监口径不判「能否真发到朋友圈」 |
+| M3-06 | 帮助中心 | **关账** | `M3WebActivity` 远端 URL 真实加载（渲染出语雀「产品帮助中心」目录）；加载中态 `加载中…`（`l-help-loading.png`）；失败态 `加载失败：net::ERR_INTERNET_DISCONNECTED` + `原版同样依赖远端服务（D-023）… 可点「重试」` + `重试`（`g-help-offline.png`）；返回一层回 `MainActivity` |
+| M3-07 | 用户协议 | **关账** | `M3WebActivity` 标题「用户协议」，正文逐字渲染（`2025年09月08日`/`2025年09月23日`/条款正文…）；返回一层回 `MainActivity` |
+
+### 14.3 遗留（不阻塞本轮判词）
+
+- **D-026**：朋友圈分流能力丢失（技术不可得），页面不加提示，仅日志/台账体现；判据按标签+正文逐字+降级可复现。
+- **D-023**：帮助中心/用户协议离线态记「未确认（原版离线行为不可采证）」，实现侧有加载中/失败/重试三态。
+- **账户设置头像**：dump 中无 id，只能按截图判（`a-account.png` 可见灰底人像）。
+- **分享日志措辞**：入库日志（`verify-final.log`）里那行是旧措辞 `direct -> resolver`，代码与本次实测（`51793a9` 构建）已是
+  `channel=WEIXIN_CIRCLE ACTION_SEND -> wechat resolver (D-026 downgrade)`；客户端补 `d026-share.log` 后与代码一致，本条不影响判词。
+
+
 
 
 ### 11.1 右列四枚的真实形态（4× 放大复核，修正 §11 上表的措辞）

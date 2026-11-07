@@ -41,6 +41,10 @@ public class M3PageActivity extends Activity {
     private static final int DANGER = 0xFFE93B4D;
     private static final int DIVIDER = 0xFFE6E8EB;
 
+    /** M6 第 4 条：账户页「退出登录」原版贴底（父节点 [39,2512][1189,2578]），
+     *  必须挂在 ScrollView 之外，否则会随内容滚走。 */
+    private View bottomFixedButton;
+
     /** px -> dp。原版几何都是设备像素（720dpi 屏、density 3.375），实现必须按 dp 写。 */
     private int dp(float v) {
         return Math.round(v * getResources().getDisplayMetrics().density);
@@ -210,6 +214,16 @@ public class M3PageActivity extends Activity {
         scroll.addView(list);
         root.addView(scroll, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        // M6 第 4 条：账户页贴底红按钮（1150x66 由列表内距折出，这里固定在最底部，不随滚动）
+        if (bottomFixedButton != null) {
+            LinearLayout.LayoutParams blp2 = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 66);
+            blp2.leftMargin = 39;
+            blp2.rightMargin = 39;
+            blp2.bottomMargin = 24;
+            root.addView(bottomFixedButton, blp2);
+        }
 
         // 帮助中心 / 用户协议：原版就是远端 WebView，且是**整页 WebActivity**（逆向 smali $b$a$c/$d），
         // 整页打开，不在对话框里塞 WebView。
@@ -587,7 +601,8 @@ public class M3PageActivity extends Activity {
         logout.setBackground(logoutBg);
         logout.setPadding(0, dp(2), 0, dp(7));
         logout.setOnClickListener(v -> doLogout(token));
-        list.addView(logout);
+        // 贴底：挂到 root，不放进 ScrollView（原版 y 2512..2578 固定底部）
+        bottomFixedButton = logout;
     }
 
     /** 修改昵称（PATCH /v2/auth/me），成功后更新本地会话并刷新本页。 */

@@ -1982,6 +1982,71 @@ InterestListActivity:151  reload();     ← 删除后
 - **代码层：§30/§31/§32/§33 四项全部落地，互不冲突**（推送队列仍严、删除队列放宽、界面按账号、正匹配认领）。
 - **仍差真机五条**：①跨账号条数不减 ②崩窗口带 uid 守卫重跑 ③坐 90 向 270 还原 ④删除双向 ⑤§33（不可见+不可删）+ 孤儿墓碑归零。
 
+## 35. Stage 5 总判词（2026-11-07 23:05）
+
+### 35.1 真机证据包：我自己从磁盘复核过，六项成立
+
+证据目录 `E:\APPDetector\reports\M4-stage5-525704c\`（12 个本地库 + 3 份 dump + run.log），我不看结论表，直接读库：
+
+| 项 | 我自己读到的数 | 判定 |
+|---|---|---|
+| P0-① 跨账号 | `local-A.db` 三行 remote 343/344/345、owner 109；`local-A-zero.db` 同三行 owner 0；`before-sync` 3 行 → `after-sync` **3 行、owner 仍 0**；run.log `push=0 purgedRemote=0`、`B_ACTIVE=0` | **通过** |
+| ② 崩窗口 | `local-crash-pushed.db` id=50 / remote=0 / pending → `local-crash-after.db` id=**50** / remote=**346** / clean（同 id，未新建） | **通过** |
+| ③ 坐向 | `local-sit.db` id=51 / remote=347 / sit=90 / face=270 → `local-sit-pulled.db` id=53 / remote=347 / **sit=90 / face=270** | **通过** |
+| ④a 本机删 | `local-del.db` id=54 remote=348 `delete_pending=1` → `local-del-after.db` 该行消失；run.log `348:0 → 348:1` | **机制通过**（见 35.3） |
+| ④b 远端删 | `local-del-after.db` 里 remote 347（sit-row）已消失；run.log `SOFTDELETED=347:0` | **机制通过** |
+| ⑤ §33 | `sec33-B-list.xml`：`s33-a1`=0、`s33-a2`=0、`暂无收藏点`=1、无删除/确定节点；`sec33-B-longpress.xml` 同；`sec33-A-back-list.xml`：`s33-a1`=1、`s33-a2`=1；run.log `A_SRV_ACTIVE=2 A_SRV_IDS=349,350` 未变 | **通过** |
+| ⑥ 孤儿墓碑 | `orphan-before.db` id=56 remote=350 owner=**0** `delete_pending=1` → `orphan-after.db` 该行消失、无残留；run.log `DELETED=1 local_left=0` | **通过** |
+
+### 35.2 §33 的验证对象（必须写死，照办）
+
+**判据落在 `MainActivity` 的收藏列表覆盖层（`openFavoriteList()`，`MainActivity:1720-1752`），不是 `InterestListActivity`。**
+
+可达性事实（我自己核的，不是转述）：
+```
+AndroidManifest.xml:147-149   .InterestListActivity  exported="false"
+git grep 'InterestListActivity.class|".InterestListActivity"' → 只有两处 Manifest 声明，无任何 startActivity
+```
+→ 这个 Activity **没有任何启动点，用户进不去**；覆盖层才是用户能碰到的表面。
+覆盖层里 `openFavoriteList()` 用 `db.listInterest(LcSession.uid(this))` 取数（`:1722`），只有 `setOnItemClickListener`（点行跳图），**没有长按、没有删除按钮**。所以「B 侧看不到 A 的行、也点不到删除」成立。
+
+### 35.3 **新发现：删除功能在可达 UI 里根本不存在**（不阻塞 M4 机制判词，但必须登记）
+
+```
+唯一的删除 UI 入口：InterestListActivity:157 markInterestDeletePending / :159 deleteInterest
+   ↑ 该 Activity 无启动点、exported=false → 用户不可达
+可达覆盖层 MainActivity:1742 只有 setOnItemClickListener（跳图），没有删除动作
+```
+
+即：**收藏点可以建、可以同步、可以看，但用户没有任何入口能删掉它**（④ 里的删除是脚本走「界面等价路径」直接置墓碑验证的，验的是同步机制，不是用户功能）。
+
+- **不能**把 ④ 写成「删除功能通过」——它证明的是「墓碑推出/收敛正确」，用户路径缺失这半边没验。
+- 建议：要么把 `InterestListActivity` 接进可达路径（原版有「收藏列表」子页，覆盖层已有，加长按即可），要么删掉这个死 Activity 免得下一个人以为有删除功能。**登记为缺口**（`M4-GAP-DELETE-UI`），由总监定 M4 收尾还是 M5 首项。
+
+### 35.4 五条 done-when：我能独立证实到哪
+
+| # | done-when | 我的独立证据 | 结论 |
+|---|---|---|---|
+| 1 | 一键起、`/health` 200、volume 持久化、容器自检 | 自跑 `SELFCHECK: PASS (80 checks)`；`StartedAt 12:23` 而库内最早数据 `09:41`；`127.0.0.1:8787`；`schema=006` | **证实** |
+| 2 | 五条链路 + scrypt + 日志无明文 + token 不可猜 | 自跑注册/登录/登出(401)/改密(旧密 401、他人会话 401)/过期(401)；库内 40/40 `scrypt$N=32768`；145 行日志对密码与 token 明文 **命中 0**；token 43 字符=32B 随机、库内仅 sha256+pepper | **证实** |
+| 3 | 客户端真机闭环 + 降级可见 | E6.4：dump `提交成功` + 库内 `fb_be5c60c3…`（e64-reason/e64@example.com/e64-desc/type=2 逐字）；`e82` 降级文案、`e85` 恢复；本轮六项证据包我逐库复核 | **证实** |
+| 4 | 微信只取证/占位/DI | `LoginActivity:124` 占位+说明、`M3PageActivity:456-464`；D-031 | **证实** |
+| 5 | M3 遗留三项 | §17/§24：R2-013 A/B/C、R2-032 未回归、R2-027 面板 11 项；`d53d4bc` 与判据依据 `bfde9da` 六份证据逐字节相同 | **证实** |
+| 6 | 缺失清单逐项关闭或 DI | 产品台账（`m4-close-summary` v1.5），**我未逐条复核**，只核了 P0/§33 相关引用 | **未独立核实** |
+| 7 | `api.md` v2 定稿 | 文件在 develop，我读过 §0/§3.3（幂等语义、偏索引措辞） | **证实（内容抽样）** |
+| 8 | 工时台账 + copy/secret + report 全绿 | 六门与 `report exit 0` 是测试/总监跑的，**我未复跑**；只核了 `fidelity` 判词我已提交那部分 | **未独立核实** |
+
+### 35.5 已知限制（逐条，关账必须带上）
+
+1. **S3 装机场景未覆盖**：本机未出现 `UnifiedAuthenticationDialogActivity`，`PIN_IN_LOG=False` 是空真，**不得写成脱敏已验**。
+2. `adoptByRemoteIds` **只取第一页**，>200 条整轮跳过（不写不删，安全侧失败）；翻页与 tombstone 属 M5。
+3. **pepper 与库同卷**（`/data/.token-pepper` 与 `lc.sqlite` 同目录）：整卷泄露时「DB 泄露拿不到可用会话」不成立；建议 M5 走 `/run/secrets`。
+4. **无 TLS**（回环明文，仅 `127.0.0.1`/`localhost` 放行）。
+5. 两条 P1 转 M5：同步把 401/429 显示成「连不上本地服务」；401 后不清会话。
+6. **删除无用户入口**（`M4-GAP-DELETE-UI`，35.3）。
+7. `listDeletePending` 放行 `owner_uid=0` 是为清理既有孤儿墓碑，长期应随 tombstone 一并简化。
+
+
 
 
 

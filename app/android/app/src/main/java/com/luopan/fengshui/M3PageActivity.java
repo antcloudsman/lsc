@@ -189,6 +189,9 @@ public class M3PageActivity extends Activity {
             mineLp.gravity = Gravity.END | Gravity.TOP;
             mineLp.topMargin = 0;   // 原版 y115 = bar 顶
             mineLp.rightMargin = 15;
+            // X 补偿：rightMargin 落在 bar 右内距 dp(12)=41 里，右缘会退到 1172；
+            // 41 是有效补偿（审核验第七轮确认），Y 那个 -31 才是残留，已删。
+            mineBtn.setTranslationX(41f);
             bar.addView(mineBtn, mineLp);
         }
         root.addView(bar, new LinearLayout.LayoutParams(
@@ -197,7 +200,7 @@ public class M3PageActivity extends Activity {
         // 依赖标注（有则显示）
         // M6 第 4 条：原版「投诉反馈」没有这行自造说明，它会把握手位整体推下 141px（审审核验实测），
         // 按 1:1 去掉；依赖说明只留在日志里，不占版面。
-        String dep = "投诉反馈".equals(page) ? null : dependencyNote(page);
+        String dep = ("投诉反馈".equals(page) || "账户设置".equals(page)) ? null : dependencyNote(page);
         if (dep != null) {
             TextView note = new TextView(this);
             note.setId(R.id.lc_m3_dep_note);
@@ -213,7 +216,8 @@ public class M3PageActivity extends Activity {
         LinearLayout list = new LinearLayout(this);
         list.setId(R.id.lc_m3_body);
         list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(dp(12), 33, dp(12), dp(10));   // 首行目标 353：实测 320，差 +33
+        // 顶距 +33 只对投诉页（首行 320 -> 353）；账户页 body 起点不同，不能一起推
+        list.setPadding(dp(12), "投诉反馈".equals(page) ? 33 : 0, dp(12), dp(10));
         List<String> lines = readPage(page);
         // 三页有专属结构（不是纯文本列表）：投诉反馈两级、推荐给好友分享面板、账户设置未登录态
         if ("投诉反馈".equals(page)) {

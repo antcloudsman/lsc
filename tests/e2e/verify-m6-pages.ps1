@@ -63,7 +63,7 @@ foreach ($pg in $Pages) {
     # 回主界面（Activity/Dialog 都按两次返回兜底）
     GoBack; GoBack
     $ref = Join-Path $root ("docs\fidelity\m3\" + @{account='account-setting';complaint='complaint';about='about';contact='contact'}[$pg] + '.xml')
-    $out = & python (Join-Path $root 'checks\compare_page.py') $ref (Join-Path $OutDir ("act-$pg.xml")) --step 2>&1
+    $out = & python (Join-Path $root 'tests\lib\compare_page.py') $ref (Join-Path $OutDir ("act-$pg.xml")) --step 2>&1
     $txt = ($out | ForEach-Object { "$_" }) -join "`n"
     Add-Content -LiteralPath (Join-Path $OutDir 'compare.log') -Value ("== $pg ==`n" + $txt) -Encoding UTF8
     $verdict = if ($txt -match 'VERDICT=PASS') { 'PASS' } else { 'FAIL' }

@@ -2135,7 +2135,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         btnBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
         btnBg.setColor(0xFF2F59B8);
         btnBg.setCornerRadius(32f);
-        copy.setBackground(btnBg);
+        copy.setBackground(null);   // 蓝底改挂容器（否则 wrap_content 会把底色缩成 228 宽）
         copy.setOnClickListener(v -> {
             android.content.ClipboardManager cm =
                     (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
@@ -2149,6 +2149,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 蓝钮分两层（审客户端订正 + 总监裁定）：可点容器 = dump 583x157（距卡顶 331）；
         // 蓝色填充 = 像素实测 583x111，相对容器上下各内缩 23/19 —— 整块 157 涂蓝会高 46px。
         android.widget.FrameLayout btnBox = new android.widget.FrameLayout(this);
+        btnBox.setBackground(btnBg);   // 蓝填充 583x111 挂在容器上
         btnBox.setClickable(true);
         btnBox.setOnClickListener(v -> copy.performClick());
         // 文字节点宽度取 wrap_content（原版 `复制邮箱` 文本 [520,1497][708,1576] = 188 宽，

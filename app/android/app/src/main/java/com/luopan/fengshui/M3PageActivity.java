@@ -153,7 +153,7 @@ public class M3PageActivity extends Activity {
         TextView title = new TextView(this);
         title.setId(R.id.lc_m3_title);
         title.setText(page);
-        title.setTextSize(18f);
+        title.setTextSize(16f);   // 原版标题 216 宽 = 四字各 54px ≈ 16sp（18sp 会画成 240）
         title.setTextColor(TEXT_MAIN);
         android.widget.FrameLayout.LayoutParams titleLp =
                 new android.widget.FrameLayout.LayoutParams(
@@ -186,7 +186,9 @@ public class M3PageActivity extends Activity {
         root.addView(bar);
 
         // 依赖标注（有则显示）
-        String dep = dependencyNote(page);
+        // M6 第 4 条：原版「投诉反馈」没有这行自造说明，它会把握手位整体推下 141px（审审核验实测），
+        // 按 1:1 去掉；依赖说明只留在日志里，不占版面。
+        String dep = "投诉反馈".equals(page) ? null : dependencyNote(page);
         if (dep != null) {
             TextView note = new TextView(this);
             note.setId(R.id.lc_m3_dep_note);
@@ -897,11 +899,25 @@ public class M3PageActivity extends Activity {
                 });
             }
             android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(
-                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
                     android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
-            lp.topMargin = Math.max(0, ys[k] - statusBar);
+            lp.gravity = Gravity.CENTER_HORIZONTAL;
+            tv.setTag(ys[k]);
             stage.addView(tv, lp);
         }
+        stage.post(() -> {
+            int off = stage.getTop();
+            if (off <= 0) return;
+            for (int idx = 0; idx < stage.getChildCount(); idx++) {
+                View ch = stage.getChildAt(idx);
+                Object tag = ch.getTag();
+                if (!(tag instanceof Integer)) continue;
+                android.widget.FrameLayout.LayoutParams lp2 =
+                        (android.widget.FrameLayout.LayoutParams) ch.getLayoutParams();
+                lp2.topMargin = Math.max(0, ((Integer) tag) - off);
+                ch.setLayoutParams(lp2);
+            }
+        });
     }
 
     /**

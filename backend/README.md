@@ -5,7 +5,7 @@
 - 技术栈：Node 22（`node:http` + `node:sqlite`），**零 npm 依赖**，镜像基于 `node:22-bookworm-slim`
 - 端口：`127.0.0.1:8787`（compose 仅绑定回环，避免未鉴权接口暴露）
 - 数据：Docker volume `lc-backend_lc-data` → `/data/lc.sqlite`
-- 契约：[`api.md`](api.md)（v1，所有字段/错误码/同步语义以此为准）
+- 契约：[`api.md`](api.md)（v1，**已冻结为历史契约**）；**[`api-v2.draft.md`](api-v2.draft.md)（v2 草案：账号密码鉴权 / 会话 token / 收藏点同步 / 投诉反馈，未实现）**
 
 ## 一键起
 

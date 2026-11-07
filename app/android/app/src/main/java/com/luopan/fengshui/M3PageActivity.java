@@ -29,6 +29,24 @@ import java.util.List;
  */
 public class M3PageActivity extends Activity {
 
+    // M6 第 4 条：四页转浅色主题。取值为原版截图像素统计（docs/fidelity/m6/client-four-pages-diff.md §0.3）：
+    // 页面底 #F0F3F7 占 50–88%、白卡 #FFFFFF、主字色 #23272B、次字 (142,142,142)、链接蓝 (44,102,214)。
+    private static final int LIGHT_BG = 0xFFF0F3F7;
+    private static final int CARD_WHITE = 0xFFFFFFFF;
+    private static final int TEXT_MAIN = 0xFF23272B;
+    private static final int TEXT_SUB = 0xFF8E8E8E;
+    private static final int TEXT_HINT = 0xFF9C9C9C;
+    private static final int ACCENT = 0xFF2C66D6;
+    private static final int LINK = 0xFF2C66D6;
+    private static final int DANGER = 0xFFE93B4D;
+    private static final int DIVIDER = 0xFFE6E8EB;
+
+    /** px -> dp。原版几何都是设备像素（720dpi 屏、density 3.375），实现必须按 dp 写。 */
+    private int dp(float v) {
+        return Math.round(v * getResources().getDisplayMetrics().density);
+    }
+
+
     public static final String EXTRA_PAGE = "m3_page";
 
 
@@ -94,26 +112,39 @@ public class M3PageActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setId(R.id.lc_m3_root);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(26, 22, 18));
+        root.setBackgroundColor(LIGHT_BG);
 
         // 标题栏：返回 + 页名（原版标题逐字）
         LinearLayout bar = new LinearLayout(this);
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(20, 24, 20, 16);
+        bar.setPadding(dp(12), dp(7), dp(12), dp(5));
         TextView back = new TextView(this);
         back.setId(R.id.lc_m3_back);
         back.setText("返回");
         back.setTextSize(15f);
-        back.setTextColor(Color.rgb(235, 228, 215));
-        back.setPadding(0, 12, 32, 12);
+        back.setTextColor(TEXT_MAIN);
+        back.setPadding(0, dp(4), dp(10), dp(4));
         back.setOnClickListener(v -> finish());
         bar.addView(back);
+        // M6 第 4 条：投诉反馈一级页右上「我的」[1056,115][1213,272] = 157×157。
+        // 跳转目标未取证（complaint.xml 只给节点），按裁定**只渲染、不接线**：不猜目标，
+        // 设 clickable=false，避免留下一个点了没反应的入口。
+        if ("投诉反馈".equals(page)) {
+            TextView mineBtn = new TextView(this);
+            mineBtn.setId(R.id.lc_m3_mine);
+            mineBtn.setText("我的");
+            mineBtn.setTextSize(17f);
+            mineBtn.setTextColor(TEXT_MAIN);
+            mineBtn.setGravity(Gravity.CENTER);
+            mineBtn.setClickable(false);
+            bar.addView(mineBtn, new LinearLayout.LayoutParams(157, 157));
+        }
         TextView title = new TextView(this);
         title.setId(R.id.lc_m3_title);
         title.setText(page);
         title.setTextSize(18f);
-        title.setTextColor(Color.rgb(235, 228, 215));
+        title.setTextColor(TEXT_MAIN);
         bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         root.addView(bar);
 
@@ -124,8 +155,8 @@ public class M3PageActivity extends Activity {
             note.setId(R.id.lc_m3_dep_note);
             note.setText(dep);
             note.setTextSize(12f);
-            note.setTextColor(Color.rgb(220, 190, 130));
-            note.setPadding(20, 4, 20, 16);
+            note.setTextColor(ACCENT);
+            note.setPadding(dp(12), dp(1), dp(12), dp(5));
             root.addView(note);
         }
 
@@ -134,7 +165,7 @@ public class M3PageActivity extends Activity {
         LinearLayout list = new LinearLayout(this);
         list.setId(R.id.lc_m3_body);
         list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(20, 0, 20, 32);
+        list.setPadding(dp(12), 0, dp(12), dp(10));
         List<String> lines = readPage(page);
         // 三页有专属结构（不是纯文本列表）：投诉反馈两级、推荐给好友分享面板、账户设置未登录态
         if ("投诉反馈".equals(page)) {
@@ -156,8 +187,8 @@ public class M3PageActivity extends Activity {
                 TextView tv = new TextView(this);
                 tv.setText(lines.get(i));
                 tv.setTextSize(15f);
-                tv.setTextColor(Color.rgb(235, 228, 215));
-                tv.setPadding(0, 12, 0, 12);
+                tv.setTextColor(TEXT_MAIN);
+                tv.setPadding(0, dp(4), 0, dp(4));
                 list.addView(tv);
                 android.util.Log.d("LCM3", page + " line " + i + " = " + lines.get(i));
             }
@@ -168,8 +199,8 @@ public class M3PageActivity extends Activity {
             empty.setId(R.id.lc_m3_empty);
             empty.setText(needNote(page));
             empty.setTextSize(14f);
-            empty.setTextColor(Color.rgb(200, 190, 170));
-            empty.setPadding(0, 16, 0, 16);
+            empty.setTextColor(TEXT_SUB);
+            empty.setPadding(0, dp(5), 0, dp(5));
             list.addView(empty);
         }
         scroll.addView(list);
@@ -247,16 +278,16 @@ public class M3PageActivity extends Activity {
         tip.setId(R.id.lc_m3_tip);
         tip.setText("确认提交的信息准确无误，如果提交错误信息可能导致问题无法有效解决");
         tip.setTextSize(13f);
-        tip.setTextColor(Color.rgb(200, 190, 170));
-        tip.setPadding(0, 24, 0, 16);
+        tip.setTextColor(TEXT_SUB);
+        tip.setPadding(0, dp(7), 0, dp(5));
         list.addView(tip);
         // 提交结果行：三态可区分（校验不过 / 网络不可用 / 服务端未接入）。
         // 文案是 LC 本地提示（原版空提交行为未取证，未发真请求），不冒充原版文案。
         final TextView submitStatus = new TextView(this);
         submitStatus.setId(R.id.lc_m3_submit_status);
         submitStatus.setTextSize(13f);
-        submitStatus.setTextColor(Color.rgb(200, 190, 170));
-        submitStatus.setPadding(0, 8, 0, 16);
+        submitStatus.setTextColor(TEXT_SUB);
+        submitStatus.setPadding(0, dp(2), 0, dp(5));
         // 提交：本地必填校验；通过了也不发请求（D-022），但失败态必须能区分，不伪造成功
         TextView submit = new TextView(this);
         submit.setId(R.id.lc_m3_submit);
@@ -268,7 +299,7 @@ public class M3PageActivity extends Activity {
         bg.setColor(Color.rgb(50, 90, 182));
         bg.setCornerRadius(12f);
         submit.setBackground(bg);
-        submit.setPadding(0, 24, 0, 24);
+        submit.setPadding(0, dp(7), 0, dp(7));
         submit.setOnClickListener(v -> {
             final String r = reason.getText().toString().trim();
             final String c = contact.getText().toString().trim();
@@ -286,7 +317,7 @@ public class M3PageActivity extends Activity {
                 android.util.Log.d("LCM3", "complaint needs login");
                 return;
             }
-            submitStatus.setTextColor(Color.rgb(200, 190, 170));
+            submitStatus.setTextColor(TEXT_SUB);
             submitStatus.setText("提交中…");
             submit.setEnabled(false);
             // M4：接自建服务端 /v2/feedback/add（type=2 问题反馈）；失败按错误码/网络分开展示，不伪造成功。
@@ -340,7 +371,7 @@ public class M3PageActivity extends Activity {
         addLabel(list, "选择要分享到的平台");
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, 24, 0, 24);
+        row.setPadding(0, dp(12), 0, dp(12));
         View wx = shareItem(R.mipmap.lc_share_wx, "微信", false);
         wx.setId(R.id.lc_m3_share_wx);
         row.addView(wx);
@@ -352,9 +383,9 @@ public class M3PageActivity extends Activity {
         cancel.setId(R.id.lc_m3_share_cancel);
         cancel.setText("取消分享");
         cancel.setTextSize(15f);
-        cancel.setTextColor(Color.rgb(200, 190, 170));
+        cancel.setTextColor(TEXT_SUB);
         cancel.setGravity(Gravity.CENTER);
-        cancel.setPadding(0, 24, 0, 24);
+        cancel.setPadding(0, dp(7), 0, dp(7));
         cancel.setOnClickListener(v -> finish());
         list.addView(cancel);
     }
@@ -363,16 +394,16 @@ public class M3PageActivity extends Activity {
         LinearLayout item = new LinearLayout(this);
         item.setOrientation(LinearLayout.VERTICAL);
         item.setGravity(Gravity.CENTER);
-        item.setPadding(0, 8, 48, 8);
+        item.setPadding(0, dp(2), dp(14), dp(2));
         android.widget.ImageView iv = new android.widget.ImageView(this);
         iv.setImageResource(iconRes);
         item.addView(iv, new LinearLayout.LayoutParams(164, 164));
         TextView tv = new TextView(this);
         tv.setText(label);
         tv.setTextSize(14f);
-        tv.setTextColor(Color.rgb(235, 228, 215));
+        tv.setTextColor(TEXT_MAIN);
         tv.setGravity(Gravity.CENTER);
-        tv.setPadding(0, 12, 0, 0);
+        tv.setPadding(0, dp(4), 0, 0);
         item.addView(tv);
         item.setOnClickListener(v -> shareTo(label, timeline));
         return item;
@@ -423,7 +454,7 @@ public class M3PageActivity extends Activity {
         android.widget.ImageView avatarImg = new android.widget.ImageView(this);
         avatarImg.setId(R.id.lc_m3_avatar_img);
         avatarImg.setImageResource(R.mipmap.lc_default_avatar);
-        avatarImg.setPadding(0, 24, 0, 12);
+        avatarImg.setPadding(0, dp(7), 0, dp(4));
         list.addView(avatarImg, new LinearLayout.LayoutParams(120, 120));
 
         final String token = LcSession.token(this);
@@ -433,15 +464,15 @@ public class M3PageActivity extends Activity {
             avatar.setId(R.id.lc_m3_avatar);
             avatar.setText("您当前未登录");
             avatar.setTextSize(17f);
-            avatar.setTextColor(Color.rgb(235, 228, 215));
-            avatar.setPadding(0, 16, 0, 16);
+            avatar.setTextColor(TEXT_MAIN);
+            avatar.setPadding(0, dp(5), 0, dp(5));
             list.addView(avatar);
             TextView login = new TextView(this);
             login.setId(R.id.lc_m3_login);
             login.setText("立即登录");
             login.setTextSize(16f);
-            login.setTextColor(Color.rgb(220, 190, 130));
-            login.setPadding(0, 8, 0, 24);
+            login.setTextColor(ACCENT);
+            login.setPadding(0, dp(2), 0, dp(7));
             login.setOnClickListener(v ->
                     startActivityForResult(new android.content.Intent(this, LoginActivity.class), LoginActivity.REQ));
             list.addView(login);
@@ -451,8 +482,8 @@ public class M3PageActivity extends Activity {
             boundPhone.setId(R.id.lc_m3_bind_phone);
             boundPhone.setText("绑定手机");
             boundPhone.setTextSize(14f);
-            boundPhone.setTextColor(Color.rgb(150, 130, 100));
-            boundPhone.setPadding(0, 8, 0, 8);
+            boundPhone.setTextColor(TEXT_HINT);
+            boundPhone.setPadding(0, dp(2), 0, dp(2));
             boundPhone.setOnClickListener(v -> android.widget.Toast.makeText(this,
                     "绑定手机号需短信验证码服务（D-029），本轮不实现", android.widget.Toast.LENGTH_SHORT).show());
             list.addView(boundPhone);
@@ -461,8 +492,8 @@ public class M3PageActivity extends Activity {
             oneTap.setId(R.id.lc_m3_onetap);
             oneTap.setText("一键登录");
             oneTap.setTextSize(14f);
-            oneTap.setTextColor(Color.rgb(150, 130, 100));
-            oneTap.setPadding(0, 8, 0, 8);
+            oneTap.setTextColor(TEXT_HINT);
+            oneTap.setPadding(0, dp(2), 0, dp(2));
             oneTap.setOnClickListener(v -> android.widget.Toast.makeText(this,
                     "一键登录需运营商号码认证（D-030），本轮不实现", android.widget.Toast.LENGTH_SHORT).show());
             list.addView(oneTap);
@@ -471,8 +502,8 @@ public class M3PageActivity extends Activity {
             wx.setId(R.id.lc_m3_wechat_entry);
             wx.setText("微信登录");
             wx.setTextSize(14f);
-            wx.setTextColor(Color.rgb(150, 130, 100));
-            wx.setPadding(0, 8, 0, 24);
+            wx.setTextColor(TEXT_HINT);
+            wx.setPadding(0, dp(2), 0, dp(7));
             wx.setOnClickListener(v -> android.widget.Toast.makeText(this,
                     "微信登录需微信开放平台登记包名+签名（D-031），本项目本包无法通过校验", android.widget.Toast.LENGTH_SHORT).show());
             list.addView(wx);
@@ -486,8 +517,8 @@ public class M3PageActivity extends Activity {
         nameRow.setId(R.id.lc_m3_nickname);
         nameRow.setText("昵称：" + nickShown + "　（点此修改）");
         nameRow.setTextSize(17f);
-        nameRow.setTextColor(Color.rgb(235, 228, 215));
-        nameRow.setPadding(0, 16, 0, 12);
+        nameRow.setTextColor(TEXT_MAIN);
+        nameRow.setPadding(0, dp(5), 0, dp(4));
         nameRow.setOnClickListener(v -> showEditNameDialog(token, nickShown));
         list.addView(nameRow);
 
@@ -496,16 +527,16 @@ public class M3PageActivity extends Activity {
         accountRow.setText("账号：" + user.optString("username", "")
                 + "　uid：" + user.optInt("uid", 0));
         accountRow.setTextSize(14f);
-        accountRow.setTextColor(Color.rgb(200, 190, 170));
-        accountRow.setPadding(0, 0, 0, 20);
+        accountRow.setTextColor(TEXT_SUB);
+        accountRow.setPadding(0, 0, 0, dp(6));
         list.addView(accountRow);
 
         TextView changePw = new TextView(this);
         changePw.setId(R.id.lc_m3_changepw);
         changePw.setText("修改密码");
         changePw.setTextSize(16f);
-        changePw.setTextColor(Color.rgb(220, 190, 130));
-        changePw.setPadding(0, 8, 0, 16);
+        changePw.setTextColor(ACCENT);
+        changePw.setPadding(0, dp(2), 0, dp(5));
         changePw.setOnClickListener(v -> showChangePasswordDialog(token));
         list.addView(changePw);
 
@@ -513,8 +544,8 @@ public class M3PageActivity extends Activity {
         sync.setId(R.id.lc_m3_sync);
         sync.setText("同步收藏点（本地优先，失败留离线队列）");
         sync.setTextSize(16f);
-        sync.setTextColor(Color.rgb(220, 190, 130));
-        sync.setPadding(0, 8, 0, 16);
+        sync.setTextColor(ACCENT);
+        sync.setPadding(0, dp(2), 0, dp(5));
         sync.setOnClickListener(v -> {
             sync.setEnabled(false);
             sync.setText("同步中…");
@@ -540,8 +571,8 @@ public class M3PageActivity extends Activity {
         logout.setId(R.id.lc_m3_logout);
         logout.setText("退出登录");
         logout.setTextSize(16f);
-        logout.setTextColor(Color.rgb(220, 120, 100));
-        logout.setPadding(0, 8, 0, 24);
+        logout.setTextColor(DANGER);
+        logout.setPadding(0, dp(2), 0, dp(7));
         logout.setOnClickListener(v -> doLogout(token));
         list.addView(logout);
     }
@@ -638,8 +669,8 @@ public class M3PageActivity extends Activity {
         TextView tv = new TextView(this);
         tv.setText(text);
         tv.setTextSize(15f);
-        tv.setTextColor(Color.rgb(200, 190, 170));
-        tv.setPadding(0, 20, 0, 8);
+        tv.setTextColor(TEXT_SUB);
+        tv.setPadding(0, dp(6), 0, dp(2));
         list.addView(tv);
     }
 
@@ -647,8 +678,8 @@ public class M3PageActivity extends Activity {
         android.widget.EditText et = new android.widget.EditText(this);
         et.setId(id);
         et.setHint(hint);
-        et.setHintTextColor(Color.rgb(150, 130, 100));
-        et.setTextColor(Color.rgb(235, 228, 215));
+        et.setHintTextColor(TEXT_HINT);
+        et.setTextColor(TEXT_MAIN);
         et.setTextSize(15f);
         et.setSingleLine(false);
         list.addView(et, new LinearLayout.LayoutParams(
@@ -664,17 +695,24 @@ public class M3PageActivity extends Activity {
         TextView tv = new TextView(this);
         tv.setText(name);
         tv.setTextSize(17f);
-        tv.setTextColor(Color.rgb(235, 228, 215));
+        tv.setTextColor(TEXT_MAIN);
         row.addView(tv, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         if (!right.isEmpty()) {
             TextView r = new TextView(this);
             r.setText(right);
             r.setTextSize(14f);
-            r.setTextColor(Color.rgb(150, 130, 100));
+            r.setTextColor(TEXT_HINT);
             row.addView(r);
         }
         if (clickable) row.setOnClickListener(onClick);
+        // M6 第 4 条：原版行是白卡上的条目（底 #F0F3F7 + 白卡 + 1px 分隔），行高 48dp。
+        row.setBackgroundColor(CARD_WHITE);
+        row.setMinimumHeight(dp(48));
         list.addView(row);
+        View divider = new View(this);
+        divider.setBackgroundColor(DIVIDER);
+        list.addView(divider, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, dp(0.3f))));
     }
 
     /**
@@ -694,11 +732,11 @@ public class M3PageActivity extends Activity {
             TextView tv = new TextView(this);
             tv.setText(text);
             tv.setTextSize(15f);
-            tv.setTextColor(Color.rgb(235, 228, 215));
+            tv.setTextColor(TEXT_MAIN);
             tv.setPadding(0, 12, 0, 12);
             if ("复制邮箱".equals(text) && mail != null) {
                 tv.setId(R.id.lc_m3_copy_mail);
-                tv.setTextColor(Color.rgb(120, 170, 240));
+                tv.setTextColor(LINK);
                 tv.setOnClickListener(v -> {
                     // 原版 smali（ui/compose/c0$a$b）：ClipData.newPlainText("Label", "account@xinzhi.space")
                     // → setPrimaryClip → toast「复制成功」。label 与 toast 都按原版逐字。
@@ -730,16 +768,16 @@ public class M3PageActivity extends Activity {
             tv.setTextSize(15f);
             tv.setPadding(0, 12, 0, 12);
             if (text.contains("《用户协议》")) {
-                tv.setTextColor(Color.rgb(120, 170, 240));
+                tv.setTextColor(LINK);
                 // 逆向：AboutActivity$b$a$c → WebActivity.i.b(ctx, "yhxyb.html", "用户协议")，应用内 WebView
                 tv.setOnClickListener(v -> showWeb("用户协议", AGREEMENT_URL));
             } else if (text.contains("《隐私政策》")) {
-                tv.setTextColor(Color.rgb(120, 170, 240));
+                tv.setTextColor(LINK);
                 // 逆向：…$d → WebActivity.i.b(ctx, "privacy.html", "隐私政策")，同一载体；URL = 同一 base + privacy.html
                 tv.setOnClickListener(v -> showWeb("隐私政策", PRIVACY_URL));
             } else if (text.startsWith("APP备案编号")) {
                 // 逆向：beian.miit.gov.cn 走 ACTION_VIEW → **外部浏览器**（不是应用内 WebView）
-                tv.setTextColor(Color.rgb(120, 170, 240));
+                tv.setTextColor(LINK);
                 tv.setOnClickListener(v -> {
                     try {
                         startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
@@ -751,11 +789,11 @@ public class M3PageActivity extends Activity {
             } else if ("测绘资质".equals(text)) {
                 // 逆向：AboutActivity$b$a$a → MeasureProveActivity（目标页超出 M3 七页范围）
                 // 按 D-025 本轮只保文案/位置 1:1、**不跳转**；不篡改可见文案（原版这行是蓝色可点文本）。
-                tv.setTextColor(Color.rgb(120, 170, 240));
+                tv.setTextColor(LINK);
                 tv.setOnClickListener(v ->
                         android.util.Log.d("LCM3", "measure prove page deferred by D-025"));
             } else {
-                tv.setTextColor(Color.rgb(235, 228, 215));
+                tv.setTextColor(TEXT_MAIN);
             }
             list.addView(tv);
         }

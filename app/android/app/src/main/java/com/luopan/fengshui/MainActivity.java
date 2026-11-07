@@ -2042,12 +2042,106 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 sharePage.putExtra(M3PageActivity.EXTRA_PAGE, label);
                 startActivity(sharePage);
                 break;
+            case "联系我们":
+                // M6 第 4 条：原版「联系我们」是**对话框**（白卡叠在抽屉上），不是整页。
+                // 证据：m3/contact.png 实图 + contact.xml 无「返回」/标题节点；
+                // 几何见 docs/fidelity/m6/client-four-pages-diff.md（891×567 @ x168..1058、y1127..1693）。
+                showContactDialog();
+                break;
             default: {
                 android.content.Intent page = new android.content.Intent(this, M3PageActivity.class);
                 page.putExtra(M3PageActivity.EXTRA_PAGE, label);
                 startActivity(page);
             }
         }
+    }
+
+    /**
+     * M6 第 4 条：「联系我们」= 原版**对话框**（不是整页 Activity）。
+     *
+     * 几何全部是**设备像素**（截图量测，见 `docs/fidelity/m6/client-four-pages-diff.md` §5.3），
+     * 因此这里直接用 px，**不过 dp()**：
+     * 白卡 891×567 @ x168..1058 / y1127..1693（水平居中）、圆角 ≈56px；
+     * 标题 `邮箱地址` 距卡顶 72px、正文 223px、蓝按钮 583×111 距卡顶 354px、左右内距 154px。
+     * 文案逐字 `邮箱地址` / `account@xinzhi.space` / `复制邮箱`。
+     * 复制行为沿用原版 smali（`ClipData.newPlainText("Label", …)` + toast「复制成功」），不新造提示。
+     */
+    private void showContactDialog() {
+        final String mail = "account@xinzhi.space";
+        final int cardW = 891, cardH = 567;
+
+        android.widget.LinearLayout col = new android.widget.LinearLayout(this);
+        col.setOrientation(android.widget.LinearLayout.VERTICAL);
+        col.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        col.setPadding(154, 72, 154, 0);
+
+        TextView title = new TextView(this);
+        title.setText("邮箱地址");
+        title.setTextSize(17f);
+        title.setTextColor(0xFF23272B);
+        title.setGravity(android.view.Gravity.CENTER);
+        col.addView(title, new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 79));
+
+        TextView value = new TextView(this);
+        value.setText(mail);
+        value.setTextSize(17f);
+        value.setTextColor(0xFF23272B);
+        value.setGravity(android.view.Gravity.CENTER);
+        android.widget.LinearLayout.LayoutParams vlp = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 79);
+        vlp.topMargin = 72;
+        col.addView(value, vlp);
+
+        TextView copy = new TextView(this);
+        copy.setId(R.id.lc_m3_copy_mail);
+        copy.setText("复制邮箱");
+        copy.setTextSize(17f);
+        copy.setTextColor(android.graphics.Color.WHITE);
+        copy.setGravity(android.view.Gravity.CENTER);
+        android.graphics.drawable.GradientDrawable btnBg = new android.graphics.drawable.GradientDrawable();
+        btnBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        btnBg.setColor(0xFF2F59B8);
+        btnBg.setCornerRadius(32f);
+        copy.setBackground(btnBg);
+        copy.setOnClickListener(v -> {
+            android.content.ClipboardManager cm =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            if (cm != null) {
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("Label", mail));
+                android.widget.Toast.makeText(this, "复制成功", android.widget.Toast.LENGTH_SHORT).show();
+            }
+            android.util.Log.d("LCM3", "copy mail ok text=" + mail + " via dialog");
+        });
+        android.widget.LinearLayout.LayoutParams blp = new android.widget.LinearLayout.LayoutParams(583, 111);
+        blp.topMargin = 52;
+        col.addView(copy, blp);
+
+        android.graphics.drawable.GradientDrawable cardBg = new android.graphics.drawable.GradientDrawable();
+        cardBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        cardBg.setColor(android.graphics.Color.WHITE);
+        cardBg.setCornerRadius(56f);
+        android.widget.LinearLayout card = new android.widget.LinearLayout(this);
+        card.setOrientation(android.widget.LinearLayout.VERTICAL);
+        card.setBackground(cardBg);
+        card.addView(col, new android.widget.LinearLayout.LayoutParams(cardW, cardH));
+
+        android.app.Dialog d = new android.app.Dialog(this);
+        d.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        android.widget.FrameLayout wrap = new android.widget.FrameLayout(this);
+        wrap.addView(card, new android.widget.FrameLayout.LayoutParams(cardW, cardH));
+        d.setContentView(wrap);
+        if (d.getWindow() != null) {
+            d.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            android.view.WindowManager.LayoutParams lp = d.getWindow().getAttributes();
+            lp.width = cardW;
+            lp.height = cardH;
+            lp.gravity = android.view.Gravity.CENTER;
+            d.getWindow().setAttributes(lp);
+        }
+        d.show();
+        android.util.Log.d("LCM3", "contact dialog shown " + cardW + "x" + cardH);
     }
 
     // ---------------- R2-004：POI 详情面板 ----------------

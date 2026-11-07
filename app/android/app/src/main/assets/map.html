@@ -84,7 +84,7 @@
 </div>
 <div id="hud"></div>
 <button id="fsExit" onclick="toggleFullScreen()">退出全屏</button>
-<div id="srcInfo">数据来自天地图地形（等价替代原版世纪空间）· 审图号：未确认</div>
+<div id="srcInfo">数据来自天地图地形 · 审图号：待核对</div>
 <div id="srcPanel"><div class="box"><h3>底图源</h3>
   <div class="srchint">原版 12 源；无 key 的置灰（D-006），审图号须按源官方核对</div>
   <div id="srcBox"></div>
@@ -1511,9 +1511,9 @@ var MAP_SOURCES = [
   { name: "吉林一号·全球", layer: null, note: "需授权" },
   { name: "吉林一号·全国", layer: null, note: "需授权" },
   { name: "世纪空间卫星", layer: null, note: "原版默认源，需授权（有意差异）" },
-  { name: "天地图卫星", layer: "img", review: "未确认" },
-  { name: "天地图地图", layer: "vec", review: "未确认" },
-  { name: "天地图地形", layer: "ter", review: "未确认" },
+  { name: "天地图卫星", layer: "img", review: "待核对" },
+  { name: "天地图地图", layer: "vec", review: "待核对" },
+  { name: "天地图地形", layer: "ter", review: "待核对" },
   { name: "高德卫星", layer: null, note: "需 key" },
   { name: "高德地图", layer: null, note: "需 key" },
   { name: "腾讯卫星", layer: null, note: "需 key" },
@@ -1559,9 +1559,12 @@ function selectSource(i) {
 }
 
 function attributionText(s) {
-  s = s || { name: "天地图地形", review: "未确认" };
+  s = s || { name: "天地图地形", review: "待核对" };
   if (s.text) return s.text;   /* 自带完整文案的来源（wayback：境外影像，无审图号）不套天地图模板 */
-  return "数据来自" + s.name + "（等价替代原版世纪空间）· 审图号：" + (s.review || "未确认");
+  /* R2-032：按源分源显示。原版是「数据来自世纪空间 审图号：GS(2026)1219号」；
+   * 我方图源换成天地图后，来源名按当前源给，审图号用各源自己的状态（待核对 / 需授权），
+   * 不把内部替换说明写进用户可见角注，也不编造官方审图号。 */
+  return "数据来自" + s.name + " · 审图号：" + (s.review || "待核对");
 }
 
 /* K-01：角注由地图提供数据、原生底部栏负责呈现；不得照抄原版审图号（与底图服务商绑定）。
@@ -1569,7 +1572,7 @@ function attributionText(s) {
 function getAttribution() {
   var i = sourceOfBase(base);
   if (i < 0) i = srcIndex;
-  var s = MAP_SOURCES[i] || { name: "天地图地形", review: "未确认" };
+  var s = MAP_SOURCES[i] || { name: "天地图地形", review: "待核对" };
   var wb = (s.layer === "wayback");
   return {
     source: s.name,
@@ -1583,7 +1586,7 @@ function getAttribution() {
 function updateSrcInfo() {
   var i = sourceOfBase(base);
   if (i >= 0) srcIndex = i;
-  var s = MAP_SOURCES[srcIndex] || { name: "天地图地形", review: "未确认" };
+  var s = MAP_SOURCES[srcIndex] || { name: "天地图地形", review: "待核对" };
   var el = document.getElementById("srcInfo");
   if (el) el.textContent = attributionText(s);
 }

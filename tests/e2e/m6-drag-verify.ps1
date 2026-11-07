@@ -110,7 +110,8 @@ foreach ($b in 30, 330, 90) {
 }
 Js 'sitMode=0;bearing=0;applyTransform()' | Out-Null
 
-$lu = ((AdbLine "dumpsys package $pkg") -split "`n" | Select-String 'lastUpdateTime=' | Select-Object -First 1)
-Log ("lastUpdate=" + $(if ($lu) { $lu.Line.Trim() } else { '(unavailable)' }))
+$dump = (AdbLine "dumpsys package $pkg")
+$lu = [regex]::Match($dump, 'lastUpdateTime=(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
+Log ("lastUpdate=" + $(if ($lu.Success) { $lu.Groups[1].Value } else { '(unavailable)' }))
 Log ("fails=" + $script:fails + " out=" + $OutDir)
 if ($script:fails -eq 0) { exit 0 } else { exit 1 }

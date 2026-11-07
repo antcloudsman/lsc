@@ -1,0 +1,33 @@
+# M4 投诉反馈表单可测性修正（不改变可见 UI）
+# 设备 L2E0222531014833  Android 12  采证 2026-11-07 20:28-20:31
+# 分支 feature/client-m4-form-a11y（base develop 8f9265f）
+# APK sha256 247e912b4f1e16f59004384f8b404ae13b15c7bfb6066ca8d2c340d578e6142f（设备 pm path 一致）
+
+## 为什么改
+M4 E2E 的 E6.4 曾三次把三段文本全落进第一个 EditText。根因不在脚本：
+1. 三个 EditText 没有 resource-id → 只能靠 hint（有值即消失）或坐标定位；
+2. M3PageActivity 没有 adjustResize → 键盘弹起时表单被遮挡、不重排，按坐标点第二/三框会落回第一框。
+
+## 改了什么（三条，均不改变可见 UI）
+1. 三个输入框加稳定 id：lc_m3_reason / lc_m3_contact / lc_m3_desc（id 不可见，不影响 1:1）；
+2. AndroidManifest M3PageActivity 加 android:windowSoftInputMode="adjustResize"（只影响键盘态布局）；
+3. 焦点进入任一字段时 smoothScrollTo 滚进可视区（对应原版表单的滚动容器行为）。
+
+## 代码自查
+- ScrollView 查找修正：链是 root→scroll→list，list.getParent() 才是 ScrollView；
+  第一版写成 getParent().getParent() 会在运行时 ClassCastException（build 能过），已改为 instanceof 判空。
+- addInput 签名加 id 参数，仅三个举报表单调用点，无其它调用者。
+
+## 真机实测（按 id 定位，不用坐标、不用 keyevent 4）
+form-fg=com.luopan.fengshui/.M3PageActivity
+stable-ids: reason=1 contact=1 desc=1
+edittext-count=3
+  lc_m3_reason  = [form-reason]
+  lc_m3_contact = [form@example.com]
+  lc_m3_desc    = [form-desc]
+submit-btn=1
+submit-status=[提交成功]
+
+## 结论
+按 id 逐字段填写一次通过，提交成功；测试不再需要「hint + 逐字段兜底 + 固定坐标」这些替代手段。
+本改动是根因修正，不改变任何可见像素或文案，不影响 1:1 判据。

@@ -218,11 +218,25 @@ public class M3PageActivity extends Activity {
 
     private void buildComplaintForm(LinearLayout list) {
         addLabel(list, "申请原因");
-        final android.widget.EditText reason = addInput(list, "");
+        final android.widget.EditText reason = addInput(list, "", R.id.lc_m3_reason);
         addLabel(list, "联系方式");
-        final android.widget.EditText contact = addInput(list, "请输入您的联系方式");
+        final android.widget.EditText contact = addInput(list, "请输入您的联系方式", R.id.lc_m3_contact);
         addLabel(list, "问题描述");
-        final android.widget.EditText desc = addInput(list, "请输入详细问题描述，以便我们提供更好的服务");
+        final android.widget.EditText desc = addInput(list,
+                "请输入详细问题描述，以便我们提供更好的服务", R.id.lc_m3_desc);
+        // 键盘弹起时把当前焦点字段滚进可视区（原版表单同样是滚动容器 + resize）。
+        // M4 E2E：不加这段时第三个框会被键盘挡住，脚本按坐标点会落回第一个框。
+        // 注意 list 的直接父级才是 ScrollView（root → scroll → list），不能取 getParent().getParent()。
+        android.view.ViewParent p = list.getParent();
+        final ScrollView formScroll = (p instanceof ScrollView) ? (ScrollView) p : null;
+        android.view.View.OnFocusChangeListener scrollToFocus = (v, hasFocus) -> {
+            if (hasFocus && formScroll != null) {
+                formScroll.postDelayed(() -> formScroll.smoothScrollTo(0, v.getTop()), 250);
+            }
+        };
+        reason.setOnFocusChangeListener(scrollToFocus);
+        contact.setOnFocusChangeListener(scrollToFocus);
+        desc.setOnFocusChangeListener(scrollToFocus);
         addLabel(list, "问题截图");
         android.widget.ImageView addImg = new android.widget.ImageView(this);
         addImg.setId(R.id.lc_m3_add_image);
@@ -629,12 +643,14 @@ public class M3PageActivity extends Activity {
         list.addView(tv);
     }
 
-    private android.widget.EditText addInput(LinearLayout list, String hint) {
+    private android.widget.EditText addInput(LinearLayout list, String hint, int id) {
         android.widget.EditText et = new android.widget.EditText(this);
+        et.setId(id);
         et.setHint(hint);
         et.setHintTextColor(Color.rgb(150, 130, 100));
         et.setTextColor(Color.rgb(235, 228, 215));
         et.setTextSize(15f);
+        et.setSingleLine(false);
         list.addView(et, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         return et;

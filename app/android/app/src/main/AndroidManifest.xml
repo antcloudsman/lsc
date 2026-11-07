@@ -38,6 +38,7 @@
         <activity
             android:name=".M3PageActivity"
             android:exported="false"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.Luopan.Light" />
 
         <!-- M3：远端 WebView 整页载体（原版 WebActivity 形态） -->

@@ -5,15 +5,25 @@ services:
     build: .
     image: lc-backend:local
     container_name: lc-backend
+    init: true
     ports:
-      # Local demo only: never expose the unauthenticated API on a public interface.
+      # Local demo only: bound to loopback, never a public interface.
       - "127.0.0.1:8787:8787"
     environment:
       PORT: "8787"
       DB_PATH: /data/lc.sqlite
       PUBLIC_BASE_URL: ${LC_PUBLIC_BASE_URL:-http://127.0.0.1:8787}
+      # Opaque-token pepper. Prefer a secrets file or env; when empty the server
+      # generates /data/.token-pepper (0600) once and reuses it across restarts.
+      LC_TOKEN_PEPPER: ${LC_TOKEN_PEPPER:-}
+      LC_TOKEN_TTL_DAYS: ${LC_TOKEN_TTL_DAYS:-30}
+      LC_CORS_ORIGIN: ${LC_CORS_ORIGIN:-}
+      LC_RATE_LIMIT: ${LC_RATE_LIMIT:-1}
     volumes:
       - lc-data:/data
+    # Optional: mount the pepper as a Docker secret instead of env.
+    # secrets:
+    #   - lc_token_pepper
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
@@ -24,3 +34,7 @@ services:
 
 volumes:
   lc-data:
+
+# secrets:
+#   lc_token_pepper:
+#     file: ../../../secrets/lc_token_pepper.txt

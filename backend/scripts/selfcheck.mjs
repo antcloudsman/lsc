@@ -1,142 +1,305 @@
 #!/usr/bin/env node
 /**
- * LC backend self-check: exercises every endpoint of the v0.1 contract.
- * Usage: node --no-warnings scripts/selfcheck.mjs            (default http://127.0.0.1:8787)
- *        BASE_URL=http://host:port node --no-warnings scripts/selfcheck.mjs
- * Exit code 0 = PASS, 1 = FAIL.
+ * LC backend v2 self-check.
+ *
+ * Runs inside the container (or on any host that has Node 22) against a live
+ * server and exercises the account chains from backend/api.md v2:
+ *   register -> login -> me -> sessions -> password -> favorites -> feedback -> logout
+ * plus expiry, authorization isolation, rate limiting and the /v1 -> 410 switch.
+ *
+ * Usage: docker compose exec api node --no-warnings scripts/selfcheck.mjs
+ *        BASE_URL=http://127.0.0.1:8787 node --no-warnings scripts/selfcheck.mjs
+ * Exit code 0 = PASS, 1 = FAIL. Tokens are never printed.
  */
-const BASE = (process.env.BASE_URL || 'http://127.0.0.1:8787').replace(/\/+$/, '');
-const stamp = Date.now();
-const owner = `selfcheck_${stamp}`;
+import { DatabaseSync } from 'node:sqlite';
 
-let failures = 0;
+const BASE = (process.env.BASE_URL || 'http://127.0.0.1:8787').replace(/\/+$/, '');
+const DB_PATH = process.env.DB_PATH || '/data/lc.sqlite';
+const stamp = Date.now().toString(36);
+
 let checks = 0;
+let failures = 0;
 
 function pass(message) {
   checks += 1;
   console.log(`[PASS] ${message}`);
 }
+
 function fail(message) {
   checks += 1;
   failures += 1;
   console.error(`[FAIL] ${message}`);
 }
+
 function check(condition, message) {
   if (condition) pass(message);
   else fail(message);
 }
 
-async function call(method, pathName, body) {
-  const headers = {};
-  if (body !== undefined) headers['content-type'] = 'application/json';
-  const res = await fetch(BASE + pathName, {
+async function call(method, pathname, { body, token, headers = {}, raw } = {}) {
+  const merged = { ...headers };
+  if (body !== undefined || raw !== undefined) merged['content-type'] = merged['content-type'] || 'application/json';
+  if (token) merged.token = token;
+  const res = await fetch(BASE + pathname, {
     method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: merged,
+    body: raw !== undefined ? raw : body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await res.text();
   let json = null;
-  try { json = text ? JSON.parse(text) : null; } catch { /* non-JSON (HTML page) */ }
-  return { status: res.status, json, text };
+  try { json = text ? JSON.parse(text) : null; } catch { /* non-JSON */ }
+  return { status: res.status, json, text, headers: res.headers };
+}
+
+const envelopeOk = (res, status = 200) =>
+  res.status === status && res.json?.code === 200 && res.json?.msg === 'ok';
+
+const envelopeError = (res, status) =>
+  res.status === status && res.json?.code === status && typeof res.json?.msg === 'string' && res.json?.data === null;
+
+async function register(username, password, displayName) {
+  return call('POST', '/v2/auth/register', { body: { username, password, display_name: displayName } });
 }
 
 async function main() {
-  console.log(`LC backend self-check against ${BASE}`);
+  console.log(`LC backend v2 self-check against ${BASE} (run ${stamp})`);
 
+  // ---- 0. health / envelope --------------------------------------------
   const health = await call('GET', '/health');
-  check(health.status === 200, `GET /health -> 200 (got ${health.status})`);
-  check(health.json?.status === 'ok', `health.status == ok (got ${health.json?.status})`);
+  check(health.status === 200 && health.json?.status === 'ok', 'GET /health -> 200 status=ok');
   check(health.json?.db === 'ok', 'health.db == ok');
+  check(typeof health.json?.schema === 'string' && health.json.schema.startsWith('00'), `schema migrated (${health.json?.schema})`);
 
-  const created = await call('POST', '/v1/cases', {
-    owner_id: owner,
-    title: 'Selfcheck Case',
-    sit_degree: 135,
-    facing_degree: 315,
-    compass_type: 'sanyuan',
-    tags: ['selfcheck', '135'],
-    notes: 'created by selfcheck.mjs',
-    location: { lat: 30.25, lng: 120.15, name: 'Hangzhou' },
-    data: { payload: { keys: ['a', 'b'] } },
+  const root = await call('GET', '/');
+  check(root.status === 200 && root.json?.api === '/v2', 'GET / advertises api=/v2');
+
+  // ---- 1. register -----------------------------------------------------
+  const userA = `lc${stamp}a`;
+  const passA = 'SelfCheck-A-1';
+  const regA = await register(userA, passA, '自检甲');
+  check(envelopeOk(regA, 201), `register ${userA} -> 201 envelope code=200`);
+  check(typeof regA.json?.data?.token === 'string' && regA.json.data.token.length === 43, 'register returns a 43-char opaque token');
+  check(regA.json?.data?.user?.username === userA, 'register returns the user');
+  check(regA.json?.data?.user?.password_hash === undefined, 'user payload never exposes password_hash');
+  check(typeof regA.json?.data?.expires_at === 'string', 'register returns expires_at');
+  let tokenA1 = regA.json?.data?.token;
+
+  const dup = await register(userA.toUpperCase(), 'SelfCheck-A-2');
+  check(envelopeError(dup, 409), 'duplicate username (case-insensitive) -> 409');
+  const weak = await register(`lc${stamp}weak`, 'short');
+  check(envelopeError(weak, 400), 'password shorter than 8 -> 400');
+  const badName = await register('ab', 'SelfCheck-A-3');
+  check(envelopeError(badName, 400), 'username shorter than 3 -> 400');
+
+  // ---- 2. login --------------------------------------------------------
+  const login1 = await call('POST', '/v2/auth/login', { body: { username: userA, password: passA } });
+  check(envelopeOk(login1), 'login with correct password -> 200');
+  tokenA1 = login1.json?.data?.token ?? tokenA1;
+  const wrong = await call('POST', '/v2/auth/login', { body: { username: userA, password: 'Wrong-Pass-1' } });
+  check(envelopeError(wrong, 401), 'login with wrong password -> 401');
+  check(typeof wrong.json?.msg === 'string' && wrong.json.msg.length > 0, 'error envelope carries a msg');
+
+  const noToken = await call('GET', '/v2/auth/me');
+  check(envelopeError(noToken, 401), 'GET /v2/auth/me without token -> 401');
+  const badToken = await call('GET', '/v2/auth/me', { token: 'x'.repeat(43) });
+  check(envelopeError(badToken, 401), 'GET /v2/auth/me with unknown token -> 401');
+
+  const me = await call('GET', '/v2/auth/me', { token: tokenA1 });
+  check(envelopeOk(me) && me.json?.data?.user?.username === userA, 'GET /v2/auth/me returns the current user');
+  check(me.json?.data?.user?.uid > 0, 'user.uid is a positive integer (original CollectPointModel userId type)');
+
+  const patched = await call('PATCH', '/v2/auth/me', { token: tokenA1, body: { display_name: '自检甲·改' } });
+  check(envelopeOk(patched) && patched.json?.data?.user?.display_name === '自检甲·改', 'PATCH /v2/auth/me updates display_name');
+
+  // ---- 3. sessions -----------------------------------------------------
+  const login2 = await call('POST', '/v2/auth/login', { body: { username: userA, password: passA } });
+  const tokenA2 = login2.json?.data?.token;
+  check(envelopeOk(login2) && typeof tokenA2 === 'string', 'second login issues a second session');
+  const sessions = await call('GET', '/v2/auth/sessions', { token: tokenA1 });
+  // register + two logins = three sessions (each issuance is a session)
+  check(envelopeOk(sessions) && sessions.json?.data?.count === 3, 'session list shows 3 active sessions (register + 2 logins)');
+  check(sessions.json?.data?.items?.every((s) => s.token === undefined), 'session list never returns tokens');
+  const current = sessions.json?.data?.items?.find((s) => s.current === true);
+  check(Boolean(current), 'session list marks the current session');
+  const target = sessions.json?.data?.items?.find((s) => s.id !== current?.id);
+  const revokedOther = await call('DELETE', `/v2/auth/sessions/${encodeURIComponent(target?.id ?? 'sess_missing')}`, { token: tokenA1 });
+  check(envelopeOk(revokedOther), 'DELETE /v2/auth/sessions/{id} revokes a session');
+  const deadA2 = await call('GET', '/v2/auth/me', { token: tokenA2 });
+  check(envelopeError(deadA2, 401), 'revoked session token -> 401');
+
+  // ---- 4. password change ---------------------------------------------
+  const badCurrent = await call('POST', '/v2/auth/password', {
+    token: tokenA1, body: { current_password: 'Wrong-Current-1', new_password: 'SelfCheck-A-9' },
   });
-  check(created.status === 201, `POST /v1/cases -> 201 (got ${created.status})`);
-  const caseId = created.json?.case?.id;
-  check(typeof caseId === 'string' && caseId.length > 0, 'created case has an id');
-  check(created.json?.case?.facing_degree === 315, 'facing_degree round-trips');
-
-  const fetched = await call('GET', `/v1/cases/${encodeURIComponent(caseId)}?owner_id=${owner}`);
-  check(fetched.status === 200 && fetched.json?.case?.title === 'Selfcheck Case', 'GET /v1/cases/{id} returns the case');
-
-  const updated = await call('PUT', `/v1/cases/${encodeURIComponent(caseId)}`, {
-    owner_id: owner,
-    notes: 'updated by selfcheck.mjs',
-    sit_degree: 136,
+  check(envelopeError(badCurrent, 401), 'password change with wrong current password -> 401');
+  const passA2 = 'SelfCheck-A-2';
+  const changed = await call('POST', '/v2/auth/password', {
+    token: tokenA1, body: { current_password: passA, new_password: passA2 },
   });
-  check(updated.status === 200 && updated.json?.case?.notes === 'updated by selfcheck.mjs', 'PUT /v1/cases/{id} merges fields');
-  check(updated.json?.case?.title === 'Selfcheck Case', 'PUT keeps fields that were not sent');
+  check(envelopeOk(changed) && changed.json?.data?.changed === true, 'password change -> 200 changed=true');
+  const oldPass = await call('POST', '/v2/auth/login', { body: { username: userA, password: passA } });
+  check(envelopeError(oldPass, 401), 'login with the old password -> 401');
+  const newPass = await call('POST', '/v2/auth/login', { body: { username: userA, password: passA2 } });
+  check(envelopeOk(newPass), 'login with the new password -> 200');
+  let tokenA3 = newPass.json?.data?.token;
+  check(typeof tokenA3 === 'string', 'post-change login issues a token');
 
-  const listed = await call('GET', `/v1/cases?owner_id=${owner}`);
-  check(listed.status === 200 && listed.json?.items?.length === 1, 'GET /v1/cases lists 1 case');
-
-  const settingsPut = await call('PUT', `/v1/settings/${owner}`, {
-    settings: { theme: 'dark', active_compass: 3, sound: false },
+  // ---- 5. favorites ----------------------------------------------------
+  const p1 = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3,
+    body: {
+      name: '自检·西湖', address: '杭州市西湖区', latitude: 30.2501, longitude: 120.1502,
+      des: '坐向：巽山乾向', images: '[]', icon: 'default', style: '0', overlay: 1, dbId: 12,
+      userId: 999999, // must be ignored: the server uses the token's user
+    },
   });
-  check(settingsPut.status === 200 && settingsPut.json?.rev > 0, 'PUT /v1/settings/{owner} stores settings');
-  const settingsGet = await call('GET', `/v1/settings/${owner}`);
-  check(settingsGet.status === 200 && settingsGet.json?.settings?.active_compass === 3, 'GET /v1/settings/{owner} returns settings');
+  check(envelopeOk(p1, 201), 'POST /v2/userCollectPoint/save creates a point -> 201');
+  check(p1.json?.data?.point?.userId !== 999999, 'client-sent userId is ignored (server overrides it)');
+  check(p1.json?.data?.point?.name === '自检·西湖' && p1.json?.data?.point?.overlay === 1, 'favorite round-trips original fields');
+  const p1id = p1.json?.data?.point?.id;
+  const p1rev = p1.json?.data?.point?.rev;
 
-  const pullBefore = await call('GET', `/v1/sync/pull?owner_id=${owner}&since=0`);
-  check(pullBefore.status === 200 && pullBefore.json?.sync?.changes?.length >= 3, 'GET /v1/sync/pull returns change log');
-  const cursor = pullBefore.json?.sync?.cursor;
-
-  const pushed = await call('POST', '/v1/sync/push', {
-    owner_id: owner,
-    cases: [{
-      id: `case_push_${stamp}`,
-      title: 'Pushed Case',
-      sit_degree: 90,
-      facing_degree: 270,
-    }],
-    settings: { theme: 'light' },
+  const p2 = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, body: { name: '自检·第二处', latitude: 31.1, longitude: 121.2 },
   });
-  check(pushed.status === 200 && pushed.json?.sync?.applied?.length === 1, 'POST /v1/sync/push applies one case');
-  const pulledAfter = await call('GET', `/v1/sync/pull?owner_id=${owner}&since=${cursor}`);
-  check(pulledAfter.status === 200 && pulledAfter.json?.sync?.changes?.some((c) => c.entity_id === `case_push_${stamp}`), 'pull after cursor sees the pushed case');
+  const p2id = p2.json?.data?.point?.id;
+  check(envelopeOk(p2, 201), 'second favorite created -> 201');
 
-  const share = await call('POST', '/v1/shares', { owner_id: owner, case_id: caseId, expires_in_days: 7 });
-  check(share.status === 201 && typeof share.json?.share?.token === 'string', 'POST /v1/shares creates a link');
-  const token = share.json?.share?.token;
-  const shareGet = await call('GET', `/v1/shares/${token}`);
-  check(shareGet.status === 200 && shareGet.json?.share?.case?.title === 'Selfcheck Case', 'GET /v1/shares/{token} returns the shared case');
-  check(shareGet.json?.share?.case?.owner_id === undefined, 'shared case does not leak owner_id');
-  const page = await call('GET', `/s/${token}`);
-  check(page.status === 200 && page.text.includes('Selfcheck Case') && page.text.includes('山水罗盘'), 'GET /s/{token} serves the HTML share page');
+  const list = await call('GET', '/v2/userCollectPoint/list', { token: tokenA3 });
+  check(envelopeOk(list) && list.json?.data?.count === 2, 'favorite list returns 2 points');
+  check(list.json?.data?.items?.every((p) => typeof p.rev === 'number' && p.deleted === false), 'list items carry rev/deleted extensions');
+  const cursor = list.json?.data?.cursor;
 
-  const invalid = await call('POST', '/v1/cases', { owner_id: owner });
-  check(invalid.status === 400 && invalid.json?.error?.code === 'invalid_field', 'missing title -> 400 invalid_field');
-  const notFound = await call('GET', `/v1/cases/case_missing_000?owner_id=${owner}`);
-  check(notFound.status === 404 && notFound.json?.error?.code === 'case_not_found', 'unknown case -> 404 case_not_found');
+  const incremental = await call('GET', `/v2/userCollectPoint/list?since=${cursor}`, { token: tokenA3 });
+  check(envelopeOk(incremental) && incremental.json?.data?.count === 0, 'since=cursor returns no changes (incremental sync)');
 
-  const deleted = await call('DELETE', `/v1/cases/${encodeURIComponent(caseId)}?owner_id=${owner}`);
-  check(deleted.status === 200 && deleted.json?.deleted === true, 'DELETE /v1/cases/{id} soft-deletes');
-  const afterDelete = await call('GET', `/v1/cases/${encodeURIComponent(caseId)}?owner_id=${owner}`);
-  check(afterDelete.status === 404, 'deleted case is no longer visible');
-  const pullDeleted = await call('GET', `/v1/sync/pull?owner_id=${owner}&since=${pulledAfter.json?.sync?.cursor}`);
-  check(pullDeleted.status === 200 && pullDeleted.json?.sync?.changes?.some((c) => c.op === 'delete'), 'change log records the delete');
+  const conflict = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, body: { id: p1id, rev: p1rev + 5, name: 'stale' },
+  });
+  check(
+    conflict.status === 409 && conflict.json?.code === 409 && conflict.json?.data?.server?.id === p1id,
+    'stale rev on save -> 409 with server snapshot'
+  );
+  const updated = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, body: { id: p1id, rev: p1rev, des: '坐向：巽山乾向（已改）' },
+  });
+  check(envelopeOk(updated) && updated.json?.data?.point?.des.includes('已改'), 'save with matching rev updates the point');
+  check(updated.json?.data?.point?.name === '自检·西湖', 'update keeps fields that were not sent');
 
-  const revoked = await call('DELETE', `/v1/shares/${token}?owner_id=${owner}`);
-  check(revoked.status === 200 && revoked.json?.revoked === true, 'DELETE /v1/shares/{token} revokes the link');
-  const shareAfterRevoke = await call('GET', `/v1/shares/${token}`);
-  check(shareAfterRevoke.status === 404, 'revoked share link returns 404');
+  const del = await call('DELETE', `/v2/userCollectPoint/delete?id=${p2id}`, { token: tokenA3 });
+  check(envelopeOk(del) && del.json?.data?.deleted === true, 'DELETE /v2/userCollectPoint/delete soft-deletes');
+  const afterDel = await call('GET', '/v2/userCollectPoint/list', { token: tokenA3 });
+  check(envelopeOk(afterDel) && afterDel.json?.data?.count === 1, 'deleted point disappears from the list');
+  const resurrect = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenA3, body: { id: p2id, name: '复活' },
+  });
+  check(envelopeError(resurrect, 404), 'saving a deleted point id -> 404 (no resurrection)');
+
+  // ---- 6. feedback -----------------------------------------------------
+  const fb = await call('POST', '/v2/feedback/add', {
+    token: tokenA3,
+    headers: { 'idempotency-key': `idem-${stamp}` },
+    body: { contactWay: 'selfcheck', orderNum: '', reasons: '自检反馈', remark: '', type: 2 },
+  });
+  check(envelopeOk(fb, 201) && fb.json?.data?.feedback?.type === 2, 'POST /v2/feedback/add accepts type=2');
+  const fbId = fb.json?.data?.feedback?.id;
+  const fbAgain = await call('POST', '/v2/feedback/add', {
+    token: tokenA3,
+    headers: { 'idempotency-key': `idem-${stamp}` },
+    body: { reasons: '自检反馈重复提交', type: 2 },
+  });
+  check(envelopeOk(fbAgain) && fbAgain.json?.data?.feedback?.id === fbId, 'same Idempotency-Key returns the same feedback');
+
+  const fbBadType = await call('POST', '/v2/feedback/add', {
+    token: tokenA3, body: { reasons: 'type 1', type: 1 },
+  });
+  check(envelopeError(fbBadType, 400), 'feedback type other than 2 -> 400 (original value range not proven)');
+  const fbAttach = await call('POST', '/v2/feedback/add', {
+    token: tokenA3, body: { reasons: 'attachment', type: 2, attachments: '[{"url":"x"}]' },
+  });
+  check(envelopeError(fbAttach, 400), 'non-empty attachments -> 400 (image upload is DI)');
+  const fbList = await call('GET', '/v2/feedback/list', { token: tokenA3 });
+  check(envelopeOk(fbList) && fbList.json?.data?.count >= 1, 'GET /v2/feedback/list returns own feedback');
+
+  // ---- 7. authorization isolation (A's token must not touch B) ----------
+  const userB = `lc${stamp}b`;
+  const regB = await register(userB, 'SelfCheck-B-1', '自检乙');
+  const tokenB = regB.json?.data?.token;
+  check(envelopeOk(regB, 201), `register ${userB} -> 201`);
+  const listB = await call('GET', '/v2/userCollectPoint/list', { token: tokenB });
+  check(envelopeOk(listB) && listB.json?.data?.count === 0, "B's list does not contain A's favorites");
+  const bDeletesA = await call('DELETE', `/v2/userCollectPoint/delete?id=${p1id}`, { token: tokenB });
+  check(envelopeError(bDeletesA, 404), "B deleting A's favorite -> 404 (ownership enforced)");
+  const bSavesA = await call('POST', '/v2/userCollectPoint/save', {
+    token: tokenB, body: { id: p1id, name: '被乙改' },
+  });
+  check(envelopeError(bSavesA, 404), "B saving A's favorite id -> 404 (ownership enforced)");
+  const bFbList = await call('GET', '/v2/feedback/list', { token: tokenB });
+  check(envelopeOk(bFbList) && bFbList.json?.data?.count === 0, "B's feedback list does not contain A's feedback");
+
+  // ---- 8. session expiry ------------------------------------------------
+  const userC = `lc${stamp}c`;
+  const regC = await register(userC, 'SelfCheck-C-1');
+  const tokenC = regC.json?.data?.token;
+  check(envelopeOk(regC, 201), `register ${userC} -> 201`);
+  const sessionsC = await call('GET', '/v2/auth/sessions', { token: tokenC });
+  const sessionCId = sessionsC.json?.data?.items?.find((s) => s.current)?.id;
+  let db = null;
+  try {
+    db = new DatabaseSync(DB_PATH);
+    db.prepare('UPDATE sessions SET expires_at = ? WHERE id = ?')
+      .run(new Date(Date.now() - 60_000).toISOString(), sessionCId);
+  } catch (error) {
+    fail(`could not expire a session in ${DB_PATH}: ${error.message}`);
+  } finally {
+    db?.close();
+  }
+  const expired = await call('GET', '/v2/auth/me', { token: tokenC });
+  check(envelopeError(expired, 401), 'expired session token -> 401');
+
+  // ---- 9. protocol edges ------------------------------------------------
+  const v1 = await call('GET', '/v1/cases?owner_id=x');
+  check(v1.status === 410 && v1.json?.code === 410 && v1.json?.data?.replacement === '/v2', '/v1/* -> 410 with replacement /v2');
+  const notJson = await call('POST', '/v2/auth/login', { raw: 'username=a&password=b', headers: { 'content-type': 'text/plain' } });
+  check(notJson.status === 415, `non-JSON content-type -> 415 (got ${notJson.status})`);
+  const tooBig = await call('POST', '/v2/feedback/add', {
+    token: tokenA3, body: { reasons: 'x'.repeat(300 * 1024), type: 2 },
+  });
+  check(tooBig.status === 413, `oversized body -> 413 (got ${tooBig.status})`);
+  const evilCors = await call('GET', '/health', { headers: { origin: 'http://evil.example' } });
+  check(evilCors.headers.get('access-control-allow-origin') === null, 'CORS: unknown origin gets no Allow-Origin header');
+
+  // ---- 10. logout -------------------------------------------------------
+  const logout = await call('POST', '/v2/auth/logout', { token: tokenA3 });
+  check(envelopeOk(logout), 'POST /v2/auth/logout -> 200');
+  const afterLogout = await call('GET', '/v2/auth/me', { token: tokenA3 });
+  check(envelopeError(afterLogout, 401), 'logged-out token -> 401');
+  const meA1 = await call('GET', '/v2/auth/me', { token: tokenA1 });
+  check(envelopeOk(meA1), 'other session of the same user stays valid');
+  const logoutAll = await call('POST', '/v2/auth/logout-all', { token: tokenA1 });
+  check(envelopeOk(logoutAll) && logoutAll.json?.data?.revoked >= 1, 'POST /v2/auth/logout-all revokes remaining sessions');
+  const afterLogoutAll = await call('GET', '/v2/auth/me', { token: tokenA1 });
+  check(envelopeError(afterLogoutAll, 401), 'logout-all invalidates the token used for the call');
+
+  // ---- 11. login rate limit (last: it burns the per-user budget) --------
+  const userD = `lc${stamp}d`;
+  await register(userD, 'SelfCheck-D-1');
+  let limited = null;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const res = await call('POST', '/v2/auth/login', { body: { username: userD, password: 'Wrong-Pass-9' } });
+    if (res.status === 429) { limited = res; break; }
+  }
+  check(limited !== null, 'six wrong logins in a minute -> 429');
+  check(limited?.json?.msg?.includes('频繁'), '429 message says the request is too frequent');
+  check(Number(limited?.headers.get('retry-after') ?? 0) > 0, '429 carries Retry-After');
 
   console.log('');
   if (failures === 0) {
     console.log(`SELFCHECK: PASS (${checks} checks)`);
     process.exit(0);
-  } else {
-    console.error(`SELFCHECK: FAIL (${failures}/${checks} checks failed)`);
-    process.exit(1);
   }
+  console.error(`SELFCHECK: FAIL (${failures}/${checks} checks failed)`);
+  process.exit(1);
 }
 
 main().catch((error) => {

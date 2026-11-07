@@ -1,271 +1,310 @@
+/**
+ * LC backend v2 — 127.0.0.1-only JSON API.
+ *
+ * Contract: backend/api.md (v2). Envelope `{code,msg,data}` with success code 200
+ * (matching the original ApiResult), opaque `token` header, scrypt password
+ * hashes, hashed session tokens, in-memory rate limits, redacted logs.
+ *
+ * All dependencies are inside the container: node:22 + node:http + node:sqlite.
+ */
 import http from 'node:http';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.js';
+import { hashPassword, verifyPassword, burnPasswordTime } from './password.mjs';
+import { loadPepper, generateToken, hashToken } from './token.mjs';
+import { SlidingWindowLimiter } from './ratelimit.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const SERVICE = 'lc-backend';
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const PORT = Number(process.env.PORT || 8787);
+// Inside the container we listen on 0.0.0.0 so compose can map 127.0.0.1:8787.
 const HOST = process.env.HOST || '0.0.0.0';
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'lc.sqlite');
-const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`).replace(/\/+$/, '');
-const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
-const BODY_LIMIT = 1024 * 1024;
-const OWNER_RE = /^[A-Za-z0-9._:-]{1,128}$/;
-const CASE_ID_RE = /^[A-Za-z0-9_-]{6,64}$/;
+
+const TOKEN_TTL_DAYS = clampInt(process.env.LC_TOKEN_TTL_DAYS, 30, 1, 365);
+const MAX_SESSIONS_PER_USER = 10;
+const LIMIT_AUTH_BYTES = 16 * 1024;
+const LIMIT_BUSINESS_BYTES = 256 * 1024;
+const RATE_LIMIT_ENABLED = process.env.LC_RATE_LIMIT !== '0';
+const CORS_ORIGINS = (process.env.LC_CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const USERNAME_RE = /^[A-Za-z0-9._-]{3,32}$/;
+const PASSWORD_MIN = 8;
+const PASSWORD_MAX = 128;
+const FEEDBACK_TYPE_KNOWN = 2; // 原版取证到的唯一值（FeedbackViewModel.P）
+
+const RATE_LIMITS = {
+  // Per-IP budgets are loose enough to run selfcheck repeatedly; the per-user
+  // login window (5/min) is the actual brute-force control.
+  loginIp: { limit: 60, windowMs: 60_000 },
+  loginIpHour: { limit: 600, windowMs: 60 * 60_000 },
+  loginUser: { limit: 5, windowMs: 60_000 },
+  registerIp: { limit: 100, windowMs: 60 * 60_000 },
+  passwordUser: { limit: 5, windowMs: 60 * 60_000 },
+  feedbackUser: { limit: 5, windowMs: 60 * 60_000 },
+};
+
+function clampInt(raw, fallback, min, max) {
+  const value = Number(raw);
+  if (!Number.isInteger(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
 
 const store = openDb(DB_PATH);
+const pepper = loadPepper();
+const limiter = new SlidingWindowLimiter();
 const startedAt = Date.now();
 
-class HttpError extends Error {
-  constructor(status, code, message, details) {
+// Unknown-username logins must cost the same as real ones (no user enumeration by timing).
+const dummyHash = await hashPassword(randomUUID());
+
+if (pepper.source === 'file') {
+  logSafe('warn', { event: 'pepper_generated', note: 'set LC_TOKEN_PEPPER or mount /run/secrets/lc_token_pepper' });
+}
+
+class ApiError extends Error {
+  constructor(status, message, { data = null, headers = {} } = {}) {
     super(message);
     this.status = status;
-    this.code = code;
-    this.details = details;
+    this.data = data;
+    this.headers = headers;
   }
 }
 
-function fail(status, code, message, details) {
-  throw new HttpError(status, code, message, details);
+function fail(status, message, options) {
+  throw new ApiError(status, message, options);
 }
 
-function baseHeaders() {
+function logSafe(level, fields) {
+  const line = { t: new Date().toISOString(), level, ...fields };
+  const text = JSON.stringify(line);
+  if (level === 'error') console.error(text);
+  else console.log(text);
+}
+
+function corsHeaders(req) {
+  const origin = req.headers.origin;
+  if (!origin || !CORS_ORIGINS.includes(origin)) return {};
   return {
-    'access-control-allow-origin': CORS_ORIGIN,
-    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'access-control-allow-headers': 'content-type',
+    'access-control-allow-origin': origin,
+    'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'access-control-allow-headers': 'content-type, token, authorization, idempotency-key',
     'access-control-max-age': '600',
-    'x-content-type-options': 'nosniff',
+    vary: 'Origin',
   };
 }
 
-function sendJson(res, status, body) {
-  const data = JSON.stringify(body);
+function send(res, req, status, payload, extraHeaders = {}) {
+  const body = JSON.stringify(payload);
   res.writeHead(status, {
-    ...baseHeaders(),
+    ...corsHeaders(req),
     'content-type': 'application/json; charset=utf-8',
-    'content-length': Buffer.byteLength(data),
+    'content-length': Buffer.byteLength(body),
     'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    ...extraHeaders,
   });
-  res.end(data);
+  res.end(body);
 }
 
-function sendHtml(res, status, html) {
-  res.writeHead(status, {
-    ...baseHeaders(),
-    'content-type': 'text/html; charset=utf-8',
-    'content-length': Buffer.byteLength(html),
-    'cache-control': 'no-store',
-  });
-  res.end(html);
+function ok(res, req, data, status = 200) {
+  send(res, req, status, { code: 200, msg: 'ok', data });
 }
 
-function readBody(req, limit = BODY_LIMIT) {
+function sendError(res, req, status, message, { data = null, headers = {} } = {}) {
+  send(res, req, status, { code: status, msg: message, data }, headers);
+}
+
+function readBody(req, limit) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
+    let aborted = false;
     req.on('data', (chunk) => {
+      if (aborted) return;
       size += chunk.length;
       if (size > limit) {
-        reject(new HttpError(413, 'payload_too_large', `request body exceeds ${limit} bytes`));
-        req.destroy();
+        aborted = true;
+        reject(new ApiError(413, '请求体过大'));
+        req.resume(); // drain the rest so the 413 response can still be written
         return;
       }
       chunks.push(chunk);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', (error) => {
-      if (error instanceof HttpError) reject(error);
-      else reject(new HttpError(400, 'bad_request', 'could not read request body'));
+    req.on('end', () => {
+      if (!aborted) resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+    req.on('error', () => {
+      if (!aborted) reject(new ApiError(400, '读取请求体失败'));
     });
   });
 }
 
-async function readJson(req) {
-  const raw = await readBody(req);
+async function readJson(req, limit) {
+  const raw = await readBody(req, limit);
   if (!raw.trim()) return {};
   const type = String(req.headers['content-type'] || '');
-  if (type && !type.includes('application/json')) {
-    fail(415, 'unsupported_media_type', 'Content-Type must be application/json');
-  }
+  if (type && !type.includes('application/json')) fail(415, '仅接受 application/json');
   let parsed;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    fail(400, 'invalid_json', 'request body is not valid JSON');
+    fail(400, '请求体不是合法 JSON');
   }
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    fail(400, 'invalid_json', 'request body must be a JSON object');
+    fail(400, '请求体必须是 JSON 对象');
   }
   return parsed;
 }
 
-function requireOwner(value) {
-  if (typeof value !== 'string' || !OWNER_RE.test(value)) {
-    fail(400, 'invalid_owner_id', 'owner_id is required (1-128 chars: A-Z a-z 0-9 . _ : -)');
+// ----- validation --------------------------------------------------------
+
+function asString(value, field, maxLength, { allowEmpty = false, required = false } = {}) {
+  if (value === undefined || value === null) {
+    if (required) fail(400, `参数不合法：${field}`);
+    return undefined;
   }
+  if (typeof value !== 'string') fail(400, `参数不合法：${field}`);
+  const text = value.trim();
+  if (!allowEmpty && text.length === 0) fail(400, `参数不合法：${field}`);
+  if (text.length > maxLength) fail(400, `参数不合法：${field} 超过 ${maxLength} 字符`);
+  return text;
+}
+
+function asUsername(value) {
+  const text = asString(value, 'username', 32, { required: true });
+  if (!USERNAME_RE.test(text)) {
+    fail(400, '用户名需为 3–32 位字母、数字、点、下划线或连字符');
+  }
+  return text;
+}
+
+function asPassword(value, field = 'password') {
+  if (typeof value !== 'string') fail(400, `参数不合法：${field}`);
+  if (value.length < PASSWORD_MIN || value.length > PASSWORD_MAX) {
+    fail(400, `密码长度需为 ${PASSWORD_MIN}–${PASSWORD_MAX} 位`);
+  }
+  if (value.trim().length === 0) fail(400, '密码不能全为空白字符');
   return value;
 }
 
-function asString(value, field, maxLength, { allowEmpty = false } = {}) {
-  if (typeof value !== 'string') fail(400, 'invalid_field', `${field} must be a string`);
-  const trimmed = value.trim();
-  if (!allowEmpty && trimmed.length === 0) fail(400, 'invalid_field', `${field} must not be empty`);
-  if (trimmed.length > maxLength) fail(400, 'invalid_field', `${field} exceeds ${maxLength} chars`);
-  return trimmed;
-}
-
-function asDegree(value, field) {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 360) {
-    fail(400, 'invalid_field', `${field} must be a number in [0, 360]`);
+function asInt(value, field, { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER, fallback } = {}) {
+  if (value === undefined || value === null || value === '') {
+    if (fallback !== undefined) return fallback;
+    fail(400, `参数不合法：${field}`);
   }
-  return value === 360 ? 0 : value;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) fail(400, `参数不合法：${field}`);
+  return parsed;
 }
 
-function asTags(value) {
-  if (!Array.isArray(value)) fail(400, 'invalid_field', 'tags must be an array of strings');
-  if (value.length > 32) fail(400, 'invalid_field', 'tags may contain at most 32 items');
-  return value.map((tag, index) => {
-    if (typeof tag !== 'string') fail(400, 'invalid_field', `tags[${index}] must be a string`);
-    const trimmed = tag.trim();
-    if (trimmed.length > 32) fail(400, 'invalid_field', `tags[${index}] exceeds 32 chars`);
-    return trimmed;
-  }).filter(Boolean);
+function parseQueryInt(raw, field, { min = 0, max = Number.MAX_SAFE_INTEGER, fallback } = {}) {
+  if (raw === null || raw === undefined || raw === '') return fallback;
+  return asInt(raw, field, { min, max, fallback });
 }
 
-function asLocation(value) {
-  if (value === null) return null;
-  if (typeof value !== 'object' || Array.isArray(value)) fail(400, 'invalid_field', 'location must be an object or null');
-  const out = {};
-  if (value.lat !== undefined && value.lat !== null) {
-    if (typeof value.lat !== 'number' || value.lat < -90 || value.lat > 90) fail(400, 'invalid_field', 'location.lat must be in [-90, 90]');
-    out.lat = value.lat;
+function clientIp(req) {
+  return req.socket.remoteAddress || 'unknown';
+}
+
+function guard(key, limit, windowMs) {
+  if (!RATE_LIMIT_ENABLED) return;
+  const result = limiter.hit(key, limit, windowMs);
+  if (!result.allowed) {
+    fail(429, '请求过于频繁，请稍后再试', { headers: { 'retry-after': String(result.retryAfter) } });
   }
-  if (value.lng !== undefined && value.lng !== null) {
-    if (typeof value.lng !== 'number' || value.lng < -180 || value.lng > 180) fail(400, 'invalid_field', 'location.lng must be in [-180, 180]');
-    out.lng = value.lng;
+}
+
+// ----- auth --------------------------------------------------------------
+
+function extractToken(req) {
+  const header = req.headers.token;
+  if (typeof header === 'string' && header.trim()) return header.trim();
+  const auth = req.headers.authorization;
+  if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim();
+  return null;
+}
+
+function requireAuth(req, ctx) {
+  const token = extractToken(req);
+  if (!token) fail(401, 'token 无效或已过期');
+  const found = store.findSessionByTokenHash(hashToken(token, pepper.pepper));
+  if (!found) fail(401, 'token 无效或已过期');
+  if (found.user.status !== 'active') fail(401, '账号已停用');
+  if (Date.parse(found.session.expires_at) <= Date.now()) {
+    store.revokeSession(found.user.id, found.session.id);
+    fail(401, 'token 无效或已过期');
   }
-  for (const key of ['name', 'address', 'coord_system']) {
-    if (value[key] !== undefined && value[key] !== null) out[key] = asString(value[key], `location.${key}`, 200);
-  }
-  return out;
+  const lastUsed = found.session.last_used_at ? Date.parse(found.session.last_used_at) : 0;
+  if (Date.now() - lastUsed > 120_000) store.touchSession(found.session.id);
+  ctx.userId = found.user.id;
+  ctx.sessionId = found.session.id;
+  return found;
 }
 
-function asData(value) {
-  if (value === null) return null;
-  if (typeof value !== 'object' || Array.isArray(value)) fail(400, 'invalid_field', 'data must be a JSON object or null');
-  const encoded = JSON.stringify(value);
-  if (Buffer.byteLength(encoded) > 256 * 1024) fail(400, 'invalid_field', 'data exceeds 256KB');
-  return value;
+function publicUser(user) {
+  return {
+    id: user.id,
+    // Numeric id: the original CollectPointModel.userId is a Long, so favorites
+    // echo this value while ownership is enforced through the text id/token.
+    uid: user.uid,
+    username: user.username,
+    display_name: user.display_name,
+    phone: user.phone,
+    avatar: user.avatar,
+    created_at: user.created_at,
+    last_login_at: user.last_login_at,
+  };
 }
 
-function normalizeCaseFields(body, { requireTitle = false } = {}) {
-  const out = {};
-  if (body.title !== undefined || requireTitle) {
-    out.title = asString(body.title, 'title', 200);
-  }
-  if (body.sit_degree !== undefined && body.sit_degree !== null) out.sit_degree = asDegree(body.sit_degree, 'sit_degree');
-  if (body.facing_degree !== undefined && body.facing_degree !== null) out.facing_degree = asDegree(body.facing_degree, 'facing_degree');
-  if (body.compass_type !== undefined && body.compass_type !== null) out.compass_type = asString(body.compass_type, 'compass_type', 64);
-  if (body.location !== undefined) out.location = asLocation(body.location);
-  if (body.tags !== undefined) out.tags = asTags(body.tags);
-  if (body.notes !== undefined && body.notes !== null) out.notes = asString(body.notes, 'notes', 20000, { allowEmpty: true });
-  if (body.data !== undefined) out.data = asData(body.data);
-  return out;
+function issueSession(user, req, device) {
+  const token = generateToken();
+  const expiresAt = new Date(Date.now() + TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const session = store.createSession({
+    userId: user.id,
+    tokenHash: hashToken(token, pepper.pepper),
+    device: typeof device === 'string' ? device.slice(0, 64) : null,
+    expiresAt,
+  });
+  store.trimSessions(user.id, MAX_SESSIONS_PER_USER);
+  return { token, session };
 }
 
-function parseLimit(url, fallback = 100, max = 200) {
-  const raw = url.searchParams.get('limit');
-  if (!raw) return fallback;
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value < 1 || value > max) {
-    fail(400, 'invalid_limit', `limit must be an integer in [1, ${max}]`);
-  }
-  return value;
-}
+// ----- request handler ---------------------------------------------------
 
-function parseSince(url) {
-  const raw = url.searchParams.get('since') ?? url.searchParams.get('since_rev');
-  if (raw === null || raw === '') return 0;
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value < 0) fail(400, 'invalid_since', 'since must be a non-negative integer');
-  return value;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-
-function sharePage(share) {
-  const c = share.case;
-  const title = escapeHtml(c.title);
-  const rows = [
-    c.sit_degree === null || c.sit_degree === undefined ? null : `坐向度数：${escapeHtml(c.sit_degree)}°`,
-    c.facing_degree === null || c.facing_degree === undefined ? null : `朝向：${escapeHtml(c.facing_degree)}°`,
-    c.compass_type ? `盘面：${escapeHtml(c.compass_type)}` : null,
-    Array.isArray(c.tags) && c.tags.length ? `标签：${c.tags.map(escapeHtml).join('、')}` : null,
-    c.location && (c.location.name || c.location.address)
-      ? `位置：${escapeHtml(c.location.name || c.location.address)}`
-      : null,
-  ].filter(Boolean);
-  const notes = c.notes ? `<p class="notes">${escapeHtml(c.notes)}</p>` : '';
-  return `<!doctype html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} · 山水罗盘</title>
-<style>
-  :root { color-scheme: dark; }
-  body { margin: 0; background: #181410; color: #ebe3d6; font: 16px/1.7 "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
-  main { max-width: 720px; margin: 0 auto; padding: 32px 20px 56px; }
-  h1 { font-size: 24px; color: #dcc292; margin: 0 0 4px; }
-  .meta { color: #a99475; font-size: 14px; margin-bottom: 24px; }
-  ul { list-style: none; padding: 0; margin: 0 0 24px; }
-  li { padding: 8px 0; border-bottom: 1px solid #2e271f; }
-  .notes { white-space: pre-wrap; background: #221c16; border-radius: 8px; padding: 16px; }
-  footer { margin-top: 40px; color: #7c6b54; font-size: 13px; }
-</style>
-</head>
-<body>
-<main>
-  <h1>${title}</h1>
-  <div class="meta">山水罗盘 · 风水案例分享 · ${escapeHtml(share.created_at)}</div>
-  <ul>${rows.map((row) => `<li>${row}</li>`).join('')}</ul>
-  ${notes}
-  <footer>分享链接有效期至 ${escapeHtml(share.expires_at || '长期')}；由山水罗盘生成。</footer>
-</main>
-</body>
-</html>`;
-}
-
-async function route(req, res) {
+async function route(req, res, ctx) {
   const url = new URL(req.url, 'http://localhost');
   const pathname = url.pathname.replace(/\/+$/, '') || '/';
   const method = req.method || 'GET';
+  ctx.path = pathname;
 
   if (method === 'OPTIONS') {
-    res.writeHead(204, baseHeaders());
+    res.writeHead(204, corsHeaders(req));
     res.end();
     return;
   }
 
-  if (method === 'GET' && (pathname === '/health' || pathname === '/v1/health')) {
+  if (method === 'GET' && pathname === '/health') {
     const health = store.health();
-    sendJson(res, 200, {
+    send(res, req, 200, {
       status: health.db === 'ok' ? 'ok' : 'degraded',
       service: SERVICE,
       version: VERSION,
       time: new Date().toISOString(),
       uptime_s: Math.round((Date.now() - startedAt) / 1000),
       db: health.db,
+      schema: health.schema,
+      users: health.users,
+      sessions: health.sessions,
+      favorites: health.favorites,
+      feedback: health.feedback,
       cases: health.cases,
       shares: health.shares,
     });
@@ -273,223 +312,323 @@ async function route(req, res) {
   }
 
   if (method === 'GET' && pathname === '/') {
-    sendJson(res, 200, {
+    send(res, req, 200, {
       service: SERVICE,
       version: VERSION,
-      api: '/v1',
+      api: '/v2',
       docs: 'backend/api.md',
       health: '/health',
     });
     return;
   }
 
-  // ----- cases -----------------------------------------------------------
-  if (pathname === '/v1/cases' && method === 'GET') {
-    const ownerId = requireOwner(url.searchParams.get('owner_id'));
-    const includeDeleted = url.searchParams.get('include_deleted') === '1';
-    const items = store.listCases(ownerId, {
-      sinceRev: parseSince(url),
-      limit: parseLimit(url),
-      includeDeleted,
+  if (pathname === '/v1' || pathname.startsWith('/v1/')) {
+    sendError(res, req, 410, 'deprecated', {
+      data: { replacement: pathname === '/v1/health' ? '/health' : '/v2', doc: 'backend/api.md' },
     });
-    sendJson(res, 200, { items, count: items.length });
     return;
   }
 
-  if (pathname === '/v1/cases' && method === 'POST') {
-    const body = await readJson(req);
-    const ownerId = requireOwner(body.owner_id);
-    const fields = normalizeCaseFields(body, { requireTitle: true });
-    if (body.id !== undefined) {
-      if (typeof body.id !== 'string' || !CASE_ID_RE.test(body.id)) {
-        fail(400, 'invalid_case_id', 'id must match [A-Za-z0-9_-]{6,64}');
-      }
-      if (store.getCase(body.id, ownerId, true)) fail(409, 'case_exists', `case ${body.id} already exists`);
+  // ----- auth ------------------------------------------------------------
+  if (pathname === '/v2/auth/register' && method === 'POST') {
+    guard(`register:ip:${clientIp(req)}`, RATE_LIMITS.registerIp.limit, RATE_LIMITS.registerIp.windowMs);
+    const body = await readJson(req, LIMIT_AUTH_BYTES);
+    const username = asUsername(body.username);
+    const password = asPassword(body.password);
+    const displayName = asString(body.display_name, 'display_name', 32, { allowEmpty: true }) ?? null;
+    const usernameLc = username.toLowerCase();
+    if (store.getUserByUsernameLc(usernameLc)) fail(409, '用户名已被占用');
+    const passwordHash = await hashPassword(password);
+    let user;
+    try {
+      user = store.createUser({ username, usernameLc, displayName, passwordHash });
+    } catch (error) {
+      if (String(error.message).includes('UNIQUE')) fail(409, '用户名已被占用');
+      throw error;
     }
-    const created = store.createCase(ownerId, fields, { id: body.id });
-    sendJson(res, 201, { case: created });
+    const { token, session } = issueSession(user, req, body.device);
+    ok(res, req, { user: publicUser(user), token, expires_at: session.expires_at }, 201);
     return;
   }
 
-  const caseMatch = pathname.match(/^\/v1\/cases\/([^/]+)$/);
-  if (caseMatch) {
-    const caseId = decodeURIComponent(caseMatch[1]);
-    if (method === 'GET') {
-      const ownerId = requireOwner(url.searchParams.get('owner_id'));
-      const found = store.getCase(caseId, ownerId);
-      if (!found) fail(404, 'case_not_found', `case ${caseId} not found`);
-      sendJson(res, 200, { case: found });
-      return;
+  if (pathname === '/v2/auth/login' && method === 'POST') {
+    const ip = clientIp(req);
+    guard(`login:ip:${ip}`, RATE_LIMITS.loginIp.limit, RATE_LIMITS.loginIp.windowMs);
+    guard(`login:iphour:${ip}`, RATE_LIMITS.loginIpHour.limit, RATE_LIMITS.loginIpHour.windowMs);
+    const body = await readJson(req, LIMIT_AUTH_BYTES);
+    const rawUsername = asString(body.username, 'username', 64, { required: true });
+    const password = asPassword(body.password);
+    const usernameLc = rawUsername.toLowerCase();
+    guard(`login:user:${usernameLc}`, RATE_LIMITS.loginUser.limit, RATE_LIMITS.loginUser.windowMs);
+    const user = store.getUserByUsernameLc(usernameLc);
+    if (!user) {
+      await burnPasswordTime(password, dummyHash);
+      fail(401, '账号或密码不正确');
     }
-    if (method === 'PUT') {
-      const body = await readJson(req);
-      const ownerId = requireOwner(body.owner_id);
-      const patch = normalizeCaseFields(body);
-      const updated = store.updateCase(ownerId, caseId, patch);
-      if (!updated) fail(404, 'case_not_found', `case ${caseId} not found or deleted`);
-      sendJson(res, 200, { case: updated });
-      return;
+    const passwordHash = store.getPasswordHash(user.id);
+    const valid = await verifyPassword(password, passwordHash);
+    if (!valid) {
+      store.recordFailedLogin(user.id);
+      fail(401, '账号或密码不正确');
     }
-    if (method === 'DELETE') {
-      const ownerId = requireOwner(url.searchParams.get('owner_id'));
-      const deleted = store.deleteCase(ownerId, caseId);
-      if (!deleted) fail(404, 'case_not_found', `case ${caseId} not found`);
-      sendJson(res, 200, { deleted: true, id: caseId });
-      return;
-    }
-    fail(405, 'method_not_allowed', `${method} is not supported for ${pathname}`);
-  }
-
-  // ----- settings --------------------------------------------------------
-  const settingsMatch = pathname.match(/^\/v1\/settings\/([^/]+)$/);
-  if (settingsMatch) {
-    const ownerId = requireOwner(decodeURIComponent(settingsMatch[1]));
-    if (method === 'GET') {
-      sendJson(res, 200, store.getSettings(ownerId));
-      return;
-    }
-    if (method === 'PUT') {
-      const body = await readJson(req);
-      if (body.settings === undefined) fail(400, 'invalid_field', 'settings is required');
-      const settings = asData(body.settings);
-      if (settings === null) fail(400, 'invalid_field', 'settings must be a JSON object');
-      sendJson(res, 200, store.putSettings(ownerId, settings));
-      return;
-    }
-    fail(405, 'method_not_allowed', `${method} is not supported for ${pathname}`);
-  }
-
-  // ----- sync ------------------------------------------------------------
-  if (pathname === '/v1/sync/pull' && method === 'GET') {
-    const ownerId = requireOwner(url.searchParams.get('owner_id'));
-    const since = parseSince(url);
-    const result = store.pull(ownerId, since, parseLimit(url));
-    sendJson(res, 200, { sync: result });
+    store.touchLogin(user.id);
+    const refreshed = store.getUserById(user.id);
+    const { token, session } = issueSession(refreshed, req, body.device);
+    ok(res, req, { user: publicUser(refreshed), token, expires_at: session.expires_at });
     return;
   }
 
-  if (pathname === '/v1/sync/push' && method === 'POST') {
-    const body = await readJson(req);
-    const ownerId = requireOwner(body.owner_id);
-    const cases = body.cases === undefined ? [] : body.cases;
-    if (!Array.isArray(cases)) fail(400, 'invalid_field', 'cases must be an array');
-    if (cases.length > 500) fail(400, 'invalid_field', 'cases may contain at most 500 items');
+  if (pathname === '/v2/auth/logout' && method === 'POST') {
+    const auth = requireAuth(req, ctx);
+    store.revokeSession(auth.user.id, auth.session.id);
+    ok(res, req, { revoked: true });
+    return;
+  }
 
-    const applied = [];
-    const conflicts = [];
-    for (let index = 0; index < cases.length; index += 1) {
-      const item = cases[index];
-      if (item === null || typeof item !== 'object' || Array.isArray(item)) {
-        fail(400, 'invalid_field', `cases[${index}] must be an object`);
+  if (pathname === '/v2/auth/logout-all' && method === 'POST') {
+    const auth = requireAuth(req, ctx);
+    const revoked = store.revokeAllSessions(auth.user.id);
+    ok(res, req, { revoked, count: revoked });
+    return;
+  }
+
+  if (pathname === '/v2/auth/password' && method === 'POST') {
+    const auth = requireAuth(req, ctx);
+    guard(`password:user:${auth.user.id}`, RATE_LIMITS.passwordUser.limit, RATE_LIMITS.passwordUser.windowMs);
+    const body = await readJson(req, LIMIT_AUTH_BYTES);
+    const current = asPassword(body.current_password, 'current_password');
+    const next = asPassword(body.new_password, 'new_password');
+    if (current === next) fail(400, '新密码不能与当前密码相同');
+    const stored = store.getPasswordHash(auth.user.id);
+    if (!(await verifyPassword(current, stored))) fail(401, '当前密码不正确');
+    store.updatePassword(auth.user.id, await hashPassword(next));
+    const revoked = store.revokeAllSessions(auth.user.id, { exceptSessionId: auth.session.id });
+    ok(res, req, { changed: true, revoked_sessions: revoked });
+    return;
+  }
+
+  if (pathname === '/v2/auth/me' && method === 'GET') {
+    const auth = requireAuth(req, ctx);
+    ok(res, req, { user: publicUser(auth.user) });
+    return;
+  }
+
+  if (pathname === '/v2/auth/me' && method === 'PATCH') {
+    const auth = requireAuth(req, ctx);
+    const body = await readJson(req, LIMIT_AUTH_BYTES);
+    const displayName = asString(body.display_name, 'display_name', 32, { allowEmpty: true }) ?? null;
+    ok(res, req, { user: publicUser(store.updateDisplayName(auth.user.id, displayName)) });
+    return;
+  }
+
+  if (pathname === '/v2/auth/sessions' && method === 'GET') {
+    const auth = requireAuth(req, ctx);
+    const items = store.listSessions(auth.user.id, auth.session.id);
+    ok(res, req, { items, count: items.length });
+    return;
+  }
+
+  const sessionMatch = pathname.match(/^\/v2\/auth\/sessions\/([^/]+)$/);
+  if (sessionMatch) {
+    if (method !== 'DELETE') fail(405, '方法不支持');
+    const auth = requireAuth(req, ctx);
+    const sessionId = decodeURIComponent(sessionMatch[1]);
+    if (!store.revokeSession(auth.user.id, sessionId)) fail(404, '会话不存在');
+    ok(res, req, { revoked: true, id: sessionId });
+    return;
+  }
+
+  // ----- favorites (original CollectPointModel) --------------------------
+  if (pathname === '/v2/userCollectPoint/list' && method === 'GET') {
+    const auth = requireAuth(req, ctx);
+    const since = parseQueryInt(url.searchParams.get('since'), 'since', { fallback: 0 });
+    const limit = parseQueryInt(url.searchParams.get('limit'), 'limit', { min: 1, max: 200, fallback: 100 });
+    const pageNum = parseQueryInt(url.searchParams.get('pageNum'), 'pageNum', { min: 1, fallback: 1 });
+    const overlayRaw = url.searchParams.get('overlay');
+    let overlay = null;
+    if (overlayRaw !== null && overlayRaw !== '') {
+      if (['1', 'true'].includes(overlayRaw.toLowerCase())) overlay = 1;
+      else if (['0', 'false'].includes(overlayRaw.toLowerCase())) overlay = 0;
+      else fail(400, '参数不合法：overlay');
+    }
+    const offset = since > 0 ? 0 : (pageNum - 1) * limit;
+    const items = store.listFavorites(auth.user.id, auth.user.uid, { sinceRev: since, limit, overlay, offset });
+    ok(res, req, {
+      items,
+      count: items.length,
+      cursor: items.length > 0 ? items[items.length - 1].rev : since,
+    });
+    return;
+  }
+
+  if (pathname === '/v2/userCollectPoint/save' && method === 'POST') {
+    const auth = requireAuth(req, ctx);
+    const body = await readJson(req, LIMIT_BUSINESS_BYTES);
+    const fields = normalizeFavorite(body);
+    if (body.id !== undefined && body.id !== null && body.id !== '') {
+      const id = asInt(body.id, 'id', { min: 1 });
+      const existing = store.getFavorite(auth.user.id, auth.user.uid, id);
+      if (!existing) fail(404, '收藏点不存在');
+      if (body.rev !== undefined && body.rev !== null) {
+        const clientRev = asInt(body.rev, 'rev', { min: 0 });
+        if (clientRev !== existing.rev) {
+          fail(409, '版本冲突', { data: { server: existing } });
+        }
       }
-      const fields = normalizeCaseFields(item, { requireTitle: true });
-      const existing = item.id ? store.getCase(item.id, ownerId, true) : null;
-      if (item.id !== undefined && (typeof item.id !== 'string' || !CASE_ID_RE.test(item.id))) {
-        fail(400, 'invalid_case_id', `cases[${index}].id must match [A-Za-z0-9_-]{6,64}`);
-      }
-      if (existing && existing.deleted) {
-        conflicts.push({ id: item.id, reason: 'deleted_on_server', server_rev: existing.rev });
-        continue;
-      }
+      ok(res, req, { point: store.updateFavorite(auth.user.id, auth.user.uid, id, fields) });
+      return;
+    }
+    ok(res, req, { point: store.createFavorite(auth.user.id, auth.user.uid, fields) }, 201);
+    return;
+  }
+
+  if (pathname === '/v2/userCollectPoint/delete' && method === 'DELETE') {
+    const auth = requireAuth(req, ctx);
+    const id = asInt(url.searchParams.get('id'), 'id', { min: 1 });
+    if (!store.deleteFavorite(auth.user.id, id)) fail(404, '收藏点不存在');
+    ok(res, req, { deleted: true, id });
+    return;
+  }
+
+  // ----- feedback (original AddFeedbackReqModel) -------------------------
+  if (pathname === '/v2/feedback/add' && method === 'POST') {
+    const auth = requireAuth(req, ctx);
+    guard(`feedback:user:${auth.user.id}`, RATE_LIMITS.feedbackUser.limit, RATE_LIMITS.feedbackUser.windowMs);
+    const body = await readJson(req, LIMIT_BUSINESS_BYTES);
+    const type = asInt(body.type, 'type', { fallback: FEEDBACK_TYPE_KNOWN });
+    if (type !== FEEDBACK_TYPE_KNOWN) {
+      fail(400, `type 仅支持 ${FEEDBACK_TYPE_KNOWN}（原版其余取值域未取证）`);
+    }
+    const attachments = body.attachments;
+    if (attachments !== undefined && attachments !== null && attachments !== '') {
+      fail(400, 'attachments 本轮仅支持空值（图片上传属 DI）');
+    }
+    const idemKey = typeof req.headers['idempotency-key'] === 'string'
+      ? req.headers['idempotency-key'].trim().slice(0, 128) || null
+      : null;
+    if (idemKey) {
+      const existing = store.findFeedbackByIdem(auth.user.id, idemKey);
       if (existing) {
-        applied.push(store.updateCase(ownerId, item.id, fields));
-      } else {
-        applied.push(store.createCase(ownerId, fields, { id: item.id }));
+        ok(res, req, { feedback: existing, deduplicated: true });
+        return;
       }
     }
-    let settings = null;
-    if (body.settings !== undefined) {
-      if (body.settings === null || typeof body.settings !== 'object' || Array.isArray(body.settings)) {
-        fail(400, 'invalid_field', 'settings must be a JSON object');
-      }
-      settings = store.putSettings(ownerId, body.settings);
-    }
-    sendJson(res, 200, { sync: { applied, conflicts, settings } });
+    const fields = {
+      attachments: null,
+      contactWay: asString(body.contactWay, 'contactWay', 100, { allowEmpty: true }) ?? null,
+      orderNum: asString(body.orderNum, 'orderNum', 64, { allowEmpty: true }) ?? null,
+      reasons: asString(body.reasons, 'reasons', 500, { required: true }),
+      remark: asString(body.remark, 'remark', 500, { allowEmpty: true }) ?? '',
+      type,
+    };
+    const created = store.createFeedback(auth.user.id, fields, idemKey);
+    ok(res, req, { feedback: created.feedback, deduplicated: created.deduplicated }, 201);
     return;
   }
 
-  // ----- shares ----------------------------------------------------------
-  if (pathname === '/v1/shares' && method === 'POST') {
-    const body = await readJson(req);
-    const ownerId = requireOwner(body.owner_id);
-    if (typeof body.case_id !== 'string') fail(400, 'invalid_field', 'case_id is required');
-    const ttlDays = body.expires_in_days === undefined ? 30 : Number(body.expires_in_days);
-    if (!Number.isInteger(ttlDays) || ttlDays < 1 || ttlDays > 365) {
-      fail(400, 'invalid_field', 'expires_in_days must be an integer in [1, 365]');
-    }
-    const share = store.createShare(ownerId, body.case_id, ttlDays);
-    if (!share) fail(404, 'case_not_found', `case ${body.case_id} not found`);
-    sendJson(res, 201, {
-      share: {
-        token: share.token,
-        url: `${PUBLIC_BASE_URL}/s/${share.token}`,
-        case_id: share.case_id,
-        created_at: share.created_at,
-        expires_at: share.expires_at,
-      },
-    });
+  if (pathname === '/v2/feedback/list' && method === 'GET') {
+    const auth = requireAuth(req, ctx);
+    const limit = parseQueryInt(url.searchParams.get('limit'), 'limit', { min: 1, max: 100, fallback: 20 });
+    const items = store.listFeedback(auth.user.id, limit);
+    ok(res, req, { items, count: items.length });
     return;
   }
 
-  const shareMatch = pathname.match(/^\/v1\/shares\/([^/]+)$/);
-  if (shareMatch) {
-    const token = decodeURIComponent(shareMatch[1]);
-    if (method === 'GET') {
-      const share = store.getShare(token);
-      if (!share) fail(404, 'share_not_found', 'share link is invalid, revoked or expired');
-      sendJson(res, 200, { share });
-      return;
-    }
-    if (method === 'DELETE') {
-      const ownerId = requireOwner(url.searchParams.get('owner_id'));
-      if (!store.revokeShare(ownerId, token)) fail(404, 'share_not_found', 'share not found');
-      sendJson(res, 200, { revoked: true, token });
-      return;
-    }
-    fail(405, 'method_not_allowed', `${method} is not supported for ${pathname}`);
-  }
+  fail(404, '资源不存在');
+}
 
-  const pageMatch = pathname.match(/^\/s\/([^/]+)$/);
-  if (pageMatch && method === 'GET') {
-    const share = store.getShare(decodeURIComponent(pageMatch[1]));
-    if (!share) {
-      sendHtml(res, 404, '<!doctype html><meta charset="utf-8"><title>链接不可用</title><p>分享链接无效、已撤销或已过期。</p>');
-      return;
+function normalizeFavorite(body) {
+  const fields = {};
+  const strings = [
+    ['name', 200], ['address', 500], ['des', 5000], ['images', 20000], ['icon', 64], ['style', 64],
+  ];
+  for (const [field, max] of strings) {
+    if (body[field] !== undefined) {
+      fields[field] = asString(body[field], field, max, { allowEmpty: true }) ?? null;
     }
-    sendHtml(res, 200, sharePage(share));
-    return;
   }
-
-  fail(404, 'not_found', `no route for ${method} ${pathname}`);
+  if (body.latitude !== undefined && body.latitude !== null) {
+    if (typeof body.latitude !== 'number' || body.latitude < -90 || body.latitude > 90) {
+      fail(400, '参数不合法：latitude');
+    }
+    fields.latitude = body.latitude;
+  }
+  if (body.longitude !== undefined && body.longitude !== null) {
+    if (typeof body.longitude !== 'number' || body.longitude < -180 || body.longitude > 180) {
+      fail(400, '参数不合法：longitude');
+    }
+    fields.longitude = body.longitude;
+  }
+  if (body.overlay !== undefined && body.overlay !== null) {
+    fields.overlay = asInt(body.overlay, 'overlay', { min: -2_147_483_648, max: 2_147_483_647 });
+  }
+  if (body.dbId !== undefined && body.dbId !== null) {
+    fields.dbId = asInt(body.dbId, 'dbId', { min: -2_147_483_648, max: 2_147_483_647 });
+  }
+  if (body.createTime !== undefined && body.createTime !== null) {
+    const text = asString(body.createTime, 'createTime', 64);
+    if (Number.isNaN(Date.parse(text))) fail(400, '参数不合法：createTime');
+    fields.createTime = text;
+  }
+  return fields;
 }
 
 const server = http.createServer((req, res) => {
   const started = Date.now();
+  const ctx = { requestId: randomUUID(), userId: null, path: null };
+  res.setHeader('x-request-id', ctx.requestId);
+
   res.on('finish', () => {
-    console.log(`${req.method} ${req.url} -> ${res.statusCode} ${Date.now() - started}ms`);
+    logSafe('info', {
+      event: 'http',
+      rid: ctx.requestId,
+      method: req.method,
+      path: ctx.path, // never the query string: tokens must not reach logs
+      status: res.statusCode,
+      ms: Date.now() - started,
+      user: ctx.userId,
+    });
   });
-  route(req, res).catch((error) => {
+
+  route(req, res, ctx).catch((error) => {
     if (res.headersSent) {
       res.end();
       return;
     }
-    if (error instanceof HttpError) {
-      sendJson(res, error.status, {
-        error: { code: error.code, message: error.message, ...(error.details ? { details: error.details } : {}) },
-      });
+    if (error instanceof ApiError) {
+      sendError(res, req, error.status, error.message, { data: error.data, headers: error.headers });
       return;
     }
-    console.error('unhandled error:', error);
-    sendJson(res, 500, { error: { code: 'internal_error', message: 'internal server error' } });
+    logSafe('error', {
+      event: 'unhandled',
+      rid: ctx.requestId,
+      method: req.method,
+      path: ctx.path,
+      error: error.name,
+      message: String(error.message).slice(0, 300),
+    });
+    sendError(res, req, 500, '服务端内部错误');
   });
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`${SERVICE} v${VERSION} listening on http://${HOST}:${PORT} (db=${DB_PATH})`);
+  logSafe('info', {
+    event: 'listening',
+    service: SERVICE,
+    version: VERSION,
+    host: HOST,
+    port: PORT,
+    db: DB_PATH,
+    schema: store.appliedMigrations,
+    pepper_source: pepper.source,
+    rate_limit: RATE_LIMIT_ENABLED,
+    token_ttl_days: TOKEN_TTL_DAYS,
+    cors_origins: CORS_ORIGINS.length,
+  });
 });
 
 function shutdown(signal) {
-  console.log(`${signal} received, shutting down`);
+  logSafe('info', { event: 'shutdown', signal });
   server.close(() => {
     try { store.db.close(); } catch { /* ignore */ }
     process.exit(0);

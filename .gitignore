@@ -51,3 +51,9 @@ __pycache__/
 
 # ---- 证据日志以 .txt 入库（*.log 已被上方规则挡掉）：见 docs/fidelity/verify-r2025-final/ ----
 
+# ---- 自建后端本地数据：SQLite 与 token pepper 绝不入库（L2，2026-11-07 加固） ----
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.token-pepper
+

@@ -133,9 +133,9 @@ public class M3PageActivity extends Activity {
         root.setBackgroundColor(LIGHT_BG);
 
         // 标题栏：返回 + 页名（原版标题逐字）
-        LinearLayout bar = new LinearLayout(this);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
+        // M6 第 4 条：标题栏改 FrameLayout —— 返回贴左、标题**居中且 wrap_content**（原版宽 216）、我的贴右。
+        // 用 LinearLayout 时标题靠 weight 撑满，dump 宽度永远是整栏，Δ 表必挂（测试实测 ΔR=+465）。
+        android.widget.FrameLayout bar = new android.widget.FrameLayout(this);
         bar.setPadding(dp(12), dp(7), dp(12), dp(5));
         TextView back = new TextView(this);
         back.setId(R.id.lc_m3_back);
@@ -144,13 +144,23 @@ public class M3PageActivity extends Activity {
         back.setTextColor(TEXT_MAIN);
         back.setPadding(0, dp(4), dp(10), dp(4));
         back.setOnClickListener(v -> finish());
-        bar.addView(back);
+        android.widget.FrameLayout.LayoutParams backLp =
+                new android.widget.FrameLayout.LayoutParams(
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+        backLp.gravity = Gravity.START | Gravity.CENTER_VERTICAL;
+        bar.addView(back, backLp);
         TextView title = new TextView(this);
         title.setId(R.id.lc_m3_title);
         title.setText(page);
         title.setTextSize(18f);
         title.setTextColor(TEXT_MAIN);
-        bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        android.widget.FrameLayout.LayoutParams titleLp =
+                new android.widget.FrameLayout.LayoutParams(
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+        titleLp.gravity = Gravity.CENTER;
+        bar.addView(title, titleLp);
 
         // M6 第 4 条：投诉反馈一级页右上「我的」[1056,115][1213,272] = **158×158**、
         // complaint.xml 里 `clickable=true` + `focusable=true`（dump 只支持“可点”，不支持“不可点”）。
@@ -167,7 +177,11 @@ public class M3PageActivity extends Activity {
             mineBtn.setOnClickListener(v -> android.widget.Toast.makeText(this,
                     "「我的」跳转目标未取证（D-034），本轮未接入",
                     android.widget.Toast.LENGTH_SHORT).show());
-            bar.addView(mineBtn, new LinearLayout.LayoutParams(158, 158));
+            android.widget.FrameLayout.LayoutParams mineLp =
+                    new android.widget.FrameLayout.LayoutParams(158, 158);
+            mineLp.gravity = Gravity.END | Gravity.CENTER_VERTICAL;
+            mineLp.rightMargin = 15;   // 原版 [1056,115][1213,272]：右缘 1213，屏 1228 留 15
+            bar.addView(mineBtn, mineLp);
         }
         root.addView(bar);
 
@@ -743,8 +757,12 @@ public class M3PageActivity extends Activity {
         tv.setText(name);
         tv.setTextSize(17f);
         tv.setTextColor(TEXT_MAIN);
-        row.addView(tv, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(tv, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         if (!right.isEmpty()) {
+            // 中间垫一个 weight=1 的空白，把右值推到行尾（左标签不再撑满整行）
+            View gapView = new View(this);
+            row.addView(gapView, new LinearLayout.LayoutParams(0, 1, 1f));
             TextView r = new TextView(this);
             r.setText(right);
             r.setTextSize(14f);

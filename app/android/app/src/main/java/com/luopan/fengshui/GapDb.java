@@ -225,6 +225,35 @@ class GapDb extends SQLiteOpenHelper {
         return getWritableDatabase().update(T_INTEREST, v, "owner_uid=0 AND remote_id=0", null);
     }
 
+    /**
+     * 按「服务端声明」认领幽灵行（审核验 §33.2 / 服务端提案）：只处理 `owner_uid=0 AND remote_id>0` 的行，
+     * 且**仅当该 remote_id 出现在当前账号的 list 里**才认领 —— 这是服务端在说「这个 id 是我的」，不是本地猜。
+     * 不在集合里的保持 `owner_uid=0`（不推、不对账、不删），等它真正的主人登录或 M5 tombstone 处理。
+     *
+     * @param liveIds 当前账号 `GET list` 返回的全部 id
+     * @return 认领行数
+     */
+    int adoptByRemoteIds(int uid, java.util.Set<Long> liveIds) {
+        if (uid <= 0 || liveIds == null || liveIds.isEmpty()) return 0;
+        int adopted = 0;
+        java.util.List<Long> orphanIds = new ArrayList<>();
+        java.util.List<Long> orphanRemote = new ArrayList<>();
+        try (Cursor c = getReadableDatabase().query(T_INTEREST, new String[]{"id", "remote_id"},
+                "owner_uid=0 AND remote_id>0", null, null, null, "id ASC")) {
+            while (c.moveToNext()) {
+                orphanIds.add(c.getLong(0));
+                orphanRemote.add(c.getLong(1));
+            }
+        }
+        for (int i = 0; i < orphanIds.size(); i++) {
+            if (!liveIds.contains(orphanRemote.get(i))) continue;
+            ContentValues v = new ContentValues();
+            v.put("owner_uid", uid);
+            adopted += getWritableDatabase().update(T_INTEREST, v, "id=?",
+                    new String[]{String.valueOf(orphanIds.get(i))});
+        }
+        return adopted;
+    }
     /** 幂等键：每行一个稳定 UUID，首次同步时生成并持久化，重推沿用它 → 服务端撞键返回同一行，不会重复建点。 */
     String clientKeyOf(long localId) {
         try (Cursor c = getReadableDatabase().query(T_INTEREST, new String[]{"client_key"},
@@ -427,6 +456,7 @@ class GapDb extends SQLiteOpenHelper {
         }
     }
 }
+
 
 
 

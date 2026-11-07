@@ -5,7 +5,8 @@
 param(
     [Parameter(Mandatory)][string]$Apk,
     [string]$Device = 'L2E0222531014833',
-    [string[]]$Only = @('xacct', 'crash', 'sit', 'del', 'sec33', 'orphan')
+    [string[]]$Only = @('xacct', 'crash', 'sit', 'del', 'sec33', 'orphan', 'orphanui', 'delui'),
+    [switch]$SkipInstall
 )
 if ($Only.Count -eq 1 -and $Only[0] -match ',') { $Only = $Only[0] -split ',' | ForEach-Object { $_.Trim() } }
 . (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'tests\lib\ui-drive.ps1')
@@ -148,8 +149,10 @@ function AddLocalFavorite([string]$name) {
 }
 
 # ---------- 准备：安装 + 起应用 ----------
-$o = & pwsh -NoProfile -File (Join-Path $root 'tools\device\install-debug.ps1') -Apk $Apk -Device $Device 2>&1
-Log ("install_exit=" + $LASTEXITCODE + " " + (($o | Select-Object -Last 1) -join ''))
+if (-not $SkipInstall) {
+    $o = & pwsh -NoProfile -File (Join-Path $root 'tools\device\install-debug.ps1') -Apk $Apk -Device $Device 2>&1
+    Log ("install_exit=" + $LASTEXITCODE + " " + (($o | Select-Object -Last 1) -join ''))
+} else { Log 'install_skipped (设备已装同构建)' }
 AdbOk @('reverse', 'tcp:8787', 'tcp:8787') | Out-Null
 AppStart
 
@@ -485,6 +488,201 @@ console.log("DELETED=" + (r ? r.deleted : "MISSING"));
     }
 }
 
+# ---------- ⑦ 孤儿行（owner_uid=0 + remote_id>0）在界面不可见、不可删 ----------
+if ($Only -contains 'orphanui') {
+    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null; Start-Sleep -Milliseconds 800
+    if (-not ((Get-Focus) -match 'com.luopan.fengshui')) { AppStart }
+    GoAccount | Out-Null
+    $dd0 = Get-UiDump
+    if ($dd0 -and (Find-Node $dd0 '' 'lc_m3_login')) {
+        $ouUser = RegisterAs 'ou'
+        Log "orphanui_register=$ouUser"
+    }
+    $dd0 = Get-UiDump
+    if ($dd0 -and (Find-Node $dd0 '' 'lc_m3_login')) {
+        Verdict '孤儿UI-⑦' '孤儿行不在列表、同步也不删不推' $false 'login failed（本用例需已登录账号）'
+    } else {
+        AddLocalFavorite 'ou-row'
+        GoAccount | Out-Null
+        SyncNow 7 | Out-Null
+        $db = PullLocal 'orphanui-before.db'
+        $rid = LocalScalar $db "select remote_id from interest where name='ou-row' order by id desc limit 1"
+        $other = LocalScalar $db "select name from interest where name<>'ou-row' and owner_uid>0 and delete_pending=0 order by id desc limit 1"
+        AppStop
+        $py = Join-Path $env:TEMP 'sync4ou.py'
+        @'
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1])
+row = db.execute("select id from interest where name='ou-row' order by id desc limit 1").fetchone()
+db.execute("update interest set owner_uid=0 where id=?", (row[0],))
+db.commit()
+print("ou=" + str(db.execute("select id,owner_uid,remote_id,delete_pending from interest where id=?", (row[0],)).fetchone()))
+'@ | Set-Content -LiteralPath $py -Encoding UTF8
+        $ou = ((& python $py $db) -join '').Trim()
+        PushLocal $db
+        Log "orphanui_seed=$ou remote_id=$rid other_row=$other"
+        AppStart
+        OpenFavList
+        $d = Get-UiDump
+        $txt = if ($d) { $d.OuterXml } else { '' }
+        Set-Content -LiteralPath (Join-Path $out 'orphanui-list.xml') -Value $txt -Encoding UTF8
+        & adb -s $Device exec-out screencap -p > (Join-Path $out 'orphanui-list.png')
+        $visOu = $txt -match 'ou-row'
+        $visOther = [bool]($other -and $txt.Contains([string]$other))
+        Log "orphanui_ui: vis_ou=$visOu vis_other=$visOther"
+        # 回到账户页同步一次：孤儿行既不推（push=0）也不被删（本地仍在、服务端 deleted=0）
+        Tap-NodeRetry '' 'lc_fav_sublist_back' 2 900 | Out-Null
+        GoAccount | Out-Null
+        $s = SyncNow 7
+        $srv = RemoteJs @"
+import { DatabaseSync } from "node:sqlite";
+const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
+const r = db.prepare("select id,deleted from favorites where id=?").get($rid);
+console.log("DELETED=" + (r ? r.deleted : "MISSING"));
+"@
+        $left = LocalScalar (PullLocal 'orphanui-after.db') "select count(*) from interest where name='ou-row'"
+        Log ("orphanui_sync: " + $s.Log + " ; " + $srv + " ; local_left=$left")
+        $ok = (-not $visOu) -and $visOther -and ($srv -match 'DELETED=0') -and ([int]$left -eq 1)
+        Verdict '孤儿UI-⑦' '孤儿行不在列表、同步不推不删（服务端行仍在）' $ok ("vis_ou=$visOu vis_other=$visOther; " + $srv + " local_left=$left; push_log=" + $s.Log)
+    }
+}
+
+# ---------- ⑧ 覆盖层长按删除（M4-GAP-DELETE-UI，9e42ef1）：已同步行 / 未同步行 / B 侧无入口 ----------
+if ($Only -contains 'delui') {
+    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null; Start-Sleep -Milliseconds 800
+    if (-not ((Get-Focus) -match 'com.luopan.fengshui')) { AppStart }
+    # 干净基线：清本地 interest + 增量游标，再注册全新账号（避免上一个账号的同名遗留行混进 count）
+    AppStop
+    $db0 = PullLocal 'delui-clean.db'
+    $py0 = Join-Path $env:TEMP 'deluiclean.py'
+    @'
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1]); db.execute("delete from interest"); db.commit(); print("cleaned")
+'@ | Set-Content -LiteralPath $py0 -Encoding UTF8
+    ((& python $py0 $db0) -join '') | Out-Null
+    PushLocal $db0
+    & adb -s $Device shell "run-as com.luopan.fengshui sh -c 'rm -f shared_prefs/lc_sync.xml'" | Out-Null
+    AppStart
+    GoAccount | Out-Null
+    LogoutIfIn | Out-Null
+    $duUser = RegisterAs 'du'
+    Log "delui_register=$duUser"
+    $sfx = Get-Random -Maximum 99999
+    $synName = "dsyn$sfx"; $unName = "dun$sfx"
+    # 1) 已同步行：建→推，拿到 remote_id
+    AddLocalFavorite $synName
+    GoAccount | Out-Null
+    SyncNow 7 | Out-Null
+    $db1 = PullLocal 'delui-synced.db'
+    $ridSyn = LocalScalar $db1 "select remote_id from interest where name='$synName' order by id desc limit 1"
+    # 2) 未同步行：只建不推
+    Invoke-Adb @('shell', 'input', 'keyevent', '4') | Out-Null; Start-Sleep -Milliseconds 800
+    AddLocalFavorite $unName
+    $db2 = PullLocal 'delui-unsynced.db'
+    $ridUn = LocalScalar $db2 "select remote_id from interest where name='$unName' order by id desc limit 1"
+    $unRow = LocalQuery $db2 "select id,remote_id,sync_state from interest where name='$unName' order by id desc limit 1"
+    Log "delui_rows: syn=$synName remote=$ridSyn ; un=$unName remote=$ridUn row=$unRow"
+    # 3) 进覆盖层列表，长按已同步行 → 确认框 → 点“删除”（精确文本匹配，避免点到标题）
+    OpenFavList
+    $d = Get-UiDump
+    $dText = if ($d) { $d.OuterXml } else { '' }
+    Set-Content -LiteralPath (Join-Path $out 'delui-list-before.xml') -Value $dText -Encoding UTF8
+    & adb -s $Device exec-out screencap -p > (Join-Path $out 'delui-list-before.png')
+    $nSyn = Find-Node $d $synName ''
+    $dlg1 = $false
+    if ($nSyn) {
+        Invoke-Adb @('shell', 'input', 'swipe', "$($nSyn.X)", "$($nSyn.Y)", "$($nSyn.X)", "$($nSyn.Y)", '900') | Out-Null
+        Start-Sleep -Milliseconds 900
+        $dd = Get-UiDump
+        $ddTxt = if ($dd) { $dd.OuterXml } else { '' }
+        Set-Content -LiteralPath (Join-Path $out 'delui-dialog-syn.xml') -Value $ddTxt -Encoding UTF8
+        & adb -s $Device exec-out screencap -p > (Join-Path $out 'delui-dialog-syn.png')
+        $dlg1 = ($ddTxt -match '确定删除|删除收藏点')
+        if ($dd) {
+            foreach ($node in $dd.SelectNodes('//node')) {
+                if ("$($node.text)" -eq '删除' -and "$($node.bounds)" -match '\[(\d+),(\d+)\]\[(\d+),(\d+)\]') {
+                    $cx = [int](([int]$Matches[1] + [int]$Matches[3]) / 2); $cy = [int](([int]$Matches[2] + [int]$Matches[4]) / 2)
+                    Invoke-Adb @('shell', 'input', 'tap', "$cx", "$cy") | Out-Null
+                    break
+                }
+            }
+            Start-Sleep -Seconds 2
+        }
+    }
+    $lc1 = ((AdbOk @('shell', 'logcat', '-d', '-s', 'LCFAV:V')) -join ' ')
+    Log "delui_syn: dialog=$dlg1 node_found=$([bool]$nSyn) lcfav=$lc1"
+    # 4) 长按未同步行 → 确认框 → 删除（前后统计服务端 delete 请求，证“不发请求”）
+    $delBefore = ((docker logs lc-backend --since 3m 2>&1) | Select-String -Pattern '/v2/userCollectPoint/delete').Count
+    $d = Get-UiDump
+    $nUn = Find-Node $d $unName ''
+    $dlg2 = $false
+    if ($nUn) {
+        Invoke-Adb @('shell', 'input', 'swipe', "$($nUn.X)", "$($nUn.Y)", "$($nUn.X)", "$($nUn.Y)", '900') | Out-Null
+        Start-Sleep -Milliseconds 900
+        $dd = Get-UiDump
+        $ddTxt = if ($dd) { $dd.OuterXml } else { '' }
+        Set-Content -LiteralPath (Join-Path $out 'delui-dialog-un.xml') -Value $ddTxt -Encoding UTF8
+        $dlg2 = ($ddTxt -match '确定删除|删除收藏点')
+        if ($dd) {
+            foreach ($node in $dd.SelectNodes('//node')) {
+                if ("$($node.text)" -eq '删除' -and "$($node.bounds)" -match '\[(\d+),(\d+)\]\[(\d+),(\d+)\]') {
+                    $cx = [int](([int]$Matches[1] + [int]$Matches[3]) / 2); $cy = [int](([int]$Matches[2] + [int]$Matches[4]) / 2)
+                    Invoke-Adb @('shell', 'input', 'tap', "$cx", "$cy") | Out-Null
+                    break
+                }
+            }
+            Start-Sleep -Seconds 2
+        }
+    }
+    $delAfter = ((docker logs lc-backend --since 3m 2>&1) | Select-String -Pattern '/v2/userCollectPoint/delete').Count
+    $lc2 = ((AdbOk @('shell', 'logcat', '-d', '-s', 'LCFAV:V')) -join ' ')
+    $db3 = PullLocal 'delui-after-ui.db'
+    $synPending = LocalScalar $db3 "select count(*) from interest where name='$synName' and delete_pending=1"
+    $unLeft = LocalScalar $db3 "select count(*) from interest where name='$unName'"
+    Log ("delui_after_ui: syn_dialog=$dlg1 un_dialog=$dlg2 syn_pending=$synPending un_left=$unLeft delreq $delBefore->$delAfter lcfav2=$lc2")
+    # 5) 同步：已同步行墓碑推出 → 服务端 deleted=1、本地归零；未同步行没有任何请求
+    GoAccount | Out-Null
+    $s = SyncNow 8
+    $srv = RemoteJs @"
+import { DatabaseSync } from "node:sqlite";
+const db = new DatabaseSync("/data/lc.sqlite", { readOnly: true });
+const a = db.prepare("select id,deleted from favorites where id=?").get($ridSyn);
+console.log("SYN_ROW=" + (a ? (a.id + ":" + a.deleted) : "MISSING"));
+"@
+    $db4 = PullLocal 'delui-after-sync.db'
+    $synLeft = LocalScalar $db4 "select count(*) from interest where name='$synName'"
+    $pendingLeft = LocalScalar $db4 "select count(*) from interest where delete_pending=1"
+    Log ("delui_sync: " + $s.Log + " ; " + $srv + " ; syn_left=$synLeft pending_left=$pendingLeft")
+    $okDelSyn = ($dlg1 -and ($srv -match "SYN_ROW=$ridSyn:1") -and ([int]$synLeft -eq 0) -and ([int]$pendingLeft -eq 0))
+    Verdict '删除UI-⑧a' '长按删已同步行：服务端同 remote_id deleted=1、本地归零、无墓碑残留' $okDelSyn ("name=$synName rid=$ridSyn dialog=$dlg1 ; " + $srv + " syn_left=$synLeft pending_left=$pendingLeft")
+    $okDelUn = ($dlg2 -and ([int]$unLeft -eq 0) -and ([int]$ridUn -eq 0) -and ([int]$delAfter -eq [int]$delBefore))
+    Verdict '删除UI-⑧b' '长按删未同步行：本地直接消失、无 remote_id、无墓碑、不发删除请求' $okDelUn ("name=$unName rid=$ridUn un_left=$unLeft un_row=$unRow delreq=$delBefore->$delAfter")
+    # 6) 切 B：列表为空，长按无确认框（非平凡，因为入口已存在）
+    GoAccount | Out-Null
+    LogoutIfIn | Out-Null
+    $userB = RegisterAs 'db'
+    $s = SyncNow 7
+    OpenFavList
+    $dB = Get-UiDump
+    $tB = if ($dB) { $dB.OuterXml } else { '' }
+    Set-Content -LiteralPath (Join-Path $out 'delui-B-list.xml') -Value $tB -Encoding UTF8
+    & adb -s $Device exec-out screencap -p > (Join-Path $out 'delui-B-list.png')
+    $nList = Find-Node $dB '' 'lc_fav_sublist_list'
+    $dlgB = $false
+    if ($nList) {
+        Invoke-Adb @('shell', 'input', 'swipe', "$($nList.X)", "$($nList.Y)", "$($nList.X)", "$($nList.Y)", '900') | Out-Null
+        Start-Sleep -Milliseconds 900
+        $dd = Get-UiDump
+        $ddTxt = if ($dd) { $dd.OuterXml } else { '' }
+        Set-Content -LiteralPath (Join-Path $out 'delui-B-longpress.xml') -Value $ddTxt -Encoding UTF8
+        $dlgB = ($ddTxt -match '确定删除|删除收藏点')
+    }
+    $okB = (-not $dlgB) -and ($tB -match '暂无收藏点')
+    Log "delui_B: list_ids=$([bool]$nList) dialog=$dlgB empty=$($tB -match '暂无收藏点')"
+    Verdict '删除UI-⑧c' 'B 侧列表无 A 的行、长按无确认框（入口已存在，非平凡）' $okB ("dialog=$dlgB empty=$($tB -match '暂无收藏点') ; b_user=$userB")
+    Tap-NodeRetry '' 'lc_fav_sublist_back' 2 900 | Out-Null
+}
+
 # ---------- 收尾 ----------
 foreach ($k in 'window_animation_scale', 'transition_animation_scale', 'animator_duration_scale') { AdbOk @('shell', 'settings', 'put', 'global', $k, '1') | Out-Null }
 AdbOk @('shell', 'am', 'force-stop', 'com.luopan.fengshui') | Out-Null
@@ -492,8 +690,6 @@ AdbOk @('shell', 'input', 'keyevent', 'KEYCODE_HOME') | Out-Null
 AdbOk @('reverse', '--remove-all') | Out-Null
 Log ("fails=" + $script:fails + " out=$out")
 if ($script:fails -eq 0) { exit 0 } else { exit 1 }
-
-
 
 
 

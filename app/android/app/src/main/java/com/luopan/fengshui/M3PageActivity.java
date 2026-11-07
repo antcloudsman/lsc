@@ -217,7 +217,10 @@ public class M3PageActivity extends Activity {
         list.setId(R.id.lc_m3_body);
         list.setOrientation(LinearLayout.VERTICAL);
         // 顶距 +33 只对投诉页（首行 320 -> 353）；账户页 body 起点不同，不能一起推
-        list.setPadding(dp(12), "投诉反馈".equals(page) ? 33 : 0, dp(12), dp(10));
+        // 顶距：投诉 33（320->353）、账户 74（339-265）；两者 body 起点不同
+        list.setPadding(dp(12),
+                "账户设置".equals(page) ? 74 : ("投诉反馈".equals(page) ? 33 : 0),
+                dp(12), dp(10));
         List<String> lines = readPage(page);
         // 三页有专属结构（不是纯文本列表）：投诉反馈两级、推荐给好友分享面板、账户设置未登录态
         if ("投诉反馈".equals(page)) {
@@ -603,7 +606,7 @@ public class M3PageActivity extends Activity {
         nameRow.setTextColor(TEXT_MAIN);
         nameRow.setPadding(0, dp(5), 0, dp(4));
         nameRow.setOnClickListener(v -> showEditNameDialog(token, nickShown));
-        list.addView(nameRow);
+        addAccountRow(list, nameRow);
 
         TextView accountRow = new TextView(this);
         accountRow.setId(R.id.lc_m3_account_name);
@@ -612,7 +615,7 @@ public class M3PageActivity extends Activity {
         accountRow.setTextSize(14f);
         accountRow.setTextColor(TEXT_SUB);
         accountRow.setPadding(0, 0, 0, dp(6));
-        list.addView(accountRow);
+        addAccountRow(list, accountRow);
 
         TextView changePw = new TextView(this);
         changePw.setId(R.id.lc_m3_changepw);
@@ -621,7 +624,7 @@ public class M3PageActivity extends Activity {
         changePw.setTextColor(ACCENT);
         changePw.setPadding(0, dp(2), 0, dp(5));
         changePw.setOnClickListener(v -> showChangePasswordDialog(token));
-        list.addView(changePw);
+        addAccountRow(list, changePw);
 
         TextView sync = new TextView(this);
         sync.setId(R.id.lc_m3_sync);
@@ -648,7 +651,7 @@ public class M3PageActivity extends Activity {
                 }
             }, "lc-sync").start();
         });
-        list.addView(sync);
+        addAccountRow(list, sync);
 
         // M6 第 4 条：退出登录 = **红底按钮**，不是红字。
         // 几何取 dump 父节点 [39,2512][1189,2578] = 1150x66（文本节点 183x37 只是字）；
@@ -781,6 +784,27 @@ public class M3PageActivity extends Activity {
         list.addView(et, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         return et;
+    }
+
+
+    /** M6 第 4 条：账户页行容器 —— 与 addRow 同一套几何：minHeight 160 + 3px 分隔 = 163 步进。
+     *  原版账户页 6 行步进 163（339/502/665/828/991/1154）；我方自有行落进同一几何，不判文案。 */
+    private void addAccountRow(LinearLayout list, View content) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setBackgroundColor(CARD_WHITE);
+        row.setMinimumHeight(160);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.addView(content, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        list.addView(row);
+        View divider = new View(this);
+        divider.setBackgroundColor(0xFFF0F3F7);
+        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 3);
+        dlp.leftMargin = 39;
+        dlp.rightMargin = 39;
+        list.addView(divider, dlp);
     }
 
     private LinearLayout addRow(LinearLayout list, String name, String right, boolean clickable, View.OnClickListener onClick) {

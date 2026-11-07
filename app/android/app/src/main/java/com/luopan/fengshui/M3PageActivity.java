@@ -605,7 +605,7 @@ public class M3PageActivity extends Activity {
         nameRow.setText("昵称：" + nickShown + "　（点此修改）");
         nameRow.setTextSize(17f);
         nameRow.setTextColor(TEXT_MAIN);
-        nameRow.setPadding(0, dp(5), 0, dp(4));
+        nameRow.setPadding(0, 0, 0, 0);   // 内容区 79 必须容下 76/62/72/72：有 padding 会把字挤裁（审核验实测 403=404-1）
         nameRow.setOnClickListener(v -> showEditNameDialog(token, nickShown));
         addAccountRow(list, nameRow);
         // 头像：160 行内放 120x120，垂直居中
@@ -632,7 +632,7 @@ public class M3PageActivity extends Activity {
                 + "　uid：" + user.optInt("uid", 0));
         accountRow.setTextSize(14f);
         accountRow.setTextColor(TEXT_SUB);
-        accountRow.setPadding(0, 0, 0, dp(6));
+        accountRow.setPadding(0, 0, 0, 0);   // 内容区 79 必须容下 76/62/72/72：有 padding 会把字挤裁（审核验实测 403=404-1）
         addAccountRow(list, accountRow);
 
         TextView changePw = new TextView(this);
@@ -640,7 +640,7 @@ public class M3PageActivity extends Activity {
         changePw.setText("修改密码");
         changePw.setTextSize(16f);
         changePw.setTextColor(ACCENT);
-        changePw.setPadding(0, dp(2), 0, dp(5));
+        changePw.setPadding(0, 0, 0, 0);   // 内容区 79 必须容下 76/62/72/72：有 padding 会把字挤裁（审核验实测 403=404-1）
         changePw.setOnClickListener(v -> showChangePasswordDialog(token));
         addAccountRow(list, changePw);
 
@@ -649,7 +649,7 @@ public class M3PageActivity extends Activity {
         sync.setText("同步收藏点（本地优先，失败留离线队列）");
         sync.setTextSize(16f);
         sync.setTextColor(ACCENT);
-        sync.setPadding(0, dp(2), 0, dp(5));
+        sync.setPadding(0, 0, 0, 0);   // 内容区 79 必须容下 76/62/72/72：有 padding 会把字挤裁（审核验实测 403=404-1）
         sync.setOnClickListener(v -> {
             sync.setEnabled(false);
             sync.setText("同步中…");

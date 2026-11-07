@@ -881,6 +881,125 @@ git grep -n '原生最高级\|云端超分\|LC 会按' origin/develop -- app/and
 2. 右列这 4 枚记 **P1-33-C「应为开关控件」**——总监定「本轮不实现」，客户端已做（`a3780db`），判词另立；
 3. R2-033 判据只覆盖「按钮 chrome」：158×158、深色圆角底、图标/文字排布——这四枚 chrome 达标的仍算达标，开关形态另案。
 
+## 18. 主线 `71be770` 复验：R2-001 代码等价 / R2-027 范围判定 / R2-032 文案基准（2026-11-07 10:12–10:48）
+
+被验基线：develop `71be770`（`origin/develop`，含 §17 判词、客户端白带修复、地图 `1c5543a`、服务端采集前置 `45ea7b3`）。
+我的构建：worktree `E:\APPDetector\wt\lcs-verify-71be770`（`71be770` detached，`git status --porcelain` 空），
+`gradle assembleDebug --no-daemon` → `BUILD SUCCESSFUL in 40s`，
+`app-debug.apk` **8,668,733 B**，sha256 `605f01f936e244d39931b73073aeafa64233924d8e338c74c0c54e681d05ae69`。
+
+### 18.1 R2-001 —— 主线代码与 `c08841a` **零差异**（像素复跑待设备窗口）
+
+```
+git -C E:\APPDetector\develop-int diff --stat 71be770 c08841a -- \
+  app/android/app/src/main/java/com/luopan/fengshui/SplashActivity.java \
+  app/android/app/src/main/res/values/themes.xml \
+  app/android/app/src/main/AndroidManifest.xml
+→ （空，无输出）
+```
+
+行号逐条回到 `71be770` 核对（`git show 71be770:<path>`）：
+
+| 位置 | 原文 |
+|---|---|
+| `SplashActivity.java:34` | `private static final int LOGO_TOP = 435;` |
+| `SplashActivity.java:44` | `getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.WHITE));` |
+| `SplashActivity.java:45-48` | `getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS` / `\| WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS` / `\| WindowManager.LayoutParams.FLAG_FULLSCREEN` / `\| WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);` |
+| `SplashActivity.java:49` | `getWindow().setStatusBarColor(Color.WHITE);` |
+| `AndroidManifest.xml:158` | `android:theme="@style/Theme.Luopan.Splash">`（`:161` 为 `LAUNCHER`） |
+| `themes.xml:11` | `<style name="Theme.Luopan.Splash" parent="@android:style/Theme.Light.NoTitleBar.Fullscreen">`（`:12-19` 白窗口底/白状态栏/`windowLightStatusBar`/`windowDrawsSystemBarBackgrounds`） |
+
+证据包一致性：`git diff --stat 71be770 c08841a -- docs/fidelity/stage4` → **只有 `README.md` 少 2 行**，其余 10 件二进制与文本逐字节相同；
+我在 `71be770` 上重算 `docs/fidelity/stage4/SHA256SUMS.txt` = **10/10 ok**（sha256 + 字节数双匹配），
+所以 §17 里我量过的 `r2-001-splash.png` / `r2-013-sheet-*.png` 就是主线这一份，不存在「验的分支、合的是另一份」。
+
+判定：§17.1 的判词（顶部 `y0..121` = `(255,255,255)`、图标带 ≤1px、标题带 0）**可以直接平移到主线**，因为实现字节级一致。
+**但按「主线过账」口径，像素复跑仍欠一次**：设备当前被 LC地图 占用（`mCurrentFocus=com.android.packageinstaller/.InstallStaging`，
+`com.luopan.fengshui lastUpdateTime=2026-11-07 10:10:26`），我不抢窗口、不采伪证。
+状态：**代码已具备（已证实）／主线像素 待确认**。
+
+### 18.2 R2-027 范围判定：两处挂账 **属于 R2-027**，不另立新条目
+
+原版证据（`reports/M3-stage4/orig-layer-sheet.png`，1228×2700，脱壳原版 `space.xinzhi.globe` 实拍）：
+
+1. 面板是**浅色浮动卡片**。连通亮区（阈值 RGB≥223）剖面：`y=720/880/1040/1200` 最长亮区恒为 **`x 128..1027`（宽 900）**；
+   列剖面 `x=300/700/900` 亮区恒为 **`y 540..1371`（高 832）**。即面板 = `[128,540]-[1027,1371]`，占屏高 **30.8%**。
+   底色采样：`(614,720)=(238,243,240)`、`(614,880)=(232,245,234)`、`(614,1040)=(242,242,241)`、`(150,600)=(245,244,244)`
+   → 浅色半透明白，**不是深色**。
+2. 面板外地图**未压暗**：`y=1300` 行面板下方、`x<128` 列面板左侧、`x>1027` 右侧工具列，像素亮度与整屏连续（同图角注行、右侧「图层/叠加/山脉/水系/探索」均正常亮度）。
+3. 面板内**无任何关闭控件**：整张面板只有 3 列×4 行卡片 + 第 13 格「+」，无 `×`、无「关闭」、无同义按钮。
+
+我方（`71be770:app/android/app/src/main/assets/map.html`）：
+
+| 行 | 原文 | 与原版差 |
+|---|---|---|
+| `:49-50` | `#srcPanel { position:absolute; left:60px; right:60px; top:0; bottom:0;` / `background:#00000099; z-index:20; display:none; }` | 全高（`top:0 bottom:0`）深色遮罩，原版无遮罩且卡片高仅 832/2700 |
+| `:51-52` | `#srcPanel .box { position:absolute; left:0; right:0; top:8px; max-height:88%; overflow:auto;` / `background:#201a14f5; border:1px solid #5a4a30; border-radius:10px; padding:8px; }` | 深棕面板 + 描边，原版白色无描边 |
+| `:112` | `<button class="srcItem" onclick="closeSources()">关闭</button>` | 原版无关闭控件 |
+| `:63` | `.srcCard.on { border-color:#dcbe82; box-shadow:0 0 0 1px #dcbe82 inset; }` | 原版选中态是**卡片标签条变蓝**（世纪空间卡），不是金色描边 |
+
+判定依据（范围，不是缺陷新立）：R2-027 的原始发现文字是
+**「底图源面板呈现方式不同（全屏遮罩+文字列表）」**（`round2-report.md:174`，改法行写「改回 3×4 缩略图网格（12 格 + 「+」），卡片底部条为源名」）。
+「全屏遮罩」就是这条要修的对象，我方现在仍是 `top:0;bottom:0` + `#00000099` + 深色卡片 + 关闭按钮
+→ 这两处（面板底色/遮罩、关闭按钮）**不是新缺陷，是 R2-027 尚未修完的部分**。
+
+**R2-027 维持不关账**，判据补 4 行（建议由总监并入 R2-027，不单独立项）：
+1. 面板为浅色卡片：底色 ≈ `(238,243,240)`（半透明白），无描边；
+2. 面板外无深色遮罩，地图保持原亮度；
+3. 面板几何：`x 128..1027`、`y 540..1371`（宽 900 / 高 832，占屏高 30.8%），不是全高；
+4. 选中态：选中卡的**标签条变蓝**（原版世纪空间卡），不是金色描边。
+（原版「点面板外关闭」这一**行为**不在像素证据内，属待确认；见 18.4 N-18-2。）
+
+### 18.3 R2-032 文案基准：原版用**空格**分隔，不是「·」
+
+原版 5 张不同状态截图（`orig/map-home-01.png`、`orig/right-layer-sheet.png`、`orig/map-3d-mode.png`、
+`orig/tool-contour-01.png`、`orig/search-result-01.png`）底部角注**全部**是同一串：
+
+```
+数据来自世纪空间 审图号： GS(2026)1219号
+```
+
+- 来源与「审图号」之间是**空格**：文字列剖面 `x 357..561`（`数据来自世纪空间`）→ `561..573` 间隙 **12px** → `x 573..` 起
+  （`审图号`）；该间隙内**没有任何「·」像素簇**（若为 `·` 会是一段 4–6px 的独立亮簇）。
+- 「审图号：」后面还有一个空格。
+- 5 张不同图层/工具状态截图同串 → 原版角注**不随源切换**；我方「按源显示」是换天地图后的必要适配（D-027 允许），
+  但**分隔符与冒号后空格要回到原版形态**。
+
+我方现状：
+
+```
+71be770:app/android/app/src/main/java/com/luopan/fengshui/MainActivity.java:664
+        attrView.setText("数据来自天地图地形 · 审图号：待核对");
+71be770:app/android/app/src/main/assets/map.html:109
+<div id="srcInfo">数据来自天地图地形 · 审图号：待核对</div>
+```
+
+→ **R2-032 判据订正**为：`数据来自{当前源} 审图号： {号或「待核对」}`（空格分隔、冒号后一个空格），
+其余（按源显示、不编造官方号、`syncAttributionBar()` 覆盖静态串）不变。这条只改标点，不影响 D-027 的「不编造号」结论。
+
+### 18.4 核验中发现的新线索（不自行立条，交总监决定）
+
+- **N-18-1** 面板选中态：我方金色描边 vs 原版蓝标签条 —— 已并入 18.2 第 4 行判据，不另立。
+- **N-18-2** 原版「点面板外关闭」是**行为**：像素只能证明「面板内没有关闭控件」（已证实），
+  「点空白关闭」本身需真机点按取证（**待确认**，缺：原版一次「点面板外 → 面板消失」的 dump 前后对比）。
+- **N-18-3** 同 commit 的 APK 体积差：我用 `71be770` 自建 = **8,668,733 B**（sha `605f01f9…`），
+  地图报的 `702c5bb` 自建 = **9,246,033 B**。相邻 commit（差 1 笔客户端启动页 + 文档）不应差 577 KB。
+  **待确认**：其构建工作区可能带未提交素材（`feature/地图-3d-terrain` 树里 K-01 贴图、POT2048 等）。
+  依据 `collect` 的装机指纹前置（`45ea7b3`）可以拦住「装错包」，但拦不住「自己构建的包不是 commit 纯净树」——
+  建议采集时把 `apk.sha256` 连同 `git status --porcelain` 记录一起落 `meta.json`。
+- **N-18-4** APK 资产里残留**未被引用的重复素材**（已证实，不影响功能，属清理项）：
+  `git ls-tree 71be770 app/android/app/src/main/assets/map/source-thumb/` 同时有
+  `ic_base_map_xintu_satellite.png` 与 `xintu_satellite.png`，**blob 都是 `8e2ff583d665ef6582179ea7c354b0f0107e8acf`（104,638 B）**；
+  `git grep -n 'xintu_satellite' 71be770` 的 3 处引用全指向 `ic_base_map_xintu_satellite.png`（`map.html:1531/1537`）。
+  素材库 `docs/fidelity/assets/map/source-thumb/` 已按「内容唯一」只留一份（总监的删除生效），
+  但 **APK 里那份副本没删**，多打进包 104,638 B。`assets.py verify` 只扫素材库、不扫 APK 资产目录，所以没拦住。
+  建议单独一笔清理（删 `xintu_satellite.png` 并在 `assets-sources.json` 备注只保留 `ic_base_map_xintu_satellite`）。
+
+### 18.5 状态更新（本节口径）
+
+- **P1：12/13**，R2-027 仍不关账，原因从「未合入」更新为**「面板呈现方式剩余差异（18.2 四条）」**（`1c5543a`/`702c5bb` 已合入）。
+- **P2**：R2-001 代码已主线等价、像素待补；R2-032 待按 18.3 改文案 + 双图；R2-008/R2-034/R2-035 结论不变。
+
 
 
 

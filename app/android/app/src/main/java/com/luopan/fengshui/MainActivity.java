@@ -1484,6 +1484,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (compassMode) {
                     boolean on = compassView != null && !compassView.isShowPointer();
                     if (compassView != null) compassView.setShowPointer(on);
+                    // M6 第 1 条（逆向 §6.8）：指针开关控的是**竖向指针图**（原版 pointer.png 23×94），
+                    // 不是十字线上的红三角（那属于十字线，常显、无独立开关）。
+                    if (pointerView != null) pointerView.setVisibility(on ? View.VISIBLE : View.GONE);
                     toast(on ? "罗盘北针：开" : "罗盘北针：关");
                 } else {
                     js("toggleNeedle()");
@@ -1550,7 +1553,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (crosshairView != null) crosshairView.setVisibility(on ? View.VISIBLE : View.GONE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         // R2-005：中心指针只在罗盘态显示；「指针开关」关掉时也一起隐（与既有 setShowPointer 同步）
-        if (pointerView != null) pointerView.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (pointerView != null) pointerView.setVisibility(
+                on && (compassView == null || compassView.isShowPointer()) ? View.VISIBLE : View.GONE);
         if (rightColumn != null) rightColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);

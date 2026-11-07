@@ -1941,6 +1941,48 @@ listDeletePending:264 → 仍 `(owner_uid=0 OR owner_uid=?)`，§32 没被回退
    建议改成不依赖魔数：拿响应里的 `count`（本次返回条数）与请求的 `limit` 比，或让服务端给 `hasMore`/`total`；至少加一条断言「请求 limit=200 且服务端 max 也是 200」。
    **这条我记为「待确认」**（当前服务端 max=200 已实测，暂不触发），不是缺陷。
 
+## 34. 主线 `525704c` 复核：P0 三处 + §33「能不能删」逐条落地（2026-11-07 21:45）
+
+### 34.1 四项实现都在
+
+```
+GapDb:143  listInterest(int uid)                                   ✓ 界面按账号
+GapDb:225  adoptUnownedRows → "owner_uid=0 AND remote_id=0"        ✓ 收窄
+GapDb:236  adoptByRemoteIds(uid, liveIds)                          ✓ 正匹配认领
+GapDb:293  listDeletePending → "(owner_uid=0 OR owner_uid=?)"      ✓ 孤儿墓碑可推
+调用点     InterestListActivity:72 / MainActivity:1722 / :3167 均传 LcSession.uid(this)
+```
+
+### 34.2 总监点名要验的「能不能删」——**不能删，链路闭合**
+
+不是只看「看不见」，而是把删除入口整条追到底：
+
+```
+唯一的墓碑入口：git grep markInterestDeletePending → 全仓仅 InterestListActivity:147
+它只由 confirmDelete(p) 调用（InterestListActivity:139-155）
+confirmDelete(p) 的唯一调用点：:123 的 row.setOnLongClickListener
+而 row 由 buildRow(items.get(i)) 构建，items 来自 :72 `db.listInterest(LcSession.uid(this))`
+```
+
+→ 列表里根本不存在「别人账号的行」这个对象，**长按也按不到**，删除入口随之消失。§33 的判据「不可见 + 不可删」在主线上成立。
+
+### 34.3 一条低风险残留：列表只在 onCreate 刷新
+
+```
+InterestListActivity:61   reload();     ← onCreate
+InterestListActivity:151  reload();     ← 删除后
+无 onResume / 无 onStart 重载
+```
+若该 Activity 存活期间账号发生变化（理论上要能在它之上完成一次切号，正常返回栈里走不到），列表会是**上一账号的快照**，那批行又可长按删除 → §33 会从「陈旧快照」这条缝回来。
+**建议**：`onResume()` 调一次 `reload()`（一行）。既是防御，也能让「同步后再回列表」看到新数据。
+**定级：待确认**（当前没有可达路径），不阻塞。
+
+### 34.4 结论
+
+- **代码层：§30/§31/§32/§33 四项全部落地，互不冲突**（推送队列仍严、删除队列放宽、界面按账号、正匹配认领）。
+- **仍差真机五条**：①跨账号条数不减 ②崩窗口带 uid 守卫重跑 ③坐 90 向 270 还原 ④删除双向 ⑤§33（不可见+不可删）+ 孤儿墓碑归零。
+
+
 
 
 

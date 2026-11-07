@@ -1882,6 +1882,189 @@ GapDb:133-137   List<InterestPoint> listInterest() {  query(T_INTEREST, null, "d
 
 **注意**：`FavoriteSync:157` 的对账循环用的是同一个 `listInterest()`，那边已有 `if (owner != uid) continue;` 兜住，**别为了改 UI 把那处守卫删掉**。
 
+### 33.1 修复复核（`6c289fd`，2026-11-07 21:40）—— 改对了
+
+```
+GapDb:143-151   listInterest(int uid): where="delete_pending=0"; uid>0 时 += " AND owner_uid=?"
+GapDb:133-142   javadoc 把「B 删 A 的行 → 墓碑挂到 A 登录时才执行」这条因果写进去了（以后不会被当冗余删掉）
+调用点          InterestListActivity:72 / MainActivity:1722 / MainActivity:3167 全部传 LcSession.uid(this)
+无参 listInterest()  → 已移除（grep 无命中）
+FavoriteSync:157 → db.listInterest(uid)（SQL 只取本账号）
+FavoriteSync:160-163 → 守卫与注释都在（「上一账号的行绝不能用本账号的 list 判已删」）
+listDeletePending:264 → 仍 `(owner_uid=0 OR owner_uid=?)`，§32 没被回退
+```
+
+### 33.2 新出现的可见性代价（不阻塞，建议 M5 处理）
+
+`listInterest(uid)` 之后，`owner_uid=0 且 remote_id>0` 的孤儿行从「能看不能用」变成**完全看不见**了：
+
+- 不显示（uid 匹配不到 0）、不推送（`listPendingInterest` 收窄）、不参与对账；
+- 删除也不行（虽然 `listDeletePending` 放行了它们，但 **UI 里根本点不到**）。
+
+→ 这批数据成了**占用存储、用户看不到也删不掉的幽灵行**。当前升级路径下数量很小可以接受，但一旦用户遇到，**只能靠改库或重装**，这不是产品该给用户留的出口。
+
+建议（二选一，M5）：
+1. **只读分区**：列表底部显示「本地历史数据（未归属）N 条」，灰显、**禁止删除**；
+2. **用户主动认领**：给一个「合并到当前账号」按钮——**注意这跟自动认领不是一回事**：自动认领是程序猜主人，用户主动点是自己声明，不违背 §30/§31 的原则。
+
+### 33.3 服务端给的第三条出路：**正匹配认领** —— 采纳，但**驳回**「对不上就清墓碑」
+
+服务端提出：登录后枚举本账号的全部 `remote_id`（`pageNum/limit` 翻页取完），本地 `owner_uid=0 && remote_id>0` 的行，**只要 id 出现在枚举里，就说明服务端承认这个 id 属于该账号**——写回 `owner_uid` 即可，不需要用户点按钮。我核过分页行为（`pageNum=1 limit=2 → 307,308`；`pageNum=2 → 309`；`limit=200 → 全量`），**这条成立，采纳**。
+
+但要加三条限定，否则会走回 §30：
+
+1. **只做正匹配赋值，绝不覆盖已有归属**：只处理 `owner_uid=0` 的行；`owner_uid` 已经是别的账号的不动。
+2. **绝不用「不在枚举里」当删除依据**。服务端那句「对不上也可能是远端已删，应按墓碑清理」**我驳回**——
+   「不在本账号 list 里」有三种互斥解释：① 属于别的账号；② 属于本账号但被远端删除；③ 本次枚举没取全 / 请求失败。这三者客户端区分不了，**拿它当删除依据就是 §30 那个 P0 的原始成因**（「远端没返回」被当成「已删除」，整批硬删本地真实数据）。
+   → **对不上的行一律保持 `owner_uid=0`、不删不推**，继续当幽灵行（至少数据还在）。
+3. 要真正区分「远端已删」，必须等服务端给出**显式 tombstone 信号**（`list` 返回 `deleted=1` 的行，或独立的 ids 接口）。在那之前，宁可留着幽灵行，也不许用「缺席」推断删除。
+
+**判定**：这条作为 M5 的验证项，判据是「`owner_uid=0` 的行里，`remote_id` 命中本账号枚举的那部分被正确写回归属，且没有任何一行因为『没命中』被删」。
+
+### 33.4 `437b383` 复核：正匹配认领已实现且安全，但「取全」的判断靠一个隐含前提
+
+实现（`GapDb:236-256`）**符合我的三条限定**：
+
+```
+:241  只查 "owner_uid=0 AND remote_id>0"
+:249  if (!liveIds.contains(remote)) continue;        ← 命中才写
+:252  update(T_INTEREST, {owner_uid}, "id=?")          ← 只写归属，无删除语句
+```
+调用（`FavoriteSync:144-164`）：复用对账那次 `since=0` 请求拿 `live`，命中才认领；`:147-151` 当返回 `>=200` 时**整段跳过对账与认领**，一条不删。
+
+**两条遗留，都不阻塞本轮、但要写清楚**：
+
+1. **>200 条时完全不认领**（自己已说明）：当前只请求一页（`listPoints(token, 0, 200)`），`>=200` 就跳过。安全，但幽灵行在 200+ 的账号上不会被消解。**M5 与服务端 tombstone 一起做**。
+
+2. **「取全」的判断依赖一个隐含前提**：代码用 `allItems.length() >= 200` 判「可能被截断」。这个判断只有在**服务端一页上限正好 ≥200 且确实按 limit 返回**时才成立。
+   如果将来服务端把单页上限调小（比如 100），那么 200 条数据只返回 100 条 → `100 < 200` → 判定为「已取全」→ `live` 少一半 → **对账会把另一半自己的行当「远端已删」purge 掉**，§30 那个 P0 就复活了。
+   建议改成不依赖魔数：拿响应里的 `count`（本次返回条数）与请求的 `limit` 比，或让服务端给 `hasMore`/`total`；至少加一条断言「请求 limit=200 且服务端 max 也是 200」。
+   **这条我记为「待确认」**（当前服务端 max=200 已实测，暂不触发），不是缺陷。
+
+## 34. 主线 `525704c` 复核：P0 三处 + §33「能不能删」逐条落地（2026-11-07 21:45）
+
+### 34.1 四项实现都在
+
+```
+GapDb:143  listInterest(int uid)                                   ✓ 界面按账号
+GapDb:225  adoptUnownedRows → "owner_uid=0 AND remote_id=0"        ✓ 收窄
+GapDb:236  adoptByRemoteIds(uid, liveIds)                          ✓ 正匹配认领
+GapDb:293  listDeletePending → "(owner_uid=0 OR owner_uid=?)"      ✓ 孤儿墓碑可推
+调用点     InterestListActivity:72 / MainActivity:1722 / :3167 均传 LcSession.uid(this)
+```
+
+### 34.2 总监点名要验的「能不能删」——**不能删，链路闭合**
+
+不是只看「看不见」，而是把删除入口整条追到底：
+
+```
+唯一的墓碑入口：git grep markInterestDeletePending → 全仓仅 InterestListActivity:147
+它只由 confirmDelete(p) 调用（InterestListActivity:139-155）
+confirmDelete(p) 的唯一调用点：:123 的 row.setOnLongClickListener
+而 row 由 buildRow(items.get(i)) 构建，items 来自 :72 `db.listInterest(LcSession.uid(this))`
+```
+
+→ 列表里根本不存在「别人账号的行」这个对象，**长按也按不到**，删除入口随之消失。§33 的判据「不可见 + 不可删」在主线上成立。
+
+### 34.3 一条低风险残留：列表只在 onCreate 刷新
+
+```
+InterestListActivity:61   reload();     ← onCreate
+InterestListActivity:151  reload();     ← 删除后
+无 onResume / 无 onStart 重载
+```
+若该 Activity 存活期间账号发生变化（理论上要能在它之上完成一次切号，正常返回栈里走不到），列表会是**上一账号的快照**，那批行又可长按删除 → §33 会从「陈旧快照」这条缝回来。
+**建议**：`onResume()` 调一次 `reload()`（一行）。既是防御，也能让「同步后再回列表」看到新数据。
+**定级：待确认**（当前没有可达路径），不阻塞。
+
+### 34.4 结论
+
+- **代码层：§30/§31/§32/§33 四项全部落地，互不冲突**（推送队列仍严、删除队列放宽、界面按账号、正匹配认领）。
+- **仍差真机五条**：①跨账号条数不减 ②崩窗口带 uid 守卫重跑 ③坐 90 向 270 还原 ④删除双向 ⑤§33（不可见+不可删）+ 孤儿墓碑归零。
+
+## 35. Stage 5 总判词（2026-11-07 23:05）
+
+### 35.1 真机证据包：我自己从磁盘复核过，六项成立
+
+证据目录 `E:\APPDetector\reports\M4-stage5-525704c\`（12 个本地库 + 3 份 dump + run.log），我不看结论表，直接读库：
+
+| 项 | 我自己读到的数 | 判定 |
+|---|---|---|
+| P0-① 跨账号 | `local-A.db` 三行 remote 343/344/345、owner 109；`local-A-zero.db` 同三行 owner 0；`before-sync` 3 行 → `after-sync` **3 行、owner 仍 0**；run.log `push=0 purgedRemote=0`、`B_ACTIVE=0` | **通过** |
+| ② 崩窗口 | `local-crash-pushed.db` id=50 / remote=0 / pending → `local-crash-after.db` id=**50** / remote=**346** / clean（同 id，未新建） | **通过** |
+| ③ 坐向 | `local-sit.db` id=51 / remote=347 / sit=90 / face=270 → `local-sit-pulled.db` id=53 / remote=347 / **sit=90 / face=270** | **通过** |
+| ④a 本机删 | `local-del.db` id=54 remote=348 `delete_pending=1` → `local-del-after.db` 该行消失；run.log `348:0 → 348:1` | **机制通过**（见 35.3） |
+| ④b 远端删 | `local-del-after.db` 里 remote 347（sit-row）已消失；run.log `SOFTDELETED=347:0` | **机制通过** |
+| ⑤ §33 | `sec33-B-list.xml`：`s33-a1`=0、`s33-a2`=0、`暂无收藏点`=1、无删除/确定节点；`sec33-B-longpress.xml` 同；`sec33-A-back-list.xml`：`s33-a1`=1、`s33-a2`=1；run.log `A_SRV_ACTIVE=2 A_SRV_IDS=349,350` 未变 | **通过** |
+| ⑥ 孤儿墓碑 | `orphan-before.db` id=56 remote=350 owner=**0** `delete_pending=1` → `orphan-after.db` 该行消失、无残留；run.log `DELETED=1 local_left=0` | **通过** |
+
+### 35.2 §33 的验证对象（必须写死，照办）
+
+**判据落在 `MainActivity` 的收藏列表覆盖层（`openFavoriteList()`，`MainActivity:1720-1752`），不是 `InterestListActivity`。**
+
+可达性事实（我自己核的，不是转述）：
+```
+AndroidManifest.xml:147-149   .InterestListActivity  exported="false"
+git grep 'InterestListActivity.class|".InterestListActivity"' → 只有两处 Manifest 声明，无任何 startActivity
+```
+→ 这个 Activity **没有任何启动点，用户进不去**；覆盖层才是用户能碰到的表面。
+覆盖层里 `openFavoriteList()` 用 `db.listInterest(LcSession.uid(this))` 取数（`:1722`），只有 `setOnItemClickListener`（点行跳图），**没有长按、没有删除按钮**。所以「B 侧看不到 A 的行、也点不到删除」成立。
+
+### 35.3 **新发现：删除功能在可达 UI 里根本不存在**（不阻塞 M4 机制判词，但必须登记）
+
+```
+唯一的删除 UI 入口：InterestListActivity:157 markInterestDeletePending / :159 deleteInterest
+   ↑ 该 Activity 无启动点、exported=false → 用户不可达
+可达覆盖层 MainActivity:1742 只有 setOnItemClickListener（跳图），没有删除动作
+```
+
+即：**收藏点可以建、可以同步、可以看，但用户没有任何入口能删掉它**（④ 里的删除是脚本走「界面等价路径」直接置墓碑验证的，验的是同步机制，不是用户功能）。
+
+- **不能**把 ④ 写成「删除功能通过」——它证明的是「墓碑推出/收敛正确」，用户路径缺失这半边没验。
+- 建议：要么把 `InterestListActivity` 接进可达路径（原版有「收藏列表」子页，覆盖层已有，加长按即可），要么删掉这个死 Activity 免得下一个人以为有删除功能。**登记为缺口**（`M4-GAP-DELETE-UI`），由总监定 M4 收尾还是 M5 首项。
+
+### 35.4 五条 done-when：我能独立证实到哪
+
+| # | done-when | 我的独立证据 | 结论 |
+|---|---|---|---|
+| 1 | 一键起、`/health` 200、volume 持久化、容器自检 | 自跑 `SELFCHECK: PASS (80 checks)`；`StartedAt 12:23` 而库内最早数据 `09:41`；`127.0.0.1:8787`；`schema=006` | **证实** |
+| 2 | 五条链路 + scrypt + 日志无明文 + token 不可猜 | 自跑注册/登录/登出(401)/改密(旧密 401、他人会话 401)/过期(401)；库内 40/40 `scrypt$N=32768`；145 行日志对密码与 token 明文 **命中 0**；token 43 字符=32B 随机、库内仅 sha256+pepper | **证实** |
+| 3 | 客户端真机闭环 + 降级可见 | E6.4：dump `提交成功` + 库内 `fb_be5c60c3…`（e64-reason/e64@example.com/e64-desc/type=2 逐字）；`e82` 降级文案、`e85` 恢复；本轮六项证据包我逐库复核 | **证实** |
+| 4 | 微信只取证/占位/DI | `LoginActivity:124` 占位+说明、`M3PageActivity:456-464`；D-031 | **证实** |
+| 5 | M3 遗留三项 | §17/§24：R2-013 A/B/C、R2-032 未回归、R2-027 面板 11 项；`d53d4bc` 与判据依据 `bfde9da` 六份证据逐字节相同 | **证实** |
+| 6 | 缺失清单逐项关闭或 DI | 产品台账（`m4-close-summary` v1.5），**我未逐条复核**，只核了 P0/§33 相关引用 | **未独立核实** |
+| 7 | `api.md` v2 定稿 | 文件在 develop，我读过 §0/§3.3（幂等语义、偏索引措辞） | **证实（内容抽样）** |
+| 8 | 工时台账 + copy/secret + report 全绿 | 六门与 `report exit 0` 是测试/总监跑的，**我未复跑**；只核了 `fidelity` 判词我已提交那部分 | **未独立核实** |
+
+### 35.5 已知限制（逐条，关账必须带上）
+
+1. **S3 装机场景未覆盖**：本机未出现 `UnifiedAuthenticationDialogActivity`，`PIN_IN_LOG=False` 是空真，**不得写成脱敏已验**。
+2. `adoptByRemoteIds` **只取第一页**，>200 条整轮跳过（不写不删，安全侧失败）；翻页与 tombstone 属 M5。
+3. **pepper 与库同卷**（`/data/.token-pepper` 与 `lc.sqlite` 同目录）：整卷泄露时「DB 泄露拿不到可用会话」不成立；建议 M5 走 `/run/secrets`。
+4. **无 TLS**（回环明文，仅 `127.0.0.1`/`localhost` 放行）。
+5. 两条 P1 转 M5：同步把 401/429 显示成「连不上本地服务」；401 后不清会话。
+6. **删除无用户入口**（`M4-GAP-DELETE-UI`，35.3）。
+7. `listDeletePending` 放行 `owner_uid=0` 是为清理既有孤儿墓碑，长期应随 tombstone 一并简化。
+
+### 35.6 `adoptByRemoteIds` 命中路径 —— 客户端实测 + 我的服务端侧独立印证（通过）
+
+客户端补上了唯一没人验过的一半（命中→写回）。他报的数我不采信转述，直接查库核对那次「命中」是不是真命中：
+
+```
+favorites id=354 → user_id=user_e1473e63… / uid=111（sa84982）/ deleted=0 / rev=252
+```
+→ 本地那行 `remote_id=354` 确实在 **uid=111 自己的 list 里**，所以「命中」成立，`adopted by remote ids=1`、`owner_uid 0→111`、`push=0`、`purgedRemote=0` 是正确行为，不是把别的账号的行认领走。
+
+两个方向现在都有实证：
+- **不命中 → 不动**：测试 P0-①（3 行 owner_uid=0、remote 343/344/345 不在 B 的 list 里）→ `adopted` 无、`purgedRemote=0`、3→3、`B_ACTIVE=0`；
+- **命中 → 写回**：本次（354 在 uid=111 的 list 里）→ `adopted=1`、`owner_uid 0→111`、未推未删。
+
+
+
+
+
+
+
 
 
 

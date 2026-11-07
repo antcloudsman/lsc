@@ -53,4 +53,9 @@
     <item name="lc_web_status" type="id" />
     <item name="lc_web_retry" type="id" />
     <item name="lc_web_view" type="id" />
+    <!-- R2-001 启动页 -->
+    <item name="lc_splash_root" type="id" />
+    <item name="lc_splash_bg" type="id" />
+    <item name="lc_splash_logo" type="id" />
 </resources>
+

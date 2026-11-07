@@ -2000,7 +2000,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             item.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
             item.setIncludeFontPadding(false);
             item.setOnClickListener(v -> {
-                hideDrawer();
+                // M6 第 4 条：原版「联系我们」是**叠在抽屉上的对话框**，所以这一项不能先关抽屉，
+                // 否则关掉卡片会落回地图而不是抽屉（原版关掉后抽屉仍在）。
+                if (!"联系我们".equals(label)) hideDrawer();
                 openDrawerTarget(label);
             });
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
@@ -2042,12 +2044,136 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 sharePage.putExtra(M3PageActivity.EXTRA_PAGE, label);
                 startActivity(sharePage);
                 break;
+            case "联系我们":
+                // M6 第 4 条：原版「联系我们」是**对话框**（白卡叠在抽屉上），不是整页。
+                // 证据：m3/contact.png 实图 + contact.xml 无「返回」/标题节点；
+                // 几何见 docs/fidelity/m6/client-four-pages-diff.md（891×567 @ x168..1058、y1127..1693）。
+                showContactDialog();
+                break;
             default: {
                 android.content.Intent page = new android.content.Intent(this, M3PageActivity.class);
                 page.putExtra(M3PageActivity.EXTRA_PAGE, label);
                 startActivity(page);
             }
         }
+    }
+
+    /**
+     * M6 第 4 条：「联系我们」= 原版**对话框**（不是整页 Activity）。
+     *
+     * 几何全部是**设备像素**（截图量测，见 `docs/fidelity/m6/client-four-pages-diff.md` §5.3），
+     * 因此这里直接用 px，**不过 dp()**：
+     * 白卡 891×567 @ x168..1058 / y1127..1693（水平居中）、圆角 ≈56px；
+     * 标题 `邮箱地址` 距卡顶 72px、正文 223px、蓝按钮 583×111 距卡顶 354px、左右内距 154px。
+     * 文案逐字 `邮箱地址` / `account@xinzhi.space` / `复制邮箱`。
+     * 复制行为沿用原版 smali（`ClipData.newPlainText("Label", …)` + toast「复制成功」），不新造提示。
+     */
+    private void showContactDialog() {
+        final String mail = "account@xinzhi.space";
+        final int cardW = 891, cardH = 567;
+
+        // 白卡：891x567、圆角 56（dump root FrameLayout [168,1127][1059,1694]）
+        android.graphics.drawable.GradientDrawable cardBg = new android.graphics.drawable.GradientDrawable();
+        cardBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        cardBg.setColor(android.graphics.Color.WHITE);
+        cardBg.setCornerRadius(56f);
+
+        android.widget.FrameLayout card = new android.widget.FrameLayout(this);
+        card.setBackground(cardBg);
+
+        android.widget.LinearLayout col = new android.widget.LinearLayout(this);
+        col.setOrientation(android.widget.LinearLayout.VERTICAL);
+        col.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        // 左右内距 154px（(891-583)/2），顶部 72px（标题 dump y 1199 - 卡顶 1127）
+        col.setPadding(154, 72, 154, 0);
+
+        TextView title = new TextView(this);
+        title.setText("邮箱地址");
+        title.setTextSize(17f);
+        title.setTextColor(0xFF23272B);
+        title.setGravity(android.view.Gravity.CENTER);
+        // 宽度按**文字自身**（dump: 标题 [506,1199][722,1278] = 216、正文 [328,1350][899,1429] = 571），
+        // 用 MATCH_PARENT 会得到 583 宽、Δx 184px，复验按 Δ≤2px 必挂。
+        col.addView(title, new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 79));
+
+        TextView value = new TextView(this);
+        value.setText(mail);
+        value.setTextSize(17f);
+        value.setTextColor(0xFF23272B);
+        value.setGravity(android.view.Gravity.CENTER);
+        android.widget.LinearLayout.LayoutParams vlp = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 79);
+        vlp.topMargin = 72;   // 正文 dump y 1350 - (卡顶 1127 + 顶部 72 + 标题 79) = 72
+        col.addView(value, vlp);
+
+        TextView copy = new TextView(this);
+        copy.setId(R.id.lc_m3_copy_mail);
+        copy.setText("复制邮箱");
+        copy.setTextSize(17f);
+        copy.setTextColor(android.graphics.Color.WHITE);
+        copy.setGravity(android.view.Gravity.CENTER);
+        android.graphics.drawable.GradientDrawable btnBg = new android.graphics.drawable.GradientDrawable();
+        btnBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        btnBg.setColor(0xFF2F59B8);
+        btnBg.setCornerRadius(32f);
+        copy.setBackground(btnBg);
+        copy.setOnClickListener(v -> {
+            android.content.ClipboardManager cm =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            if (cm != null) {
+                cm.setPrimaryClip(android.content.ClipData.newPlainText("Label", mail));
+                android.widget.Toast.makeText(this, "复制成功", android.widget.Toast.LENGTH_SHORT).show();
+            }
+            android.util.Log.d("LCM3", "copy mail ok text=" + mail + " via dialog");
+        });
+        // 蓝钮：dump [322,1458][905,1615] → 583x157，距卡顶 331（=1127+331=1458）
+        // 蓝钮分两层（审客户端订正 + 总监裁定）：可点容器 = dump 583x157（距卡顶 331）；
+        // 蓝色填充 = 像素实测 583x111，相对容器上下各内缩 23/19 —— 整块 157 涂蓝会高 46px。
+        android.widget.FrameLayout btnBox = new android.widget.FrameLayout(this);
+        btnBox.setClickable(true);
+        btnBox.setOnClickListener(v -> copy.performClick());
+        android.widget.FrameLayout.LayoutParams fillLp = new android.widget.FrameLayout.LayoutParams(583, 111);
+        fillLp.topMargin = 23;
+        btnBox.addView(copy, fillLp);
+        android.widget.LinearLayout.LayoutParams blp = new android.widget.LinearLayout.LayoutParams(583, 157);
+        blp.topMargin = 29;
+        col.addView(btnBox, blp);
+
+        card.addView(col, new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT));
+
+        // 关闭钮：dump [911,1127][1059,1275] = 148x148，**卡片右上角内侧**（右缘 1059 = 卡右缘），clickable=true
+        TextView close = new TextView(this);
+        close.setId(R.id.lc_m3_dialog_close);
+        close.setText("×");
+        close.setTextSize(22f);
+        close.setTextColor(0xFF8E8E8E);
+        close.setGravity(android.view.Gravity.CENTER);
+        android.widget.FrameLayout.LayoutParams xlp = new android.widget.FrameLayout.LayoutParams(148, 148);
+        xlp.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+        final android.app.Dialog[] holder = new android.app.Dialog[1];
+        close.setOnClickListener(v -> { if (holder[0] != null) holder[0].dismiss(); });
+        card.addView(close, xlp);
+
+        android.app.Dialog d = new android.app.Dialog(this);
+        holder[0] = d;
+        d.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        android.widget.FrameLayout wrap = new android.widget.FrameLayout(this);
+        wrap.addView(card, new android.widget.FrameLayout.LayoutParams(cardW, cardH));
+        d.setContentView(wrap);
+        if (d.getWindow() != null) {
+            d.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            android.view.WindowManager.LayoutParams lp = d.getWindow().getAttributes();
+            lp.width = cardW;
+            lp.height = cardH;
+            lp.gravity = android.view.Gravity.CENTER;
+            d.getWindow().setAttributes(lp);
+        }
+        d.show();
+        android.util.Log.d("LCM3", "contact dialog shown " + cardW + "x" + cardH + " (close 148x148, btn 583x157)");
     }
 
     // ---------------- R2-004：POI 详情面板 ----------------

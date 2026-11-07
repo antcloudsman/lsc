@@ -1635,7 +1635,11 @@ MIGRATIONS : 001_init … 006_favorites_idem
 /health : schema=006_favorites_idem
 ```
 
-偏索引 `WHERE idem_key IS NOT NULL` 是对的——否则「不带键」的多次新建会互相撞唯一约束，直接建不出第二行（判据 4 就会失败）。
+偏索引 `WHERE idem_key IS NOT NULL` 是对的——但它**不是**为了防「无键撞车」：我在容器里用 `:memory:` 库实测（SQLite **3.53.4**），
+普通 `UNIQUE(user_id, idem_key)` 下连插两条 `idem_key=NULL` **两条都成功**（`PLAIN_UNIQUE_NULL_TWICE=ALLOWED`，`PLAIN_NULL_ROWS=2`），
+而同键非 NULL 插入会被拦（`PLAIN_SAME_KEY_TWICE=BLOCKED`）——因为 SQL 标准里 NULL 互不相同。
+所以偏索引的真实价值是：**只索引有键的行**（更小、更快）+ 把「有键才去重」写进 schema 让人看得见，不是正确性的必需品。
+**我在本节的初版写成「否则无键多次新建会互相撞唯一约束」，那句是错的，已撤回**（下一次谁要改这个索引，别拿那句话当依据）。
 
 ### 28.3 结论
 

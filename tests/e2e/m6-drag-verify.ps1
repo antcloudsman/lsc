@@ -36,6 +36,7 @@ function ReadState {
         Lng = [double]([regex]::Match($j, '"lng":([-\d\.]+)').Groups[1].Value)
         Brg = [int]([regex]::Match($j, '"bearing":(\d+)').Groups[1].Value)
         Zoom = [int]([regex]::Match($j, '"zoom":(\d+)').Groups[1].Value)
+        Ui = [regex]::Match($j, '"uiMode":"(\w+)"').Groups[1].Value
     }
 }
 function Swipe([int]$dx, [int]$dy, [int]$dur = 400) {
@@ -64,6 +65,7 @@ foreach ($z in 18, 12) {
     foreach ($d in $dirs) {
         $c1 = ReadState
         if (-not $c1) { Verdict ("2a-z$z-" + $d.N) 'bearing=0 拖动符号' $false 'getState 读取失败（map 未加载或 js 注入被拒）'; continue }
+        if ($c1.Ui -ne 'map') { Verdict ("2a-z$z-" + $d.N) 'bearing=0 拖动符号' $false ('uiMode=' + $c1.Ui + '（罗盘浮层会吞掉拖拽，先退出罗盘态）'); continue }
         Invoke-Adb2 @('exec-out', 'screencap', '-p') > (Join-Path $OutDir ("2a-z{0}-{1}-before.png" -f $z, $d.N))
         Swipe $d.dx $d.dy
         $c2 = ReadState

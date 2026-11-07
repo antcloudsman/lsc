@@ -157,8 +157,8 @@ public final class CompassReadSheet {
             android.widget.ImageView gem = new android.widget.ImageView(a);
             gem.setId(R.id.lc_read_vip);
             gem.setImageResource(R.drawable.lc_compass_vip);
-            gem.setScaleType(android.widget.ImageView.ScaleType.FIT_XY);
-            LinearLayout.LayoutParams gemLp = new LinearLayout.LayoutParams(76, 65);
+            gem.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            LinearLayout.LayoutParams gemLp = new LinearLayout.LayoutParams(77, 65);
             gemLp.rightMargin = p(a, 6);
             tail.addView(gem, gemLp);
             rightView.setText(right);
@@ -220,4 +220,5 @@ public final class CompassReadSheet {
         return s == null ? "" : s.replace("\u200c", "");
     }
 }
+
 

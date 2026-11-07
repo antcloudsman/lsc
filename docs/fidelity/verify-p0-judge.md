@@ -1697,6 +1697,196 @@ GapDb.java:199-201
 
 ⚠️ 客户端方案里若写「换账号后把旧行 `remote_id` 置 0 重推」，**这条要打回**：那是把 A 的数据推到 B 账号，属另一种串数据。正确做法是**整行既不推也不对账**（`owner_uid != 当前 uid` 即跳过）。
 
+## 30. 主线 `bd30997` 复验：§28 关账、§29 前提更新，但 P0 修复**还漏一个入口**
+
+### 30.1 §28 幂等在 develop 构建上重跑 —— 关账（我此前留的「必须合并后复跑」已兑现）
+
+先验环境是真的主线构建（不是分支）：
+
+```
+develop = bd30997；git merge-base --is-ancestor 047b2be origin/develop → exit 0
+容器 vs develop 逐字节：server.js 17e97436 / db.js f54c0e05 / selfcheck.mjs d8d0b16b → 3/3 SAME
+/health → schema=006_favorites_idem
+```
+
+四条判据（新账号 `dvchcdx`，`Idempotency-Key=dev-idem-chcdx`）：
+
+```
+1) 同 key 同内容 → 201 id=273 dedup=false ；再发 → 200 id=273 dedup=true   ✓
+2) 同 key 不同内容 → 200 id=273 name=DEV-A-chcdx                          ✓ 首行未被改写
+3) 新 key → 201 id=274                                                     ✓
+4) 无 key 两次 → 201/201 id=275/276（库内 idem_key 均为 null）             ✓
+库级：DUP_KEYS=[] ；我自己重跑 docker exec … selfcheck.mjs → SELFCHECK: PASS (80 checks) exit=0
+```
+
+→ **§28 从「分支级通过」升级为「主线通过」**。
+
+### 30.2 §29 前提更新
+
+我原来写「跨账号误删未进 develop」——已过期：客户端修复已随 `bd30997` 进主线。§29 的机制描述仍成立，但复验必须按 `bd30997` 跑，不是按我审过的 `fddce8d`。
+
+### 30.3 **新发现：`owner_uid=0` 的存量行仍会被误删/误推（已证实，代码路径）**
+
+修复加了三处收窄，但**「存量行」这个入口没堵**：
+
+```
+GapDb.java:92   ALTER TABLE interest ADD COLUMN owner_uid INTEGER NOT NULL DEFAULT 0
+                → 升级前的所有本地行都是 owner_uid=0
+GapDb.java:201-204  int adoptUnownedRows(int uid) {
+                      v.put("owner_uid", uid);
+                      return …update(T_INTEREST, v, "owner_uid=0", null);   ← 认领「全部」无归属行
+                    }
+GapDb.java:173  listPendingInterest: where += " AND (owner_uid=0 OR owner_uid=?)"  ← 无归属行直接可推
+FavoriteSync.java:161-164  owner != uid → continue；相等则 purge
+```
+
+后果（正是测试撞到的那个场景的**首次同步**）：
+
+1. 升级前，账号 A 的行 → `owner_uid=0`、`remote_id=23/24/25`；
+2. 升级后**先登 B 同步**：`adoptUnownedRows(B)` 把 A 的 3 行认领成 B 的；
+3. 对账时 `ownerUidOf == B` → B 的 list 里没有 23/24/25 → **照样整批 purge**；
+4. 另一条路：若这些行 `sync_state<>'clean'`，`listPendingInterest(B)` 的 `owner_uid=0` 分支会把它们**推进 B 账号**（串数据）。
+
+也就是说：**只要「升级后第一次同步的账号 ≠ 建这些行的账号」，P0 就复现**。测试那 3 条若在升级后没先在 A 账号下同步过一次（被 `adoptUnownedRows(A)` 收走），这条 P0 就会失败——这正是我要求 P0 必须真机重跑的原因。
+
+**修法（二选一，都在客户端最小改动内）**：
+- **A（推荐）**：`adoptUnownedRows` 只认领「从未同步过」的行 → `WHERE owner_uid=0 AND remote_id=0`；`listPendingInterest` 里同步去掉 `owner_uid=0` 分支，或同样限定 `remote_id=0`。
+  理由：`remote_id>0` 说明这行在**某个账号**的服务端已经存在，谁是主人无法从本地判定，**任何自动认领都是猜测**。
+- **B**：存量行一律当「未知归属」，既不推也不参与对账，等用户在该账号下显式操作再说。
+
+### 30.4 追加判据（P0 复验必须包含这一条，否则会「假通过」）
+
+**场景**：`owner_uid=0` 且 `remote_id>0` 的存量行 + **切到另一个账号做升级后的第一次同步**。
+- 期望：本地条数不减少、服务端该账号 `favorites` 不增加、日志出现明确的跳过（不是 `adopted`）。
+- 若测试只在「先在 A 账号同步过一次」之后才切号，那 3 条已被 A 认领，**测不到这个洞**——两条路径都要跑，或至少说明自己跑的是哪条。
+
+**判据②的计数口径（2026-11-07 21:20 修正，服务端指出、我实测确认）**：
+我原来打算用 `/health` 的 `favorites` 判「B 账号不增加」——**错的**，那是全库口径：
+
+```
+/health favorites            = 46   ← 全库所有账号 deleted=0 合计
+SELECT COUNT(*) 含软删        = 96
+按账号：idm2wpqek 4 / dvchcdx 4 / e2e47712 3 / sb8397 2 / idemsnvqi 2 …
+```
+别人一跑测试，这个数就变，判据会被第三方数据污染。
+**改用（都只计 `deleted=0`）**：① `GET /v2/userCollectPoint/list` 用 B 的 token 取 `data.count`；
+② 库内 `SELECT COUNT(*) FROM favorites f JOIN users u ON u.id=f.user_id WHERE u.username_lc='<B>' AND f.deleted=0`。
+
+### 30.5 同一处还有两个连带问题（都已证实）
+
+**① `setOwnerUid()` 有定义、零调用点** —— `git grep -n 'setOwnerUid|owner_uid' origin/develop -- app/android/app/src/main/java` 里，`setOwnerUid` 只出现在 `GapDb.java:194` 的定义处，**没有任何调用**。
+也就是说 `owner_uid` 唯一的赋值途径就是同步开始时那次**批量认领**（`adoptUnownedRows`）。新建行、拉回来的行，在被下一次同步认领之前都是 `owner_uid=0`。
+
+**② `upsertRemoteInterest` 不写 `owner_uid`** —— 拉回来的行也是 0。
+所以风险不止「升级前的存量行」，还有：**A 账号拉回来的行（`owner_uid=0`）→ 用户切到 B → 下一次同步先把它们认领给 B → 对账时 B 的 list 没有它们 → purge**。
+比我 §30.3 写的范围更大：**只要「拉回之后、被下次同步认领之前」切了账号，就中招**。
+
+**修法补充**：`owner_uid` 应该在**创建时刻**写死（新建行调 `setOwnerUid(uid)`、`upsertRemoteInterest` 传当前 uid），而不是靠同步起点的批量认领来兜。批量认领只用于「升级前且 `remote_id=0`」的老行。
+
+### 30.6 B（崩窗口）判据的正确数据源 —— 不能用「拉回来的行」
+
+客户端提过「先 `delete from interest` 清本地再拉回，再清 `remote_id` 做崩窗口」。**这个顺序做 B 会得出错误结论**：
+
+```
+GapDb.java:208-221 clientKeyOf()
+  读到 client_key 为空 → 生成新 UUID 并写回
+服务端 list 不回显 idem_key（§28.4 实测 ITEM_FIELDS 无此字段）
+→ 拉回来的行 client_key 为 NULL
+→ 清 remote_id 后重推时 clientKeyOf 现场生成「新键」
+→ 服务端视为新键 → 建出重复行
+```
+
+即：用拉回的行测 B，看到的重复**不是崩窗口缺陷复现**，而是「拉回行没有键」导致的；反之若测试只核「id 不变」，也会因为新键必然新建而误判失败。
+**B 必须用「本地新建、且已推过一次」的行**（`client_key` 已生成持久化），再 `update interest set remote_id=0, rev=0, sync_state='pending'` 做崩窗口，才测的是那条缝。
+
+## 31. P0 修复清单（`bd30997` 全量核对，2026-11-07 21:35）
+
+总监已裁三条。我把 `interest` 表的**所有写入路径**过了一遍，避免只改一处又漏一处：
+
+| 位置 | 路径 | 现在是否写 `owner_uid` |
+|---|---|---|
+| `GapDb:119-129` `insertInterest(...)` → `:128 insert` | 本地新建收藏点 | **不写**（升到 `DEFAULT 0`） |
+| `GapDb:309-319` `upsertRemoteInterest(...)` 新建分支 → `:319 insert` | 服务端拉回落地 | **不写** |
+| `GapDb:299-304` `upsertRemoteInterest(...)` 更新分支 | 已存在行的拉取刷新 | **不写**（只改 name/lat/lng/rev） |
+| `GapDb:201-204` `adoptUnownedRows(uid)` | 同步起点批量认领 | 写 `uid`，但**条件是 `owner_uid=0` 一个**（缺陷本身） |
+| `GapDb:194-197` `setOwnerUid(...)` | — | **零调用点** |
+| `GapDb:173` `listPendingInterest` 的 `owner_uid=0 OR owner_uid=?` | 推送选择 | 把无归属行当成本账号的 |
+
+**完整修法（四处 + 一处收窄）**：
+1. `insertInterest` 加 `owner_uid = 当前 uid`（签名加 uid 或由调用方 `setOwnerUid` 补）；
+2. `upsertRemoteInterest` **新建分支**加 `owner_uid = 当前 uid`；
+3. `upsertRemoteInterest` **更新分支**同样写 `owner_uid`（否则拉回的行永远无归属，下次切号仍被认领）；
+4. `adoptUnownedRows` 收窄为 `owner_uid=0 AND remote_id=0`；
+5. `listPendingInterest` 的 `owner_uid=0` 分支同步收窄为只放 `remote_id=0` 的行，否则无归属的旧行会被推进当前账号（串数据）。
+
+修完我按 §30.4 的三条 + §30.6 的 B 数据源判；**`adoptUnownedRows` 的返回计数**也能当旁证（只认领 `remote_id=0` 后，升级场景的 `adopted` 应为 0 而不是 3）。
+
+## 32. `9d0170e` 代码复核：五处全改对，但留了一个「孤儿行删不掉」的尾巴
+
+### 32.1 五处逐条核对（`git show 9d0170e:…`，不看汇报）
+
+```
+GapDb:209   adoptUnownedRows → update(…, "owner_uid=0 AND remote_id=0", null)   ✓ 收窄
+GapDb:123   insertInterest            v.put("owner_uid", ownerUid)            ✓ 本地新建写死
+GapDb:328   upsertRemoteInterest 新建  v.put("owner_uid", ownerUid)            ✓ 拉回落地
+GapDb:312   upsertRemoteInterest 更新  if (ownerUid > 0) v.put("owner_uid", …) ✓ 我 §31 指的漏点，已补
+GapDb:177   listPendingInterest       where += " AND owner_uid=?"              ✓ 去掉 =0 放行
+GapDb:240   listDeletePending         where += " AND owner_uid=?"              ← 见 32.2
+git grep setOwnerUid → 无命中（已删除）                                        ✓
+客户端无「remote_id 置 0 重推」（只有 adopt 条件里出现该字段名）                 ✓
+```
+→ **P0 三条判据（本地条数不减 / 不串数据 / 切回 A 可推拉）在这个版本上代码层面成立**，等真机证据。
+
+### 32.2 残留：`owner_uid=0 且 remote_id>0` 的老行**删不掉**
+
+按新逻辑，这类行「永不认领、永不推送、永不参与对账」——这是对的（本地无法判断主人）。但删除链路也被一起卡住了：
+
+```
+GapDb:136   listInterest:  "delete_pending=0"          ← 用户删掉后列表就不再显示
+GapDb:227   markInterestDeletePending: set delete_pending=1
+GapDb:240   listDeletePending(uid): "delete_pending=1 AND owner_uid=?"   ← 孤儿行 owner_uid=0 不匹配
+FavoriteSync:43  for (p : db.listDeletePending(uid))   ← 永远拿不到这一行
+```
+
+后果：用户在本地删了一条孤儿行 → **界面消失、但墓碑永远推不出去** → 服务端那行还在 → 别的设备仍显示它（复活），本机则永远留一条 `delete_pending=1` 的死行。
+
+**修法很小、且安全性有现成保障**：把 `listDeletePending` 改成也接受 `owner_uid=0`（`delete_pending=1 AND (owner_uid=0 OR owner_uid=?)`）。
+理由是删除本身**不会串数据**：`FavoriteSync:46` 只发 `id`，服务端按 token 判归属，不是自己的返回 404；而 `FavoriteSync:50-53` 已经**把 404 当删除完成并本地 purge**。所以非本账号的行最多得到 404 → 本地清掉墓碑，不会误删别人的数据。
+
+**注意**：推送队列（`listPendingInterest`）**不能**这样放开——推会把行塞进当前账号，是串数据。两条队列要区别对待。
+
+### 32.3 另外记一条已知限制（不进缺陷）
+
+孤儿行（`owner_uid=0`、`remote_id>0`）从此**永远不会再同步**，只能本地看。这是「不猜归属」的必然代价，属于正确的保守选择，记进已知限制即可；若以后要救，只能让用户手动「认领到当前账号」。
+
+## 33. 同类问题第二个：**界面列表没有按账号过滤**（`c9ab189`，已证实）
+
+§32 修的是「同步队列」，但**展示层**还是全表：
+
+```
+GapDb:133-137   List<InterestPoint> listInterest() {  query(T_INTEREST, null, "delete_pending=0", …)  }
+                ← 只有 delete_pending=0 一个条件，没有 owner_uid
+调用点：InterestListActivity:72、MainActivity:1722、MainActivity:3167   ← 都是 UI
+```
+
+后果两条，都不是「防过头」，是「没防到」：
+
+1. **切到 B 后，界面上仍然能看到 A 的收藏点**（以及 `owner_uid=0` 的孤儿行），还能点开编辑。
+2. **在 B 的会话里删掉 A 的行**（因为它显示着）：
+   `markInterestDeletePending` 把 `delete_pending=1` 打上 → UI 立刻消失（`listInterest` 过滤了）→ 但 `listDeletePending(B)` 因 `owner_uid=A` 拿不到它，**墓碑挂在本地不推**；
+   等 A 再登录同步时，`listDeletePending(A)` 会取到它并**真的把 A 在服务端的行删掉**。
+   即：**在 B 的界面点一次删除，A 的数据在 A 下次同步时被删**。这不是串数据（走向对了），是**跨账号的破坏性副作用**，而且删的时候用户以为自己删的是 B 的。
+
+**修法**：`listInterest` 增加 owner 维度（`listInterest(uid)`），UI 只显示当前账号 + 可选的「本地历史/未归属」分区；`InterestListActivity` 与 `MainActivity` 两处调用点传当前 uid。
+若短期不想动 UI，最低限度要让主人不同的行**不可点删除**（否则就是上面第 2 条）。
+
+**注意**：`FavoriteSync:157` 的对账循环用的是同一个 `listInterest()`，那边已有 `if (owner != uid) continue;` 兜住，**别为了改 UI 把那处守卫删掉**。
+
+
+
+
+
+
 
 
 

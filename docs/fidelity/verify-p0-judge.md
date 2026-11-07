@@ -1697,6 +1697,70 @@ GapDb.java:199-201
 
 ⚠️ 客户端方案里若写「换账号后把旧行 `remote_id` 置 0 重推」，**这条要打回**：那是把 A 的数据推到 B 账号，属另一种串数据。正确做法是**整行既不推也不对账**（`owner_uid != 当前 uid` 即跳过）。
 
+## 30. 主线 `bd30997` 复验：§28 关账、§29 前提更新，但 P0 修复**还漏一个入口**
+
+### 30.1 §28 幂等在 develop 构建上重跑 —— 关账（我此前留的「必须合并后复跑」已兑现）
+
+先验环境是真的主线构建（不是分支）：
+
+```
+develop = bd30997；git merge-base --is-ancestor 047b2be origin/develop → exit 0
+容器 vs develop 逐字节：server.js 17e97436 / db.js f54c0e05 / selfcheck.mjs d8d0b16b → 3/3 SAME
+/health → schema=006_favorites_idem
+```
+
+四条判据（新账号 `dvchcdx`，`Idempotency-Key=dev-idem-chcdx`）：
+
+```
+1) 同 key 同内容 → 201 id=273 dedup=false ；再发 → 200 id=273 dedup=true   ✓
+2) 同 key 不同内容 → 200 id=273 name=DEV-A-chcdx                          ✓ 首行未被改写
+3) 新 key → 201 id=274                                                     ✓
+4) 无 key 两次 → 201/201 id=275/276（库内 idem_key 均为 null）             ✓
+库级：DUP_KEYS=[] ；我自己重跑 docker exec … selfcheck.mjs → SELFCHECK: PASS (80 checks) exit=0
+```
+
+→ **§28 从「分支级通过」升级为「主线通过」**。
+
+### 30.2 §29 前提更新
+
+我原来写「跨账号误删未进 develop」——已过期：客户端修复已随 `bd30997` 进主线。§29 的机制描述仍成立，但复验必须按 `bd30997` 跑，不是按我审过的 `fddce8d`。
+
+### 30.3 **新发现：`owner_uid=0` 的存量行仍会被误删/误推（已证实，代码路径）**
+
+修复加了三处收窄，但**「存量行」这个入口没堵**：
+
+```
+GapDb.java:92   ALTER TABLE interest ADD COLUMN owner_uid INTEGER NOT NULL DEFAULT 0
+                → 升级前的所有本地行都是 owner_uid=0
+GapDb.java:201-204  int adoptUnownedRows(int uid) {
+                      v.put("owner_uid", uid);
+                      return …update(T_INTEREST, v, "owner_uid=0", null);   ← 认领「全部」无归属行
+                    }
+GapDb.java:173  listPendingInterest: where += " AND (owner_uid=0 OR owner_uid=?)"  ← 无归属行直接可推
+FavoriteSync.java:161-164  owner != uid → continue；相等则 purge
+```
+
+后果（正是测试撞到的那个场景的**首次同步**）：
+
+1. 升级前，账号 A 的行 → `owner_uid=0`、`remote_id=23/24/25`；
+2. 升级后**先登 B 同步**：`adoptUnownedRows(B)` 把 A 的 3 行认领成 B 的；
+3. 对账时 `ownerUidOf == B` → B 的 list 里没有 23/24/25 → **照样整批 purge**；
+4. 另一条路：若这些行 `sync_state<>'clean'`，`listPendingInterest(B)` 的 `owner_uid=0` 分支会把它们**推进 B 账号**（串数据）。
+
+也就是说：**只要「升级后第一次同步的账号 ≠ 建这些行的账号」，P0 就复现**。测试那 3 条若在升级后没先在 A 账号下同步过一次（被 `adoptUnownedRows(A)` 收走），这条 P0 就会失败——这正是我要求 P0 必须真机重跑的原因。
+
+**修法（二选一，都在客户端最小改动内）**：
+- **A（推荐）**：`adoptUnownedRows` 只认领「从未同步过」的行 → `WHERE owner_uid=0 AND remote_id=0`；`listPendingInterest` 里同步去掉 `owner_uid=0` 分支，或同样限定 `remote_id=0`。
+  理由：`remote_id>0` 说明这行在**某个账号**的服务端已经存在，谁是主人无法从本地判定，**任何自动认领都是猜测**。
+- **B**：存量行一律当「未知归属」，既不推也不参与对账，等用户在该账号下显式操作再说。
+
+### 30.4 追加判据（P0 复验必须包含这一条，否则会「假通过」）
+
+**场景**：`owner_uid=0` 且 `remote_id>0` 的存量行 + **切到另一个账号做升级后的第一次同步**。
+- 期望：本地条数不减少、服务端该账号 `favorites` 不增加、日志出现明确的跳过（不是 `adopted`）。
+- 若测试只在「先在 A 账号同步过一次」之后才切号，那 3 条已被 A 认领，**测不到这个洞**——两条路径都要跑，或至少说明自己跑的是哪条。
+
+
 
 
 

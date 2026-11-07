@@ -79,16 +79,6 @@
       "note": "罗盘中心指针，46x188"
     },
     {
-      "entry": "res/Dn.webp",
-      "target": "compass/ic_compass_vip.webp",
-      "kind": "bitmap",
-      "resource": "ic_compass_vip",
-      "raster": "mipmap-xxxhdpi",
-      "size": "132x112",
-      "use": "读盘 sheet 每行行尾的 VIP 徽标（金色钻石 + V）——此前被误记为 ◆ 字符",
-      "evidence": "docs/fidelity/orig/w3-sheet.png：金色像素外接框 [861,1966][936,2030]=76x65（比例 1.169），资源比例 1.179；全量 res 位图缩放到 76x65 逐一比对 MAE=13.41，次名 ic_tab_indicator2 为 19.97；a11y bbox [862,1967][935,2020]=74x54 是裁剪框（金色像素溢到 y=2030）"
-    },
-    {
       "entry": "res/6g.png",
       "target": "tools/ic_tool_compass.png",
       "kind": "tool-icon",
@@ -415,13 +405,13 @@
       "checksheet": "A-07 12 源卡片缩略图"
     },
     {
-      "entry": "res/Eo.webp",
+      "entry": "res/ml.webp",
       "target": "map/source-thumb/ic_base_map_xintu_satellite.png",
       "kind": "source-thumb",
       "resource": "ic_base_map_xintu_satellite",
       "raster": "mipmap-xxxhdpi",
       "use": "星图·卫星",
-      "evidence": "res/values/public.xml 资源名 + mipmap-xxxhdpi 像素 + 大小/CRC 唯一命中",
+      "evidence": "res/values/public.xml 资源名 ic_base_map_xintu_satellite + mipmap-xxxhdpi 条目 res/ml.webp（Eo.webp 属 xintu_satellite）+ 大小/CRC 唯一比对；同内容转位：res/Eo.webp（ic_base_map_xintu_satellite.png 同 sha）",
       "checksheet": "A-07 12 源卡片缩略图"
     },
     {
@@ -1045,6 +1035,16 @@
       "use": "推荐给好友-微信朋友圈（候选）",
       "evidence": "2 个 ImageButton：[822,2140][986,2304]",
       "checksheet": "S-推荐给好友"
+    },
+    {
+      "entry": "res/Dn.webp",
+      "target": "compass/ic_compass_vip.webp",
+      "kind": "bitmap",
+      "resource": "ic_compass_vip",
+      "raster": "mipmap-xxxhdpi",
+      "size": "132x112",
+      "use": "读盘 sheet 每行行尾的 VIP 徽标（金色钻石 + V）——此前被误记为 ◆ 字符",
+      "evidence": "docs/fidelity/orig/w3-sheet.png：金色像素外接框 [861,1966][936,2030]=76x65（比例 1.169），资源比例 1.179；全量 res 位图缩放到 76x65 逐一比对 MAE=13.41，次名 ic_tab_indicator2 为 19.97；a11y bbox [862,1967][935,2020]=74x54 是裁剪框（金色像素溢到 y=2030）"
     }
   ],
   "decode": {

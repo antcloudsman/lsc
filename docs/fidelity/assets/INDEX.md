@@ -83,7 +83,7 @@
 | 75 | `map/source-thumb/ic_base_map_tecent_normal.png` | 位图 | 16582 | 300x186 | `f5ec1b87febb79f5…` | `res/Nv.webp` | ic_base_map_tecent_normal | 腾讯·标准 | source-thumb |
 | 76 | `map/source-thumb/ic_base_map_tencent_satellite.png` | 位图 | 11260 | 300x186 | `1f7496ab8b7c1478…` | `res/UL.webp` | ic_base_map_tencent_satellite | 腾讯·卫星 | source-thumb |
 | 77 | `map/source-thumb/ic_base_map_tencent_terrain.png` | 位图 | 6938 | 300x186 | `0f4eff35dfcb0927…` | `res/5z.webp` | ic_base_map_tencent_terrain | 腾讯·地形 | source-thumb |
-| 78 | `map/source-thumb/ic_base_map_xintu_satellite.png` | 位图 | 104638 | 874x536 | `626d04b3f90551b5…` | `res/Eo.webp` | ic_base_map_xintu_satellite | 星图·卫星 | source-thumb |
+| 78 | `map/source-thumb/ic_base_map_xintu_satellite.png` | 位图 | 104638 | 874x536 | `626d04b3f90551b5…` | `res/ml.webp` | ic_base_map_xintu_satellite | 星图·卫星 | source-thumb |
 | 79 | `pages/_shared/icons/svg_title_back.xml` | 矢量/解码 | 456 | - | `14be0ac5f1fef97c…` | `res/e2.xml` | svg_title_back | 共用返回箭头（9 页 dump 均有「返回」节点） | page-icon |
 | 80 | `pages/account/icons/ic_default_avatar.png` | 位图 | 3694 | 240x240 | `ac6d865eb51f4e46…` | `res/Qc.webp` | ic_default_avatar | 账户设置-默认头像（候选） | page-icon |
 | 81 | `pages/feedback/icons/ic_add_image.png` | 位图 | 1552 | 280x280 | `1ab9a548678dcb6c…` | `res/A0.png` | ic_add_image | 投诉反馈-添加图片 | page-icon |

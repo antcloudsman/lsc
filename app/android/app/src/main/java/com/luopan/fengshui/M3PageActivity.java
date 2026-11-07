@@ -58,7 +58,6 @@ public class M3PageActivity extends Activity {
             {"投诉反馈", "本页的提交需服务端工单接口，当前未接入（D-022）——以下为原版界面文案。"},
             {"帮助中心", "原版为在线帮助（远端 WebView），离线时无法加载正文（D-023）。"},
             {"用户协议", "原版为远端 WebView（正文由第三方托管），离线时无法加载（D-023）。"},
-            {"联系我们", "本页文案含原版域名，按 copy 门禁暂挂起，等裁定后接入（原文见 docs/fidelity/m3-text/contact.txt）。"},
     };
 
     /**
@@ -72,6 +71,19 @@ public class M3PageActivity extends Activity {
     private static final String PRIVACY_URL = "https://agreement.yuan9.cn/agreement/swssqjdt/privacy.html";
     /** 备案编号：原版 ACTION_VIEW 走**外部浏览器**（ApiHelper 常量 https://beian.miit.gov.cn/）。 */
     private static final String BEIAN_URL = "https://beian.miit.gov.cn/";
+
+    /**
+     * 推荐给好友的分享载荷 = 原版 `MainViewModel.s3(Activity)`（smali 逐字，不是自编文案）：
+     * - UMWeb URL：`https://sj.qq.com/appdetail/space.xinzhi.globe`
+     * - 标题：`R.string.app_name` =「三维山水全景地图」
+     * - 正文：原文含 `appName` 占位符，逐字保留 =「我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~」
+     * - 缩略图：`R.mipmap.ic_launcher`
+     * 原版用友盟 `ShareAction` 的 `SHARE_MEDIA.WEIXIN` / `WEIXIN_CIRCLE`（F8/d$a、F8/d$b）；
+     * 本项目不引第三方 SDK，按任务口径落到系统 `ACTION_SEND`（正文与渠道标签逐字）。
+     */
+    private static final String SHARE_TITLE = "三维山水全景地图";
+    private static final String SHARE_TEXT = "我正在使用《appName》探索世界，它支持3D、超清影像、罗盘等功能，快来一起探索吧~";
+    private static final String SHARE_URL = "https://sj.qq.com/appdetail/space.xinzhi.globe";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -224,7 +236,14 @@ public class M3PageActivity extends Activity {
         tip.setTextColor(Color.rgb(200, 190, 170));
         tip.setPadding(0, 24, 0, 16);
         list.addView(tip);
-        // 提交：本地必填校验；通过了也不发请求（D-022）
+        // 提交结果行：三态可区分（校验不过 / 网络不可用 / 服务端未接入）。
+        // 文案是 LC 本地提示（原版空提交行为未取证，未发真请求），不冒充原版文案。
+        final TextView submitStatus = new TextView(this);
+        submitStatus.setId(R.id.lc_m3_submit_status);
+        submitStatus.setTextSize(13f);
+        submitStatus.setTextColor(Color.rgb(200, 190, 170));
+        submitStatus.setPadding(0, 8, 0, 16);
+        // 提交：本地必填校验；通过了也不发请求（D-022），但失败态必须能区分，不伪造成功
         TextView submit = new TextView(this);
         submit.setId(R.id.lc_m3_submit);
         submit.setText("提交");
@@ -240,15 +259,36 @@ public class M3PageActivity extends Activity {
             if (reason.getText().toString().trim().isEmpty()
                     || contact.getText().toString().trim().isEmpty()
                     || desc.getText().toString().trim().isEmpty()) {
-                tip.setText("请先填写申请原因、联系方式与问题描述");
+                submitStatus.setTextColor(Color.rgb(220, 170, 90));
+                submitStatus.setText("请先填写申请原因、联系方式与问题描述");
                 android.util.Log.d("LCM3", "complaint validate fail");
                 return;
             }
-            tip.setText("提交未接入（D-022）：原版会向服务端提交，本项目不发送请求");
-            android.util.Log.d("LCM3", "complaint submit blocked by D-022");
+            boolean online = isNetworkOnline();
+            submitStatus.setTextColor(Color.rgb(200, 90, 80));
+            if (!online) {
+                submitStatus.setText("提交失败：当前网络不可用（原版提交依赖服务端，D-022）");
+            } else {
+                submitStatus.setText("提交失败：服务端未接入（D-022），未发送请求");
+            }
+            android.util.Log.d("LCM3", "complaint submit blocked, online=" + online);
         });
         list.addView(submit, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        list.addView(submitStatus);
+    }
+
+    /** 网络可用性：只用于把「网络不可用」与「服务端未接入」两种失败态区分开，不据此伪造成功。 */
+    private boolean isNetworkOnline() {
+        try {
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            if (cm == null) return false;
+            android.net.NetworkInfo ni = cm.getActiveNetworkInfo();
+            return ni != null && ni.isConnected();
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /** 推荐给好友（M3-05）：原版是**底部分享面板** —— 选择要分享到的平台 + 微信 / 微信朋友圈 / 取消分享，2 枚原版图标。 */
@@ -257,8 +297,12 @@ public class M3PageActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setPadding(0, 24, 0, 24);
-        row.addView(shareItem(R.mipmap.lc_share_wx, "微信", "com.tencent.mm"));
-        row.addView(shareItem(R.mipmap.lc_share_circle, "微信朋友圈", "com.tencent.mm"));
+        View wx = shareItem(R.mipmap.lc_share_wx, "微信", false);
+        wx.setId(R.id.lc_m3_share_wx);
+        row.addView(wx);
+        View circle = shareItem(R.mipmap.lc_share_circle, "微信朋友圈", true);
+        circle.setId(R.id.lc_m3_share_circle);
+        row.addView(circle);
         list.addView(row);
         TextView cancel = new TextView(this);
         cancel.setId(R.id.lc_m3_share_cancel);
@@ -271,7 +315,7 @@ public class M3PageActivity extends Activity {
         list.addView(cancel);
     }
 
-    private View shareItem(int iconRes, String label, String pkg) {
+    private View shareItem(int iconRes, final String label, final boolean timeline) {
         LinearLayout item = new LinearLayout(this);
         item.setOrientation(LinearLayout.VERTICAL);
         item.setGravity(Gravity.CENTER);
@@ -286,20 +330,38 @@ public class M3PageActivity extends Activity {
         tv.setGravity(Gravity.CENTER);
         tv.setPadding(0, 12, 0, 0);
         item.addView(tv);
-        item.setOnClickListener(v -> {
-            // 真实分享动作：原作者走分享 Intent；这里调系统分享面板（目标包存在时直达）
-            android.content.Intent send = new android.content.Intent(android.content.Intent.ACTION_SEND);
-            send.setType("text/plain");
-            send.putExtra(android.content.Intent.EXTRA_TEXT, "三维山水全景地图（LC）");
-            send.setPackage(pkg);
-            try {
-                startActivity(send);
-            } catch (Throwable t) {
-                startActivity(android.content.Intent.createChooser(send, "推荐给好友"));
-            }
-            android.util.Log.d("LCM3", "share " + label);
-        });
+        item.setOnClickListener(v -> shareTo(label, timeline));
         return item;
+    }
+
+    /**
+     * 渠道点击 → 系统 `ACTION_SEND` 到微信（原版走友盟 `ShareAction` 的 WEIXIN / WEIXIN_CIRCLE）。
+     *
+     * 实测（2026-11-07 08:24–08:28，真机 L2E0222531014833）：
+     * - `setPackage("com.tencent.mm")` + text/plain：落到微信自己的选择器「发送给朋友 / 添加到微信收藏」→ 可用；
+     * - `setClassName(... ui.tools.ShareToTimeLineUI)`（带/不带 Ktitle/Kdescription/Klink）：微信弹
+     *   「获取资源失败，无法分享至朋友圈。」——普通 `ACTION_SEND` 走不通朋友圈，原版用的微信 SDK 通道本项目不引入。
+     * 因此两个渠道都落到微信的 `ACTION_SEND` 入口；**朋友圈与微信的分流是已知差异**（原版靠微信 SDK），
+     * 正文（UMWeb description）与渠道标签逐字不变。`SHARE_URL` 是原版 UMWeb 的落地页，随日志留痕。
+     */
+    private void shareTo(String label, boolean timeline) {
+        android.content.Intent send = new android.content.Intent(android.content.Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(android.content.Intent.EXTRA_SUBJECT, SHARE_TITLE);
+        send.putExtra(android.content.Intent.EXTRA_TEXT, SHARE_TEXT);
+        send.setPackage("com.tencent.mm");
+        try {
+            startActivity(send);
+            android.util.Log.d("LCM3", "share " + label + " channel=" + (timeline ? "WEIXIN_CIRCLE" : "WEIXIN")
+                    + " direct -> resolver, text=" + SHARE_TEXT + " url=" + SHARE_URL);
+        } catch (Throwable t) {
+            android.util.Log.d("LCM3", "share " + label + " fallback chooser: " + t);
+            android.content.Intent plain = new android.content.Intent(android.content.Intent.ACTION_SEND);
+            plain.setType("text/plain");
+            plain.putExtra(android.content.Intent.EXTRA_SUBJECT, SHARE_TITLE);
+            plain.putExtra(android.content.Intent.EXTRA_TEXT, SHARE_TEXT);
+            startActivity(android.content.Intent.createChooser(plain, "推荐给好友"));
+        }
     }
 
     /**
@@ -307,6 +369,13 @@ public class M3PageActivity extends Activity {
      * 字符串只允许已取证的 `您当前未登录` / `立即登录`；登录链路按 D-022 标注。
      */
     private void buildAccount(LinearLayout list) {
+        // 默认头像 = 原版 `pages/account/icons/ic_default_avatar.png`（S- 判据：本页 1 枚，候选）。
+        // 未登录态整页布局原版拿不到（需登出，不可逆，D-022），这里只做「头像 + 未登录 + 立即登录」最小结构。
+        android.widget.ImageView avatarImg = new android.widget.ImageView(this);
+        avatarImg.setId(R.id.lc_m3_avatar_img);
+        avatarImg.setImageResource(R.mipmap.lc_default_avatar);
+        avatarImg.setPadding(0, 24, 0, 12);
+        list.addView(avatarImg, new LinearLayout.LayoutParams(120, 120));
         TextView avatar = new TextView(this);
         avatar.setId(R.id.lc_m3_avatar);
         avatar.setText("您当前未登录");
@@ -382,7 +451,9 @@ public class M3PageActivity extends Activity {
             if (s.contains("@")) email = s.trim();
         }
         final String mail = email;
-        for (int i = 1; i < lines.size(); i++) {
+        // 原版 contact.xml **没有标题节点**（产品 §9 已记），所以 assets 里三行全是正文，不能跳过第一行；
+        // 顺序与 dump 一致：邮箱地址 / account@xinzhi.space / 复制邮箱。
+        for (int i = 0; i < lines.size(); i++) {
             String text = lines.get(i);
             TextView tv = new TextView(this);
             tv.setText(text);
@@ -393,10 +464,15 @@ public class M3PageActivity extends Activity {
                 tv.setId(R.id.lc_m3_copy_mail);
                 tv.setTextColor(Color.rgb(120, 170, 240));
                 tv.setOnClickListener(v -> {
+                    // 原版 smali（ui/compose/c0$a$b）：ClipData.newPlainText("Label", "account@xinzhi.space")
+                    // → setPrimaryClip → toast「复制成功」。label 与 toast 都按原版逐字。
                     android.content.ClipboardManager cm =
                             (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                    if (cm != null) cm.setPrimaryClip(android.content.ClipData.newPlainText("邮箱", mail));
-                    android.util.Log.d("LCM3", "copy mail ok");
+                    if (cm != null) {
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("Label", mail));
+                        android.widget.Toast.makeText(this, "复制成功", android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                    android.util.Log.d("LCM3", "copy mail ok text=" + mail);
                 });
             }
             list.addView(tv);
@@ -437,11 +513,11 @@ public class M3PageActivity extends Activity {
                     }
                 });
             } else if ("测绘资质".equals(text)) {
-                // 逆向：本项可点，行为待确认（他正在 dump 该页）——先标注，不臆造跳转
-                tv.setOnClickListener(v -> {
-                    tv.setText("测绘资质：行为待确认");
-                    tv.setTextColor(Color.rgb(200, 190, 170));
-                });
+                // 逆向：AboutActivity$b$a$a → MeasureProveActivity（目标页超出 M3 七页范围）
+                // 按 D-025 本轮只保文案/位置 1:1、**不跳转**；不篡改可见文案（原版这行是蓝色可点文本）。
+                tv.setTextColor(Color.rgb(120, 170, 240));
+                tv.setOnClickListener(v ->
+                        android.util.Log.d("LCM3", "measure prove page deferred by D-025"));
             } else {
                 tv.setTextColor(Color.rgb(235, 228, 215));
             }
@@ -465,9 +541,7 @@ public class M3PageActivity extends Activity {
     }
 
     /** 文案未接入时的显式说明（不臆造内容）。 */
-    private static String needNote(String page) {        if ("联系我们".equals(page)) {
-            return "本页原文含原版域名，按 copy 门禁挂起，待裁定后接入。";
-        }
+    private static String needNote(String page) {
         if ("用户协议".equals(page)) {
             return "本页为远端 WebView（正文由第三方托管），离线或未接入时无正文。";
         }

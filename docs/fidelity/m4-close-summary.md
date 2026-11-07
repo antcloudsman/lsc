@@ -2,7 +2,7 @@
 
 - 作者：LC产品
 | 6 | **一次改动改了什么 ≠ 合并后文件里现在有什么** | 有人看 `develop` 快照见两处 `adjustResize` 就判「这支加了两处」；实际 `git diff f11b84e...2d0e8ee` 的 manifest **只 +1 行**，`LoginActivity` 那处早在 `f11b84e` 就有 | **判断改动范围只看 `git diff <base>...<branch>`，看现状才看 HEAD**；拿「现状」推「本次改动」与拿「可见像素」推「控件几何」是同一类错 |｜评审：技术总监
-- 日期：2026-11-07｜版本：**v1.7**（新增待定级残留 `LIST-SNAPSHOT`：列表页无 `onResume` 重载，理论快照路径；我独立核过并与同仓其他 Activity 对比）
+- 日期：2026-11-07｜版本：**v1.8**（`LIST-SNAPSHOT` 改「已修待复验」`383d54f`：`onResume` 按当前账号重建，我独立核 diff 只加这一段）
 - 基线：`develop` @ **`47cb0fc`**（含 E2E 补跑 `24de04b` 与 m4-plan v1.11）
 - 输入：`m4-plan.md` v1.11、`docs/qa/m4-e2e-result.md`、`docs/qa/install-debug-result.md`、`docs/qa/m4-timesheet.md`、`round2-report.md` v1.0.39、`backend/api.md`（v2 定稿）
 
@@ -36,7 +36,7 @@
 | **已知限制 3** | 装机 S3 未覆盖（本轮未出现认证对话框）→ `PIN_IN_LOG=False` 是空真 | M4 关账写「S3 未覆盖」，见 §5 第 1 问 |
 | **已知限制 4** | 登录/注册页为**新增页**，无原版对照图；判据为「LC 截图 + dump + 标明新增」 | **证据已补**（`bb75e34` → develop `ad8eb5e`）：`docs/fidelity/m4/login-page.png`（199,612 B / **1228×2700**）+ `login-page.xml`（8 个关键 id 齐：`lc_login_title/username/password/submit/sms/onetap/honor/wechat`，含「账号登录（本项目新增）」），SUMS **12/12** 我独立从提交 blob 复算 `ok=12 bad=0`；**未造原版对照图** |
 | **已知限制 5**（总监 2026-11-07 指定措辞） | **幽灵行认领（`adoptByRemoteIds`，`GapDb:236`）：仅 200 条以内有效；超限整轮跳过（不误写不误删）；翻页与 tombstone 属 M5** | 必须按这句写，**不许写成「已支持全量认领」**。现状：只取 `limit=200` 第一页的 `liveIds`，`count>=200` 时对账与认领整段跳过（**安全侧失败**：不认领、不删、不动）；`adoptByRemoteIds` 结构上**只 UPDATE 归属、无 DELETE**（`if (!liveIds.contains(remote)) continue`）。翻页要处理「翻半页失败/恰好整页/多页合并」三种情况，在没有 tombstone 时补等于为几乎不存在的场景引入新出错面 → **M5 与 `include_deleted=1` 一起做** |
-| **待定级 · `LIST-SNAPSHOT`**（审核验 `edc9a92` §34 提出，我独立核过） | `InterestListActivity` **无 `onResume` 重载**：只在 `:61 onCreate` 与 `:151`（删除后）调 `reload()` | **理论路径**：该页存活期间账号变化 → 列表仍是上一账号快照 → 那批行又能长按删除，§33 从「快照」这条缝回来。**正常返回栈走不到**；同仓 `MainActivity`/`TrackListActivity` **都有 `onResume`**，此处缺失属不一致。**定级待裁**（我建议 P2：需特定时序、非默认路径）；修复一行 `onResume(){ super.onResume(); reload(); }`，顺带让「同步后回列表」看到新数据。**不阻塞 M4 关账** |
+| **`LIST-SNAPSHOT`**（审核验 `edc9a92` §34 提出 → **已修待复验** `383d54f`） | `InterestListActivity` 原**无 `onResume`**（只在 `:61 onCreate` 与 `:151` 删除后调 `reload()`）→ 理论路径：该页存活期间账号变化，列表留上一账号快照，那批行仍可长按删除（§33 从「快照」缝回来）；同仓 `MainActivity`/`TrackListActivity` 都有 `onResume`，此处缺失属不一致 | **已修**（`383d54f`，base `525704c`）：`onResume(){ super.onResume(); if (db != null) reload(); }`，按当前账号重建。我独立核 `git diff 525704c…383d54f` → **只加这一段、无其他改动**（+11/−1）。**待复验一条**：停留收藏列表 → 切账号 → 返回该页，**列表必须是新账号的**（旧账号行连同长按删除入口一起消失） | **建议 P2，不阻塞 M4**；客户端**未等指令直接修**（一行、零可见变化），纪律层面由总监评 |
 
 ### 1.11 M4 期间的最高级缺陷记录（P0，留痕）
 
@@ -171,6 +171,7 @@ M4-POST-01 `/v2/cases` 案例库云同步（待客户端接入再排期）、M4-
 
 | 版本 | 日期 | 变更 | 作者 |
 |---|---|---|---|
+| v1.8 | 2026-11-07 | **`LIST-SNAPSHOT` 由「待定级」改「已修待复验」**：客户端 `383d54f`（base `525704c`）加 `onResume(){ super.onResume(); if (db != null) reload(); }`，按当前账号重建列表；我独立核 `git diff 525704c…383d54f` → **只加这一段、无其他改动**（+11/−1），写法与同仓 `MainActivity`/`TrackListActivity` 一致。**复验点一条**：停留收藏列表 → 切账号 → 返回该页，列表必须是新账号的（旧账号行与长按删除入口一起消失）。仍建议 P2、不阻塞 M4；**客户端未等指令直接修**（一行、零可见变化），纪律层面由总监评 | LC产品 |
 | v1.7 | 2026-11-07 | **新增待定级残留 `LIST-SNAPSHOT`**（审核验 `edc9a92` §34 提出）：`InterestListActivity` **无 `onResume`**，只在 `:61 onCreate` 与 `:151` 删除后 `reload()`——理论路径下该页存活期间账号变化会留下上一账号快照，§33 从「快照」缝回来；**正常返回栈走不到**，同仓 `MainActivity`/`TrackListActivity` 都有 `onResume`（我这里独立核过 `git grep -c onResume`：只有这两个文件命中，`InterestListActivity` 零命中）。**定级待裁、建议 P2、不阻塞关账**；修法一行 `onResume(){ super.onResume(); reload(); }` | LC产品 |
 | v1.6 | 2026-11-07 | **新增「已知限制 5」**（总监指定措辞，必须照写）：**幽灵行认领（`adoptByRemoteIds`，`GapDb:236`）仅 200 条以内有效；超限整轮跳过（不误写不误删）；翻页与 tombstone 属 M5**——不许写成「已支持全量认领」。我核过代码：只处理 `owner_uid=0 AND remote_id>0`、`if (!liveIds.contains(remote)) continue`、**只 UPDATE 无 DELETE**；`liveIds` 来自单页 `limit=200`，`count>=200` 时对账与认领整段跳过（安全侧失败）。同步更新 §1.11：§33 = `6c289fd` **已合 `61c132c`**、幽灵行认领 = `8c26d53` **已合**，develop 现为 **`525704c`**；第 3 条改为「总监列的五条判据在 `525704c` 上尚未跑完」，仍不写达成 | LC产品 |
 | v1.5 | 2026-11-07 | **P0 修复归属更正（LC测试实测反例）**：我此前写「`bd30997` 已修 P0」**不准确**——核实后：①认领收窄 `owner_uid=0 AND remote_id=0` 由 `e200eb6` 引入（`GapDb:209`，**已进 develop**；测试验证构建 `9d0170e` 是同一改动）②对账守卫/整行跳过在 `bd30997` ③`listInterest(int uid)`（§33）= **`6c289fd`，`merge-base --is-ancestor` exit=1，未合主线**，develop `8ce8ddd` 的 `GapDb:133` 仍无参。补 **实测**：`9d0170e` 构造 `owner_uid=0 + remote_id=298/299/300` → 登 D → `purgedRemote=0`、无 adopted、本地 **3→3**、D active=**0** → 通过；`bd30997` 同构造 `adopted=2/purgedRemote=2`、3→0 → 失败。§33 用例待合入补测 | LC产品 |

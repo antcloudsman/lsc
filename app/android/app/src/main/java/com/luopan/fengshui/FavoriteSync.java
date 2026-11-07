@@ -31,11 +31,16 @@ final class FavoriteSync {
     static String sync(Context context) throws Exception {
         String token = LcSession.token(context);
         if (token == null) return "未登录，未同步";
+        final int uid = LcSession.uid(context);
+        if (uid <= 0) return "未登录（缺账号信息），未同步";
         GapDb db = new GapDb(context);
+        // 账号隔离：把尚未归属的存量行认领给当前账号；已有归属的行不动。
+        int adopted = db.adoptUnownedRows(uid);
+        if (adopted > 0) android.util.Log.d("LCSYNC", "adopted unowned rows=" + adopted + " uid=" + uid);
 
         // ---- 先推删除墓碑（方向一：本机删 → 服务端也删）----
         int deleted = 0, deleteFailed = 0;
-        for (InterestPoint p : db.listDeletePending()) {
+        for (InterestPoint p : db.listDeletePending(uid)) {
             long remote = db.remoteIdOf(p.id);
             try {
                 if (remote > 0) LcApi.deletePoint(token, remote);
@@ -57,7 +62,7 @@ final class FavoriteSync {
         }
 
         int pushed = 0, failed = 0, conflicts = 0;
-        for (InterestPoint p : db.listPendingInterest()) {
+        for (InterestPoint p : db.listPendingInterest(uid)) {
             try {
                 JSONObject body = new JSONObject();
                 long remote = db.remoteIdOf(p.id);
@@ -152,6 +157,10 @@ final class FavoriteSync {
                     for (InterestPoint local : db.listInterest()) {
                         long remote = db.remoteIdOf(local.id);
                         if (remote <= 0 || live.contains(remote)) continue;
+                        // 账号隔离：只有「属于当前账号」的行才允许进远端已删判定。
+                        // 上一账号的行（owner_uid 不等）绝不能用本账号的 list 去判「已删」——那是误删本地真实数据。
+                        int owner = db.ownerUidOf(local.id);
+                        if (owner != uid) continue;
                         db.purgeInterest(local.id);
                         purgedRemote++;
                     }
@@ -212,5 +221,6 @@ final class FavoriteSync {
         }
     }
 }
+
 
 

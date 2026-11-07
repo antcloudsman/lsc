@@ -25,6 +25,7 @@ sha256 校验对它是 PASS —— 哈希只能证明「文件没被改过」，
 | 0 字节 | **FAIL** |
 | 无法 parse | **FAIL** |
 | 首部命中 shell 报错（`cat:` / `adb:` / `No such file or directory` / `error:` / `not found` / `Permission denied` / `uiautomator:` / `cannot ` / `failed to `） | **FAIL**（附首行原文） |
+| 根节点是 `<hierarchy>` 但 **0 个 `<node>`**（合法空树） | **FAIL**（`empty dump (0 <node> elements)`）｜只对 dump 生效，SVG/vector 根不判 |
 | 根节点不是 `<hierarchy>` | 默认 **WARN**（素材 xml 如 Android vector 会命中；`--strict-root` 时升级） |
 
 ### 2.2 `.png`
@@ -46,12 +47,13 @@ sha256 校验对它是 PASS —— 哈希只能证明「文件没被改过」，
 ## 3 用法
 
 ```bash
-# 全量证据（跳过素材目录）
-python tools/fidelity/evidence-lint.py --root docs/fidelity
+# 全量证据（--root 默认 docs/fidelity，可省略）
+python tools/fidelity/evidence-lint.py --allow tools/fidelity/evidence-lint-allow.json
 
 # 带声明尺寸 + JSON 落盘 + 严判
-python tools/fidelity/evidence-lint.py --root docs/fidelity \
-  --expect-size 1228x2700 --strict --json checks/evidence-lint.json
+python tools/fidelity/evidence-lint.py \
+  --expect-size 1228x2700 --strict --allow tools/fidelity/evidence-lint-allow.json \
+  --json checks/evidence-lint.json
 
 # 只看某批（如 M6 四页证据）
 python tools/fidelity/evidence-lint.py --root docs/fidelity/m6
@@ -105,7 +107,7 @@ exit=1
 
 ## 5 自测（可复跑，证明判据不是空转）
 
-用 `checks/seed-lint-selftest.py` 生成 8 个样本（不入库，临时目录），期望 6 FAIL / 2 PASS：
+用 `checks/seed-lint-selftest.py` 生成 8 个样本（不入库，临时目录），期望 6 FAIL / 2 PASS；另用 3 个 xml 单测空树规则：
 
 ```
 FAIL blank-black.png   : effectively black (blank screen)
@@ -116,7 +118,14 @@ FAIL shell.xml         : cat: /sdcard/a.xml: No such file or directory
 FAIL truncated.xml     : unparseable: unclosed token: line 1, column 32
 （real.xml / real-shot.png 不报 = PASS）
 EVIDENCE-LINT: scanned xml=3 png=5 fail=6 warn=0
+
+# 空树规则（合法但无内容）
+FAIL empty.xml         : empty dump (0 <node> elements)     ← <hierarchy/> 也判死
+（real.xml / vector.xml 不报 = PASS；vector 根不受空树规则影响）
+EVIDENCE-LINT: scanned xml=3 png=0 fail=1 warn=0
 ```
+
+> 空树用例由 LC审核验 2026-11-08 提出：`<hierarchy/>` 能 parse、但没有 `<node>`，旧规则会放过；现补为 FAIL，且只对 `hierarchy` 根生效。
 
 ## 6 与现有工具的关系
 
@@ -132,5 +141,6 @@ EVIDENCE-LINT: scanned xml=3 png=5 fail=6 warn=0
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-08 | 按 LC审核验 建议补两条：**空 dump（`<hierarchy>` 根、0 个 `<node>`）判 FAIL**（仅对 dump，SVG 不适用）；**`--root` 默认 `docs/fidelity`**（不再必填，避免上手 `exit 2`）。实测：真实证据 `fail=0 allowed=1`（带清单），`empty.xml` 单测 FAIL |
 | 2026-11-08 | 增具名例外清单 `--allow`（四键必填，FAIL→ALLOWED 但永远打印）；基线更新为 `fail=0 / allowed=1 / exit 0`（带清单）与 `fail=1`（不带，反证）；证据文件不删不改 |
 | 2026-11-08 | 建工具与规则；首次全量基线：`xml=155 / png=130 / fail=1（help-offline.xml）/ warn=0`；自测 6 FAIL 2 PASS 通过 |

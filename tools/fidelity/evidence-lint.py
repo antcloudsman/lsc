@@ -100,7 +100,20 @@ def check_xml(path: str, strict_root: bool) -> list[dict]:
         ]
 
     tag = root.tag.split("}")[-1]
-    if tag != "hierarchy" and strict_root:
+    if tag == "hierarchy":
+        # 合法但为空的 dump：<hierarchy/>，或没有第二个 <node>
+        if len(root.findall(".//node")) == 0:
+            out.append(
+                {
+                    "level": "fail",
+                    "kind": "xml",
+                    "reason": "empty dump (0 <node> elements)",
+                    "path": path,
+                    "size": size,
+                }
+            )
+            return out
+    elif strict_root:
         out.append(
             {
                 "level": "warn",
@@ -190,7 +203,7 @@ def walk(root: str, skip_dirs: set[str]):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Content validity lint for fidelity evidence (.xml/.png)")
-    ap.add_argument("--root", required=True, help="evidence root, e.g. docs/fidelity")
+    ap.add_argument("--root", default="docs/fidelity", help="evidence root (default: docs/fidelity)")
     ap.add_argument("--strict", action="store_true", help="treat warnings as failures")
     ap.add_argument("--mono-ratio", type=float, default=0.995, help="monochrome threshold (default 0.995)")
     ap.add_argument("--min-png-side", type=int, default=600, help="only lint png with min(w,h) >= this (default 600)")

@@ -4,7 +4,7 @@
     <item name="lc_pointer" type="id" />
     <!-- R2-013：智能读盘白色 sheet -->
     <item name="lc_read_sheet" type="id" />
-    <item name="lc_read_vip" type="id" />
+    <item name="lc_read_badge" type="id" />
     <item name="lc_read_title" type="id" />
     <item name="lc_read_close" type="id" />
     <item name="lc_read_list" type="id" />

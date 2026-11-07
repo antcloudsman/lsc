@@ -155,7 +155,7 @@ public final class CompassReadSheet {
             tail.setOrientation(LinearLayout.HORIZONTAL);
             tail.setGravity(Gravity.CENTER_VERTICAL);
             android.widget.ImageView gem = new android.widget.ImageView(a);
-            gem.setId(R.id.lc_read_vip);
+            gem.setId(R.id.lc_read_badge);
             gem.setImageResource(R.drawable.lc_compass_vip);
             gem.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
             LinearLayout.LayoutParams gemLp = new LinearLayout.LayoutParams(77, 65);

@@ -20,10 +20,25 @@ public class LCAndroid {
         void onMapEvent(String type, MapMarker marker);
     }
 
+    /** R2-027/R2-032：web→native 的 UI 事件（无坐标），字段契约由总监 2026-11-07 定死。 */
+    public interface UiListener {
+        /**
+         * @param type {@code attribution} 或 {@code src-panel}
+         * @param o    原始对象：{@code {"type":"attribution","text":"..."}} /
+         *             {@code {"type":"src-panel","open":true|false}}
+         */
+        void onUiEvent(String type, JSONObject o);
+    }
+
     private final Listener listener;
+    private UiListener uiListener;
 
     public LCAndroid(Listener listener) {
         this.listener = listener;
+    }
+
+    public void setUiListener(UiListener l) {
+        this.uiListener = l;
     }
 
     @JavascriptInterface
@@ -32,6 +47,12 @@ public class LCAndroid {
         try {
             JSONObject o = new JSONObject(json);
             String type = o.optString("type", "");
+            if ("attribution".equals(type) || "src-panel".equals(type)) {
+                // 无坐标事件：不走 pick 的范围校验，直接透传给 MainActivity。
+                Log.d("LCUI", type + " " + json);
+                if (uiListener != null) uiListener.onUiEvent(type, o);
+                return;
+            }
             if ("pick-clear".equals(type)) {
                 Log.d("LCPICK", "pick-clear");
                 listener.onMapEvent("pick-clear", null);

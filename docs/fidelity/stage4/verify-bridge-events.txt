@@ -1,0 +1,21 @@
+# R2-027/R2-032 native 桥事件联调（debug 入口 uievent，契约由总监 2026-11-07 定）
+# 设备 L2E0222531014833  Android 12  采证 2026-11-07 10:42-10:43
+# APK sha256 ae5b20e19bd4003b797058c51ba4ad3d6eca34e9c94f716c7dd4e27474b0ba6c
+# 契约：{"type":"attribution","text":"..."} / {"type":"src-panel","open":true|false}
+
+before attr=[数据来自天地图地形 · 审图号：待核对]  place-count=1
+
+## attribution
+adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd uievent --es type attribution --es text '数据来自天地图卫星 审图号： 待核对'
+LCATTR: ui 数据来自天地图卫星 审图号： 待核对
+after attr=[数据来自天地图卫星 审图号： 待核对]        # 角注按事件刷新（不再只在 onPageFinished 同步一次）
+
+## src-panel
+open=true  → place-count=0（左上地名 lc_g1_place 隐藏）
+open=false → place-count=1（恢复）
+日志：LCATTR: src-panel open=true / open=false
+
+## 代码路径
+LCAndroid.onEvent：attribution/src-panel 在 pick 范围校验之前透传给 UiListener（LCUI 日志）。
+MainActivity.onMapUiEvent：attribution → attrView.setText；src-panel → placeView 可见性（open 或 compassMode 时 GONE）。
+web 侧 emit 由 LC地图 按同一契约补；本证据只覆盖 native 接收端。

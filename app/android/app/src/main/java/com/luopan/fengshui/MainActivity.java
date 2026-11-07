@@ -393,6 +393,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // R2-026：量取用确定性入口（地图移动后刷新一次左上地名）
                 refreshPlaceName();
                 break;
+            case "uievent": {
+                // R2-027/R2-032 联调入口：--es type attribution --es text "…" / --es type src-panel --ez open true
+                String ut = it.getStringExtra("type");
+                try {
+                    org.json.JSONObject o = new org.json.JSONObject();
+                    o.put("type", ut == null ? "" : ut);
+                    String tx = it.getStringExtra("text");
+                    if (tx != null) o.put("text", tx);
+                    o.put("open", it.getBooleanExtra("open", false));
+                    onMapUiEvent(ut == null ? "" : ut, o);
+                    android.util.Log.d("LCATTR", "uievent " + o);
+                } catch (Throwable t) {
+                    android.util.Log.w("LCATTR", "uievent bad", t);
+                }
+                break;
+            }
             case "reset":
                 injectedHeading = null;
                 injectedPitch = null;
@@ -661,7 +677,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         attrView = new TextView(this);
         // R2-032：按源分源显示，用户可见文案里不留内部替换说明，也不编造官方审图号；
         // 页面就绪后 syncAttributionBar() 会用 getAttribution() 的真实来源覆盖这句。
-        attrView.setText("数据来自天地图地形 · 审图号：待核对");
+        attrView.setText("数据来自天地图地形 审图号： 待核对");
         attrView.setTextColor(Color.rgb(150, 130, 100));
         attrView.setTextSize(9f);
         attrView.setPadding(dp(10), dp(1), dp(10), dp(1));
@@ -2090,6 +2106,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 });
     }
 
+    /**
+     * R2-027/R2-032：web 侧 UI 事件处理。字段契约（总监 2026-11-07 定死，两边不许各自发明）：
+     * <pre>
+     *   {"type":"attribution","text":"数据来自{源} 审图号： {值}"}
+     *   {"type":"src-panel","open":true|false}
+     * </pre>
+     * - attribution：切底图源时刷新底部角注（不再只在 onPageFinished 同步一次）；
+     * - src-panel：底图源面板开合时隐藏/恢复左上地名（原版面板压住地图文字），
+     *   只在开合瞬间切换，罗盘态仍按 compassMode 保持隐藏，不留常驻改动。
+     */
+    private void onMapUiEvent(String type, org.json.JSONObject o) {
+        if ("attribution".equals(type)) {
+            String text = o.optString("text", "");
+            if (attrView != null && text != null && !text.trim().isEmpty()) {
+                attrView.setText(text);
+                android.util.Log.d("LCATTR", "ui " + text);
+            }
+            return;
+        }
+        if ("src-panel".equals(type)) {
+            boolean open = o.optBoolean("open", false);
+            if (placeView != null) {
+                placeView.setVisibility(open || compassMode ? View.GONE : View.VISIBLE);
+            }
+            android.util.Log.d("LCATTR", "src-panel open=" + open);
+        }
+    }
+
     // ---------------- R2-030 山脉：地图内半屏图层（不跳 Activity） ----------------
 
     /** 点一次开、再点一次关；关闭按钮走 hideMountainLayer()，前台始终是 MainActivity。 */
@@ -3381,7 +3425,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setGeolocationEnabled(true);
-        webView.addJavascriptInterface(new LCAndroid((type, marker) -> {
+        LCAndroid bridge = new LCAndroid((type, marker) -> {
             if ("elev".equals(type)) {
                 runOnUiThread(() -> showElevationPanel(marker));
                 return;
@@ -3397,7 +3441,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mapMarker = null;
                 runOnUiThread(this::hidePoiPanel);
             }
-        }), "LCAndroid");
+        });
+        // R2-027/R2-032：web→native UI 事件（attribution / src-panel），契约由总监 2026-11-07 定
+        bridge.setUiListener((type, payload) -> runOnUiThread(() -> onMapUiEvent(type, payload)));
+        webView.addJavascriptInterface(bridge, "LCAndroid");
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -3865,3 +3912,4 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 }
+

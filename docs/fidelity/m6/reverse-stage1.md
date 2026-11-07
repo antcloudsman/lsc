@@ -601,7 +601,22 @@ fun C3(context, flag: Boolean? = null) {
 2. **`compass_ck`/`name="3D"` 这个埋点名确认了**：原版把 3D 按钮归在罗盘工具组（与「罗盘复位/罗盘锁定/贴地/等高线/截屏/读盘」同一事件），所以**它是罗盘工具区的一颗按钮，不是地图控件**。
 3. **`anim=false`**：原版切 3D 时**不做过渡动画**（第二个参数固定 false）。我方若加了动画，是与原版不同的**新增行为**。
 
-### 8.4 仍未取证
+### 8.5 状态存放位置（回答「3D 状态是否跨重载持久」）
+
+| 状态 | 载体 | 是否持久 | 证据 |
+| --- | --- | --- | --- |
+| **当前是否 3D**（`is3D`） | **`MainViewModel` 的 Compose `MutableState`（内存）** | **不持久**（进程死即丢；Activity 重建/网页重载**不丢**） | `m1()` @8624 读字段 `s`；`y2(Z)` @12840 写字段 `s`，`MutableState.setValue` |
+| **免费试用次数**（`open3dTimes`） | **MMKV**，id `AppConfig`，key `open3dTimes` | **持久**（跨进程） | `AppConfig.getOpen3dTimes()` @2379：`getMmkv().decodeInt("open3dTimes", 0)`；MMKV id `AppConfig` @`mmkvWithID` |
+
+⇒ **结论：原版的「是否 3D」存在原生 ViewModel 里，不在网页变量里。**
+所以：
+1. **网页重载不会让原版丢 3D 状态**（状态根本不在网页侧）；
+2. **进程被杀会丢**（回到默认 2D）；
+3. 我方把 `mode` 放在 `map.html:187 var mode = "2d"` —— **载体与原版不同**，这才是「WebView 一重载就静默回 2D」的根因，不是缺重放逻辑。
+
+⇒ **给实现方的口径**：3D 状态应由原生持有（ViewModel 等价物），网页侧 `mode` 只作为投影；`onPageFinished` 时把原生 `is3D` 下发（与 `roadNet` 同法）。**不要指望网页变量承载状态**——它一重载就归零。
+
+### 8.6 未取证
 
 - `switch3D` 在 JS 侧的具体动作（`setMode("3d")` 的等价物、是否强制 `zoom>=9`、是否切贴面）——原版 `webapp` 里对应的 handler 名未定位到（我方 `toggle3D` 是自拟名）。
 - `controller.c()`（退出 3D 的收尾）具体做什么，未读。

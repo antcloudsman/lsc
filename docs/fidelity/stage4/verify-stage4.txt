@@ -1,0 +1,19 @@
+# M2 收口 P2 客户端证据  commit=5d2db1a  时间=2026-11-07 09:34:48 +08:00
+# APK sha256=86e9fc190ea37187309ed3d61273fe1a72ecfa16c29bc8d7f9084bd20e09589f
+# lastUpdateTime=2026-11-07 09:30:58
+
+## R2-001 启动页
+splash-fg:  mResumedActivity: ActivityRecord{3a3c54f u0 com.luopan.fengshui/.SplashActivity t1026153}
+splash-log: 11-07 09:34:48.454 20039 20039 D LCSPLASH: show logo top=313 w=660 hold=1500
+after-hold-fg:  mResumedActivity: ActivityRecord{2afb2bc u0 com.luopan.fengshui/.MainActivity t1026153}
+
+## R2-008 超清页文案
+supermap-fg:  mResumedActivity: ActivityRecord{2a118cc u0 com.luopan.fengshui/.SuperMapActivity t1026153}
+supermap-texts: ‹|超清地图|把地图拖到想看的位置、放大到街道级，再点「生成超清图」，即可生成当前视野的高清大图。|2× 放大（双三次）|生成超清图
+banned-words: 0
+
+## R2-034 轨迹页空态 / 轨迹设置
+track-fg:  mResumedActivity: ActivityRecord{b33be3f u0 com.luopan.fengshui/.TrackListActivity t1026153}
+track-texts: ‹|历史轨迹|轨迹设置|开始记录|暂无历史轨迹记录
+track-settings-texts: 轨迹设置|权限设置|后台定位|忽略省电优化|去设置|后台运行权限|未开启|通知栏权限|未开启|记录参数|采样间隔：1s|最小位移：3m|高精度定位|轨迹只保存在本机，不会上传。|关闭
+final-fg:  mResumedActivity: ActivityRecord{2afb2bc u0 com.luopan.fengshui/.MainActivity t1026153}

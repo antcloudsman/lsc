@@ -2129,6 +2129,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         copy.setId(R.id.lc_m3_copy_mail);
         copy.setText("复制邮箱");
         copy.setTextSize(14f);   // 原版 188 宽/4 字/3.375 ≈ 13.9 -> 14sp
+        copy.setPadding(0, 0, 0, 0);   // 去掉内距：文字节点高 111 vs 原版字形 89
         copy.setTextColor(android.graphics.Color.WHITE);
         copy.setGravity(android.view.Gravity.CENTER);
         android.graphics.drawable.GradientDrawable btnBg = new android.graphics.drawable.GradientDrawable();

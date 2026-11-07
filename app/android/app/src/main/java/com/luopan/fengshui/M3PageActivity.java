@@ -129,13 +129,14 @@ public class M3PageActivity extends Activity {
         int statusBar = 0;
         int sbId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (sbId > 0) statusBar = getResources().getDimensionPixelSize(sbId);
-        root.setPadding(0, statusBar, 0, 0);
+        // 原版 bar 顶在 y=0（返回钮 y115），不能在 root 上补状态栏内距，否则整体下移 24+
         root.setBackgroundColor(LIGHT_BG);
 
         // 标题栏：返回 + 页名（原版标题逐字）
         // M6 第 4 条：标题栏改 FrameLayout —— 返回贴左、标题**居中且 wrap_content**（原版宽 216）、我的贴右。
         // 用 LinearLayout 时标题靠 weight 撑满，dump 宽度永远是整栏，Δ 表必挂（测试实测 ΔR=+465）。
         android.widget.FrameLayout bar = new android.widget.FrameLayout(this);
+        bar.setPadding(40, 115, 40, 0);   // 原版返回钮 y115、左 0；标题栏底 = 正文起点 265
         // 标题栏高度固定（原版正文从 y=265 起、状态栏 122 -> 143），
         // 否则「我的」158 高会把 bar 撑高、把标题一起推下去（实测标题 +31 就是这条）。
 
@@ -163,7 +164,7 @@ public class M3PageActivity extends Activity {
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
                         android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
         titleLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        titleLp.topMargin = 32;   // 原版标题 y154 - 状态栏 122
+        titleLp.topMargin = 39;   // 原版标题 y154 - bar 顶 115
         titleLp.height = 79;   // 原版标题高 79（四页一致），wrap 只有 76
         title.setIncludeFontPadding(false);
         bar.addView(title, titleLp);
@@ -184,16 +185,17 @@ public class M3PageActivity extends Activity {
                     "「我的」跳转目标未取证（D-034），本轮未接入",
                     android.widget.Toast.LENGTH_SHORT).show());
             android.widget.FrameLayout.LayoutParams mineLp =
-                    new android.widget.FrameLayout.LayoutParams(158, 158);
+                    new android.widget.FrameLayout.LayoutParams(157, 157);
             mineLp.gravity = Gravity.END | Gravity.TOP;
-            mineLp.topMargin = -7;   // 原版 y115 - 状态栏 122
+            mineLp.topMargin = 0;   // 原版 y115 = bar 顶
             mineLp.rightMargin = 15;
             // 实测偏差：右移 41、上移 31（我方 [1014,146][1172,304] -> 原版 [1056,115][1213,272]）
             mineBtn.setTranslationX(41f);
             mineBtn.setTranslationY(-31f);   // 原版 [1056,115][1213,272]：右缘 1213，屏 1228 留 15
             bar.addView(mineBtn, mineLp);
         }
-        root.addView(bar);
+        root.addView(bar, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 265));
 
         // 依赖标注（有则显示）
         // M6 第 4 条：原版「投诉反馈」没有这行自造说明，它会把握手位整体推下 141px（审审核验实测），
@@ -895,7 +897,7 @@ public class M3PageActivity extends Activity {
             // 备案编号按总监估算 10.5sp（8 中文 + 18 拉丁：8×35.4 + 18×17.7 ≈ 601，落在 621±20）；v1.6.1 同档，
             // 这是**估算值**，装好后按 dump 实测回填，不拿估算当结论。
             // 备案编号按实测回填：10.5sp 实测宽 638，目标 621 -> 10.5×621/638 ≈ 10.2sp
-            float[] sps = {16f, 13f, 15.5f, 10.5f, 10.2f};
+            float[] sps = {16f, 13f, 15.5f, 10.5f, 10.3f};
             tv.setTextSize(sps[Math.min(k, sps.length - 1)]);
             tv.setSingleLine(true);   // 五项在原版都是单行（备案编号此前被折成两行，宽 330）
 

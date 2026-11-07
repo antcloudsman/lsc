@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
+import android.view.WindowManager;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -37,6 +38,15 @@ public class SplashActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // R2-001：顶部状态栏区必须是白色（原版 `_launch-probe.png` y0..121 = 255,255,255）。
+        // 上一版窗口背景/状态栏仍是主题的黑色，采证 y0..121 = 0,0,0；这里三层都铺白：
+        // 窗口背景 + 状态栏/导航栏色 + 根布局。
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.WHITE));
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                | WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setStatusBarColor(Color.WHITE);
+        getWindow().setNavigationBarColor(Color.WHITE);
 
         FrameLayout root = new FrameLayout(this);
         root.setId(R.id.lc_splash_root);
@@ -60,14 +70,17 @@ public class SplashActivity extends Activity {
         root.addView(logo, lp);
 
         setContentView(root);
-        // 原版启动页是全屏图（`orig/_launch-probe.png` 顶边无状态栏黑带）；这里隐藏系统栏对齐。
+        // 原版启动页是全屏图（`orig/_launch-probe.png` 顶边无状态栏黑带，y0..121 纯白）；
+        // 隐藏系统栏 + 亮色图标，避免状态栏区域出现主题黑底。
         getWindow().getDecorView().setSystemUiVisibility(
                 android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                         | android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                         | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
                         | android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                        | android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                        | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         android.util.Log.d("LCSPLASH", "show logo top=" + LOGO_TOP + " w=" + LOGO_WIDTH + " hold=" + HOLD_MS);
         new Handler(Looper.getMainLooper()).postDelayed(this::goMain, HOLD_MS);
     }
@@ -84,5 +97,6 @@ public class SplashActivity extends Activity {
         goMain();
     }
 }
+
 
 

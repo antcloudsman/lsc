@@ -61,11 +61,11 @@ public final class CompassReadSheet {
         LinearLayout titleRow = new LinearLayout(activity);
         titleRow.setOrientation(LinearLayout.HORIZONTAL);
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        titleRow.setPadding(p(activity, 16), p(activity, 14), p(activity, 16), p(activity, 10));
+        titleRow.setPadding(p(activity, 16), p(activity, 10), p(activity, 16), p(activity, 8));
         TextView title = new TextView(activity);
         title.setId(R.id.lc_read_title);
         title.setText("智能读盘");
-        title.setTextSize(20f);
+        title.setTextSize(18f);
         title.setTextColor(INK);
         title.setGravity(Gravity.CENTER);
         titleRow.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -85,30 +85,26 @@ public final class CompassReadSheet {
         list.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(list);
 
-        // 第 1 行：向北 x° → 离宅（原版右值是普通深色字，无「点击查看」）
-        addRow(activity, list, String.format(java.util.Locale.US, "向北 %.1f°", h),
-                "离宅", false, null);
-        // 第 2 行：坐南 y° → 坐x山 向y山
-        addRow(activity, list, String.format(java.util.Locale.US, "坐南 %.1f°", back),
-                String.format(java.util.Locale.US, "坐%s山 向%s山",
-                        CompassData.MOUNTAINS[r.sitting], CompassData.MOUNTAINS[r.mountain]), false, null);
-        // 三盘行（R4b 口径）：人盘 = 地盘+15°、天盘 = 地盘。数据由 MainActivity.plateLine 传入，
-        // 那边是 plate() 的在役调用点（numeric PlatesRegressionTest 解析）。
-        if (plateLine != null && !plateLine.isEmpty()) {
-            addRow(activity, list, "三盘", plateLine, false, null);
-        }
-
-        // 第 3–16 行：14 个圈层，每行「点击查看 ›」（原版逐字）
+        // R2-013 订正（审核验 2026-11-07 像素扫描 `orig/w3-sheet.png`）：
+        // 原版 sheet 就是 **14 个圈层行**，前 3 行直接显示向/坐值，后 11 行「点击查看 ›」；
+        // 没有「向北 x°」「坐南 y°」「三盘」这三行（那是上一版按对话框形态加的，作废）。
         for (int t = 1; t <= 14; t++) {
             String name = clean(CompassData.RINGS[t - 1].text);
             final int tt = t;
-            addRow(activity, list, name, "点击查看 ›", true, v -> {
-                String face = clean(CompassData.ringText(tt, h));
-                String sit = clean(CompassData.ringText(tt, back));
-                if (v instanceof TextView) {
-                    ((TextView) v).setText("向：" + face + "　坐：" + sit);
-                }
-            });
+            if (t <= 3) {
+                // B 档：前 3 行显示具体向/坐值（原版 `先天八卦_卦位→向：坤 坐：乾` 等）。
+                String face = clean(CompassData.ringText(t, h));
+                String sit = clean(CompassData.ringText(t, back));
+                addRow(activity, list, name, "向：" + face + "　坐：" + sit, false, null);
+            } else {
+                addRow(activity, list, name, "点击查看 ›", true, v -> {
+                    String face = clean(CompassData.ringText(tt, h));
+                    String sit = clean(CompassData.ringText(tt, back));
+                    if (v instanceof TextView) {
+                        ((TextView) v).setText("向：" + face + "　坐：" + sit);
+                    }
+                });
+            }
         }
         sheet.addView(scroll, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
@@ -126,7 +122,10 @@ public final class CompassReadSheet {
             WindowManager.LayoutParams lp = w.getAttributes();
             lp.gravity = Gravity.BOTTOM;
             lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            lp.height = Math.round(activity.getResources().getDisplayMetrics().heightPixels * 0.9f);
+            // R2-013-C：原版 sheet 顶边 = 1011（审核验像素扫描；上一版 380，差 −631）。
+            // 屏幕 2700 高，按「顶边 1011」反算 sheet 高 ≈ 1799（本机型实测标定，换机型需重标）。
+            int screenH = activity.getResources().getDisplayMetrics().heightPixels;
+            lp.height = Math.max(Math.round(screenH * 0.5f), screenH - 889);
             lp.dimAmount = 0.35f;
             w.setAttributes(lp);
         }
@@ -138,7 +137,7 @@ public final class CompassReadSheet {
         LinearLayout row = new LinearLayout(a);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(p(a, 16), p(a, 8), p(a, 16), p(a, 8));
+        row.setPadding(p(a, 16), p(a, 11), p(a, 16), p(a, 11));
 
         TextView nameView = new TextView(a);
         nameView.setText(name);
@@ -148,18 +147,20 @@ public final class CompassReadSheet {
 
         TextView rightView = new TextView(a);
         if (clickable) {
-            // 原版：钻石图标 + 蓝字「点击查看 ›」。
-            // 钻石必须**单独一个控件**：拼进同一个 TextView 会让节点文本变成「◆  点击查看 ›」，
-            // 判据要的「点击查看 ›」就不再逐字（第一版就是这么错的）。
+            // 原版：金色钻石 VIP 徽标 + 蓝字「点击查看 ›」。
+            // 素材 = APK 的 `mipmap-xxxhdpi/ic_compass_vip.webp`（132×112，逆向 `2026-11-07` 全量位图比对
+            // 误差 13.41 vs 次名 19.97 定位）；原版真实绘制框 76×65 px（a11y 的 74×54 是被裁框）。
+            // 之前用字符「◆」不是原版形态，R2-013-A 已改为此素材。
             LinearLayout tail = new LinearLayout(a);
             tail.setOrientation(LinearLayout.HORIZONTAL);
             tail.setGravity(Gravity.CENTER_VERTICAL);
-            TextView gem = new TextView(a);
-            gem.setText("◆");
-            gem.setTextSize(14f);
-            gem.setTextColor(GOLD);
-            gem.setPadding(0, 0, p(a, 6), 0);
-            tail.addView(gem);
+            android.widget.ImageView gem = new android.widget.ImageView(a);
+            gem.setId(R.id.lc_read_vip);
+            gem.setImageResource(R.drawable.lc_compass_vip);
+            gem.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            LinearLayout.LayoutParams gemLp = new LinearLayout.LayoutParams(77, 65);
+            gemLp.rightMargin = p(a, 6);
+            tail.addView(gem, gemLp);
             rightView.setText(right);
             rightView.setTextColor(BLUE);
             rightView.setOnClickListener(onClick);
@@ -185,7 +186,7 @@ public final class CompassReadSheet {
         LinearLayout row = new LinearLayout(a);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(p(a, 16), p(a, 8), p(a, 16), p(a, 8));
+        row.setPadding(p(a, 16), p(a, 11), p(a, 16), p(a, 11));
 
         TextView nameView = new TextView(a);
         nameView.setText(name);
@@ -219,3 +220,5 @@ public final class CompassReadSheet {
         return s == null ? "" : s.replace("\u200c", "");
     }
 }
+
+

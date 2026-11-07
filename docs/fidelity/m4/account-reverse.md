@@ -222,6 +222,18 @@ attachments = s()
 
 > 设备侧说明（如实记录）：13:31 那次安装**是我发起的探针包安装**，不是应用市场的自动升级；同一时段市场把原版升到了 1.6.3（版本漂移，见 §12）。为装探针包临时停过市场，已 `pm enable` 恢复，`pm list packages -d` 复查为空。
 
+### 10.1 市场「临时禁用 → 立即恢复」留痕（逐次）
+
+| 序号 | 动作与实测输出 |
+| --- | --- |
+| 1 | `pm disable-user --user 0 com.huawei.appmarket` → `Package com.huawei.appmarket new state: disabled-user`（为装探针包 S4 口径） |
+| 2 | 安装被风险提示拦截 → `pm enable --user 0 com.huawei.appmarket` → `new state: enabled`；`pm list packages -d | grep appmarket` 输出**空**（无残留禁用） |
+| 3 | 第二次「停 → 装 → 恢复」：同一对命令；`install 用时 114 s` 后报 `INSTALL_FAILED_DUPLICATE_PERMISSION`（此时市场已恢复 `enabled`） |
+| 4 | 修完权限名重建后再来一次：`disable-user` → `pm install`（**挂住 >13 分钟，被 kill**）→ `pm enable` → `new state: enabled`；复查 `pm list packages -d` 空 |
+| 5 | 收尾复核：`pm path space.xinzhi.globX` **空**（探针包未落地）；`pm list packages | grep globX` 空；原版 `versionName=1.6.3`、`lastUpdateTime=2026-11-07 13:31:33` |
+
+**结论：市场在我每次动手后都已恢复 `enabled`，没有留下禁用状态。** 后续若复查看到 `enabled=3`（DISABLED_USER），那是**另一个成员的装机脚本正处在 S4 区间**（同一时刻前台是 `com.android.packageinstaller/.InstallStaging`，设备已被他人占用），不是我的残留；我按串行纪律不动设备、不替他人 `pm enable`，以免打断其 finally 恢复判定。
+
 ## 11. 取证进度与时间戳
 
 | 步骤 | 结果 | 时间 |

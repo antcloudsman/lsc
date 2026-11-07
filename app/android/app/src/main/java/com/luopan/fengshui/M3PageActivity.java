@@ -136,11 +136,10 @@ public class M3PageActivity extends Activity {
         // M6 第 4 条：标题栏改 FrameLayout —— 返回贴左、标题**居中且 wrap_content**（原版宽 216）、我的贴右。
         // 用 LinearLayout 时标题靠 weight 撑满，dump 宽度永远是整栏，Δ 表必挂（测试实测 ΔR=+465）。
         android.widget.FrameLayout bar = new android.widget.FrameLayout(this);
-        bar.setPadding(40, 142, 40, 0);   // 原版返回钮 y115、左 0；标题栏底 = 正文起点 265
         // 标题栏高度固定（原版正文从 y=265 起、状态栏 122 -> 143），
         // 否则「我的」158 高会把 bar 撑高、把标题一起推下去（实测标题 +31 就是这条）。
 
-        bar.setPadding(dp(12), dp(7), dp(12), dp(5));
+        bar.setPadding(dp(12), 142, dp(12), dp(5));   // top=142（原 115+27）：只此一处，别在下面再覆盖
         TextView back = new TextView(this);
         back.setId(R.id.lc_m3_back);
         back.setText("返回");
@@ -189,9 +188,6 @@ public class M3PageActivity extends Activity {
             mineLp.gravity = Gravity.END | Gravity.TOP;
             mineLp.topMargin = 0;   // 原版 y115 = bar 顶
             mineLp.rightMargin = 15;
-            // 实测偏差：右移 41、上移 31（我方 [1014,146][1172,304] -> 原版 [1056,115][1213,272]）
-            mineBtn.setTranslationX(41f);
-            mineBtn.setTranslationY(-31f);   // 原版 [1056,115][1213,272]：右缘 1213，屏 1228 留 15
             bar.addView(mineBtn, mineLp);
         }
         root.addView(bar, new LinearLayout.LayoutParams(

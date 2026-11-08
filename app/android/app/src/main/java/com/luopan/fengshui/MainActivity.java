@@ -33,6 +33,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private CompassCrosshairView crosshairView;
     /** M7 第 3 条：屏心符号（四段蓝线 + 红点），viewport 覆盖层，不进 WebView。 */
     private MapCenterSymbolView centerSymbolView;
+    /** M7 第 3 条另一半：当前位置符号（蓝椭圆+白描边+圈外三角），由页面投影后摆位。 */
+    private LocationPointerView locPointerView;
+    /** 位置轮询开关：拖图/缩放后重新向页面要屏幕坐标（250ms）。 */
+    private boolean locPointerRunning = false;
     /** TEST HOOK：hidehud 前被隐藏视图的原始可见性，用于复原（不猜状态）。 */
     private final java.util.List<View> testHiddenViews = new java.util.ArrayList<>();
     private final java.util.List<Integer> testHiddenVis = new java.util.ArrayList<>();
@@ -617,6 +621,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         centerSymbolView.setVisibility(View.VISIBLE);   // 主视图（地图态）默认显示
         frame.addView(centerSymbolView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        // M7 第 3 条另一半：当前位置符号。原版取证 45×34/47×35 #0077FF + 白描边 + 圈外独立三角 14×8
+        // （连通域两块，三角在描边外侧）⇒ 不能画成水滴。位置随地图走，所以屏幕坐标由页面
+        // screenPointOf(lat,lng) 投影后回传，本层只负责摆位。
+        // 旋转已取证（逆向 a61da79）：三角指向 = +heading，顺时针、0 = 正上，与地图 bearing 无关。
+        locPointerView = new LocationPointerView(this);
+        locPointerView.setVisibility(View.GONE);
+        frame.addView(locPointerView, new FrameLayout.LayoutParams(
+                Math.round(68f / 3.375f * getResources().getDisplayMetrics().density),
+                Math.round(68f / 3.375f * getResources().getDisplayMetrics().density)));
         // K-01 z 序与触摸（验收 P-08 必读）：浮层之后又加了 读数/状态/左列/罗盘左列/右列/隐藏/底部条，
         // 它们都在浮层之上；其中工具列与「隐藏」是交互层，会正常吃掉落在按钮矩形内的触摸。
         // 圆盘外径 0.733W ≈ 900px@1228，水平方向圆外 50px 已压到左右工具列上，
@@ -1539,6 +1552,90 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         testHiddenViews.clear();
         testHiddenVis.clear();
+    }
+
+    /**
+     * 当前位置符号：每 250ms 向页面要一次「该经纬度的屏幕坐标」，把原生标记摆过去。
+     *
+     * 为什么在原生层（总监 2026-11-08 裁定）：与屏心符号同一层、不进贴地 canvas。
+     * 为什么还要问页面：标记必须随地图拖动/缩放走，投影只有页面有（screenPointOf）。
+     * 已知边界：轮询滞后约 1 帧；罗盘态不显示（原版该态是否显示未取证）。
+     */
+    private final Runnable locPointerTick = new Runnable() {
+        @Override
+        public void run() {
+            if (!locPointerRunning || compassMapView == null || locPointerView == null) return;
+            if (compassMode) {
+                locPointerView.setVisibility(View.GONE);
+                compassMapView.postDelayed(this, 400);
+                return;
+            }
+            final double[] ll = lastKnownLatLng();
+            if (ll == null) {
+                locPointerView.setVisibility(View.GONE);
+                compassMapView.postDelayed(this, 800);
+                return;
+            }
+            compassMapView.evaluateJavascript(
+                    "(function(){var p=screenPointOf(" + ll[0] + "," + ll[1] + ");"
+                            + "return p?(p.x+','+p.y):'-';})()",
+                    v -> {
+                        if (!locPointerRunning || locPointerView == null) return;
+                        String s = v == null ? "-" : v.replace("\"", "");
+                        int c = s.indexOf(',');
+                        if (c <= 0) { locPointerView.setVisibility(View.GONE); return; }
+                        try {
+                            float cssX = Float.parseFloat(s.substring(0, c).trim());
+                            float cssY = Float.parseFloat(s.substring(c + 1).trim());
+                            if (cssX < -40 || cssY < -40
+                                    || cssX > compassMapView.getWidth() + 40
+                                    || cssY > compassMapView.getHeight() + 40) {
+                                locPointerView.setVisibility(View.GONE);
+                                return;
+                            }
+                            // 三角指向 = +heading（逆向 a61da79：MapLibre rotationAlignment=map，
+                            // setRotation(target − mapBearing) 与 bearing 抵消 ⇒ 屏幕角就是 heading）
+                            if (compassView != null) locPointerView.setHeading(compassView.getHeading());
+                            locPointerView.showAt(cssX, cssY);
+                        } catch (Throwable ignored) {
+                        }
+                    });
+            compassMapView.postDelayed(this, 250);
+        }
+    };
+
+    /** 系统最后已知位置（GPS/网络取更新的那个）；无权限或无点返回 null——不造坐标。 */
+    private double[] lastKnownLatLng() {
+        try {
+            android.location.LocationManager lm =
+                    (android.location.LocationManager) getSystemService(LOCATION_SERVICE);
+            if (lm == null || checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                return null;
+            }
+            android.location.Location best = null;
+            for (String p : new String[]{android.location.LocationManager.GPS_PROVIDER,
+                    android.location.LocationManager.NETWORK_PROVIDER}) {
+                android.location.Location l = lm.getLastKnownLocation(p);
+                if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
+            }
+            return best == null ? null : new double[]{best.getLatitude(), best.getLongitude()};
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private void startLocationPointer() {
+        if (locPointerRunning || compassMapView == null) return;
+        locPointerRunning = true;
+        compassMapView.post(locPointerTick);
+        android.util.Log.d("LCLOCPTR", "tick started");
+    }
+
+    private void stopLocationPointer() {
+        locPointerRunning = false;
+        if (compassMapView != null) compassMapView.removeCallbacks(locPointerTick);
+        if (locPointerView != null) locPointerView.setVisibility(View.GONE);
     }
 
     private void sync3DStateFromPage() {
@@ -4439,6 +4536,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
+        startLocationPointer();
         applyImmersiveFullscreen();
         registerDebugBridge();
         if (compassView != null && prefs != null) {
@@ -4466,6 +4564,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onPause() {
         unregisterDebugBridge();
         super.onPause();
+        stopLocationPointer();
         if (sensorManager != null) {
             sensorManager.unregisterListener(this);
         }

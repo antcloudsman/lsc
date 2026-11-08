@@ -130,6 +130,26 @@ hwschromium-21705: [INFO:CONSOLE(3389)] "LCGROUND ERROR draw Failed to execute '
 
 **定稿**：判据 **927 ± 4**；实现取 **`dialPx = 549`**（`274.638 × 2 = 549.28`）或 `GROUND_DIAL_FRAC = 0.37725`。**546（0.375，scale=0 近似）不再接受为默认值**——若实现坚持 546，台账必须写「按 scale=0 近似，非默认态」，且判据仍按 927 判会差 5.5 px、落在 ±4 之外，故不接受。
 
+### 1.4e Q0 复跑手册（AssetLoader 落地后照此执行，四关缺一不算过）
+
+总监 16:3x 裁定采纳 `WebViewAssetLoader`（只改地图 WebView，帮助中心与 compass-introduce 保持 `file://`），并指定四件必验。我把四件翻译成可机器判的命令与阈值，**不靠肉眼**：
+
+| 关 | 验什么 | 命令 | 通过阈值 | 失败长什么样 |
+|---|---|---|---|---|
+| **Q0-1 数据** | 盘面数据到位 | `getGroundDebug().hasRings`；日志 `LCGROUND rings-inline ok rings=14` | `true` 且 `rings=14` | `hasRings:false` / `rings-json missing` |
+| **Q0-2 纹理上传** | `texImage2D` 不再 SecurityError | `getGroundDebug().diag`；`getState().tileDiag.err` | `diag == "drawn"` | `diag == "fail:upload SecurityError"`（`b56a4c0` 起不再停在旧值，可直判） |
+| **Q0-3 瓦片** | 换虚拟域后天地图不拒（`?tk=`/Referer 最容易翻车） | 连采两次 `getState().tileDiag`，间隔 5 s；`logcat -d \| grep LCTILE` | `err == 0` **且** `ok` 在两次采样间**递增**（只判 err=0 不够：不请求也不报错） | `err > 0`（`lastErrUrl` 即被拒瓦片）、或 `ok` 不增长 |
+| **Q0-4 不回归** | 拖动 / 3D / 收藏点 / 底图切换 | 见下四项，各一条 | 四项全过 | 任一项与 M6 已定案值不符 |
+
+**Q0-4 的四项具体判法**（沿用 M6 已固化的方法，不重新发明）：
+
+1. **拖动方向**：`input swipe 400 1500 700 1500`（dx=+300，同向=同号），读 `getState().center[0]`（lng）前后差；**同号即过**（M6 定案：地标 dmx +289 同向）。
+2. **3D**：`toggle3D()` → `getState().mode == "3d"` 且 `hasTexture == true`，且 `logcat` 无 `FATAL EXCEPTION`。
+3. **收藏点**：打开收藏面板截图 + `getState().overlays` 数目与切换前一致（不得因换域丢失）。
+4. **底图切换**：`cycleBase()` 逐档切换，每档后 `tileDiag.err` 仍为 0 且 `ok` 继续增长。
+
+**执行前提**：① 本人从客户端提交独立构建（不装实现方自报的包），装机贴 `apk_sha` + `lastUpdateTime`；② `MapAsset.USE_ASSET_LOADER` 的**开关两个值都要测一次**（默认值与回滚值），确认一行能退回 `file://`；③ 失败即整批判「阻塞」，不判 PASS/FAIL。
+
 ### 1.5 失败与回滚
 
 - 任一项超差 → 本条判**不通过**，退回实现方，附超差项与实测值；

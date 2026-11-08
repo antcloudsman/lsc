@@ -28,6 +28,17 @@
 .PARAMETER PinFile
   锁屏 PIN 文件，默认 E:\APPDetector\secrets\device-pin.txt（不在仓库内，永不打印）。
 
+.PARAMETER Owner
+  设备租约持有者（默认 \Administrator@\ST-JACK-COMPUTE）。同一时间只允许一个持有者装包。
+
+.PARAMETER LeaseMinutes
+  租约有效期（分钟），默认 30。
+
+.PARAMETER Force
+  租约被他人持有且未过期时，强制接管（会打印 LEASE_TAKEOVER）。
+
+.PARAMETER Release
+  释放自己持有的租约；不是持有者时需配合 -Force。
 .PARAMETER SkipMarketDisable
   跳过应用市场临时禁用（默认会禁用并在 finally 恢复）。
 
@@ -41,7 +52,12 @@ param(
   [string]$Device = '',
   [int]$TimeoutSec = 180,
   [string]$PinFile = 'E:\APPDetector\secrets\device-pin.txt',
-  [switch]$SkipMarketDisable
+  [switch]$SkipMarketDisable,
+  # 设备租约（M7 B 轮事故：一人装包把另一人的测量环境换掉，读数指向错误的包）
+  [string]$Owner = '',
+  [int]$LeaseMinutes = 30,
+  [switch]$Force,
+  [switch]$Release
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,6 +65,66 @@ $package = 'com.luopan.fengshui'
 $market = 'com.huawei.appmarket'
 $script:serial = ''
 $script:marketDisabledByUs = $false
+
+# ---- 设备租约（M7 B 轮事故）------------------------------------------------
+# 事故：A 装完包在测，B 又在同一台机上装了自己的包，A 的读数就指向了错误的包。
+# 靠口头约定 GUARD 不住，所以把“谁在用”变成脚本能拒绝的状态文件。
+# 状态文件故意放在仓库外：多 worktree 并行时，租约必须是共享的一份。
+$script:leasePath = if ($env:LC_DEVICE_LEASE) { $env:LC_DEVICE_LEASE } else { 'E:\APPDetector\device-lease.json' }
+
+function Read-Lease {
+  if (-not (Test-Path -LiteralPath $script:leasePath)) { return $null }
+  try { return (Get-Content -LiteralPath $script:leasePath -Raw -Encoding UTF8 | ConvertFrom-Json) } catch { return $null }
+}
+
+function Write-Lease([string]$owner) {
+  $now = Get-Date
+  $obj = [ordered]@{
+    owner   = $owner
+    since   = $now.ToString('s')
+    expires = $now.AddMinutes($LeaseMinutes).ToString('s')
+    device  = $script:serial
+    note    = 'install-debug.ps1'
+  }
+  ($obj | ConvertTo-Json) | Set-Content -LiteralPath $script:leasePath -Encoding UTF8
+}
+
+function Test-Lease([string]$me) {
+  $l = Read-Lease
+  if (-not $l) { return @{ ok = $true; reason = 'no-lease' } }
+  $exp = [datetime]::MinValue
+  [void][datetime]::TryParse([string]$l.expires, [ref]$exp)
+  if ($exp -eq [datetime]::MinValue -or $exp -lt (Get-Date)) { return @{ ok = $true; reason = 'expired' } }
+  if ([string]$l.owner -eq $me) { return @{ ok = $true; reason = 'mine' } }
+  return @{ ok = $false; owner = [string]$l.owner; expires = $exp.ToString('HH:mm') }
+}
+
+$me = if ($Owner) { $Owner } else { "$env:USERNAME@$env:COMPUTERNAME" }
+
+if ($Release) {
+  $l = Read-Lease
+  if (-not $l) { Write-Host 'LEASE: none'; exit 0 }
+  if ([string]$l.owner -ne $me -and -not $Force) {
+    Write-Host ("LEASE_BUSY: 设备由 {0} 持有（{1} 到期）；要强制释放请加 -Force" -f $l.owner, $l.expires)
+    exit 3
+  }
+  Remove-Item -LiteralPath $script:leasePath -Force
+  Write-Host ("LEASE_RELEASED: {0}" -f $l.owner)
+  exit 0
+}
+
+$leaseChk = Test-Lease $me
+if (-not $leaseChk.ok) {
+  if ($Force) {
+    Write-Host ("LEASE_TAKEOVER: 已强制接管（原持有者 {0}，{1} 到期）" -f $leaseChk.owner, $leaseChk.expires)
+  } else {
+    Write-Host ("LEASE_BUSY: 设备由 {0} 持有至 {1}；请先在群里交接，或加 -Force 强制接管" -f $leaseChk.owner, $leaseChk.expires)
+    exit 3
+  }
+} else {
+  Write-Host ("LEASE_OK: {0}（{1}）" -f $me, $leaseChk.reason)
+}
+Write-Lease $me
 
 function Resolve-Serial {
   param([string]$want)

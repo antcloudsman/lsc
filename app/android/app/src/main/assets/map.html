@@ -2424,11 +2424,12 @@ function groundCanvasSize() {
   return { css: css, dpr: dpr, px: css * dpr };
 }
 
-/* 半径（米）＝屏宽米数；原版 toBounds 的 radius 是半边长 ⇒ 地面边长 = 2×半径米 */
+/* 半径（米）＝屏宽米数 × 机位压缩系数；原版 toBounds 的 radius 是半边长 ⇒ 地面边长 = 2×半径米。
+ * 乘 GROUND_CAM_COMPRESS 是因为屏幕比例尺被扩大 1/0.35，屏上尺寸才回到 2×视口宽（728 CSS）。 */
 function groundRadiusMeters() {
   var sw = groundViewportWidth();
   var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
-  return Math.floor(sw * zMpp);
+  return Math.floor(sw * zMpp * GROUND_CAM_COMPRESS);
 }
 
 function groundEnsureCanvas() {
@@ -2457,6 +2458,12 @@ function groundEnsureCanvas() {
  *   pitch 0 屏宽 = 274.638 × 3.375 = 926.9 设备 px ⇒ 判据 927 ± 4
  * 旧值 0.375(=546/1456) 对应 scale=0 的近似，与默认态差 0.58%，已按裁定替换。 */
 var GROUND_DIAL_FRAC = 0.37725;   /* 274.638 / 728 */
+/* 贴地机位压缩系数（11-08 定位的 2.857 倍根因，总监裁定唯一来源）：
+ * render3D 里 `if (groundMode) D *= GROUND_CAM_COMPRESS` 把相机距离压到 35%，
+ * 屏幕比例尺随之放大 1/0.35 = 2.857 倍，所以地面半边长 r 必须同乘同一个系数，
+ * 否则 quad 实测 sideCss=2079.96 而期望 728（2079.96 × 0.35 = 727.99）。
+ * 已知偏差（台账口径）：地面世界覆盖范围 = 原版的 0.35 倍，屏上尺寸 1:1；视差比原版略小。 */
+var GROUND_CAM_COMPRESS = 0.35;
 function groundRedraw() {
   var sz = groundEnsureCanvas();
   var ctx = groundCanvas.getContext('2d');
@@ -3340,7 +3347,8 @@ function render3D() {
   var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
   var hCss = Math.max(1, glCanvas.clientHeight);
   var D = (hCss * zMpp) / (2 * Math.tan(FOV / 2));
-  if (groundMode) D *= 0.35;          /* 贴地：机位压低到 35%，配合俯仰 60° */
+  if (groundMode) D *= GROUND_CAM_COMPRESS;   /* 贴地：机位压低到该系数，配合俯仰 60°；
+                                               * groundRadiusMeters() 用同一常量反补，改一处即两处同步 */
 
   var t = lonLatToTile(center.lng, center.lat, patch.z);
   var gx = t.x * 256, gy = t.y * 256;

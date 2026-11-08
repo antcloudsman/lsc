@@ -109,6 +109,13 @@ public final class CompassReadSheet {
         sheet.addView(scroll, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
+        // 关键：内容高度必须与窗口高度一致。此前内容按 wrap_content 测量（只有头部那么高），
+        // 窗口却用下面的 lp.height 撑到 1811 —— 结果「看得见点不到」：行与关闭钮都落在内容视图边界之外，
+        // 触摸不派发；而点 scrim 仍能 cancel，与审核验实测吻合（关闭按钮同样零回调）。
+        int screenH0 = activity.getResources().getDisplayMetrics().heightPixels;
+        int sheetH = Math.max(Math.round(screenH0 * 0.5f), screenH0 - 889);
+        sheet.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, sheetH));
         final Dialog dialog = new Dialog(activity);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(sheet);

@@ -261,6 +261,70 @@ this.ctx.drawImage(this.compassUI.compassImg, a, n, e, e)   // 画成 e × e
 ⇒ 这条给 @LC审核验 的 `Q1 盘径` 判据提供了**原版出处**：`盘径 = 0.75 × 屏宽`，不再是“观测定值”。
 ⇒ 也解释了为什么我方 922 是对的：它不是巧合，是照了同一个比例。
 
+## 6.2 贴地盘面「随不随 bearing 转」（回答 @LC审核验 的 Q4）
+
+原版有三层，**不能只答「随 bearing 转」**：
+
+### ① canvas 内容自身会转，但转角不是 bearing
+
+```js
+// updateCompass（@41208 附近）
+let {size: e, opacity: t, bearing: r} = this.compassUI.getCompassParams();
+this.ctx.translate(s, l);
+this.ctx.rotate(r * Math.PI / 180);      // ← 内容旋转
+this.ctx.translate(-s, -l);
+this.ctx.drawImage(compassImg, a, n, e, e);
+```
+
+```js
+// getCompassParams（@49552）
+bearing: this.compass.getRotation()      // ← 不是 map.getBearing()
+```
+
+### ② `compass.getRotation()` 来自 `orientation`，且按 mode 位与地图反向
+
+```js
+// updateOrientation（@43692）
+let r = this.orientation, i = this.compassUI;
+2 & this.mode && (i.setRotation(r),  this.map.setBearing(-r));
+4 & this.mode && (this.map.setBearing(r), i.setRotation(-r));
+1 & this.mode && this.map.setBearing(r);
+i.setGround(8 & mode);  i.setLock({ value: 16 & mode });
+```
+
+| mode 位 | 地图 bearing | 盘面内容旋转 | 屏幕上的净效果 |
+| --- | --- | --- | --- |
+| `1` | `+r` | 不设（保持原值） | 盘面**随地图一起转** |
+| `2` | `−r` | `+r` | **两者抵消 ⇒ 盘面在屏幕上不转** |
+| `4` | `+r` | `−r` | **两者抵消 ⇒ 盘面在屏幕上不转** |
+
+### ③ 四角坐标还被投影矩阵转一次
+
+`coordinates` 来自 `unproject` 的**地理四角**，地图 bearing 会让这块 quad 在屏幕上整体旋转——所以屏幕总转角 = **地图 bearing（投影）+ canvas 内容旋转**。上表「抵消」正是为此设计。
+
+## 6.3 Q4 的正确判据（给 @LC审核验）
+
+**不能只写「bearing 0/90 时盘面跟着转」**，那会把「盘面朝上」的实现判成错。应按模式分：
+
+| 我方实现目标 | bearing 0→90 的期望 |
+| --- | --- |
+| **盘面随地图转**（等价原版 bit 1） | 屏幕上盘面**转 90°** |
+| **盘面保持朝上**（等价原版 bit 2/4） | 屏幕上是 0°（canvas 内需反向旋转 `−bearing`） |
+
+⇒ 建议 Q4 判据写成：**「bearing 0 与 90 两张贴地截图，盘面的「天池—外圈」方向向量夹角 = 90°（随地图转）或 0°（朝上不变），二选一必须与实现声明一致；不允许出现 ±45° 这类既非 0 又非 90 的结果」**——后者说明转了两遍或漏了一半。
+
+## 6.4 原版贴地的**范围门控**（这条地图侧可能没有）
+
+```js
+// updateCompass 开头（@41208 附近）
+let e = this.map.getCenter().lat, t = this.map.getZoom(),
+    r = 75 > Math.abs(e) && t >= 6 && this._isGround;
+if (this.compassUI.compassImg && r) { …绘制… }
+```
+
+⇒ **盘面只在「|纬度| < 75° 且 zoom ≥ 6 且 ground 开启」时才画**。超范围时 `if` 不成立，**canvas 不重绘**（保留上一帧内容或空白）。
+⇒ 这是可判的边界行为：把地图移到纬度 76° 或 zoom 降到 5，原版**不再绘制贴地盘面**。建议进 @LC审核验 的判据（边界态）。
+
 # 七、检索复现命令（审核验可直接照跑）
 
 ## 3.1 代码检索

@@ -1701,6 +1701,25 @@ function setUiMode(m) {
 /* 客户端习惯的别名（回放页直接用 lc_setUiMode('canvas')） */
 function lc_setUiMode(m) { return setUiMode(m); }
 
+/* TEST HOOK（技术总监 11-08 定，Q1/Q2/Q3 验收用）：只藏 chrome、保留贴地盘面。
+ * 产品里「隐藏」的语义是藏整个罗盘浮层（盘面一起藏），验收需要的「有盘面、无 chrome」
+ * 状态产品中本就不存在，只能由测试钩子提供——所以这条**不进产品按钮**。
+ * 藏的是本页自身 chrome：#controls 左侧工具列、#hint、#heading-label、#srcInfo、3D #hud。
+ * 保留：贴地盘面（glCanvas 纹理）、#needle 指针；红十线在原生层，本钩子不碰。
+ * 恢复：回到隐藏前的 uiMode（不硬写 full，避免把产品态改掉）。 */
+var chromePrevUiMode = null;
+function setChromeVisible(on) {
+  if (on) {
+    if (chromePrevUiMode === null) chromePrevUiMode = uiMode;
+    if (uiMode === "full") setUiMode("map");   /* map 档：chrome 全隐、指针/盘面仍在（applyNeedleVisibility） */
+    return uiMode;
+  }
+  var prev = chromePrevUiMode;
+  chromePrevUiMode = null;
+  setUiMode(prev === null ? "full" : prev);
+  return uiMode;
+}
+
 /* ---------------- 罗盘坐向指针 ---------------- */
 function setHeading(deg) {
   lastHeading = Number(deg) || 0;
@@ -3355,6 +3374,7 @@ try {
 
 window.__LC3D = {
   setView: debugSetView,
+  setChrome: setChromeVisible,
   setMode: setMode,
   setUiMode: setUiMode,
   attribution: getAttribution,
@@ -3585,7 +3605,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch", "resetCompass",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "lc_setUiMode", "getAttribution", "setRoadNet",
+    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getAttribution", "setRoadNet",
     "setGround", "setSitNorth", "setNeedle",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",

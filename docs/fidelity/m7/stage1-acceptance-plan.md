@@ -55,6 +55,7 @@ adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd state
 | Q7 纬度/zoom 门控 | 纬度 76° 或 zoom=5 时贴地 | 造该状态后截图 | 原版判据 `75 > |lat| && zoom >= 6 && _isGround` 才绘制；超出范围应**不绘**贴地盘面（`a12c694`）<br>**执行**：`view --ef lat 76` 与 `--ef zoom 5` 各造一次（`zoom` 会被 clamp 到 ≥2，不影响 5） |
 | Q5 不跟 DEM 起伏 | 平地与山地各贴地一次，比外接四边形四顶点 | 两次截图同法取四角 | 四个顶点坐标差 ≤ **2 px**（跟 DEM 会明显变形） |
 | Q6 遮罩/可交互 | 贴地态下点右侧「3D」「图层」是否仍可点 | 点击后 `state.mode` 变化 | 变化即算通过（盘面不得吃掉全屏触摸） |
+| Q8 文字朝向（总监 16:4x 新增） | 贴地盘面与 2D 浮层盘面**同机位**比文字方向 | 条件：`bearing=0`、`pitch=0`、`renderer=canvas`；先截贴地态，再 `toggleGround()` 关贴地截 2D 态，取同一屏位比「子/北」所在边 | **屏幕顶边「子/北」、底边「午/南」，与 2D 盘面同向**；pitch=0 四角投影退化为等比缩放，文字方向必须与 2D 完全一致，不同即 FAIL（纹理 flip/orientation）。**不得用 pitch=60 的观感判**——透视与纹理都会影响观感 |
 
 ### 1.4b 前置门禁 Q0：`COMPASS_RINGS` 必须真加载（不通过则 Q1–Q7 一律不判）
 

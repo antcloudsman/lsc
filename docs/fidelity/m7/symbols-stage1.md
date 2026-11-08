@@ -13,6 +13,22 @@
 
 放大图：`docs/fidelity/m7/center-cross-zoom5x.png`（原图 `map-home-01.png` 中心 180×180 区域 5× 放大）。
 
+## 1.1b 素材对照：`cross.png` 形状一致，但**不能直接复用**（`m7/symbol-assets-compare.png`）
+
+原版 web 素材里有 `assets/webapp/assets/imgs/cross.png`（**52×52**，621 B），目视**四段圆头线 + 中心红点**——与实测形状**完全一致**。但三条理由决定不能直接贴图：
+
+| 项 | 素材 `cross.png` | 截图实测 | 结论 |
+| --- | --- | --- | --- |
+| 尺寸 | 52×52 | 整体 114×114 设备 px | 需放大 2.19×，非 1:1 贴图 |
+| 蓝线颜色 | `rgba(100,136,252,255)` = `#6488FC` | **`#009DFF`** rgb(0,157,255) | **颜色不同** ⇒ 运行时重新着色过 |
+| 引用 | **只被 `global-population` 子页 bundle 引用**（byte 级检索：主图 `index.946c1624e0.bundle.js` 中 `cross.png` 出现 **0** 次；`mem_smali` 全树 0 次） | 主地图 21 张截图可见 | **主图不引用该素材** |
+
+⇒ **按可观测像素重画（`#009DFF` + `#FF5163`），不要直接复用 `cross.png`**——直接贴会得到偏紫的 `#6488FC`，且尺寸差 2.19 倍。
+
+## 1.1c 罗盘态也显示（`@LC地图` 核出，记入本文件避免两处各写一半）
+
+除 `map-home-01` 等地图态外，**`compass-main-01.png` 也 HIT**（红点 138、四臂 40/41/41/41）⇒ 罗盘态下该符号同样显示。结合 §1.3 的「弹层/面板态 NONE」，**显隐条件是「主视图（地图态或罗盘态）显示、弹层/子页隐藏」**，与是否打开罗盘无关。
+
 ## 1.2 量化（原版真机 1228×2700，density 3.375）
 
 | 项 | 设备 px | 折算 dp | 颜色 hex / RGB |
@@ -88,6 +104,20 @@
 | 资源引用 | `svg_locate_0/1/2` | **零引用**（定位按钮动画帧） |
 | 资源引用 | `svg_location`(`0x7f0803df`，15×18dp 地图针) | 仅 `ui/pages/WeatherActivity.smali:8106` ⇒ **天气页城市图标** |
 | 资源引用 | `svg_topic_center_cross` | **零引用** |
+
+## 2.1b 素材对照：`locationPointer.png` 存在，**但主图不引用**
+
+原版 web 素材 `assets/webapp/assets/imgs/locationPointer.png`（**68×68**，1978 B）= **经典定位点**：蓝色实心圆 + 白色描边 + 圆上方一个小三角（朝向指示）。见 `m7/symbol-assets-compare.png` 第 1 格。
+
+| 项 | 事实 |
+| --- | --- |
+| 素材 | 存在，68×68，样式就是「当前位置点」 |
+| 引用面 | 被 **8 个子页 bundle** 引用：`973.bundle`、`AirportMap`、`EarthQuakeMap`、`globalLandCover`、`HarborMap`、`ScenicMap`、`special`、`global-population` |
+| **主图** | `index.946c1624e0.bundle.js` 中 `locationPointer` 出现 **0** 次 |
+| `mem_smali` | 全树 0 次（原生侧不引用该名字） |
+
+⇒ **素材在、主图未使用**（与 `cross.png` 同类，但 `cross.png` 至少主图有像素；`locationPointer` 连像素都没有）。
+⇒ 仍需设备窗口关闭「定位成功后是否出现跟随点」这一缺口（§2.3）。
 
 ## 2.2 截图检测
 

@@ -442,6 +442,46 @@ p(this, "setCompassVisible", ({value: e}) => {
 ⇒ 台账应写：「**原版贴地时指针仍显示且随地面倾斜（`pitchAlignment:"map"`）；我方因原生 ImageView 无法倾斜，选择隐藏——属实现限制下的差异，非原版行为**」。
 ⇒ 这比原先「原版贴地时指针形态未取证」更准确——**原版怎么做的已经取证了**，未取证的是它的具体倾斜视觉效果（无 L1 截图）。
 
+## 6.8 根因：原版**不用 `file://`**，用 `WebViewAssetLoader`（一次解掉 fetch 被拒 + canvas 污染）
+
+@LC审核验 的 `Tainted canvases may not be loaded` 与 @LC地图 的 `fetch` 404/被拒，**是同一个根因**：我方页面跑在 `file:///android_asset/` 下。
+
+原版逐字（`map/MapWebView.smali:185-233`）：
+
+```smali
+new-instance v4, Landroidx/webkit/WebViewAssetLoader$Builder;
+invoke-direct {v4}, Landroidx/webkit/WebViewAssetLoader$Builder;-><init>()V
+new-instance v5, Landroidx/webkit/WebViewAssetLoader$AssetsPathHandler;
+invoke-direct {v5, v3}, Landroidx/webkit/WebViewAssetLoader$AssetsPathHandler;-><init>(Landroid/content/Context;)V
+const-string v0, "/assets/"
+invoke-virtual {v4, v0, v5}, ...addPathHandler(...)     → /assets/ → APK assets
+const-string v0, "/res/"
+invoke-virtual {v4, v0, v5}, ...addPathHandler(...)      → /res/    → APK res
+... InternalStoragePathHandler(context, filesDir)        → 内部存储
+.field private final assetLoader:Landroidx/webkit/WebViewAssetLoader;
+```
+
+页面地址（`MainActivity$P$a$d$a` 内的常量，与 `H5Helper` 一致）：
+
+```
+https://appassets.androidplatform.net/assets/webapp/index.html
+```
+
+⇒ 原版页面来源是 **`https://appassets.androidplatform.net/...`**（`WebViewAssetLoader` 的默认域），**不是 `file://`**。
+⇒ 于是原版：
+- `fetch('map/…json')` **可用**（同源 https，不是 file 源）；
+- `<img src="assets/imgs/compass/compass.png">` 画进 2D 画布**不污染**（同源），`texImage2D` **正常**。
+
+### 6.8.1 三条修法对比（推荐第 1 条）
+
+| 方案 | 解决 fetch | 解决污染 | 与原版一致 | 备注 |
+| --- | --- | --- | --- | --- |
+| **① 上 `WebViewAssetLoader`，页址改 `https://appassets.androidplatform.net/assets/…`** | ✅ | ✅ | **✅（原版做法）** | 跨模块（客户端/地图），一次解两因 |
+| ② `data:` 内联图片/JSON | ✅ | ✅ | ❌ 绕开 | 地图已做，可作过渡 |
+| ③ `setAllowUniversalAccessFromFileURLs(true)` | ✅ | ✅ | ❌ 且**放松安全** | 不建议 |
+
+⇒ **建议按 ① 做**：不仅因为它是原版做法，更因为它把「`file://` 特有的两道限制」一起消掉；②③ 都是在跟 `file://` 搏斗。
+
 # 七、检索复现命令（审核验可直接照跑）
 
 ## 3.1 代码检索

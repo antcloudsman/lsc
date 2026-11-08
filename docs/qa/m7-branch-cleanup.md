@@ -34,3 +34,29 @@ git rev-parse origin/<branch>
 | 日期 | 变更 |
 |---|---|
 | 2026-11-08 | 建表：7 条已合入分支的顶 sha 与合入校验结果；随后执行删除（逐条 `git push origin --delete`）。 |
+| 2026-11-08 | 新增 §5「内容已合、sha 未进图」；`feature/地图-c1-bclass` 按内容判定已合入后删除，顶 sha 留存于该节。 |
+
+## 5 内容已合、分支 sha 未进图（按内容比对判合入）
+
+判定方法（**不要只看 sha**）：先比内容，再看图关系。
+
+```bash
+git diff --stat origin/develop <sha> -- <涉及文件>   # 空 ⇒ 内容已完全一致
+git merge-base --is-ancestor <sha> origin/develop     # 1 ⇒ 该 sha 本身不在 develop 图上
+```
+
+两者同时出现不是矛盾：**分支被 rebase 过，旧 sha 被新提交替换，内容却一样**。
+只看 sha 会得出两个错误结论——要么以为丢了要重做，要么重复合一遍制造新冲突。
+
+| # | 分支 | 分支顶 sha（删除前） | 内容比对（对 develop） | `merge-base` | 内容 |
+|---|---|---|---|---|---|
+| 1 | `feature/地图-c1-bclass` | `8915e0f` | `map.html` diff 为空 ⇒ 一致 | exit=1（sha 未进图） | C 轮 M-05 `emit`/`emitDiag` + M-07 DEM 失败原因链 |
+
+复跑（2026-11-08，`origin/develop` = `518c99e`）：
+
+```bash
+git diff --stat origin/develop 8915e0f -- app/android/app/src/main/assets/map.html   # 无输出
+git merge-base --is-ancestor 8915e0f origin/develop; echo $?                          # 1
+git show origin/develop:app/android/app/src/main/assets/map.html | grep -c 'firstDemErr'  # >0
+```
+

@@ -150,6 +150,73 @@ hwschromium-21705: [INFO:CONSOLE(3389)] "LCGROUND ERROR draw Failed to execute '
 
 **执行前提**：① 本人从客户端提交独立构建（不装实现方自报的包），装机贴 `apk_sha` + `lastUpdateTime`；② `MapAsset.USE_ASSET_LOADER` 的**开关两个值都要测一次**（默认值与回滚值），确认一行能退回 `file://`；③ 失败即整批判「阻塞」，不判 PASS/FAIL。
 
+### 1.4f 首次四关实测：Q0 全过，Q1 因 ground quad 放大 2.857× 失败（`28a54f1`，16:42–16:47）
+
+本人独立构建 `28a54f1`，`apk_sha = d8a065ec5894b4d010afb26a9d2739b01c5c41d3c5e55d6d2fcd5acd67335d2a`，`lastUpdateTime = 2026-11-08 16:42:11`，`INSTALL_OK taps=2`，设备 `L2E0222531014833`。
+
+**Q0 四关全过**（这是本轮唯一完整通过的批次）：
+
+| 关 | 实测 | 判 |
+|---|---|---|
+| Q0-1 数据 | `getGroundDebug().hasRings = true` | PASS |
+| Q0-2 上传 | `diag:"drawn"`、`hasQuad:true`、`texDirty:false`；日志 `LCGROUND draw side=21342m tex=1456px dial=549` | PASS |
+| Q0-3 瓦片 | `tileDiag {"net":160,"ok":160,"hit":0,"err":0,"lastErrUrl":""}`——`net>0` 证明确有网络请求，`err=0` 证明天地图在 https 虚拟域下未拒 | PASS |
+| Q0-4 不回归 | 见下方留待下一轮（本轮设备窗口优先给了 Q1/Q8，未逐项跑） | **未测，不计过** |
+| 页面地址 | `location.href = https://appassets.androidplatform.net/assets/map.html?tk=…` | PASS |
+
+**Q1 失败，但原因不是 `549`**（总监 16:4x 已裁定此写法）：
+
+```
+pitch 0、bearing 0：getGroundQuad().sideCss = {top: 2079.96, right: 2079.96}
+期望 728 CSS（= 2 × 屏宽 364，纹理与地面 1:1）
+倍数 2079.96 / 728 = 2.857
+```
+
+**根因（代码级，已定位到行）**：`map.html:3325`
+
+```js
+if (groundMode) D *= 0.35;          /* 贴地：机位压低到 35%，配合俯仰 60° */
+```
+
+相机距离 D 被压到 0.35 倍 ⇒ 全部地物投影放大 `1/0.35 = 2.857` 倍，与实测倍数**逐位吻合**。也就是说 `549`（纹理分辨率）是对的，错的是地面在屏幕上的铺开尺寸。
+
+**换算到判据**：盘面直径 = `0.37725 × 2079.96 CSS × 3.375 = 2648.2` 设备 px（半径 1324），而判据是 **927 ± 4** ⇒ 差 2.86 倍，**Q1 判 FAIL**（原因写「quad 边长 2079.96 ≠ 728，盘面被放大 2.857×」，不得写「549 不对」）。
+
+**像素旁证**：`pitch0-ground.png` 在 `y=1250`、`y=1450` 两整行**找不到盘面外环交点**（外环是深色带）；若盘径正确（半径 463），交点应出现在 `x≈162` 与 `x≈1066`。实测没有 ⇒ 屏幕上确实是一个远超屏宽的大盘。
+
+**Q2 中心 PASS**：同一次读数 `center = {x:182.0, y:400.0}`，恰为 `(cssW/2, cssH/2) = (364/2, 800/2)`，一位不差。尺寸错、位置对——两项必须分开记，别因为 Q1 红就把 Q2 也判红。
+
+**Q4 本轮不可判**：pitch 60 时 `getGroundQuad()` 返回 `null`（`diag` 仍是 `drawn`、`hasQuad:true`）。原因可从几何直接推出：`D = 0.35 × (800×29.32)/(2·tan25°) ≈ 8,799 m`，而 quad 半边长 `r = 10,671 m > D`，pitch 60 下近侧两角落到相机背后，`getGroundQuad` 里 `if (!(cw > 1e-6)) return null;` 直接放弃整块。**这是调试钩子的能力缺陷**（只报全有效或全 null，不做近平面裁剪），不是几何错；Q1 的 r 一改小，这个 null 会自然消失。修好前 Q4 按「不可判」记。
+
+**Q8 失败（`28a54f1`）**：bearing 0、pitch 0 下，北侧扇区（壬 子 癸）出现在**屏幕底边**，顶边是 180° 一侧的数字——与「顶边应为 子/北」相反，判 FAIL。与地图 `d07b0c9` 的 UV 静态推导一致；`d07b0c9` 尚未由我复验，**不得写成已修复**。
+
+**本轮未覆盖**：Q0-4 四项回归、Q3 透明度、Q5 平地/山地、Q7 门控、`USE_ASSET_LOADER=false` 回滚值实测。
+
+### 1.4g 复核「视口宽 2.857」假设：实测不成立，2.857 = 1/0.35（`ffb6393`，16:50–16:51）
+
+`ffb6393` 的提交说明是「`screen.width` 实测 1040 而非 364，2.857 = 1040/364」。本人在同机同页复核，**该前提在 map WebView 里不成立**：
+
+```
+adb shell am broadcast … --es value "JSON.stringify({screenW:window.screen.width,innerW:window.innerWidth})"
+  → {"screenW":364,"innerW":364}
+
+getGroundDebug()（ffb6393）
+  → {"vw":364,"screenW":364,"canvasCss":728,"canvasBacking":1456,"radiusMeters":10671,"diag":"drawn",…}
+
+getGroundQuad() pitch0
+  → sideCss {top: 2079.9634173776335, right: 2079.963417377634}
+  → sideMeters 21342
+```
+
+三点结论：
+
+1. **`screen.width` 是 364，不是 1040**；`innerWidth` 也是 364。`radiusMeters=10671`、`canvasBacking=1456` 这两个读数与 364 口径完全一致，说明改前改后取的就是 364（`28a54f1` 的绘制日志同样是 `tex=1456px`，不是题目里说的 4160）。
+2. **`ffb6393` 对 Q1 是空操作**：`sideCss` 与 `sideMeters` 与 `28a54f1` **逐位相同**（2079.9634 / 21342）。所以「画布从 2080 CSS / 4160 backing 回落到 728 / 1456」这件事在真机上没有发生，因为它本来就不是 2080 / 4160。
+3. **2.857 的唯一来源是 `map.html:3325` 的 `if (groundMode) D *= 0.35;`**：把实测 `sideCss` 乘回 0.35 得 `2079.9634 × 0.35 = 727.99`，与期望的 728 只差 0.01 CSS——**乘积精确落回期望值**，这是比「碰巧等于某个比值」强得多的证据。
+
+**修复建议（供实现方选，验收方不代改）**：把同一系数补到半径上——`r = vw × zMpp × 0.35`（本机 3,735 m），则 `side = 728 CSS`、盘面 `= 728 × 0.37725 = 274.6 CSS = 927 设备 px`，Q1 直接达标；同时因为 `r(3,735) < D(8,799)`，pitch 60 下不再出现角落跑到相机背后，**`getGroundQuad()` 的 null 也一并消失**，Q4 才可判。
+另一条路是去掉 `D *= 0.35` 让相机回到原距离——但那会改变 pitch 60 下的 3D 观感（整场景缩小 2.857 倍），属行为回归，需另跑 Q0-4，**不建议在同一轮里同时改**。
+
 ### 1.5 失败与回滚
 
 - 任一项超差 → 本条判**不通过**，退回实现方，附超差项与实测值；

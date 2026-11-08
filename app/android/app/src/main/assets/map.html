@@ -118,6 +118,10 @@
 <div id="needle"></div>
 <div id="heading-label">向 0°</div>
 
+<!-- 盘面数据（11-08）：WebView 源是 file:///android_asset/，Chromium 的 Fetch 与 XHR 都拒绝 file 方案，
+     所以数据由生成器同时输出成 JS，用 script 标签加载（不受该限制）。见 tools/fidelity/gen-compass-rings.py -->
+<script src="map/compass-rings.js"></script>
+
 <script>
 /* ============================================================
  * 山水罗盘 · map.html
@@ -2143,9 +2147,16 @@ var COMPASS_GOLD = '#dcbe82';      /* rgb(220,190,130) */
 
 function compassDataLoad(cb) {
   if (COMPASS_RINGS) { cb(COMPASS_RINGS); return; }
-  /* 11-08 现场第二个根因：文件实际在 assets/map/compass-rings.json，
-   * 而这里原来写 'compass-rings.json' ⇒ 相对 map.html 解析到 assets/ 根 ⇒ 404。
-   * 改成"按序尝试 + 成功即打日志"，路径再变也不会静默失败。 */
+  /* 首选：生成器随包输出的 JS（<script src="map/compass-rings.js"> 已在上方加载）。
+   * 原因（审核验 11-08 实测）：页面源 file:///android_asset/ 下，Chromium 的 Fetch API 与 XHR
+   * 都直接拒绝 —— "URL scheme 'file' is not supported"，与路径无关。script 标签不受此限制。 */
+  if (window.__LC_COMPASS_RINGS) {
+    COMPASS_RINGS = window.__LC_COMPASS_RINGS;
+    console.log('LCGROUND rings-inline ok rings=' + ((COMPASS_RINGS.rings || []).length));
+    cb(COMPASS_RINGS);
+    return;
+  }
+  /* 后备：http(s) 源（桌面预览）仍可 fetch；file 源下会失败并走下面的日志 */
   var paths = ['map/compass-rings.json', 'compass-rings.json'];
   var i = 0;
   function next() {

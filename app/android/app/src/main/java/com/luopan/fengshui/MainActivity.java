@@ -1354,7 +1354,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         TextView title = new TextView(this);
         title.setText(R.string.lc_compass_display_title);
-        title.setTextSize(16f);
+        title.setTextSize(16f);   // 原版 216 宽/4 字/3.375 = 16sp
         title.setTextColor(Color.rgb(235, 228, 215));
         panel.addView(title);
 
@@ -2107,7 +2107,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         TextView title = new TextView(this);
         title.setText("邮箱地址");
-        title.setTextSize(17f);
+        title.setTextSize(16f);   // 原版 216 宽/4 字/3.375 = 16sp
         title.setTextColor(0xFF23272B);
         title.setGravity(android.view.Gravity.CENTER);
         // 宽度按**文字自身**（dump: 标题 [506,1199][722,1278] = 216、正文 [328,1350][899,1429] = 571），
@@ -2128,14 +2128,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         TextView copy = new TextView(this);
         copy.setId(R.id.lc_m3_copy_mail);
         copy.setText("复制邮箱");
-        copy.setTextSize(17f);
+        copy.setTextSize(14f);   // 原版 188 宽/4 字/3.375 ≈ 13.9 -> 14sp
+        copy.setPadding(0, 0, 0, 0);   // 去掉内距：文字节点高 111 vs 原版字形 89
         copy.setTextColor(android.graphics.Color.WHITE);
         copy.setGravity(android.view.Gravity.CENTER);
         android.graphics.drawable.GradientDrawable btnBg = new android.graphics.drawable.GradientDrawable();
         btnBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
         btnBg.setColor(0xFF2F59B8);
         btnBg.setCornerRadius(32f);
-        copy.setBackground(btnBg);
+        copy.setBackground(null);   // 蓝底改挂容器（否则 wrap_content 会把底色缩成 228 宽）
         copy.setOnClickListener(v -> {
             android.content.ClipboardManager cm =
                     (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
@@ -2149,10 +2150,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 蓝钮分两层（审客户端订正 + 总监裁定）：可点容器 = dump 583x157（距卡顶 331）；
         // 蓝色填充 = 像素实测 583x111，相对容器上下各内缩 23/19 —— 整块 157 涂蓝会高 46px。
         android.widget.FrameLayout btnBox = new android.widget.FrameLayout(this);
+        // 蓝填充必须是**内层 583x111**（上 23 / 下 24），挂在 157 高的容器上会变成 157 高
+        View fill = new View(this);
+        fill.setBackground(btnBg);
+        android.widget.FrameLayout.LayoutParams fillOnly =
+                new android.widget.FrameLayout.LayoutParams(583, 111);
+        fillOnly.topMargin = 23;
+        fillOnly.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+        btnBox.addView(fill, fillOnly);
         btnBox.setClickable(true);
         btnBox.setOnClickListener(v -> copy.performClick());
-        android.widget.FrameLayout.LayoutParams fillLp = new android.widget.FrameLayout.LayoutParams(583, 111);
-        fillLp.topMargin = 23;
+        // 文字节点宽度取 wrap_content（原版 `复制邮箱` 文本 [520,1497][708,1576] = 188 宽，
+        // 蓝色填充才是 583）；填充层仍 583x111，文字在其中居中。
+        android.widget.FrameLayout.LayoutParams fillLp = new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT, 79);   // 原版文本节点高 79（填充才是 111）
+        fillLp.gravity = android.view.Gravity.CENTER;
         btnBox.addView(copy, fillLp);
         android.widget.LinearLayout.LayoutParams blp = new android.widget.LinearLayout.LayoutParams(583, 157);
         blp.topMargin = 29;
@@ -2165,7 +2177,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // 关闭钮：dump [911,1127][1059,1275] = 148x148，**卡片右上角内侧**（右缘 1059 = 卡右缘），clickable=true
         TextView close = new TextView(this);
         close.setId(R.id.lc_m3_dialog_close);
-        close.setText("×");
+        close.setText("");   // 原版关闭是无文本图标：节点里不该出现「×」
         close.setTextSize(22f);
         close.setTextColor(0xFF8E8E8E);
         close.setGravity(android.view.Gravity.CENTER);

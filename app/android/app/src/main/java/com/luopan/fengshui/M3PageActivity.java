@@ -34,12 +34,16 @@ public class M3PageActivity extends Activity {
     private static final int LIGHT_BG = 0xFFF0F3F7;
     private static final int CARD_WHITE = 0xFFFFFFFF;
     private static final int TEXT_MAIN = 0xFF23272B;
-    private static final int TEXT_SUB = 0xFF8E8E8E;
+    private static final int TEXT_SUB = 0xFF8D9299;   // 审客户端实测 (141,146,153)
     private static final int TEXT_HINT = 0xFF9C9C9C;
-    private static final int ACCENT = 0xFF2C66D6;
-    private static final int LINK = 0xFF2C66D6;
+    private static final int ACCENT = 0xFF1C45A5;     // 审客户端实测 (28,69,165)
+    private static final int LINK = 0xFF1C45A5;
     private static final int DANGER = 0xFFE93B4D;
     private static final int DIVIDER = 0xFFE6E8EB;
+
+    /** M6 第 4 条：账户页「退出登录」原版贴底（父节点 [39,2512][1189,2578]），
+     *  必须挂在 ScrollView 之外，否则会随内容滚走。 */
+    private View bottomFixedButton;
 
     /** px -> dp。原版几何都是设备像素（720dpi 屏、density 3.375），实现必须按 dp 写。 */
     private int dp(float v) {
@@ -80,10 +84,12 @@ public class M3PageActivity extends Activity {
 
     /**
      * 远端 WebView 页。URL 只在此处出现一次，出处记在 fidelity 文档里（不进 values/、不散落）：
-     * 帮助中心 = ApiHelper.HELP_CENTER（yuque 组织 wiki）；用户协议 = ApiHelper.USER_AGREEMENT。
+     * 原版帮助中心 = ApiHelper.HELP_CENTER（yuque 组织 wiki，远端）；我方已改**本地资源**（M6 第 5 条，离线可读）。
+ * 用户协议仍为原版远端 ApiHelper.USER_AGREEMENT。
      * 两者都是原版的远端行为；离线/失败时页面必须可见标注（D-023）。
      */
-    private static final String HELP_URL = "https://xinzhispace.yuque.com/org-wiki-xinzhispace-zrccm1/mh7qvx?#";
+    private static final String HELP_URL = "file:///android_asset/lc-help/index.html";
+    /** 帮助中心改为**本地资源**（离线可读）：原版是远端 WebView，且其「离线」证据 help-offline.xml 仅 47 B 的抓取失败文件，已作废。 */
     private static final String AGREEMENT_URL = "https://agreement.yuan9.cn/agreement/swssqjdt/yhxyb.html";
     /** 隐私政策：原版 WebActivity.i.b(ctx, "privacy.html", "隐私政策") —— 与用户协议同一 base。 */
     private static final String PRIVACY_URL = "https://agreement.yuan9.cn/agreement/swssqjdt/privacy.html";
@@ -110,15 +116,33 @@ public class M3PageActivity extends Activity {
         if (page == null) page = "关于我们";
 
         LinearLayout root = new LinearLayout(this);
+        // M6 第 4 条：原版四页窗口**画到屏底 2700**、且没有导航栏（四页 PNG 底部 2630..2699 单色 #F0F3F7、
+        // 零图标；状态栏仍在，深色图标 y≈44..75）。我方窗口只到 2578，红条被切在 2578 —— 这不是高度差，
+        // 是两种窗口。只改本 Activity：主界面（罗盘 922 / r / 地图已验收）一律不动。
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         root.setId(R.id.lc_m3_root);
         root.setOrientation(LinearLayout.VERTICAL);
+        // 全屏布局后内容从 y=0 起，标题会顶到状态栏里：把状态栏高度补成顶部内距
+        // （原版标题 y 154 = 状态栏 122 + 32）。
+        int statusBar = 0;
+        int sbId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (sbId > 0) statusBar = getResources().getDimensionPixelSize(sbId);
+        // 原版 bar 顶在 y=0（返回钮 y115），不能在 root 上补状态栏内距，否则整体下移 24+
         root.setBackgroundColor(LIGHT_BG);
 
         // 标题栏：返回 + 页名（原版标题逐字）
-        LinearLayout bar = new LinearLayout(this);
-        bar.setOrientation(LinearLayout.HORIZONTAL);
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(dp(12), dp(7), dp(12), dp(5));
+        // M6 第 4 条：标题栏改 FrameLayout —— 返回贴左、标题**居中且 wrap_content**（原版宽 216）、我的贴右。
+        // 用 LinearLayout 时标题靠 weight 撑满，dump 宽度永远是整栏，Δ 表必挂（测试实测 ΔR=+465）。
+        android.widget.FrameLayout bar = new android.widget.FrameLayout(this);
+        // 标题栏高度固定（原版正文从 y=265 起、状态栏 122 -> 143），
+        // 否则「我的」158 高会把 bar 撑高、把标题一起推下去（实测标题 +31 就是这条）。
+
+        bar.setPadding(dp(12), 115, dp(12), dp(5));   // P=115：与「返回 y115 / 我的 y115」同顶（审核验按导数反推）
+        bar.setClipChildren(false);   // 「我的」底部到 272，超过定高 265，不关裁剪只有 150 高
         TextView back = new TextView(this);
         back.setId(R.id.lc_m3_back);
         back.setText("返回");
@@ -126,7 +150,27 @@ public class M3PageActivity extends Activity {
         back.setTextColor(TEXT_MAIN);
         back.setPadding(0, dp(4), dp(10), dp(4));
         back.setOnClickListener(v -> finish());
-        bar.addView(back);
+        android.widget.FrameLayout.LayoutParams backLp =
+                new android.widget.FrameLayout.LayoutParams(
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+        backLp.gravity = Gravity.START | Gravity.TOP;   // 居中无解：返回 y115 与 我的 y115 需同一 P
+        bar.addView(back, backLp);
+        TextView title = new TextView(this);
+        title.setId(R.id.lc_m3_title);
+        title.setText(page);
+        title.setTextSize(16f);   // 原版标题 216 宽 = 四字各 54px ≈ 16sp（18sp 会画成 240）
+        title.setTextColor(TEXT_MAIN);
+        android.widget.FrameLayout.LayoutParams titleLp =
+                new android.widget.FrameLayout.LayoutParams(
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+        titleLp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        titleLp.topMargin = 39;   // 原版 154 - bar 顶 115
+        titleLp.height = 79;   // 原版标题高 79（四页一致），wrap 只有 76
+        title.setIncludeFontPadding(false);
+        bar.addView(title, titleLp);
+
         // M6 第 4 条：投诉反馈一级页右上「我的」[1056,115][1213,272] = **158×158**、
         // complaint.xml 里 `clickable=true` + `focusable=true`（dump 只支持“可点”，不支持“不可点”）。
         // 跳转目标未取证 → 按裁定做成**可点 + 明确的未接入提示**（与 D-031 微信入口同口径），
@@ -142,18 +186,23 @@ public class M3PageActivity extends Activity {
             mineBtn.setOnClickListener(v -> android.widget.Toast.makeText(this,
                     "「我的」跳转目标未取证（D-034），本轮未接入",
                     android.widget.Toast.LENGTH_SHORT).show());
-            bar.addView(mineBtn, new LinearLayout.LayoutParams(158, 158));
+            android.widget.FrameLayout.LayoutParams mineLp =
+                    new android.widget.FrameLayout.LayoutParams(157, 157);
+            mineLp.gravity = Gravity.END | Gravity.TOP;
+            mineLp.topMargin = 0;   // 原版 y115 = bar 顶
+            mineLp.rightMargin = 15;
+            // X 补偿：rightMargin 落在 bar 右内距 dp(12)=41 里，右缘会退到 1172；
+            // 41 是有效补偿（审核验第七轮确认），Y 那个 -31 才是残留，已删。
+            mineBtn.setTranslationX(41f);
+            bar.addView(mineBtn, mineLp);
         }
-        TextView title = new TextView(this);
-        title.setId(R.id.lc_m3_title);
-        title.setText(page);
-        title.setTextSize(18f);
-        title.setTextColor(TEXT_MAIN);
-        bar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        root.addView(bar);
+        root.addView(bar, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 265));
 
         // 依赖标注（有则显示）
-        String dep = dependencyNote(page);
+        // M6 第 4 条：原版「投诉反馈」没有这行自造说明，它会把握手位整体推下 141px（审审核验实测），
+        // 按 1:1 去掉；依赖说明只留在日志里，不占版面。
+        String dep = ("投诉反馈".equals(page) || "账户设置".equals(page)) ? null : dependencyNote(page);
         if (dep != null) {
             TextView note = new TextView(this);
             note.setId(R.id.lc_m3_dep_note);
@@ -169,7 +218,11 @@ public class M3PageActivity extends Activity {
         LinearLayout list = new LinearLayout(this);
         list.setId(R.id.lc_m3_body);
         list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(dp(12), 0, dp(12), dp(10));
+        // 顶距 +33 只对投诉页（首行 320 -> 353）；账户页 body 起点不同，不能一起推
+        // 顶距：投诉 33（320->353）、账户 74（339-265）；两者 body 起点不同
+        list.setPadding(dp(12),
+                "账户设置".equals(page) ? 74 : ("投诉反馈".equals(page) ? 33 : 0),
+                dp(12), dp(10));
         List<String> lines = readPage(page);
         // 三页有专属结构（不是纯文本列表）：投诉反馈两级、推荐给好友分享面板、账户设置未登录态
         if ("投诉反馈".equals(page)) {
@@ -179,7 +232,10 @@ public class M3PageActivity extends Activity {
         } else if ("账户设置".equals(page)) {
             buildAccount(list);
         } else if ("关于我们".equals(page)) {
-            buildAbout(list, lines);
+            // M6 第 4 条：about 是**绝对分布**（154/995/1090/2331/2489/2496），
+            // ScrollView 流式布局必然整体偏高（测试实测 -700..-1950px）。
+            // 这里改成屏幕坐标系绝对定位，纵坐标一律取 dump 原值。
+            buildAboutAbsolute(root, lines);
         } else if ("联系我们".equals(page)) {
             buildContact(list, lines);
         } else if (webUrlOf(page) != null) {
@@ -210,6 +266,29 @@ public class M3PageActivity extends Activity {
         scroll.addView(list);
         root.addView(scroll, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        // M6 第 4 条：账户页贴底红按钮（1150x66 由列表内距折出，这里固定在最底部，不随滚动）
+        if (bottomFixedButton != null) {
+            android.widget.FrameLayout bar2 = new android.widget.FrameLayout(this);
+            android.graphics.drawable.GradientDrawable lbg = new android.graphics.drawable.GradientDrawable();
+            lbg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+            lbg.setColor(0xFFE93B4D);
+            lbg.setCornerRadius(12f);
+            bar2.setBackground(lbg);
+            bar2.setClickable(true);
+            android.widget.FrameLayout.LayoutParams txtLp =
+                    new android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+            txtLp.gravity = Gravity.CENTER;
+            bar2.addView(bottomFixedButton, txtLp);
+            LinearLayout.LayoutParams blp2 = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 124);
+            blp2.leftMargin = 39;
+            blp2.rightMargin = 39;
+            blp2.bottomMargin = 64;
+            root.addView(bar2, blp2);
+        }
 
         // 帮助中心 / 用户协议：原版就是远端 WebView，且是**整页 WebActivity**（逆向 smali $b$a$c/$d），
         // 整页打开，不在对话框里塞 WebView。
@@ -244,11 +323,16 @@ public class M3PageActivity extends Activity {
      */
     private void buildComplaint(LinearLayout list) {
         // 一级：列表
-        addRow(list, "问题反馈", "", true, v -> {
+        // 投诉一级页步进 = 180px（原版 问题反馈 353 → 订单投诉 533）；账户页是 163，两者不同，
+        // 所以不能用一个全局行高，按页覆盖。
+        LinearLayout r1 = addRow(list, "问题反馈", "", true, v -> {
             list.removeAllViews();
             buildComplaintForm(list);
         });
-        addRow(list, "订单投诉", "未选择任何订单", false, null);
+        // pitch = minHeight + 分隔高度(3)：目标步进 180 -> minHeight 177
+        if (r1 != null) r1.setMinimumHeight(177);
+        LinearLayout r2 = addRow(list, "订单投诉", "未选择任何订单", false, null);
+        if (r2 != null) r2.setMinimumHeight(177);
     }
 
     private void buildComplaintForm(LinearLayout list) {
@@ -459,7 +543,8 @@ public class M3PageActivity extends Activity {
         avatarImg.setId(R.id.lc_m3_avatar_img);
         avatarImg.setImageResource(R.mipmap.lc_default_avatar);
         avatarImg.setPadding(0, dp(7), 0, dp(4));
-        list.addView(avatarImg, new LinearLayout.LayoutParams(120, 120));
+        // 头像延后：原版顺序是「昵称 339 -> 头像 502」，先记录引用，等昵称行之后插入
+        final android.widget.ImageView avatarRowImg = avatarImg;
 
         final String token = LcSession.token(this);
         final org.json.JSONObject user = LcSession.user(this);
@@ -522,9 +607,26 @@ public class M3PageActivity extends Activity {
         nameRow.setText("昵称：" + nickShown + "　（点此修改）");
         nameRow.setTextSize(17f);
         nameRow.setTextColor(TEXT_MAIN);
-        nameRow.setPadding(0, dp(5), 0, dp(4));
+        nameRow.setPadding(0, 0, 0, 0);   // 内容区 79 必须容下 76/62/72/72：有 padding 会把字挤裁（审核验实测 403=404-1）
         nameRow.setOnClickListener(v -> showEditNameDialog(token, nickShown));
-        list.addView(nameRow);
+        addAccountRow(list, nameRow);
+        // 头像：160 行内放 120x120，垂直居中
+        LinearLayout avatarRow = new LinearLayout(this);
+        avatarRow.setId(R.id.lc_m3_avatar_row);   // 复验按容器顶 502 判（图片节点会落在 522）
+        avatarRow.setOrientation(LinearLayout.VERTICAL);
+        avatarRow.setBackgroundColor(CARD_WHITE);
+        avatarRow.setMinimumHeight(160);
+        avatarRow.setGravity(Gravity.CENTER_VERTICAL);
+        avatarRow.addView(avatarRowImg, new LinearLayout.LayoutParams(120, 120));
+        list.addView(avatarRow);
+        {
+            View dv = new View(this);
+            dv.setBackgroundColor(0xFFF0F3F7);
+            LinearLayout.LayoutParams dlp0 = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 3);
+            dlp0.leftMargin = 39; dlp0.rightMargin = 39;
+            list.addView(dv, dlp0);
+        }
 
         TextView accountRow = new TextView(this);
         accountRow.setId(R.id.lc_m3_account_name);
@@ -532,24 +634,24 @@ public class M3PageActivity extends Activity {
                 + "　uid：" + user.optInt("uid", 0));
         accountRow.setTextSize(14f);
         accountRow.setTextColor(TEXT_SUB);
-        accountRow.setPadding(0, 0, 0, dp(6));
-        list.addView(accountRow);
+        accountRow.setPadding(0, 0, 0, 0);   // 内容区 79 必须容下 76/62/72/72：有 padding 会把字挤裁（审核验实测 403=404-1）
+        addAccountRow(list, accountRow);
 
         TextView changePw = new TextView(this);
         changePw.setId(R.id.lc_m3_changepw);
         changePw.setText("修改密码");
         changePw.setTextSize(16f);
         changePw.setTextColor(ACCENT);
-        changePw.setPadding(0, dp(2), 0, dp(5));
+        changePw.setPadding(0, 0, 0, 0);   // 内容区 79 必须容下 76/62/72/72：有 padding 会把字挤裁（审核验实测 403=404-1）
         changePw.setOnClickListener(v -> showChangePasswordDialog(token));
-        list.addView(changePw);
+        addAccountRow(list, changePw);
 
         TextView sync = new TextView(this);
         sync.setId(R.id.lc_m3_sync);
         sync.setText("同步收藏点（本地优先，失败留离线队列）");
         sync.setTextSize(16f);
         sync.setTextColor(ACCENT);
-        sync.setPadding(0, dp(2), 0, dp(5));
+        sync.setPadding(0, 0, 0, 0);   // 内容区 79 必须容下 76/62/72/72：有 padding 会把字挤裁（审核验实测 403=404-1）
         sync.setOnClickListener(v -> {
             sync.setEnabled(false);
             sync.setText("同步中…");
@@ -569,16 +671,29 @@ public class M3PageActivity extends Activity {
                 }
             }, "lc-sync").start();
         });
-        list.addView(sync);
+        addAccountRow(list, sync);
 
+        // M6 第 4 条：退出登录 = **红底按钮**，不是红字。
+        // 几何取 dump 父节点 [39,2512][1189,2578] = 1150x66（文本节点 183x37 只是字）；
+        // 颜色只能靠像素：#E93B4D。列表左右内距 dp(12)≈40px，MATCH_PARENT 恰好 1148 ≈ 1150。
         TextView logout = new TextView(this);
         logout.setId(R.id.lc_m3_logout);
         logout.setText("退出登录");
-        logout.setTextSize(16f);
-        logout.setTextColor(DANGER);
-        logout.setPadding(0, dp(2), 0, dp(7));
+        logout.setTextSize(13.5f);   // 原版 183 宽 = 4×45.75px ≈ 13.5sp
+        logout.setTextColor(android.graphics.Color.WHITE);
+        logout.setGravity(Gravity.CENTER);
+        // 文字节点必须只有字那么宽（原版 183），红底宽度在**容器**上：
+        // 之前把背景直接设在文字节点上，dump 里文字宽度=整条 1150（测试实测 ΔR=+483）。
+        logout.setBackground(null);
+        android.graphics.drawable.GradientDrawable logoutBg = new android.graphics.drawable.GradientDrawable();
+        logoutBg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        logoutBg.setColor(0xFFE93B4D);
+        logoutBg.setCornerRadius(12f);   // 像素实测圆角 12px（首/末行内缩 12）
+        logout.setBackground(logoutBg);
+        logout.setPadding(0, 0, 0, 0);   // 去掉不对称内距：上2/下7 会把字心推高约 2.5px（审核验实测字心 2565 vs 2572）
         logout.setOnClickListener(v -> doLogout(token));
-        list.addView(logout);
+        // 贴底：挂到 root，不放进 ScrollView（原版 y 2512..2578 固定底部）
+        bottomFixedButton = logout;
     }
 
     /** 修改昵称（PATCH /v2/auth/me），成功后更新本地会话并刷新本页。 */
@@ -691,17 +806,42 @@ public class M3PageActivity extends Activity {
         return et;
     }
 
-    private void addRow(LinearLayout list, String name, String right, boolean clickable, View.OnClickListener onClick) {
+
+    /** M6 第 4 条：账户页行容器 —— 与 addRow 同一套几何：minHeight 160 + 3px 分隔 = 163 步进。
+     *  原版账户页 6 行步进 163（339/502/665/828/991/1154）；我方自有行落进同一几何，不判文案。 */
+    private void addAccountRow(LinearLayout list, View content) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setBackgroundColor(CARD_WHITE);
+        row.setMinimumHeight(160);
+        row.setGravity(Gravity.TOP);   // 原版行节点高 79、内容顶端对齐；居中会把文字推下 42
+        row.addView(content, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 79));
+        list.addView(row);
+        View divider = new View(this);
+        divider.setBackgroundColor(0xFFF0F3F7);
+        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 3);
+        dlp.leftMargin = 39;
+        dlp.rightMargin = 39;
+        list.addView(divider, dlp);
+    }
+
+    private LinearLayout addRow(LinearLayout list, String name, String right, boolean clickable, View.OnClickListener onClick) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(0, 24, 0, 24);
         TextView tv = new TextView(this);
         tv.setText(name);
-        tv.setTextSize(17f);
+        tv.setTextSize(15f);   // 原版「问题反馈」204 宽 = 4×51px ≈ 15sp（17sp 会画成 228）
         tv.setTextColor(TEXT_MAIN);
-        row.addView(tv, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(tv, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         if (!right.isEmpty()) {
+            // 中间垫一个 weight=1 的空白，把右值推到行尾（左标签不再撑满整行）
+            View gapView = new View(this);
+            row.addView(gapView, new LinearLayout.LayoutParams(0, 1, 1f));
             TextView r = new TextView(this);
             r.setText(right);
             r.setTextSize(14f);
@@ -711,12 +851,19 @@ public class M3PageActivity extends Activity {
         if (clickable) row.setOnClickListener(onClick);
         // M6 第 4 条：原版行是白卡上的条目（底 #F0F3F7 + 白卡 + 1px 分隔），行高 48dp。
         row.setBackgroundColor(CARD_WHITE);
-        row.setMinimumHeight(dp(48));
+        // pitch = minHeight + 分隔高度(3)：账户页目标步进 163 -> minHeight 160
+        // （此前设 163 会让 pitch=166，第 6 行落到 1169，比原版 1154 多 15px）
+        row.setMinimumHeight(160);
         list.addView(row);
+        // 原版分隔 = 3px、色 #F0F3F7（与页面底同色）、左右内缩 39px（审客户端 quantify）
         View divider = new View(this);
-        divider.setBackgroundColor(DIVIDER);
-        list.addView(divider, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, Math.max(1, dp(0.3f))));
+        divider.setBackgroundColor(0xFFF0F3F7);
+        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 3);
+        dlp.leftMargin = 39;
+        dlp.rightMargin = 39;
+        list.addView(divider, dlp);
+        return row;
     }
 
     /**
@@ -737,6 +884,9 @@ public class M3PageActivity extends Activity {
             tv.setText(text);
             tv.setTextSize(15f);
             tv.setTextColor(TEXT_MAIN);
+            // M6 第 4 条：原版这两页正文**居中**（dump 三维山水全景地图 [399,995][829,1074]、
+            // 邮箱地址 [506,1199][722,1278] 的中心都在 614 = 屏半宽），不是左对齐。
+            tv.setGravity(Gravity.CENTER);
             tv.setPadding(0, 12, 0, 12);
             if ("复制邮箱".equals(text) && mail != null) {
                 tv.setId(R.id.lc_m3_copy_mail);
@@ -758,6 +908,91 @@ public class M3PageActivity extends Activity {
     }
 
     /**
+     * M6 第 4 条：关于我们 —— **按 dump 的绝对纵坐标**摆放（屏幕坐标系）。
+     * dump：三维山水全景地图 y995、重庆新知空间科技有限公司 y1090、
+     * 测绘资质 y2331、v1.6.1 y2489、APP备案编号 y2496。
+     * 根容器已按 statusBar 加了顶部内距，所以这里减掉该内距，落点才等于 dump 的 y。
+     * 《用户协议》《隐私政策》在原版 dump 里是 [0,0][0,0]（排版在窗口帧外），
+     * 照原版**不参与可见布局**；真实坐标待 about-links.png 取证后再落，不臆造。
+     */
+    private void buildAboutAbsolute(LinearLayout root, List<String> lines) {
+        int statusBar = 0;
+        int sbId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (sbId > 0) statusBar = getResources().getDimensionPixelSize(sbId);
+
+        android.widget.FrameLayout stage = new android.widget.FrameLayout(this);
+        root.addView(stage, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+
+        int[] ys = {995, 1090, 2331, 2489, 2496};
+        for (int k = 0; k < ys.length; k++) {
+            String text = null;
+            for (String line : lines) {
+                if (line.trim().isEmpty() || line.trim().equals("关于我们")) continue;
+                if (line.contains("《")) continue;         // 两链接原版未参与布局
+                if (k == 0 && line.contains("三维山水全景地图")) text = line;
+                if (k == 1 && line.contains("重庆新知空间")) text = line;
+                if (k == 2 && line.contains("测绘资质")) text = line;
+                if (k == 3 && line.contains("v1.6.1")) text = line;
+                if (k == 4 && line.startsWith("APP备案编号")) text = line;
+            }
+            if (text == null) continue;
+            TextView tv = new TextView(this);
+            tv.setText(text.trim());
+            // M6 第 4 条：字号按**字形 ink** 反算（不是节点框）：
+            // 三维山水 422/8/3.375≈15.6 → 16sp；重庆新知 516/12/3.375≈12.7 → 13sp；
+            // 测绘资质 209/4/3.375≈15.5sp；v1.6.1 ink 高 25 ≈ 10.5sp；备案编号 ink 621×31 单行。
+            // 备案编号按总监估算 10.5sp（8 中文 + 18 拉丁：8×35.4 + 18×17.7 ≈ 601，落在 621±20）；v1.6.1 同档，
+            // 这是**估算值**，装好后按 dump 实测回填，不拿估算当结论。
+            // 备案编号按实测回填：10.5sp 实测宽 638，目标 621 -> 10.5×621/638 ≈ 10.2sp
+            float[] sps = {16f, 13f, 15.5f, 10.5f, 10.3f};
+            tv.setTextSize(sps[Math.min(k, sps.length - 1)]);
+            tv.setSingleLine(true);   // 五项在原版都是单行（备案编号此前被折成两行，宽 330）
+
+            tv.setGravity(Gravity.CENTER);
+            tv.setTextColor(TEXT_MAIN);
+            if (k == 2) {
+                // 测绘资质在原版是蓝色可点（点去 MeasureProve，D-025 本轮不跳转）
+                tv.setTextColor(LINK);
+                tv.setOnClickListener(v ->
+                        android.util.Log.d("LCM3", "measure prove page deferred by D-025"));
+            } else if (k == 4) {
+                tv.setTextColor(LINK);
+                tv.setOnClickListener(v -> {
+                    try {
+                        startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(BEIAN_URL)));
+                    } catch (Throwable t) {
+                        android.util.Log.e("LCM3", "beian open failed", t);
+                    }
+                });
+            }
+            // 框高按 dump 的有效值（y2 不是 2578 的三个才有意义）：三维/重庆 79、测绘资质 157；
+            // 文字在框内垂直居中（原版 ink 只有 49 高，框 157 并不是字高）。
+            int[] frameH = {79, 79, 157, 0, 0};
+            android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                    frameH[k] > 0 ? frameH[k] : android.widget.FrameLayout.LayoutParams.WRAP_CONTENT);
+            lp.gravity = Gravity.CENTER_HORIZONTAL;
+            tv.setTag(ys[k]);
+            stage.addView(tv, lp);
+        }
+        stage.post(() -> {
+            int off = stage.getTop();
+            if (off <= 0) return;
+            for (int idx = 0; idx < stage.getChildCount(); idx++) {
+                View ch = stage.getChildAt(idx);
+                Object tag = ch.getTag();
+                if (!(tag instanceof Integer)) continue;
+                android.widget.FrameLayout.LayoutParams lp2 =
+                        (android.widget.FrameLayout.LayoutParams) ch.getLayoutParams();
+                lp2.topMargin = Math.max(0, ((Integer) tag) - off);
+                ch.setLayoutParams(lp2);
+            }
+        });
+    }
+
+    /**
      * 关于我们（M3-03）：原生页 + 正文内联两个链接。
      * 链接 bounds 原版 `[0,0]`（未布局）——按裁定记「bounds 未确认，链接目标已确认」，
      * 不做自定义排版凑位置：链接就是正文里的那两行文字，点击打开对应 WebView。
@@ -770,6 +1005,7 @@ public class M3PageActivity extends Activity {
             TextView tv = new TextView(this);
             tv.setText(text);
             tv.setTextSize(15f);
+            tv.setGravity(Gravity.CENTER);   // M6 第 4 条：原版关于我们正文居中
             tv.setPadding(0, 12, 0, 12);
             if (text.contains("《用户协议》")) {
                 tv.setTextColor(LINK);

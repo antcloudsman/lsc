@@ -46,6 +46,8 @@
     <item name="lc_m3_copy_mail" type="id" />
     <!-- M6 第 4 条：投诉反馈一级页右上「我的」157×157（渲染、不可点） -->
     <item name="lc_m3_mine" type="id" />
+    <!-- M6 第 4 条：账户页头像行容器（160 高），供复验按容器顶 502 判 -->
+    <item name="lc_m3_avatar_row" type="id" />
     <!-- M6 第 4 条：联系我们对话框关闭钮 148x148（dump [911,1127][1059,1275]） -->
     <item name="lc_m3_dialog_close" type="id" />
     <!-- M3 Stage3：业务逻辑控件（提交态 / 头像 / 两个分享渠道） -->

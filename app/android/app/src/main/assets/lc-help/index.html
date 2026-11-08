@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>帮助中心</title>
+<style>
+  body { margin: 0; padding: 16px 18px 48px; background: #F0F3F7; color: #23272B;
+         font: 15px/1.7 -apple-system, "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
+  h1 { font-size: 19px; margin: 0 0 6px; }
+  h2 { font-size: 16px; margin: 26px 0 8px; padding-left: 8px; border-left: 3px solid #1C45A5; }
+  p, li { margin: 6px 0; }
+  .sub { color: #8D9299; font-size: 13px; margin-bottom: 14px; }
+  .card { background: #FFFFFF; border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+  .toc a { color: #1C45A5; text-decoration: none; margin-right: 10px; white-space: nowrap; }
+  .limit { background: #FFF7E6; border-radius: 12px; padding: 12px 14px; }
+  .limit li { color: #6B4E00; }
+  code { background: #EDEFF2; border-radius: 4px; padding: 1px 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>帮助中心</h1>
+<p class="sub">三维山水全景地图 · 本项目复刻版 · 本文只写当前版本实际有的功能</p>
+
+<div class="card toc">
+  <a href="#compass">罗盘</a><a href="#map">地图</a><a href="#favorite">收藏点</a>
+  <a href="#account">账户</a><a href="#feedback">投诉反馈</a><a href="#about">关于与联系</a>
+  <a href="#limit">已知限制</a>
+</div>
+
+<h2 id="compass">1. 罗盘</h2>
+<div class="card">
+  <p><b>怎么进</b>：主界面左侧竖排按钮中选「罗盘」，进入罗盘浮层；再点一次回到地图态。</p>
+  <p><b>能做什么</b>：</p>
+  <ul>
+    <li>盘面随手机朝向转动，顶部读数区显示当前度数、二十四山与五行；</li>
+    <li>左侧六项：「截屏」「等高线」「罗盘复位」「罗盘锁定」「读盘」「贴地」；</li>
+    <li>「罗盘复位」= <b>立即回正北</b>：盘面回正并清掉「锁定」与「跟随」，3D 下同时退回 2D；不动地图缩放与中心，所以位置不会被重置；需要继续跟随时再点「罗盘锁定」；</li>
+    <li>右侧四枚开关：「地图」「实景」「坐南朝北」「指针开关」，前两项互斥，第三项让地图随坐向旋转；</li>
+    <li>拖动盘面可手动改朝向（松手后保持，直到再点「罗盘锁定」恢复跟随）。</li>
+  </ul>
+  <p><b>红色十字线</b>：贯穿全屏的红色竖向/横向准线是屏幕坐标，不随盘面旋转；十字上游 27% 处那颗小红三角属于十字线本体。</p>
+</div>
+
+<h2 id="map">2. 地图</h2>
+<div class="card">
+  <ul>
+    <li>单指拖动平移、滚轮或「+ / −」缩放；</li>
+    <li>右侧「图层」切底图来源，「叠加」开叠加层，「山脉」「水系」「探索」进对应专题；</li>
+    <li>右下「3D」进入三维地形；再点一次回到二维。切换是瞬时的、没有过渡动画；页面重载后仍保持 3D，杀掉进程重新打开则回到二维（与原版一致）；</li>
+    <li>底部角注显示当前底图数据来源。</li>
+  </ul>
+</div>
+
+<h2 id="favorite">3. 收藏点</h2>
+<div class="card">
+  <ul>
+    <li>左上菜单 →「收藏点」打开收藏列表；长按列表项可删除（需确认）；</li>
+    <li>已同步到服务器的收藏点会先在本地打删除标记，下次同步时推送；未同步的本地收藏点直接删除；</li>
+    <li>收藏点按账号隔离：切换账号后只能看到当前账号的收藏点。</li>
+  </ul>
+</div>
+
+<h2 id="account">4. 账户</h2>
+<div class="card">
+  <ul>
+    <li>左上菜单 →「账户设置」：账号密码登录/注册为本项目新增（原版为手机号验证码等方式）；</li>
+    <li>登录后可修改昵称、修改密码、同步收藏点、退出登录；</li>
+    <li>退出登录会清除本机会话，本地收藏点数据保留。</li>
+  </ul>
+</div>
+
+<h2 id="feedback">5. 投诉反馈</h2>
+<div class="card">
+  <ul>
+    <li>左上菜单 →「投诉反馈」，两级页面：一级列表（「问题反馈」「订单投诉」+ 右上「我的」），点「问题反馈」进表单；</li>
+    <li>表单四项：申请原因、联系方式、问题描述、问题截图；提交需要先登录；</li>
+    <li>提交成功/失败都会在表单下方给出明确状态文字，不会静默。</li>
+  </ul>
+</div>
+
+<h2 id="about">6. 关于与联系</h2>
+<div class="card">
+  <ul>
+    <li>「关于我们」显示产品名、公司主体、版本号与备案编号；</li>
+    <li>「联系我们」是浮在菜单上的对话框：「复制邮箱」把联系邮箱复制到剪贴板，右上角 × 关闭。</li>
+  </ul>
+</div>
+
+<h2 id="limit">7. 已知限制</h2>
+<div class="limit">
+  <ul>
+    <li><b>当前位置符号、屏幕中心符号未实现</b>：原版这两处符号的出处未取证，按项目规矩不自行绘制。</li>
+    <li><b>罗盘「贴地」效果未实现</b>：原版是把盘面画在画布上、按四角投影铺到地形；左列「贴地」目前只做近地视角。</li>
+    <li><b>3D 没有 VIP 门槛</b>：原版非会员用尽免费次数会弹会员页，本版直接可用（有意差异）。</li>
+    <li><b>昵称、头像不可编辑</b>：本版只支持修改昵称与密码，头像上传未接入。</li>
+    <li><b>注销账户未实现</b>：本项目自用、非商用，风险可接受；<b>对外提供账号服务前必须补</b>。</li>
+    <li><b>用户协议、隐私政策页不显示</b>：原版在这两页是零尺寸、屏外不可见，本版照原版不摆。</li>
+    <li><b>离线可读是本版改进</b>：原版帮助中心是远端网页，离线无正文；本版内置本地文档。</li>
+    <li><b>收藏点的删除入口是长按</b>：属本版新增形态，原版入口形态未取证。</li>
+    <li><b>底图角注的审图号待核对</b>：以底图数据源实际返回为准。</li>
+    <li>部分文字宽度与原版存在 5–9 像素的字体度量差异，属字体渲染不同，不影响排版位置。</li>
+  </ul>
+  <p class="sub">本文只写当前版本实际有的功能；上面这些是明知做不到或与原版不同的地方，写在这里而不是写进正文。</p>
+</div>
+
+</body>
+</html>

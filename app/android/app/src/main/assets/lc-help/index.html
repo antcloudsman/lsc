@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- GENERATED from docs/product/help-center.md @ fe732bfc10e84d2702e6add51e1f68ce69620d85 - do not edit; 源文件是唯一真相，改这里会被 lint 拦住 -->
+<!-- GENERATED from docs/product/help-center.md @ 1e9d92ba7e173fe029fcdaba4e7717ee1d0e9fa5 - do not edit; 源文件是唯一真相，改这里会被 lint 拦住 -->
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -38,9 +38,9 @@
 <tr><td>2</td><td>双指缩放、单指拖动</td><td>地图跟随手指；拖动方向与手指同向</td><td><code>fig-02-drag.png</code></td></tr>
 <tr><td>3</td><td>点左列「罗盘」</td><td>罗盘浮层打开，盘面随朝向转动</td><td>见 fig-03</td></tr>
 </tbody></table></div>
-<figure id="fig-01"><img src="fig-01.png" alt="fig-01"><figcaption>fig-01</figcaption></figure>
+<figure id="fig-01"><img src="fig-01.webp" alt="fig-01"><figcaption>fig-01</figcaption></figure>
 <p>图 fig-01：主界面 · 冷启等首帧 · 全屏地图 + 左列 8 + 右列 10</p>
-<figure id="fig-03"><img src="fig-03.png" alt="fig-03"><figcaption>fig-03</figcaption></figure>
+<figure id="fig-03"><img src="fig-03.webp" alt="fig-03"><figcaption>fig-03</figcaption></figure>
 <p>图 fig-03：左列「罗盘」 · 点入 · 罗盘浮层与左列 6 项</p>
 <hr>
 <h2 id="sec-2">2. 地图基础</h2>
@@ -50,22 +50,22 @@
 <li><b>本版没有双击缩放</b>：<code>map.html</code> 无 <code>dblclick</code>/<code>lastTap</code>/<code>tapTimer</code>，Java 侧无 <code>GestureDetector</code>/<code>onDoubleTap</code>（审核验 2026-11-08 代码与实测双证）。<b>双击 = 两次单点落点，没有缩放语义</b>。</li>
 <li><b>拖动方向</b>：手指向右，地图内容向右移动（与原版一致，M6 第 2 条已实测：2a 八条 8/8、2b 三档角误差 0°）。 状态：<code>已验收</code></li>
 </ul>
-<figure id="fig-02"><img src="fig-02.png" alt="fig-02"><figcaption>fig-02</figcaption></figure>
+<figure id="fig-02"><img src="fig-02.webp" alt="fig-02"><figcaption>fig-02</figcaption></figure>
 <p>图 fig-02：主界面 · 单指按住向右拖 · 地图内容随手指同向</p>
 <h3 id="sec-2-2">2.2 底图切换（地图 / 实景）</h3>
 <ul>
 <li>罗盘态右列「<b>地图</b>」「<b>实景</b>」两枚，互斥；切换会同时更换底图与罗盘态显示。 状态：<code>已验收</code></li>
 </ul>
-<figure id="fig-05"><img src="fig-05.png" alt="fig-05"><figcaption>fig-05</figcaption></figure>
+<figure id="fig-05"><img src="fig-05.webp" alt="fig-05"><figcaption>fig-05</figcaption></figure>
 <p>图 fig-05：罗盘态 · 点右列「地图」 · 矢量底图、该钮选中</p>
-<figure id="fig-06"><img src="fig-06.png" alt="fig-06"><figcaption>fig-06</figcaption></figure>
+<figure id="fig-06"><img src="fig-06.webp" alt="fig-06"><figcaption>fig-06</figcaption></figure>
 <p>图 fig-06：罗盘态 · 点右列「实景」 · 影像底图、该钮选中</p>
 <p>（两张图同视角，便于对照）</p>
 <h3 id="sec-2-3">2.3 角注与审图号</h3>
 <ul>
 <li>底部有数据来源与审图号角注。<b>本项目为自建/免费数据源，审图号状态为「待核对」</b>——文档里<b>只写「底部显示数据来源角注」，不写具体审图号</b>。 状态：<code>待核对</code></li>
 </ul>
-<figure id="fig-07"><img src="fig-07.png" alt="fig-07"><figcaption>fig-07</figcaption></figure>
+<figure id="fig-07"><img src="fig-07.webp" alt="fig-07"><figcaption>fig-07</figcaption></figure>
 <p>图 fig-07：主界面底部 · 无需操作 · 数据来源角注区</p>
 <hr>
 <h2 id="sec-3">3. 罗盘</h2>
@@ -82,9 +82,9 @@
 <li><b>与原版的差异（有意）</b>：原版这六项带付费门槛标记（钻石图标）；<b>本项目无门槛，不保留该标记</b>，明细直接可看。 状态：<code>有意差异</code></li>
 <li><b>缩放途径</b>：双指捏合、右列 <code>+</code>/<code>−</code>、罗盘工具条「缩放」。<b>双击没有缩放语义</b>（两次单点 = 落两个标记）。</li>
 </ul>
-<figure id="fig-08"><img src="fig-08.png" alt="fig-08"><figcaption>fig-08</figcaption></figure>
+<figure id="fig-08"><img src="fig-08.webp" alt="fig-08"><figcaption>fig-08</figcaption></figure>
 <p>图 fig-08：罗盘态 · 智能读盘弹层（<b>未展开态</b>）· 顶部直显向/坐；点行任意位置即就地展开（展开后形态见正文说明）</p>
-<figure id="fig-32"><img src="fig-32.png" alt="fig-32"><figcaption>fig-32</figcaption></figure>
+<figure id="fig-32"><img src="fig-32.webp" alt="fig-32"><figcaption>fig-32</figcaption></figure>
 <p>图 fig-32：罗盘态 · 智能读盘弹层 · 点该行任意位置就地展开「向：… 坐：…」（<b>以删门槛标记 + 整行可点之后的构建为准</b>）</p>
 <h3 id="sec-3-3">3.3 盘面切换</h3>
 <ul>
@@ -93,11 +93,11 @@
 <li>入口：罗盘态底部<b>工具条第一项「切换」</b>。 状态：<code>已验收</code></li>
 <li>设置里「恢复默认」可把盘面栅格与配色恢复。 状态：<code>已验收</code></li>
 </ul>
-<figure id="fig-09"><img src="fig-09.png" alt="fig-09"><figcaption>fig-09</figcaption></figure>
+<figure id="fig-09"><img src="fig-09.webp" alt="fig-09"><figcaption>fig-09</figcaption></figure>
 <p>图 fig-09：罗盘态 · 打开盘面列表 · 四组：自定义/常用/简易/综合</p>
 <h3 id="sec-3-4">3.4 罗盘工具条（5 项）</h3>
 <p><b>切换 / 旋转 / 缩放 / 透明度 / 天支线</b>。 状态：<code>已验收</code>（天支线：开关状态持久化）</p>
-<figure id="fig-10"><img src="fig-10.png" alt="fig-10"><figcaption>fig-10</figcaption></figure>
+<figure id="fig-10"><img src="fig-10.webp" alt="fig-10"><figcaption>fig-10</figcaption></figure>
 <p>图 fig-10：罗盘态底部 · 无需操作 · 切换/旋转/缩放/透明度/天支线</p>
 <h3 id="sec-3-5">3.5 罗盘态左列 6 项</h3>
 <p><b>左列六项</b>：截屏 / 等高线 / 罗盘复位 / 罗盘锁定 / 读盘 / 贴地（其中「<b>贴地</b>」入口在、效果未实现，见 §13）</p>
@@ -113,7 +113,7 @@
 <tr><td>读盘</td><td>读出当前盘面信息</td><td><code>待核对</code></td></tr>
 <tr><td>贴地</td><td><b>入口存在、名称为「贴地」，但效果未实现</b>（见 §13）</td><td><code>未实现</code></td></tr>
 </tbody></table></div>
-<figure id="fig-11"><img src="fig-11.png" alt="fig-11"><figcaption>fig-11</figcaption></figure>
+<figure id="fig-11"><img src="fig-11.webp" alt="fig-11"><figcaption>fig-11</figcaption></figure>
 <p>图 fig-11：罗盘态左列 · 无需操作 · 截屏/等高线/复位/锁定/读盘/贴地</p>
 <h3 id="sec-3-6">3.6 罗盘态右列 4 项</h3>
 <p><b>地图 / 实景 / 坐南朝北 / 指针开关</b></p>
@@ -126,7 +126,7 @@
 <tr><td>坐南朝北</td><td>盘面朝向取向切换</td><td><code>已验收</code></td></tr>
 <tr><td>指针开关</td><td>纯地图态下指针图隐藏；罗盘态/实景态由开关显示或隐藏</td><td><code>已验收</code></td></tr>
 </tbody></table></div>
-<figure id="fig-12"><img src="fig-12.png" alt="fig-12"><figcaption>fig-12</figcaption></figure>
+<figure id="fig-12"><img src="fig-12.webp" alt="fig-12"><figcaption>fig-12</figcaption></figure>
 <p>图 fig-12：罗盘态右列 · 无需操作 · 地图/实景/坐南朝北/指针开关</p>
 <h3 id="sec-3-7">3.7 校准与精度</h3>
 <ul>
@@ -149,11 +149,11 @@
 <tr><td>等高线</td><td>显隐等高线</td><td><code>已验收</code></td></tr>
 <tr><td>更多</td><td>打开 16 格功能面板（见 §6）</td><td><code>已验收</code></td></tr>
 </tbody></table></div>
-<figure id="fig-14"><img src="fig-14.png" alt="fig-14"><figcaption>fig-14</figcaption></figure>
+<figure id="fig-14"><img src="fig-14.webp" alt="fig-14"><figcaption>fig-14</figcaption></figure>
 <p>图 fig-14：主界面左列 · 无需操作 · 8 项全貌</p>
-<figure id="fig-15"><img src="fig-15.png" alt="fig-15"><figcaption>fig-15</figcaption></figure>
+<figure id="fig-15"><img src="fig-15.webp" alt="fig-15"><figcaption>fig-15</figcaption></figure>
 <p>图 fig-15：左列「全地图工具」 · 点入 · 16 宫格 + 编辑/排序</p>
-<figure id="fig-16"><img src="fig-16.png" alt="fig-16"><figcaption>fig-16</figcaption></figure>
+<figure id="fig-16"><img src="fig-16.webp" alt="fig-16"><figcaption>fig-16</figcaption></figure>
 <p>图 fig-16：左列「更多」 · 点入 · 16 格面板全貌</p>
 <p>配图见 §4 fig-16（同一张，不重复贴图）</p>
 <hr>
@@ -175,9 +175,9 @@
 <tr><td>3D</td><td>切换 3D 地形；<b>我方无门槛、点击即切换</b>（原版有 VIP 门槛，属有意差异，见 §13）</td><td><code>已验收</code></td></tr>
 </tbody></table></div>
 <p><b>3D 的已知行为</b>：页面重载后保持 3D；<b>杀进程冷启回 2D</b>（与原版一致）。切换<b>无过渡动画</b>。 状态：<code>已验收</code></p>
-<figure id="fig-17"><img src="fig-17.png" alt="fig-17"><figcaption>fig-17</figcaption></figure>
+<figure id="fig-17"><img src="fig-17.webp" alt="fig-17"><figcaption>fig-17</figcaption></figure>
 <p>图 fig-17：主界面右列 · 无需操作 · 10 项全貌</p>
-<figure id="fig-18"><img src="fig-18.png" alt="fig-18"><figcaption>fig-18</figcaption></figure>
+<figure id="fig-18"><img src="fig-18.webp" alt="fig-18"><figcaption>fig-18</figcaption></figure>
 <p>图 fig-18：右列「3D」 · 点入并等贴面完成 · 3D 地形</p>
 <hr>
 <h2 id="sec-6">6. 「更多」16 格</h2>
@@ -199,11 +199,11 @@
 <tr><td>删除</td><td><b>长按条目删除</b>（我方入口形态，原版为「编辑」按钮，见 §13）</td><td><code>已验收</code></td></tr>
 <tr><td>云同步</td><td>登录后与自建服务端同步；未登录时先入本地队列，登录后补同步</td><td><code>已验收</code></td></tr>
 </tbody></table></div>
-<figure id="fig-19"><img src="fig-19.png" alt="fig-19"><figcaption>fig-19</figcaption></figure>
+<figure id="fig-19"><img src="fig-19.webp" alt="fig-19"><figcaption>fig-19</figcaption></figure>
 <p>图 fig-19：更多「收藏点」 · 收藏当前点 · 保存页坐标已预填</p>
-<figure id="fig-20"><img src="fig-20.png" alt="fig-20"><figcaption>fig-20</figcaption></figure>
+<figure id="fig-20"><img src="fig-20.webp" alt="fig-20"><figcaption>fig-20</figcaption></figure>
 <p>图 fig-20：更多「收藏点」 · 进入列表 · 至少两条</p>
-<figure id="fig-21"><img src="fig-21.png" alt="fig-21"><figcaption>fig-21</figcaption></figure>
+<figure id="fig-21"><img src="fig-21.webp" alt="fig-21"><figcaption>fig-21</figcaption></figure>
 <p>图 fig-21：收藏列表 · 长按条目 · 删除确认（我方形态）</p>
 <hr>
 <h2 id="sec-8">8. 测量与画笔</h2>
@@ -215,16 +215,16 @@
 <tr><td>测量</td><td>地图上点选 → 结果面板；<b>单位可切换</b>（km² / 亩 / 公顷，<code>17.80 km² ≈ 26705.6 亩 ≈ 1780.38 公顷</code>）</td><td><code>已验收</code></td></tr>
 <tr><td>画笔</td><td>五色 + 粗细；<b>偏好记忆</b>（退出重进保留）</td><td><code>已验收</code></td></tr>
 </tbody></table></div>
-<figure id="fig-22"><img src="fig-22.png" alt="fig-22"><figcaption>fig-22</figcaption></figure>
+<figure id="fig-22"><img src="fig-22.webp" alt="fig-22"><figcaption>fig-22</figcaption></figure>
 <p>图 fig-22：更多「测量」 · 点选两点或区域 · 结果面板与单位</p>
-<figure id="fig-23"><img src="fig-23.png" alt="fig-23"><figcaption>fig-23</figcaption></figure>
+<figure id="fig-23"><img src="fig-23.webp" alt="fig-23"><figcaption>fig-23</figcaption></figure>
 <p>图 fig-23：更多「画笔」 · 打开面板 · 五色与粗细</p>
 <hr>
 <h2 id="sec-9">9. 轨迹</h2>
 <ul>
 <li>「更多」→「轨迹记录」：列表 → 详情 → <b>地图内回放</b>（不做视频合成）。 状态：<code>待核对</code>（入口在；功能状态以复验为准，未复核前<b>不写成已完成</b>）</li>
 </ul>
-<figure id="fig-24"><img src="fig-24.png" alt="fig-24"><figcaption>fig-24</figcaption></figure>
+<figure id="fig-24"><img src="fig-24.webp" alt="fig-24"><figcaption>fig-24</figcaption></figure>
 <p>图 fig-24：更多「轨迹记录」 · 进入 · 轨迹列表</p>
 <hr>
 <h2 id="sec-10">10. 账户</h2>
@@ -240,16 +240,16 @@
 <tr><td>账户设置</td><td>抽屉入口</td><td><code>已验收</code></td></tr>
 </tbody></table></div>
 <p>（登录页图已按「缺图删条」删除：<code>LoginActivity</code> 不可外部直达，采集需先登出且无凭据可复登，不为一张图牺牲已测会话。）</p>
-<figure id="fig-26"><img src="fig-26.png" alt="fig-26"><figcaption>fig-26</figcaption></figure>
+<figure id="fig-26"><img src="fig-26.webp" alt="fig-26"><figcaption>fig-26</figcaption></figure>
 <p>图 fig-26：抽屉「账户设置」 · 进入 · 行列表 + 贴底红按钮</p>
 <hr>
 <h2 id="sec-11">11. 投诉反馈</h2>
 <ul>
 <li>两级：<b>问题反馈 / 订单投诉</b> → 表单填写 → 提交。<b>未登录时点提交提示「提交前请先登录」</b>（交互提示，不是页面常驻文案）。 状态：<code>已验收</code></li>
 </ul>
-<figure id="fig-27"><img src="fig-27.png" alt="fig-27"><figcaption>fig-27</figcaption></figure>
+<figure id="fig-27"><img src="fig-27.webp" alt="fig-27"><figcaption>fig-27</figcaption></figure>
 <p>图 fig-27：抽屉「投诉反馈」 · 进入一级页 · 两行 + 右上「我的」</p>
-<figure id="fig-28"><img src="fig-28.png" alt="fig-28"><figcaption>fig-28</figcaption></figure>
+<figure id="fig-28"><img src="fig-28.webp" alt="fig-28"><figcaption>fig-28</figcaption></figure>
 <p>图 fig-28：投诉反馈 · 点「问题反馈」 · 空表单</p>
 <hr>
 <h2 id="sec-12">12. 关于我们 / 联系我们 / 帮助中心</h2>
@@ -262,11 +262,11 @@
 <tr><td>联系我们</td><td><b>弹窗</b>（叠在抽屉上，关闭回抽屉），显示邮箱 + 「复制邮箱」</td><td><code>已验收</code></td></tr>
 <tr><td>帮助中心</td><td><b>标题栏 + 内嵌网页</b>（本文件即其内容来源）</td><td><code>待核对</code>（入口完成度以复验为准）</td></tr>
 </tbody></table></div>
-<figure id="fig-29"><img src="fig-29.png" alt="fig-29"><figcaption>fig-29</figcaption></figure>
+<figure id="fig-29"><img src="fig-29.webp" alt="fig-29"><figcaption>fig-29</figcaption></figure>
 <p>图 fig-29：抽屉「关于我们」 · 进入 · Logo/名称/公司/版本/资质/备案号</p>
-<figure id="fig-30"><img src="fig-30.png" alt="fig-30"><figcaption>fig-30</figcaption></figure>
+<figure id="fig-30"><img src="fig-30.webp" alt="fig-30"><figcaption>fig-30</figcaption></figure>
 <p>图 fig-30：抽屉「联系我们」 · 点开 · 弹窗叠在抽屉上</p>
-<figure id="fig-31"><img src="fig-31.png" alt="fig-31"><figcaption>fig-31</figcaption></figure>
+<figure id="fig-31"><img src="fig-31.webp" alt="fig-31"><figcaption>fig-31</figcaption></figure>
 <p>图 fig-31：抽屉「帮助中心」 · 进入 · 标题栏 + 网页正文</p>
 <hr>
 <h2 id="sec-13">13. 已知限制（<b>只列在这里，不写进正文当功能</b>）</h2>

@@ -79,6 +79,25 @@ FAIL eol …: mixed EOL: 4117 CRLF + 203 bare LF (fake-diff risk)   exit=1
 
 > 理由：**门禁只有精确才有人守，宽泛的红等于没有门禁**——存量混用随专项规范化一并改，到那时才让 `--eol` 支持全仓判。
 
+### 2.5 扩展名与真实格式一致性（`--magic`，2026-11-08）
+
+```bash
+python tools/fidelity/evidence-lint.py --root <dir> --magic a.webp,b.webp
+# .png 必须是 PNG（89 50 4E 47）；.webp 必须是 RIFF —— 不符即 FAIL
+```
+
+按 T-04 只查**显式传入的文件**，不做全仓判死。
+
+**历史存量（另册登记，专项清）**：仓内 `docs/fidelity/assets/` 有 **19 个 `.png` 实为 WebP（magic `RIFF`）**，内容完好、可解码，属原版资源解码时的扩展名遗留：
+
+| 目录 | 数量 | 文件 |
+|---|---|---|
+| `assets/compass/plate/` | 8 | `compass5/6/7/9/10/11/12/13.png` |
+| `assets/map/source-thumb/` | 10 | `ic_base_map_*.png`（amap/custome/tdt/tecent/tencent/xintu 各图源缩略） |
+| `assets/pages/account/icons/` | 1 | `ic_default_avatar.png` |
+
+> 这批**不影响** `assets.py` 清单（它按 sha 记账、不看扩展名）；专项清时统一改 `.webp` 或按原版真实格式命名，改后重跑 `assets.py manifest/verify`。
+
 ## 3 用法
 
 ```bash
@@ -176,6 +195,7 @@ EVIDENCE-LINT: scanned xml=3 png=0 fail=1 warn=0
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-08 | 补 --magic（扩展名↔magic 一致性，.png 必须 PNG、.webp 必须 RIFF）；图像扫描扩到 .webp；登记 19 个历史 WebP 误命名文件 |
 | 2026-11-08 | --eol 收口为「必须显式文件列表」：裸 --eol 打印 EOL: SKIP 并跳过；默认跑法不带 --eol。三档实测：默认 exit0 / 裸 --eol SKIP exit0 / 指定 MainActivity FAIL exit1 |
 | 2026-11-08 | 补 --eol：混用换行 FAIL、纯 CRLF WARN（--eol-strict 判 FAIL）；只查显式文件、不做全仓判死（存量 296/699 含 CR） |
 | 2026-11-08 | 按 LC审核验 建议补两条：**空 dump（`<hierarchy>` 根、0 个 `<node>`）判 FAIL**（仅对 dump，SVG 不适用）；**`--root` 默认 `docs/fidelity`**（不再必填，避免上手 `exit 2`）。实测：真实证据 `fail=0 allowed=1`（带清单），`empty.xml` 单测 FAIL |

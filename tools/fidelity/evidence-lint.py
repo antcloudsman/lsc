@@ -93,6 +93,37 @@ def check_eol(path: str, strict_crlf: bool) -> list[dict]:
     return out
 
 
+MAGIC = {b"\x89PNG": "png", b"RIFF": "webp(RIFF)"}
+
+
+def check_magic(path: str) -> list[dict]:
+    """扩展名与真实格式一致性：`.png` 必须是 PNG、`.webp` 必须是 RIFF/WebP。
+
+    历史坑：仓里 19 个 `.png` 实为 WebP（magic RIFF），以及 22 张损坏图（0x89 被替换成 EF BF BD）。
+    只检查显式传入的文件（T-04：不做全仓判死）。
+    """
+    ext = os.path.splitext(path)[1].lower()
+    want = {".png": "png", ".webp": "webp(RIFF)"}.get(ext)
+    if want is None:
+        return []
+    try:
+        with open(path, "rb") as fh:
+            head = fh.read(4)
+    except OSError as exc:
+        return [{"level": "fail", "kind": "magic", "reason": f"unreadable: {exc}", "path": path}]
+    got = "png" if head[:4] == b"\x89PNG" else ("webp(RIFF)" if head[:4] == b"RIFF" else f"other({head[:4].hex()})")
+    if got != want:
+        return [
+            {
+                "level": "fail",
+                "kind": "magic",
+                "reason": f"extension {ext} but content is {got} (magic/extension mismatch)",
+                "path": path,
+            }
+        ]
+    return []
+
+
 def check_generated(html_path: str, source_path: str) -> list[dict]:
     """HTML 是生成物：头部 `GENERATED from <md> @ <blob sha>` 必须与 md 当前 blob sha 一致。
 
@@ -199,6 +230,7 @@ SHELL_ERROR_PATTERNS = [
 ]
 
 PNG_EXTS = {".png"}
+IMG_EXTS = {".png", ".webp"}
 XML_EXTS = {".xml"}
 
 
@@ -362,6 +394,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--expect-size", help="declared screenshot size WxH, e.g. 1228x2700 (mismatch = warn)")
     ap.add_argument("--allow", help="allowlist JSON with entries {path, reason, by, verdict} (4 keys required)")
     ap.add_argument("--json", help="write JSON report to this path")
+    ap.add_argument("--magic", help="comma-separated image files to check magic/extension consistency")
     ap.add_argument("--eol", nargs="?", const="", help="comma-separated source files to check for CRLF/mixed EOL; REQUIRES an explicit file list (bare --eol prints SKIP)")
     ap.add_argument("--eol-strict", action="store_true", help="also FAIL on CRLF-only files (repo convention is LF)")
     ap.add_argument("--generated-html", help="generated artifact (e.g. lc-help/index.html) to verify against its source")
@@ -405,7 +438,7 @@ def main(argv: list[str] | None = None) -> int:
             if ext in XML_EXTS:
                 counts["xml"] += 1
                 findings.extend(check_xml(path, args.strict_root))
-            elif ext in PNG_EXTS:
+            elif ext in IMG_EXTS:
                 counts["png"] += 1
                 findings.extend(check_png(path, args.mono_ratio, args.min_png_side, expect))
             else:
@@ -420,6 +453,13 @@ def main(argv: list[str] | None = None) -> int:
             print("ERROR: --generated-html and --source must be used together", file=sys.stderr)
             return 2
         findings.extend(check_generated(args.generated_html, args.source))
+
+    if args.magic:
+        for p in [x.strip() for x in args.magic.split(",") if x.strip()]:
+            if not os.path.isfile(p):
+                print(f"ERROR: --magic file not found: {p}", file=sys.stderr)
+                return 2
+            findings.extend(check_magic(p))
 
     if args.eol is not None:
         eol_files = [s.strip() for s in args.eol.split(",") if s.strip()]

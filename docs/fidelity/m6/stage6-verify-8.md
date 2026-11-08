@@ -16,7 +16,7 @@
 | 5 | 帮助中心带图文档 | **已验** | 可达（`M3WebActivity` 渲染 13 节目录+正文）；飞行模式冷启动仍可读；29 图 lint `fail=0`；sha 门禁 `exit=0` | `adb shell cmd connectivity airplane-mode enable` → 冷启 → 重进；`python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc-help --expect-size 1228x2700` |
 | 6 | 指南针按钮=回正北 | **已验（PASS）** | 罗盘态「罗盘复位」：`bearing 172→0`、`mode 3d→2d`、`center` 与 `zoom` **一位不差**（见 §终值） | `--es cmd state`；进入 3D→坐南朝北两次造 bearing 172→点罗盘复位→再 `state` |
 | 7 | 罗盘贴地 | **未实现**（规则认定，不写已修复） | 无 GPU/渲染通道证据；§13 已登记 | — |
-| 8 | 右侧 3D 按钮 | **T1 已验 / T2 已验 / T3 未验** | T1 重载后 `mode` 仍 `3d`、`is3D:true`；T2 `am force-stop` 冷启后 `mode:"2d"`、`is3D:false`、`bearing:0`、`zoom:5`；T3「无过渡动画」静态截图判不了 | `--es cmd reload` / `am force-stop` + `monkey … LAUNCHER 1` + `--es cmd state` |
+| 8 | 右侧 3D 按钮 | **T1 已验 / T2 已验 / T3 证据不可得** | T1 重载后 `mode` 仍 `3d`、`is3D:true`；T2 `am force-stop` 冷启后 `mode:"2d"`、`is3D:false`、`bearing:0`、`zoom:5`；T3「无过渡动画」需逐帧录屏，与 A-09 动效录屏同口径记「证据不可得」 | `--es cmd reload` / `am force-stop` + `monkey … LAUNCHER 1` + `--es cmd state` |
 
 ## 终值（`8911c22`，apk_sha `1c340cfc…`，装机 11:11:14）
 

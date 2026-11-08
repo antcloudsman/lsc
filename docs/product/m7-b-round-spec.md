@@ -58,6 +58,17 @@
 **导出对象**：① 收藏点（Point）；② 轨迹（LineString，若已存在）；③ 测量结果（Polygon，可选，若无则不做）。
 **不做**：样式、图标、照片、时间动画、`gx:` 扩展。
 
+### 2.3 实现对照与缺口（2026-11-08 按 `a46869b` 实读 `KmlIo.java` 核）
+
+**已实现（与口径一致）**：导出统一 WGS84 + **Document 级** `<ExtendedData>` 7 项（`lc:crs` / `lc:coordinate_order` / `lc:generator` / `lc:app` / `lc:exported` / `lc:count` / `lc:source`）；坐标 8 位小数、顺序 `lon,lat,alt`；导入认 Point/LineString/Polygon(外环)，其余跳过计数；无声明提示「坐标系未知，按 WGS84 处理」。
+
+**缺口 B-1（P1，如实记，不在本轮 done-when 内）**：`<Placemark>` 里目前**只有** `<name>`、可选 `<description>`、`<Point><coordinates>lng,lat,0</coordinates>`——**逐点业务字段未导出**：
+- 缺 `lc:id` / `lc:type` / `lc:sit`（坐向）/ `lc:heading` / `lc:elev`（海拔）/ `lc:created`；
+- 且 `<alt>` **写死 `0`**，与本文件 §2.2「缺值写空串，**不写 0 冒充**」冲突。
+
+**后果（用户视角）**：导出再导入后，点位只剩「名称 + 坐标」，**坐向/海拔/类型/时间全部丢失**；风水场景里「导出给同行看坐向」是核心信息，这条不能长期缺。
+**建议补法（工作量 0.5 人日）**：`<Placemark>` 内加 `<ExtendedData>` 写上述 6 项（`alt` 有值写真实值、无值省略 alt 只写 `lon,lat`）；导入端按同名读取；真机复核「导出→清空→导入→坐向/海拔逐点对得上」。
+**判据影响**：①（坐标往返 ≤1e-6）**不受影响、仍成立**；本条属**字段完整性**缺口，单列台账，不混进 ①。
 ---
 
 ## 3. 坐标系口径（客户端强调的「先定这个再写解析器」）

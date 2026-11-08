@@ -482,6 +482,71 @@ https://appassets.androidplatform.net/assets/webapp/index.html
 
 ⇒ **建议按 ① 做**：不仅因为它是原版做法，更因为它把「`file://` 特有的两道限制」一起消掉；②③ 都是在跟 `file://` 搏斗。
 
+## 2.6 【补 §2.4.5】定位点旋转的定量关系 —— **已取证，不需要设备**
+
+原版定位点实现在共享 chunk **`973.b4246bb948.bundle.js`**（主图 `index.946c1624e0.bundle.js` 引用 `973` 1 次）。逐字：
+
+```js
+_init() {
+    let t = document.createElement("img");
+    t.src = "./assets/imgs/locationPointer.png";
+    t.className = "location-icon";
+    return new Marker(t, {
+        anchor: "center", occludedOpacity: 1,
+        pitchAlignment: "map",
+        rotationAlignment: "map"        // ← 旋转相对「地图」
+    });
+}
+setBearing: ({ bearing: t }) => {
+    this._targetRotation = t;
+    if (!this._bearingFrame) {
+        this._bearingFrame = requestAnimationFrame(() => {
+            let t = this.map.getBearing(),
+                e = this.toFixedN(this._targetRotation - t, 2);   // ← 减掉地图 bearing
+            emit("setOrientation", { value: this.toFixedN(this._targetRotation, 2) });
+            this._marker.setRotation(e);                          // marker 旋转 = 差值
+            this._bearingFrame = null;
+        });
+    }
+}
+```
+
+### 2.6.1 换算关系
+
+`rotationAlignment:"map"` ⇒ 最终屏幕角 = **地图 bearing + marker 旋转值**，代入得：
+
+```
+屏幕角 = mapBearing + (target − mapBearing) = target
+```
+
+⇒ **三角指向角 = 传入的 `bearing` 值本身**，与地图 bearing 抵消无关。
+
+### 2.6.2 正负号（顺时针还是逆时针）
+
+MapLibre `Marker#setRotation(deg)` **顺时针为正**；素材 `locationPointer.png` 三角在**正上方**（§2.4.4）。
+⇒ **`指向角 = +bearing`，顺时针，`0` = 正上方 = 正北**。**不是 `−bearing`。**
+
+**交叉验证**：实测三角「向上偏左 27.3°」= 屏幕角 **−27.3° ≈ 332.7°** ⇒ 当时 heading ≈ 332.7°（NNW）。与 `target − mapBearing` 自洽。
+
+### 2.6.3 是否随 2D/3D 或 bearing 变
+
+| 因素 | 改不改指向角 | 依据 |
+| --- | --- | --- |
+| 地图 bearing | **不改** | `target − mapBearing` 被 `rotationAlignment:"map"` 加回 |
+| 2D / 3D(pitch) | **不改角度**，只改形状（`pitchAlignment:"map"` 随地面倾斜压扁） | 两个 alignment 都是 map |
+
+### 2.6.4 驱动来源
+
+原生 `MainActivity.onSensorChanged` → `MapWebApiKt.setBearing(controller, heading)`（`MainActivity.smali:27567`），命令串 **`"setBearing"`**、载荷 `{"bearing": f}`；JS 侧 `973` 注册 `register({setBearing, setFollowMode})` 接住 ⇒ **三角指向 = 设备 heading**（绝对方位）。
+
+### 2.6.5 给 @LC客户端 的实现口径（最终）
+
+```
+输入 = 设备 heading（度，0=正北，顺时针为正）
+三角屏幕指向角 = +heading，0 = 正上方
+与地图 bearing 无关；2D/3D 只改形状不改角度
+```
+
 # 七、检索复现命令（审核验可直接照跑）
 
 ## 3.1 代码检索

@@ -20,7 +20,7 @@ import android.widget.TextView;
  * 原版形态（`docs/fidelity/orig/w3-sheet.png` 逐项对照）：
  * - 白色圆角底部 sheet，顶部圆角；标题「智能读盘」居中、右上「×」关闭；
  * - 前两行是「向北 x° → 离宅」「坐南 y° → 坐x山 向y山」，右值是普通深色字；
- * - 其余行：左侧圈层名（灰），右侧「点击查看 ›」（蓝色 + 前置钻石图标）；
+ * - 其余行：左侧圈层名（灰），右侧「点击查看 ›」（蓝色；**无钻石**，见下方 DI 说明）；
  * - 共 **14 行**（对应 14 个圈层），可滚动。
  *
  * 数据仍来自 mechanics.json 的 rings[].labels（CompassData.ringText），与原版
@@ -147,25 +147,13 @@ public final class CompassReadSheet {
 
         TextView rightView = new TextView(a);
         if (clickable) {
-            // 原版：金色钻石 VIP 徽标 + 蓝字「点击查看 ›」。
-            // 素材 = APK 的 `mipmap-xxxhdpi/ic_compass_vip.webp`（132×112，逆向 `2026-11-07` 全量位图比对
-            // 误差 13.41 vs 次名 19.97 定位）；原版真实绘制框 76×65 px（a11y 的 74×54 是被裁框）。
-            // 之前用字符「◆」不是原版形态，R2-013-A 已改为此素材。
-            LinearLayout tail = new LinearLayout(a);
-            tail.setOrientation(LinearLayout.HORIZONTAL);
-            tail.setGravity(Gravity.CENTER_VERTICAL);
-            android.widget.ImageView gem = new android.widget.ImageView(a);
-            gem.setId(R.id.lc_read_badge);
-            gem.setImageResource(R.drawable.lc_compass_vip);
-            gem.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-            LinearLayout.LayoutParams gemLp = new LinearLayout.LayoutParams(77, 65);
-            gemLp.rightMargin = p(a, 6);
-            tail.addView(gem, gemLp);
+            // M6 第 5 条（有意差异 DI）：原版这里有金色钻石 VIP 徽标，点开才看明细。
+            // 我方**没有 VIP 体系**，放一个付费锁就是假入口——宁可少一个图标，也不留点不开的锁。
+            // 保留「点击查看 ›」的就地展开（向/坐 本地计算，不跳转、不联网）。
             rightView.setText(right);
             rightView.setTextColor(BLUE);
             rightView.setOnClickListener(onClick);
-            tail.addView(rightView);
-            row.addView(tail);
+            row.addView(rightView);
             list.addView(row);
             list.addView(divider(a));
             return;

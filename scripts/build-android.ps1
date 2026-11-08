@@ -240,7 +240,7 @@ if ($SkipDevice) {
             $installHost = (Get-Process -Id $PID).Path
             $installArgs = @(
                 '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $installTool,
-                '-ApkPath', $apk, '-Serial', $device, '-OutDir', $installDir
+                '-Apk', $apk, '-Device', $device
             )
             $installText = Invoke-NativeText { & $installHost @installArgs }
             $installCode = $LASTEXITCODE

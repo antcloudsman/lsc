@@ -114,6 +114,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean groundOn = false;    // 贴地
     private boolean ridgeOn = false;     // 山脊（setRidge 已有幂等 set）
     private String baseMode = "vec";     // 底图源 vec/img（setBase 已有幂等 set）
+    /** 坐向三态镜像：0=关 / 1=坐南朝北 / 2=坐北朝南。
+     *  不能用 southNorthOn（布尔）代替：`setSitNorth` 收 0/1/2，布尔重放会把「坐北朝南」降级成「坐南朝北」。
+     *  值从 `getState().sitMode` 回读，与 `is3D` 同一套做法（不做乐观赋值）。 */
+    private int sitMode = 0;
 
     /** M6 第 8 条：3D 状态**由原生持有**（原版在 MainViewModel 的 MutableState，网页重载不丢），
      *  map.html 的 `mode` 只是投影；`onPageFinished` 按它重放 `setMode('3d')`。
@@ -1307,6 +1311,32 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * 重载后还会把 2D 页面重放成 3D。所以只认 `getState().mode`。
      * 延迟 700ms：`toggle3D` 内部要拉 DEM 与贴面瓦片，立刻读会读到切换前的值。
      */
+    /**
+     * 回读坐向三态（0/1/2）。与 `is3D` 同法：只认网页真实状态，不做乐观赋值——
+     * `toggleSitNorth()` 是 0→1→2→0 的循环，用布尔镜像必然丢掉「坐北朝南」。
+     */
+    private void syncSitModeFromPage() {
+        if (compassMapView == null) return;
+        compassMapView.postDelayed(() -> {
+            try {
+                compassMapView.evaluateJavascript(
+                        "(typeof getState==='function')&&getState().sitMode",
+                        value -> {
+                            if (value == null) return;
+                            String digits = value.replaceAll("[^0-9]", "");
+                            if (digits.isEmpty()) return;
+                            try {
+                                sitMode = Math.min(2, Integer.parseInt(digits));
+                                android.util.Log.d("LCSIT", "native sitMode=" + sitMode + " from page=" + value);
+                            } catch (Throwable ignored) {
+                            }
+                        });
+            } catch (Throwable t) {
+                android.util.Log.w("LCSIT", "read-back failed: " + t.getClass().getSimpleName());
+            }
+        }, 300);
+    }
+
     private void sync3DStateFromPage() {
         if (compassMapView == null) return;
         compassMapView.postDelayed(() -> {
@@ -1560,7 +1590,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "指北针": js("toggleNeedle()"); break;
             case "地图": baseMode = "vec"; js("setBase('vec')"); break;
             case "实景": baseMode = "img"; js("setBase('img')"); break;
-            case "坐南朝北": js("toggleSitNorth()"); break;
+            case "坐南朝北":
+                js("toggleSitNorth()");
+                syncSitModeFromPage();   // 三态回读，重放用
+                break;
             case "指针开关":
                 // 两针分离（map-bridge §10.3）：地图模式管 #needle；罗盘模式管浮层自绘北针。
                 if (compassMode) {
@@ -3773,6 +3806,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     applyPendingMapView();
                     // F-04：页面重载后按持久化状态重放路网开关。
                     view.evaluateJavascript("try{setRoadNet(" + roadNetOn + ")}catch(e){}", null);
+                    // M6 第 5 条（审计 A 类根因）：重载后**逐项用幂等 set 重放**，
+                    // 严禁写任何 toggle*——写一次，重载后用户点「关」就会变成「开」。
+                    // 底图源 / 山脊 / 等高线 的 set 已存在于 map.html；贴地/坐向/指针的 set
+                    // 由地图侧 `feature/地图-m6-idem-set`（8caa006）补齐，未合入前用存在性守卫跳过。
+                    view.evaluateJavascript("try{setBase('" + baseMode + "')}catch(e){}", null);
+                    view.evaluateJavascript("try{setRidge(" + ridgeOn + ")}catch(e){}", null);
+                    view.evaluateJavascript("try{setContour(" + contourOn + ")}catch(e){}", null);
+                    view.evaluateJavascript("(typeof setGround==='function')&&setGround(" + groundOn + ")", null);
+                    view.evaluateJavascript("(typeof setSitNorth==='function')&&setSitNorth(" + sitMode + ")", null);
+                    view.evaluateJavascript("(typeof setNeedle==='function')&&setNeedle(" + pointerOn + ")", null);
                     // M6 第 8 条：3D 状态同样按原生重放（页面级 `var mode` 一重载就回 2d，
                     // 用户会以为「3D 自己关了」；不许改用 localStorage —— 那会变成两份状态）
                     if (is3D) view.evaluateJavascript("try{setMode('3d')}catch(e){}", null);

@@ -35,6 +35,7 @@
   pwsh -File tools\device\install-debug.ps1
   pwsh -File tools\device\install-debug.ps1 -Apk path\to\app-debug.apk -TimeoutSec 150
 #>
+[CmdletBinding()]
 param(
   [string]$Apk = 'app\android\app\build\outputs\apk\debug\app-debug.apk',
   [string]$Device = '',
@@ -105,6 +106,14 @@ $script:serial = Resolve-Serial $Device
 $before = Get-LastUpdate
 $marketWasDisabled = ((Invoke-Adb 'pm list packages -d') -join "`n") -match [regex]::Escape($market)
 Write-Host "device=$script:serial apk=$apkFull"
+# 装的人与测的人必须看到同一组指纹：只贴 lastUpdateTime 不足以排除"装的是旧构建"。
+# 事故实例（M7 A 轮）：调用方拼错参数名，脚本静默回退默认路径，装上了 build/outputs 里
+# 残留的回滚包（60DAC7F8），而调用方以为装的是刚构建的包（6F7A31E5）。
+$apkSha = (Get-FileHash -LiteralPath $apkFull -Algorithm SHA256).Hash
+$apkSize = (Get-Item -LiteralPath $apkFull).Length
+Write-Host "apk_sha256=$apkSha"
+Write-Host "apk_size=$apkSize"
+Write-Host "apk_mtime=$((Get-Item -LiteralPath $apkFull).LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))"
 Write-Host "before: $before"
 Write-Host "market_was_disabled=$marketWasDisabled"
 

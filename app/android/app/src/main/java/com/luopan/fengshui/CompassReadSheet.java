@@ -153,6 +153,12 @@ public final class CompassReadSheet {
             rightView.setText(right);
             rightView.setTextColor(BLUE);
             rightView.setOnClickListener(onClick);
+            // 整行可点：原来只有右侧蓝字有点击监听，行内其它位置点了没反应——
+            // 用户（和自动化）会以为这一行坏了。层圈名与蓝字都归同一动作。
+            row.setOnClickListener(onClick);
+            row.setClickable(true);
+            nameView.setClickable(false);
+            rightView.setClickable(false);   // 交给整行，避免两次触发
             row.addView(rightView);
             list.addView(row);
             list.addView(divider(a));

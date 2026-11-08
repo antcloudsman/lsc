@@ -3381,6 +3381,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             toast("编辑：原版为网格编辑态，本步未实现");
         });
         dialog.show();
+        // M7 第 3 条：原版「更多」面板态中心符号 NONE（more-sheet-01 中心像素 255,255,255）。
+        // 我方 sheet 只占 y1350..2578、遮罩 0.35 挡不住屏心（实测面板打开后 (614,1350) 仍是 #FF5163），
+        // 所以显式隐藏，并在 dismiss 时按当前状态恢复——Dialog 挡不住的地方要自己补。
+        if (centerSymbolView != null) centerSymbolView.setVisibility(View.GONE);
+        dialog.setOnDismissListener(d -> {
+            if (centerSymbolView != null) {
+                centerSymbolView.setVisibility(compassMode && compassHidden ? View.GONE : View.VISIBLE);
+            }
+        });
         android.view.Window w = dialog.getWindow();
         if (w != null) {
             w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));

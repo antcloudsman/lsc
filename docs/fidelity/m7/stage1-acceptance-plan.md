@@ -405,6 +405,30 @@ cmd pagejs --es value 'window.LCAndroid.onEvent(JSON.stringify({type:"elev",lat:
 
 **构造方法（给后续复用）**：`pagejs` 注入的是**JS 代码**，不是事件 JSON——裸发 `{"type":"elev",…}` 只会被当语句求值、面板不响应；必须包一层 `window.LCAndroid.onEvent(JSON.stringify({…}))`。另外子页必须在前台（否则 `pagejs ignored`），且 `am start` 后要等 3–7 秒让页面加载完。
 
+### 5.6 KML 判据①独立复验（离线比对导出文件，20:50）
+
+不依赖实现方的脚本，也不占设备：直接读两份导出文件 `reports/M7-kml/round{1,2}.kml`，用 `xml.etree` 取每个 `Placemark` 的 `coordinates`，排序后逐值比较。
+
+```
+placemarks  round1=6  round2=6
+比较值      18 个（6 点 × lon/lat/alt）
+max_abs_diff = 0.000e+00
+文本完全相同 identical_text = True
+样例        113.26438500,23.12911200,0
+```
+
+**判据① PASS**：不是“≤1e-6”，是**逐值完全相等**（6 点 18 值）。
+
+**同时独立确认了缺口 B-1**（产品提出，我按文件实测复现）：
+
+```
+Document 级 ExtendedData：7 项（lc:crs / lc:coordinate_order / lc:generator / lc:app / lc:exported / lc:count / lc:source）
+Placemark 子元素：name / description / Point        ← own ExtendedData = 0
+alt 取值集合：{'0'}                                  ← 6 点全部写死 0
+```
+
+即：**逐点业务字段（坐向/海拔/类型/时间）确实没有导出**，且 `alt` 以 `0` 冒充“未知”。**这不影响判据①（坐标往返）**，但用户在“导出给同行看”场景会丢掉坐向——单列缺口 B-1，按产品口径复验判据应为「导出文件里 `lc:sit` 命中数 = 点数」＋「清空后导入，坐席/海拔逐点一致」。
+
 ### 1.5 失败与回滚
 
 - 任一项超差 → 本条判**不通过**，退回实现方，附超差项与实测值；

@@ -35,13 +35,25 @@ final class MapAsset {
     private static final String BASE_ASSET =
             "https://appassets.androidplatform.net/assets/map.html";
 
-    private static String base() {
-        return USE_ASSET_LOADER ? BASE_ASSET : BASE_FILE;
+    /**
+     * **只有主界面那一个 WebView 装了 WebViewAssetLoader**，所以只有它走 {@link #mapUrl}。
+     *
+     * 其余 8 个二级页（海拔/山脉/水系/渔点/历史影像/叠加/SuperMap/轨迹回放）没有拦截器，
+     * 必须继续用这里的 `file://`——2026-11-08 实测：把 `url()` 一起切到虚拟域，
+     * 二级页直接 `ERR_NAME_NOT_RESOLVED`，页面整块空白（海拔页当场复现）。
+     */
+    static String url(String hash) {
+        return build(BASE_FILE, hash);
+    }
+
+    /** 主界面地图专用：带 AssetLoader 时走 https 虚拟域。 */
+    static String mapUrl(String hash) {
+        return build(USE_ASSET_LOADER ? BASE_ASSET : BASE_FILE, hash);
     }
 
     /** @param hash 形如 `#in3d&uimode=map&lat=..&lng=..`；null/空则不带 hash */
-    static String url(String hash) {
-        StringBuilder sb = new StringBuilder(base());
+    private static String build(String base, String hash) {
+        StringBuilder sb = new StringBuilder(base);
         String tk = BuildConfig.TDT_WEB_KEY;
         if (tk != null && !tk.isEmpty()) sb.append("?tk=").append(Uri.encode(tk));
         if (hash != null && !hash.isEmpty()) {

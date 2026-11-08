@@ -108,6 +108,7 @@ public class WaterActivity extends LcFeatureActivity {
         }
 
         web = new WebView(this);
+        DebugInject.attach(web);   // 测试钩子：二级页可被 pagejs 注入
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);

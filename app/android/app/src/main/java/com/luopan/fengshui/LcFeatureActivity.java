@@ -21,6 +21,25 @@ public abstract class LcFeatureActivity extends Activity {
 
     protected FrameLayout content;
 
+    /** 测试钩子（仅 debug）：把 JS 投进当前前台子页的 WebView，供二级页事件构造。 */
+    private final DebugInject debugInject = new DebugInject();
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        DebugInject.register(this, debugInject);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            unregisterReceiver(debugInject);
+        } catch (Throwable ignored) {
+        }
+        DebugInject.detach();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

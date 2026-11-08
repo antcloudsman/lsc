@@ -4155,7 +4155,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
         // 主地图必须带网页端 key（MapAsset 拼 ?tk=<webKey>），裸 map.html 拿不到瓦片。
         // 原先裸地址没有 hash，这里 hash 传 null 保持行为不变。
-        webView.loadUrl(MapAsset.url(null));
+        webView.loadUrl(MapAsset.mapUrl(null));   // 只有这个 WebView 装了 AssetLoader
         return webView;
     }
 

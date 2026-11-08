@@ -11,7 +11,8 @@
   `MainActivity.java:1964` `contour.setOnClickListener(v -> js("toggleContour()"));`
 - JS 侧状态是页面变量、**重载即回默认**：`map.html:199` `var contourOn = false;`、`map.html:200` `var groundMode = false;`
 - 而 `onPageFinished` 的重放清单只有 `setRoadNet(...)`（`MainActivity.java:3764`）与 `setMode('3d')`（`3767`），**不含 contour / ground**。
-- 为什么是问题：原生用 **toggle（翻转）** 语义，却没有任何地方回读或重放真实值。页面一旦重载（`location.reload()`、WebView 进程回收后重建、崩溃恢复），JS 侧归零，原生按钮的点击语义仍按“翻转”执行 → **用户点「关闭等高线」，实际把它打开**；界面上也看不出（原生没有等高线状态显示）。
+- 为什么是问题：原生用 **toggle（翻转）** 语义，却没有任何地方回读或重放真实值。页面一旦重载，JS 侧归零，原生按钮的点击语义仍按“翻转”执行 → **用户点「关闭等高线」，实际把它打开**；界面上也看不出（原生没有等高线状态显示）。
+  **触发路径以实测为准（审核验更正）**：`map.html` 内 `reload(` **0 命中**，`MainActivity:3752` 那句 `location.reload()` 只是注释；真实重载入口是桥接命令 `MainActivity:368-372` `case "url": compassMapView.loadUrl(url);`，以及 WebView 渲染进程重启/崩溃恢复。
 - 影响面：等高线（两处入口：左列 + 收藏点态）、贴地（左列）。任何一次页面重载后进入“先反后正”的错位，用户侧表现为“按钮失灵/点了相反”，且**无法通过再点一次自愈**（每次点都在两态间跳）。
 - 修法：JS 已有 `setContour(on)`（`map.html:1202`）却未被使用。原生改为持有 `contourOn/groundMode` 内存态（与 `roadNetOn` 同法），点按钮走 `js("setContour(" + v + ")")`，并在 `onPageFinished` 重放；贴地需补一个 `setGround(on)`（现只有 `toggleGround()`，`1752`）。
 
@@ -66,7 +67,7 @@
 ## 3. 占位与写死
 
 ### M-08 3D 参数是裸魔法数，改一处会静默改变贴面成功率
-- 原文（分散在 `map.html`）：`var GRID = 96`、`PATCH_PX`、`setMode` 内 `if (zoom < 9) zoom = 9;`、`var zdem = Math.max(4, Math.min(12, Math.round(zoom) - 1));`、贴面成功判据 `if (ok >= 30)`（36 张里的 30 张）。
+- 原文（行号已按 `622cf28`/`ac2fee6` 核准，与审核验复核一致）：`map.html:1976` `var GRID = 96;`、`map.html:1467` `if (zoom < 9) zoom = 9;`、`map.html:2221` `var zdem = Math.max(4, Math.min(12, Math.round(zoom) - 1));`、`map.html:2398` `if (ok >= 30) {`（分母 36 见同段 `+ "/36 "`），另有 `PATCH_PX` 常量。
 - 为什么是问题：`30/36` 与 `zoom-1` 是**经验值**，没有命名常量也没有对照文档；改 `GRID` 或 zoom 偏移会连带改变 `ok` 的分布而无人察觉（本轮 `buildMesh` 越界 193 顶点就是这类“参数耦合”的产物）。
 - 影响面：3D 地形生成与贴面；任何调 3D 性能的改动。
 
@@ -90,3 +91,12 @@
 - 未上机复现任何一条（按设备协议，设备归 @LC测试）；本审计全部为代码级结论，均给出可核对的原文行号。
 - 未审 `M3WebActivity` 的帮助中心 WebView 桥（属客户端审计范围）。
 - 未审 3D 投影/`pick` 的数学正确性（属 M3 已定结论范围，本轮不重开）。
+
+## 6. 复核状态（LC审核验 `895def2`，基线 `ac2fee6`）
+
+- **10/10 条行号与原文逐字命中，无一条判「误」**。
+- **进缺陷清单（A 类，用户可遇到）**：M-01、M-02。
+- **进清单（B 类，健壮性/可诊断）**：M-04、M-05、M-06、M-07。
+- **不进清单**：M-03（并入 M-01/M-02 的修法）、M-08（技术债）、M-09（低优先，可随批统一）、M-10（§13 已登记，不重复上账）。
+- **一条更正已采纳**：M-01 的触发例举由「`location.reload()`」改为「桥接 `url` 重载（`MainActivity:368-372`）/ WebView 渲染进程重启」——`map.html` 内 `reload(` 0 命中，`MainActivity:3752` 那句只是注释。
+- **未量化项**：M-01/M-02 的「用户实际撞到概率」需要一次真机重载才能给数，现只有代码路径证据。

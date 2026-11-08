@@ -31,6 +31,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private CompassView compassView;
     /** M6 第 1 条：贯穿全屏的红色十字经线（独立层，盘面几何不受影响）。 */
     private CompassCrosshairView crosshairView;
+    /** M7 第 3 条：屏心符号（四段蓝线 + 红点），viewport 覆盖层，不进 WebView。 */
+    private MapCenterSymbolView centerSymbolView;
     private TextView readingView;
     /** R2-005：罗盘中心指针（原版 pointer 节点 81×324）。 */
     private android.widget.ImageView pointerView;
@@ -562,6 +564,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         crosshairView.setId(R.id.lc_compass_crosshair);
         crosshairView.setVisibility(View.GONE);
         frame.addView(crosshairView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        // M7 第 3 条之一：屏心符号（四段圆头蓝线 + 中心红点）。原版取证 21/55 张 HIT：
+        // 地图 2D、3D、罗盘态都有，弹层/面板/子页无；23 张不同位置缩放的截图里圆心恒为 (614,1350)
+        // ⇒ viewport 对齐、钉屏幕中心，不随拖动/zoom/pitch。所以放原生层，与红十线同一类、同一层。
+        // 规格：红点 13×13 #FF5163 / 蓝线 57×7 #009DFF 圆头 / 整体 114×114（设备 px @3.375）。
+        // 不贴 cross.png：素材色 #6488FC 偏紫、尺寸小一半，且主图 bundle 未引用它。
+        centerSymbolView = new MapCenterSymbolView(this);
+        centerSymbolView.setId(View.generateViewId());
+        centerSymbolView.setVisibility(View.VISIBLE);   // 主视图（地图态）默认显示
+        frame.addView(centerSymbolView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         // K-01 z 序与触摸（验收 P-08 必读）：浮层之后又加了 读数/状态/左列/罗盘左列/右列/隐藏/底部条，
         // 它们都在浮层之上；其中工具列与「隐藏」是交互层，会正常吃掉落在按钮矩形内的触摸。
@@ -1771,6 +1783,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (compassView != null) compassView.setVisibility(on ? View.VISIBLE : View.GONE);
         // M6 第 1 条：十字经线只在罗盘态显示（原版 marker 只在罗盘浮层存在）
         if (crosshairView != null) crosshairView.setVisibility(on ? View.VISIBLE : View.GONE);
+        // M7 第 3 条：屏心符号在罗盘态也显示（原版 compass-main-01 中心像素 #FF5163），
+        // 与红十线不同——那条只在罗盘态/隐藏态跟着走，这条主视图常显。
+        if (centerSymbolView != null) centerSymbolView.setVisibility(View.VISIBLE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         // R2-005 + M6 第 3 条：指针可见性统一判定（罗盘态 × 未隐藏 × 非纯地图模式 × 开关）
         refreshPointerVisibility();
@@ -1916,6 +1931,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (compassView != null) compassView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         // M6 第 1 条：隐藏态（R2-006）连十字一起隐——原版「隐藏」隐的是整个罗盘浮层
         if (crosshairView != null) crosshairView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        // M7 第 3 条：屏心符号「隐藏」态一并隐——隐藏隐的是整个罗盘浮层，与红十线同规则
+        // （原版隐藏态下这个符号显不显示未取证，跟随浮层是保守选择，记已知边界）。
+        if (centerSymbolView != null) {
+            centerSymbolView.setVisibility(compassMode && compassHidden ? View.GONE : View.VISIBLE);
+        }
         // M6 第 3 条：隐藏态此前漏了 pointerView（罗盘/十字/工具列都隐了，只剩指针图飘着）
         refreshPointerVisibility();
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
@@ -2560,6 +2580,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // 「超清优化」(mleft3 [33,1294][191,1452]) 相交；「全地图工具」在 y357..515，纵向范围外不动。
             // 原版面板由上层的 web 树绘制、会盖住这两枚右半截；我们面板在 WebView 里，只能开合时隐藏/恢复。
             setPanelCoveredLeftItems(open);
+            // M7 第 3 条：底图源面板是网页内绘制，原生覆盖层会浮在它上面；原版该态中心符号 NONE，
+            // 所以面板开合时同步隐/显（弹层是 Dialog 的（更多面板/读盘 sheet）自动被盖住，不用管）。
+            if (centerSymbolView != null) {
+                centerSymbolView.setVisibility(
+                        open || (compassMode && compassHidden) ? View.GONE : View.VISIBLE);
+            }
             android.util.Log.d("LCATTR", "src-panel open=" + open);
         }
     }

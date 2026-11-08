@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>山水罗盘 收藏点</name>
+    <ExtendedData>
+      <Data name="lc:crs"><value>WGS84</value></Data>
+      <Data name="lc:coordinate_order"><value>lon,lat,alt</value></Data>
+      <Data name="lc:generator"><value>LC</value></Data>
+      <Data name="lc:app"><value>山水罗盘</value></Data>
+      <Data name="lc:exported"><value>2026-11-08T21:04:16+08:00</value></Data>
+      <Data name="lc:count"><value>12</value></Data>
+      <Data name="lc:source"><value>favorites</value></Data>
+    </ExtendedData>
+    <Placemark>
+      <name>P3</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>12</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053519</value></Data>
+      </ExtendedData>
+      <Point><coordinates>113.26438500,23.12911200</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>P2</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>11</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053518</value></Data>
+      </ExtendedData>
+      <Point><coordinates>121.47370100,31.23041600</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>P1</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>10</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053517</value></Data>
+      </ExtendedData>
+      <Point><coordinates>116.39742800,39.90918700</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name></name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>9</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053516</value></Data>
+      </ExtendedData>
+      <Point><coordinates>116.40740000,39.90420000</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>ou-row</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>8</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053515</value></Data>
+      </ExtendedData>
+      <Point><coordinates>116.40740000,39.90420000</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>s33-a1</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>7</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053514</value></Data>
+      </ExtendedData>
+      <Point><coordinates>116.40740000,39.90420000</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>s33-a1</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>6</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053513</value></Data>
+      </ExtendedData>
+      <Point><coordinates>116.40740000,39.90420000</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>ou-row</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>5</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053512</value></Data>
+      </ExtendedData>
+      <Point><coordinates>116.40740000,39.90420000</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name></name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>4</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053511</value></Data>
+      </ExtendedData>
+      <Point><coordinates>116.40740000,39.90420000</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>P1</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>3</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053510</value></Data>
+      </ExtendedData>
+      <Point><coordinates>116.39742800,39.90918700</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>P2</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>2</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053509</value></Data>
+      </ExtendedData>
+      <Point><coordinates>121.47370100,31.23041600</coordinates></Point>
+    </Placemark>
+    <Placemark>
+      <name>P3</name>
+      <description>坐0.0° 向180.0°</description>
+      <ExtendedData>
+        <Data name="lc:id"><value>1</value></Data>
+        <Data name="lc:type"><value>favorite</value></Data>
+        <Data name="lc:sit"><value>0.0</value></Data>
+        <Data name="lc:heading"><value>180.0</value></Data>
+        <Data name="lc:created"><value>1794143053499</value></Data>
+      </ExtendedData>
+      <Point><coordinates>113.26438500,23.12911200</coordinates></Point>
+    </Placemark>
+  </Document>
+</kml>

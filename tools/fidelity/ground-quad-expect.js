@@ -130,7 +130,7 @@ function dialWidthDevice(pitch) {
   });
   return (len(w[0], w[1]) * 0.37725 * DPR);
 }
-console.log("\n--- 盘面屏宽预期（0.375×四边形，device px）---");
+console.log("\n--- 盘面屏宽预期（0.37725×四边形 = 549 backing 口径，device px）---");
 [0, 1, 5, 30, 45, 60].forEach(function (p) {
   console.log("pitch " + p + " -> " + dialWidthDevice(p).toFixed(0) + " px   (目标 927 @pitch0)");
 });

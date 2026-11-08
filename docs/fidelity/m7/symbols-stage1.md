@@ -547,6 +547,41 @@ MapLibre `Marker#setRotation(deg)` **顺时针为正**；素材 `locationPointer
 与地图 bearing 无关；2D/3D 只改形状不改角度
 ```
 
+## 6.9 Q3（透明度）的原版默认值 —— **默认 alpha = 1.0，不需要「无盘面基线」**
+
+逐字（`index.946c1624e0.bundle.js`）：
+
+```js
+// createCompass（@51779）
+this.compassImg.style.opacity = "1";              // ← 初值 1.0
+
+// setOpacity（@49194）
+"setOpacity", ({ opacity: e }) => {
+    this.compassImg && (this.compassImg.style.opacity = e / 100, ...);   // 0..100 → 0..1
+}),
+
+// getCompassParams（@49552）
+opacity: this.compassImg.style.opacity            // 取回 "1"
+
+// updateCompass（@40865）
+this.ctx.globalAlpha = t;                          // t = 上面那个 opacity ⇒ 1.0
+```
+
+⇒ **原版贴地盘面默认 `globalAlpha = 1.0`（完全不透明）**；`reset()` 里 `setOpacity({opacity:100})` 也把它拉回 1.0。
+
+### 6.9.1 Q3 的可判方法（替代「无盘面基线」）
+
+不需要基线，因为 alpha=1 意味着**盘面像素 == 纹理像素**（只剩重采样误差）。做法：
+
+1. 在 `dial_full_0.webp` 里挑一块**纯色区域**（局部方差 ≈ 0，例如某段色环内部），记下该纯色 `C`；
+2. 在贴地截图上取对应位置（按 §6.5 的比例把纹理坐标换到屏坐标）；
+3. 判 `|实测 − C| ≤ 6/255`（只容重采样与压缩误差）；
+4. **若实测朝地图底色偏移 ⇒ alpha < 1**，按偏移量反解 `a`。
+
+关键：**必须选纯色区**——选到纹理里有渐变/文字的位置，重采样误差会盖过 alpha 差异，这正是「直接跟纹理比」容易判错的原因。
+
+⇒ 若我方默认 `compassDialAlpha` 是 100（与原生浮层同源），Q3 默认档应直接 PASS；非 100 就是差异，按上面第 4 步反解。
+
 # 七、检索复现命令（审核验可直接照跑）
 
 ## 3.1 代码检索

@@ -364,6 +364,33 @@ slope(B on A) = 0.018    corr = 0.007
 
 **测量方法补强**：拖动那项不是「看标记有没有动」，而是用 `SSD` 在纯地图区域做块匹配，量出**地图内容本身的位移 304 px**，再与标记位移比对——两者差 0.1 px，证明标记刚性挂在**地图坐标层**，不是屏幕固定层。手指位移 300 而地图 304，是地图自身的惯性/回弹，两侧一致即为正确。
 
+### 1.4o C 轮独立复验（20:05–20:25）
+
+复验包：`develop 3f97e38`（含客户端 `ceef6a3`+`49ea066`）与 `feature/地图-c1-bclass 8915e0f` 各自独立构建、装机后 `adb pull base.apk` 回核；包体那一项在本地把 `8565399`（WebP）合进 develop 后**删掉 `app/build/outputs` 再构建**。
+
+| 项 | 实测 | 判 |
+|---|---|---|
+| M-04 `js()` 失败可观测 | 删掉页面 `toggle3D` 后点原生「3D」按钮 → `LCDEBUG: js fail#1 code=toggle3D() -> err:TypeError: toggle3D is not a function`；`cmd state` → `"jsFail":1`；应用不崩、控制流不变 | **PASS** |
+| M-05 `emit` 不再静默 | 整体替换 `window.LCAndroid` 为抛异常对象后 `emit({type:'selftest'})` → `LCEMIT ERROR selftest: boom`、`emitDiag {ok:8, fail:1, noBridge:0, lastErr:"selftest: boom"}`；`window.LCAndroid=undefined` → `noBridge:1` | **PASS** |
+| M-06 海拔二义 | 三处代码已改 `optDouble("elev", Double.NaN)` + `isNaN` 判（`MountainActivity:308-312`、`WaterActivity:330-334`、`ElevationActivity:187-188`）；**运行时构造未做** | **待确认** |
+| M-07 DEM 失败原因 | 断网换位置后 `last3dError = "dem-missing 9/9 dem-load 11/1691/775 url=https://s3.amazonaws.com/elevation-tiles-prod/terrarium/11/1691/775.png"` | **PASS** |
+| L3 指针双状态 | `showPointer` 只剩 2 处**注释**（`CompassCrosshairView:18/26`），无实现 | **PASS** |
+| L4 两份选中点 | 大小写敏感查 `mapMarker` 只剩 1 处**注释**（`MainActivity:2739`） | **PASS** |
+| 死代码 6 条 | `MainActivity` 六名 grep=0；`gcj2bd/wgs2gcj/knowledgeEntries/shareApp/setCompassHidden` 全仓 0；`clean` 在 `MainActivity` 为 0、`CompassReadSheet` 保留 6（正确） | **PASS** |
+| 换行 | `MainActivity.java` 244,265 B、**CR=0** | **PASS** |
+| 包体 | 13,790,074 B = **13.15 MB**；entries 556、png 242、webp 42；`assets/lc-help` 30 项 3.91 MB（**29 webp / 0 png**） | **PASS** |
+| `assets.py` | `verify: 103 file(s), 103 manifest, 103 provenance; sha256 + provenance + APK source all match` exit 0 | **PASS** |
+| `evidence-lint` 尺寸门 | `--root app/android/app/src/main/assets/lc-help --expect-size 1228x2700` → `scanned png=29 fail=0 warn=0` exit 0 | **PASS** |
+| `--magic` | 29 张 webp 全查 → `fail=0` exit 0 | **PASS** |
+| help sha 门禁 | `--generated-html .../lc-help/index.html --source docs/product/help-center.md` → exit 0 | **PASS** |
+| SMOKE 六门 | `copy/secret/desktop/numeric/mech-src/android` 全 PASS；numeric `tests=85 failures=0`；android 段 `assembleDebug OK 13467 KB` + `no FATAL EXCEPTION`；`overall PASS` | **PASS** |
+
+**M-06 为什么停在「待确认」**：三处代码已按「先解析再判」改完，但运行时构造需要向 `MountainActivity/WaterActivity/ElevationActivity` 的 WebView 注入 `{"type":"elev","elev":"abc"}` 事件；调试桥的 `cmd js` 只指向主 WebView，**缺一个能对二级 Activity 注入的入口**。构造入口补上后（或人工在对应页面点一个 `elev` 为字符串的点位）即可一次判死。
+
+**两条构造注意（都是踩过的坑）**：① `cmd js` 走 `evaluateJavascript` 直连，**不经过产品 `js()`**，用它验 B-1 会永远读到 `jsFail:0`；必须点原生按钮触发 `js()`。② `window.LCAndroid` 是 `addJavascriptInterface` 注入的 Java 对象，**给它属性赋值无效**，要构造 `emit` 失败必须整体替换该全局对象。
+
+**门禁口径提醒**：`evidence-lint` 用**默认 root** 运行会 `fail=1`，原因是历史脏文件 `docs/fidelity/m3/help-offline.xml`，其全文只有一行 `cat: /sdcard/a.xml: No such file or directory`。因此「evidence-lint fail=0」只有在带窄 root 时成立；该文件与 C 轮无关，但会让默认命令变红，建议清理或进 allowlist。
+
 ### 1.5 失败与回滚
 
 - 任一项超差 → 本条判**不通过**，退回实现方，附超差项与实测值；

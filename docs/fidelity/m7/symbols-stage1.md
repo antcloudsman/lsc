@@ -188,7 +188,48 @@
 
 ---
 
-# 三、检索复现命令（审核验可直接照跑）
+# 六、贴地 canvas 里盘面占多少（回答 @LC地图 的「分支 A/B」，已定案 = **A**）
+
+原版 `index.946c1624e0.bundle.js` 三处逐字：
+
+```js
+// ① 模块级常量（@39353）
+let c = window.screen.width / 2 * 1.5,   // c = 0.75 × 屏宽（CSS）
+    u = 1.2 * window.screen.width,       // u = 1.2 × 屏宽（CSS，缩放到 100 时的上限）
+
+// ② 盘面绘制尺寸（@49552 getCompassParams）
+size = (u - c) * this._compassScale / 100 + c
+
+// ③ 画进 canvas（@41208 附近 updateCompass）
+i = this.canvas.width / this.dpr          // 728 CSS
+let a = (i - e) / 2, n = (o - e) / 2;     // e = size，居中
+this.ctx.drawImage(this.compassUI.compassImg, a, n, e, e)   // 画成 e × e
+```
+
+代入本机（`window.screen.width` = 364 CSS）：
+
+| 量 | 值 |
+| --- | --- |
+| `c`（盘面默认 CSS 宽） | **0.75 × 364 = 273 CSS** |
+| `u`（scale=100 上限） | 1.2 × 364 = 436.8 CSS |
+| `_compassScale` 初值 | **1**（构造器 `this._compassScale=1`） |
+| `size` @scale=1 | 273 + (436.8−273)×0.01 = **274.6 CSS** |
+| `size` @scale=0 / 100 | 273 / 436.8 CSS |
+| canvas CSS 尺寸 | 728（= 2×364） |
+| **盘面占 canvas 比例** | 273~275 / 728 = **37.5%** |
+| **盘面 backing px（dpr=2）** | **546~549 px** |
+
+⇒ **分支 A 成立、分支 B 排除**：盘面在 canvas 里按**自己的 `size`（≈273 CSS）**画，用 `(i-e)/2` 居中，**不是**铺满 728。
+⇒ 即使缩放到上限 `scale=100`，盘面也只有 436.8 CSS < 728，**永远不会铺满 canvas**。
+⇒ **@LC地图 的 800 px 导出 = 546 backing 的 1.47× 过采样，够用，不需要按 1456 重导。**
+
+## 6.1 顺带一个可作判据的常量：**原版盘面直径 = 0.75 × 屏宽**
+
+`c = screen.width/2*1.5` 即 **0.75 × 屏宽**。本机 0.75 × 1228 = **921 设备 px**，与我方现网实测的 **922 设备 px 盘径**一致（±1px）。
+⇒ 这条给 @LC审核验 的 `Q1 盘径` 判据提供了**原版出处**：`盘径 = 0.75 × 屏宽`，不再是“观测定值”。
+⇒ 也解释了为什么我方 922 是对的：它不是巧合，是照了同一个比例。
+
+# 七、检索复现命令（审核验可直接照跑）
 
 ## 3.1 代码检索
 

@@ -60,6 +60,25 @@ FAIL eol …/MainActivity.java: mixed EOL: 4117 CRLF + 203 bare LF (fake-diff ri
 
 **只检查显式传入的文件，不做全仓判死**：全仓 296/699 个源码/配置含 CR（存量债），一次性判红没有意义；改哪个文件就先查哪个。
 
+**默认参数口径（技术总监 2026-11-08 定）**：默认跑法**不带** `--eol`；带 `--eol` 时**必须显式给文件列表**，裸 `--eol` 打印 `EOL: SKIP` 并跳过，绝不因「没给列表」而全仓判红。
+
+```
+# ① 默认（不查换行）
+python tools/fidelity/evidence-lint.py --root docs/fidelity
+EVIDENCE-LINT: … fail=0 … exit=0
+
+# ② 裸 --eol（跳过，不判死）
+python tools/fidelity/evidence-lint.py --root docs/fidelity --eol
+EOL: SKIP (no explicit file list; pass --eol <file[,file...]>)
+
+# ③ 只查本次改动碰到的文件
+python tools/fidelity/evidence-lint.py --root docs/fidelity \
+  --eol app/android/app/src/main/java/com/luopan/fengshui/MainActivity.java
+FAIL eol …: mixed EOL: 4117 CRLF + 203 bare LF (fake-diff risk)   exit=1
+```
+
+> 理由：**门禁只有精确才有人守，宽泛的红等于没有门禁**——存量混用随专项规范化一并改，到那时才让 `--eol` 支持全仓判。
+
 ## 3 用法
 
 ```bash
@@ -157,6 +176,7 @@ EVIDENCE-LINT: scanned xml=3 png=0 fail=1 warn=0
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-08 | --eol 收口为「必须显式文件列表」：裸 --eol 打印 EOL: SKIP 并跳过；默认跑法不带 --eol。三档实测：默认 exit0 / 裸 --eol SKIP exit0 / 指定 MainActivity FAIL exit1 |
 | 2026-11-08 | 补 --eol：混用换行 FAIL、纯 CRLF WARN（--eol-strict 判 FAIL）；只查显式文件、不做全仓判死（存量 296/699 含 CR） |
 | 2026-11-08 | 按 LC审核验 建议补两条：**空 dump（`<hierarchy>` 根、0 个 `<node>`）判 FAIL**（仅对 dump，SVG 不适用）；**`--root` 默认 `docs/fidelity`**（不再必填，避免上手 `exit 2`）。实测：真实证据 `fail=0 allowed=1`（带清单），`empty.xml` 单测 FAIL |
 | 2026-11-08 | 增具名例外清单 `--allow`（四键必填，FAIL→ALLOWED 但永远打印）；基线更新为 `fail=0 / allowed=1 / exit 0`（带清单）与 `fail=1`（不带，反证）；证据文件不删不改 |

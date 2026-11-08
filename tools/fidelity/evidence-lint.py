@@ -362,7 +362,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--expect-size", help="declared screenshot size WxH, e.g. 1228x2700 (mismatch = warn)")
     ap.add_argument("--allow", help="allowlist JSON with entries {path, reason, by, verdict} (4 keys required)")
     ap.add_argument("--json", help="write JSON report to this path")
-    ap.add_argument("--eol", help="comma-separated source files to check for CRLF/mixed EOL")
+    ap.add_argument("--eol", nargs="?", const="", help="comma-separated source files to check for CRLF/mixed EOL; REQUIRES an explicit file list (bare --eol prints SKIP)")
     ap.add_argument("--eol-strict", action="store_true", help="also FAIL on CRLF-only files (repo convention is LF)")
     ap.add_argument("--generated-html", help="generated artifact (e.g. lc-help/index.html) to verify against its source")
     ap.add_argument("--source", help="source markdown for --generated-html (e.g. docs/product/help-center.md)")
@@ -421,8 +421,12 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         findings.extend(check_generated(args.generated_html, args.source))
 
-    if args.eol:
-        for p in [s.strip() for s in args.eol.split(",") if s.strip()]:
+    if args.eol is not None:
+        eol_files = [s.strip() for s in args.eol.split(",") if s.strip()]
+        if not eol_files:
+            # 精确才有人守：不带文件列表一律跳过（默认跑法不带 --eol，存量 296/699 含 CR，宽泛的红等于没有门禁）
+            print("EOL: SKIP (no explicit file list; pass --eol <file[,file...]>)")
+        for p in eol_files:
             if not os.path.isfile(p):
                 print(f"ERROR: --eol file not found: {p}", file=sys.stderr)
                 return 2

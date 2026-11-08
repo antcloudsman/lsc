@@ -216,6 +216,31 @@ def check_generated(html_path: str, source_path: str) -> list[dict]:
         )
     return out
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))  # tools/fidelity -> repo root
+
+
+def resolve(path: str) -> str:
+    """相对路径一律以 REPO_ROOT 为基准；绝对路径原样返回。
+
+    门禁工具会被复制到别处、被别的脚本调用、在别的工作树里跑——依赖 cwd 的工具，
+    换个人跑就是另一个结果，而这种差异最容易被误读成「别人改坏了」。
+    """
+    if not path:
+        return path
+    if os.path.isabs(path):
+        return path
+    return os.path.normpath(os.path.join(REPO_ROOT, path))
+
+
+def resolve_existing(path: str) -> str | None:
+    """先按原样（cwd 相对）、再按 REPO_ROOT 解析，返回第一个存在的路径。"""
+    for cand in (path, resolve(path)):
+        if os.path.exists(cand):
+            return cand
+    return None
+
+
 SHELL_ERROR_PATTERNS = [
     r"^cat:\s",
     r"^adb:\s",
@@ -385,7 +410,7 @@ def walk(root: str, skip_dirs: set[str]):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Content validity lint for fidelity evidence (.xml/.png)")
-    ap.add_argument("--root", default="docs/fidelity", help="evidence root (default: docs/fidelity)")
+    ap.add_argument("--root", default="docs/fidelity", help="evidence root (default: <repo>/docs/fidelity, resolved against the script location)")
     ap.add_argument("--strict", action="store_true", help="treat warnings as failures")
     ap.add_argument("--mono-ratio", type=float, default=0.995, help="monochrome threshold (default 0.995)")
     ap.add_argument("--min-png-side", type=int, default=600, help="only lint png with min(w,h) >= this (default 600)")
@@ -401,6 +426,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--source", help="source markdown for --generated-html (e.g. docs/product/help-center.md)")
     args = ap.parse_args(argv)
 
+    args.root = resolve(args.root)
     if not os.path.isdir(args.root):
         print(f"ERROR: not a directory: {args.root}", file=sys.stderr)
         return 2
@@ -415,7 +441,12 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     allow: list[dict] = []
+    if not args.allow:
+        default_allow = os.path.join(SCRIPT_DIR, "evidence-lint-allow.json")
+        if os.path.isfile(default_allow):
+            args.allow = default_allow
     if args.allow:
+        args.allow = resolve(args.allow)
         if not os.path.isfile(args.allow):
             print(f"ERROR: allowlist not found: {args.allow}", file=sys.stderr)
             return 2
@@ -446,7 +477,7 @@ def main(argv: list[str] | None = None) -> int:
         except FileNotFoundError:
             continue
 
-    allowed_map = {os.path.normcase(os.path.abspath(e["path"])): e for e in allow}
+    allowed_map = {os.path.normcase(os.path.abspath(resolve(e["path"]))): e for e in allow}
 
     if args.generated_html or args.source:
         if not (args.generated_html and args.source):
@@ -455,9 +486,10 @@ def main(argv: list[str] | None = None) -> int:
         findings.extend(check_generated(args.generated_html, args.source))
 
     if args.magic:
-        for p in [x.strip() for x in args.magic.split(",") if x.strip()]:
-            if not os.path.isfile(p):
-                print(f"ERROR: --magic file not found: {p}", file=sys.stderr)
+        for raw in [x.strip() for x in args.magic.split(",") if x.strip()]:
+            p = resolve_existing(raw)
+            if not p:
+                print(f"ERROR: --magic file not found: {raw}", file=sys.stderr)
                 return 2
             findings.extend(check_magic(p))
 
@@ -467,10 +499,11 @@ def main(argv: list[str] | None = None) -> int:
             # 精确才有人守：不带文件列表一律跳过（默认跑法不带 --eol，存量 296/699 含 CR，宽泛的红等于没有门禁）
             print("EOL: SKIP (no explicit file list; pass --eol <file[,file...]>)")
         for p in eol_files:
-            if not os.path.isfile(p):
+            p2 = resolve_existing(p)
+            if not p2:
                 print(f"ERROR: --eol file not found: {p}", file=sys.stderr)
                 return 2
-            findings.extend(check_eol(p, args.eol_strict))
+            findings.extend(check_eol(p2, args.eol_strict))
 
     for f in findings:
         entry = allowed_map.get(os.path.normcase(os.path.abspath(f["path"])))

@@ -33,6 +33,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private CompassCrosshairView crosshairView;
     /** M7 第 3 条：屏心符号（四段蓝线 + 红点），viewport 覆盖层，不进 WebView。 */
     private MapCenterSymbolView centerSymbolView;
+    /** TEST HOOK：hidehud 前被隐藏视图的原始可见性，用于复原（不猜状态）。 */
+    private final java.util.List<View> testHiddenViews = new java.util.ArrayList<>();
+    private final java.util.List<Integer> testHiddenVis = new java.util.ArrayList<>();
     private TextView readingView;
     /** R2-005：罗盘中心指针（原版 pointer 节点 81×324）。 */
     private android.widget.ImageView pointerView;
@@ -420,6 +423,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             }
                             android.util.Log.d("LCDEBUG", "state " + line);
                         });
+                break;
+            }
+            case "hidehud": {
+                // TEST HOOK：只藏 chrome，保留盘面 + 红十线，供 Q1/Q2 干净取边。
+                // --es on 0 恢复：按隐藏前的可见性原样还原，不猜状态。
+                boolean hide = !"0".equals(it.getStringExtra("on"));
+                boolean keepSymbol = "1".equals(it.getStringExtra("symbol"));
+                applyTestHideChrome(hide, !keepSymbol);
+                // 网页侧 chrome（#controls/#hint/#heading-label/#srcInfo/#hud）由 map.html 的
+                // setChromeVisible(on) 负责；不合并地图那笔时它是 undefined，守卫跳过即可。
+                if (compassMapView != null) {
+                    compassMapView.evaluateJavascript(
+                            "(typeof setChromeVisible==='function')?(String(setChromeVisible("
+                                    + (hide ? 1 : 0) + "))):'no-chrome-api'",
+                            v -> android.util.Log.d("LCDEBUG", "chrome -> " + v));
+                }
+                break;
+            }
+            case "view": {
+                // TEST HOOK：直接设视野。走 window.__LC3D.setView（= debugSetView(lat,lng,z,p,b)）。
+                // 不能用 setHeading：map.html:1705 只在 sitMode≠0 时才改 bearing，sitMode=0 时什么都不做，
+                // 拿它验「贴地盘面随 bearing 转 90°」会永远得 0°。
+                // 缺省参数传 null，对应字段保持当前值（debugSetView 内部按 typeof number 判断）。
+                String vLat = it.hasExtra("lat") ? String.valueOf(it.getFloatExtra("lat", 0f)) : "null";
+                String vLng = it.hasExtra("lng") ? String.valueOf(it.getFloatExtra("lng", 0f)) : "null";
+                String vZoom = it.hasExtra("zoom") ? String.valueOf(it.getFloatExtra("zoom", 0f)) : "null";
+                String vPitch = it.hasExtra("pitch") ? String.valueOf(it.getFloatExtra("pitch", 0f)) : "null";
+                String vBearing = it.hasExtra("bearing") ? String.valueOf(it.getFloatExtra("bearing", 0f)) : "null";
+                String js = "(function(){if(window.__LC3D&&typeof __LC3D.setView==='function'){"
+                        + "__LC3D.setView(" + vLat + "," + vLng + "," + vZoom + "," + vPitch + "," + vBearing
+                        + ");return 'ok';}"
+                        + "if(typeof setView==='function'){setView(" + vLat + "," + vLng + "," + vZoom
+                        + ");return 'partial-no-bearing';}"
+                        + "return 'no-view-api';})()";
+                if (compassMapView != null) {
+                    compassMapView.evaluateJavascript(js, v -> android.util.Log.d("LCDEBUG", "view -> " + v));
+                }
                 break;
             }
             case "url": {
@@ -1445,6 +1485,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 android.util.Log.w("LCMIRROR", "sync failed: " + t.getClass().getSimpleName());
             }
         }, delayMs);
+    }
+
+    /**
+     * TEST HOOK（仅 debug 包，随 DebugBridge 的 isDebuggable 门槛）：只隐藏「chrome」——
+     * 左右按钮列、开关列、工具条、「隐藏」按钮、顶部返回/图层、读数条、坐标条、地名条、地图角注，
+     * 保留盘面（CompassView）、红十线（CompassCrosshairView）与竖向指针。
+     *
+     * 为什么需要它：产品里的「隐藏」按钮语义是「隐藏罗盘浮层」，会把盘面一起收起来
+     * （总监 2026-11-08 确认：设计如此、不是 bug）。验收要的「无 UI 但有盘面」只能由测试钩子提供。
+     *
+     * 屏心符号默认一起隐：它正好画在 (614,1350)，会让「从盘心向外取边」在第 57px 撞到蓝臂，
+     * 把盘径量成 114。要保留就传 --es symbol 1。
+     */
+    private void applyTestHideChrome(boolean hide, boolean hideSymbol) {
+        View[] chrome = {leftColumn, rightColumn, leftCompassColumn, rightCompassColumn,
+                compassToolBar, hideButton, topBackButton, topLayerButton, menuButton,
+                readingView, coordView, placeView, attrView};
+        if (hide) {
+            testHiddenViews.clear();
+            testHiddenVis.clear();
+            for (View v : chrome) {
+                if (v == null) continue;
+                testHiddenViews.add(v);
+                testHiddenVis.add(v.getVisibility());
+                v.setVisibility(View.GONE);
+            }
+            if (hideSymbol && centerSymbolView != null) {
+                testHiddenViews.add(centerSymbolView);
+                testHiddenVis.add(centerSymbolView.getVisibility());
+                centerSymbolView.setVisibility(View.GONE);
+            }
+        } else {
+            for (int i = 0; i < testHiddenViews.size(); i++) {
+                testHiddenViews.get(i).setVisibility(testHiddenVis.get(i));
+            }
+            testHiddenViews.clear();
+            testHiddenVis.clear();
+        }
+        android.util.Log.d("LCDEBUG", "hidehud=" + hide + " hidden=" + testHiddenViews.size());
     }
 
     private void sync3DStateFromPage() {
@@ -3381,6 +3460,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             toast("编辑：原版为网格编辑态，本步未实现");
         });
         dialog.show();
+        // M7 第 3 条：原版「更多」面板态中心符号 NONE（more-sheet-01 中心像素 255,255,255）。
+        // 我方 sheet 只占 y1350..2578、遮罩 0.35 挡不住屏心（实测面板打开后 (614,1350) 仍是 #FF5163），
+        // 所以显式隐藏，并在 dismiss 时按当前状态恢复——Dialog 挡不住的地方要自己补。
+        if (centerSymbolView != null) centerSymbolView.setVisibility(View.GONE);
+        dialog.setOnDismissListener(d -> {
+            if (centerSymbolView != null) {
+                centerSymbolView.setVisibility(compassMode && compassHidden ? View.GONE : View.VISIBLE);
+            }
+        });
         android.view.Window w = dialog.getWindow();
         if (w != null) {
             w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));

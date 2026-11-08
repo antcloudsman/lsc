@@ -1816,6 +1816,19 @@ function toggleGround() {
   return setGround(!groundMode);
 }
 
+/* 回滚/调试开关（默认 overlay = 现网行为，不改变产品表现）。
+ * 11-08 现场发现：产品「贴地」按钮只走 toggleGround()，**没有**任何路径把
+ * groundRenderer 切到 'canvas' ⇒ 贴地画布的绘制通道整段是死代码，屏幕上一直是原生
+ * CompassView（屏幕空间正圆）。本钩子先把档位显式化，供审核验在原生盘面隐掉后单独验贴地。 */
+function setGroundRenderer(name) {
+  if (name === 'canvas' || name === 'overlay') {
+    groundRenderer = name;
+    if (groundMode) { groundTexDirty = true; if (name === 'canvas') { try { groundRedraw(); } catch (e) { } } }
+    updateHud();
+  }
+  return groundRenderer;
+}
+
 /* M6 第 6 条：「罗盘复位」的地图侧一半。
  * 原版语义（LC逆向 §6，DEX 锚点 CompassToolsKt.I0 → g.I → MapWebApiKt.resetCompass）：
  *   setMode(0) + setOpacity(100) + setScale(0) + setRotation(0) + map.resetNorth({})
@@ -2339,6 +2352,7 @@ var groundTexDirty = true;
 var groundProg = null, groundBuf = null, groundLoc = {};
 var groundImg = null;         /* 当前盘面位图（drawImage 用） */
 var groundImgDial = -1;
+var lastGroundQuad = null;    /* 上一帧贴地四角的世界坐标+VP，供 getGroundQuad() 只读复算 */
 
 function groundCanvasSize() {
   var sw = window.screen && window.screen.width ? window.screen.width : (glCanvas.clientWidth || 364);
@@ -2503,7 +2517,61 @@ function drawGroundCompass(vp, target) {
   gl.enable(gl.DEPTH_TEST);
   gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
   gl.disable(gl.BLEND);
+  /* 只读快照：供 getGroundQuad() 用同一张 VP、同一组世界坐标复算屏幕四角。
+   * 顺序与缓冲区一致：0=NW(x0,z0) 1=NE(x1,z0) 2=SE(x1,z1) 3=SW(x0,z1)，
+   * 于是 0→1 是「西→东」那条边，bearing 0 时与屏幕 x 轴平行，Q4 可直接取它的角度差。 */
+  lastGroundQuad = {
+    x0: x0, x1: x1, z0: z0, z1: z1, y: y, vp: vp, sideM: 2 * r,
+    cssW: glCanvas.clientWidth || 0, cssH: glCanvas.clientHeight || 0,
+    texCss: sz.css, texDpr: sz.dpr
+  };
   console.log('LCGROUND draw side=' + (2 * r) + 'm tex=' + sz.px + 'px');
+}
+
+/* ---- 只读调试接口：贴地盘面四角的屏幕坐标（CSS px，原点左上） ----
+ * 技术总监 11-08 批准（审核验提）：把 Q1 盘径 / Q2 中心 / Q4 转角 / Q5 不跟 DEM
+ * 从"猜像素"改成算术，不受色域、路网、UI 遮挡干扰。
+ * 未绘制（groundRenderer=overlay / 未开贴地 / 门控命中 / 还没有 VP）时返回 null。 */
+function getGroundQuad() {
+  if (groundRenderer !== 'canvas' || !groundMode) return null;
+  if (Math.abs(center.lat) >= 75 || zoom < 6) return null;   /* 与原版门控同口径 */
+  var s = lastGroundQuad;
+  if (!s || !s.vp) return null;
+  var m = s.vp, out = [], i;
+  for (i = 0; i < 4; i++) {
+    var wx = ((i === 1 || i === 2) ? s.x1 : s.x0);
+    var wz = ((i >= 2) ? s.z1 : s.z0);
+    /* 列主序：clip = m * (wx, y, wz, 1) */
+    var cx = m[0] * wx + m[4] * s.y + m[8] * wz + m[12];
+    var cy = m[1] * wx + m[5] * s.y + m[9] * wz + m[13];
+    var cw = m[3] * wx + m[7] * s.y + m[11] * wz + m[15];
+    if (!(cw > 1e-6)) return null;                           /* 角点跑到相机背后 */
+    out.push({
+      x: (cx / cw * 0.5 + 0.5) * s.cssW,
+      y: (0.5 - cy / cw * 0.5) * s.cssH
+    });
+  }
+  function len(a, b) { return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)); }
+  var top = len(out[0], out[1]), right = len(out[1], out[2]);
+  var cxp = (out[0].x + out[1].x + out[2].x + out[3].x) / 4;
+  var cyp = (out[0].y + out[1].y + out[2].y + out[3].y) / 4;
+  return {
+    corners: out,
+    center: { x: cxp, y: cyp },
+    sideCss: { top: top, right: right },
+    /* 0→1（西→东）边的屏幕角度：bearing 0 时应为 0°，bearing 90 时应为 ±90° */
+    angleDeg: Math.atan2(out[1].y - out[0].y, out[1].x - out[0].x) * 180 / Math.PI,
+    aspect: top > 0 ? (right / top) : 0,
+    pitch: pitch,
+    bearing: bearing,
+    zoom: zoom,
+    lat: center.lat,
+    sideMeters: s.sideM,
+    cssW: s.cssW,
+    cssH: s.cssH,
+    texCss: s.texCss,
+    texDpr: s.texDpr
+  };
 }
 
 /* ---- WebGL 初始化 ---- */
@@ -3337,6 +3405,7 @@ function getState() {
     demZoom: patch ? patch.z : null, hasTexture: !!(patch && patch.tex),
     sitMode: sitMode, sitNorth: sitMode !== 0,
     contour: contourOn, ground: groundMode, needle: needleOn,
+    groundRenderer: groundRenderer,
     base: base, drape: drape, roadNet: roadNet,
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError, last3dWarn: last3dWarn,
     wayback: wbOn, waybackRelease: wbRelease,
@@ -3375,6 +3444,8 @@ try {
 window.__LC3D = {
   setView: debugSetView,
   setChrome: setChromeVisible,
+  getGroundQuad: getGroundQuad,
+  setGroundRenderer: setGroundRenderer,
   setMode: setMode,
   setUiMode: setUiMode,
   attribution: getAttribution,
@@ -3605,7 +3676,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch", "resetCompass",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getAttribution", "setRoadNet",
+    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getGroundQuad", "setGroundRenderer", "getAttribution", "setRoadNet",
     "setGround", "setSitNorth", "setNeedle",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",

@@ -1200,7 +1200,12 @@ function updateTrackCursor() {
 }
 
 function setContour(on) {
-  if (!!on !== contourOn) toggleContour();
+  on = !!on;
+  if (on === contourOn) return contourOn;          /* 幂等 */
+  contourOn = on;
+  var b = document.getElementById("btn_contour");
+  if (b) b.className = contourOn ? "active" : "";
+  if (mode !== "3d" && contourOn) setMode("3d");   /* 等高线依赖 DEM 网格，仅 3D 生效 */
   return contourOn;
 }
 
@@ -1712,12 +1717,25 @@ function setHeading(deg) {
   }
 }
 
-/* ---- 指针开关 / 坐南朝北 / 等高线 / 贴地 ---- */
-function toggleNeedle() {
-  needleOn = !needleOn;
+/* ---- 指针开关 / 坐南朝北 / 等高线 / 贴地 ----
+ * M6 Stage5 M-01/M-02/M-03：页面重载后原生要能「按记住的状态重放」。
+ * 幂等 set 是重放的前提；toggle 只保留为按钮入口，内部一律委托给 set，
+ * 避免同一状态出现两套写法（两套规范并存正是重载后状态错位的根因）。
+ * 契约（给客户端重放用，名字/签名以此为准）：
+ *   setNeedle(on: boolean)   -> 返回当前 needleOn
+ *   setGround(on: boolean)   -> 返回当前 groundMode
+ *   setSitNorth(mode: 0|1|2 | false|true) -> 返回当前 sitMode
+ *       0/false = 关；1/true = 坐南朝北；2 = 坐北朝南（三态，别只存布尔） */
+function setNeedle(on) {
+  needleOn = !!on;
   applyNeedleVisibility();
   var b = document.getElementById("btn_needle");
   if (b) b.className = needleOn ? "active" : "";
+  return needleOn;
+}
+
+function toggleNeedle() {
+  return setNeedle(!needleOn);
 }
 
 function applySit() {
@@ -1736,22 +1754,31 @@ function applySit() {
   if (mode === "3d") updateHud(); else applyTransform();
 }
 
-function toggleSitNorth() {
-  if (sitMode === 0) { bearingBeforeSit = bearing; sitMode = 1; }
-  else if (sitMode === 1) { sitMode = 2; }
-  else { sitMode = 0; }
+function setSitNorth(mode) {
+  var target = 0;
+  if (mode === 2 || mode === "2") target = 2;
+  else if (mode === 1 || mode === true || mode === "1") target = 1;
+  /* 从「关」进入任一朝向时，先记住当前 bearing，退出时才能原样还原 */
+  if (target !== 0 && sitMode === 0) bearingBeforeSit = bearing;
+  sitMode = target;
   applySit();
+  return sitMode;
+}
+
+function toggleSitNorth() {
+  return setSitNorth(sitMode === 0 ? 1 : (sitMode === 1 ? 2 : 0));
 }
 
 function toggleContour() {
-  contourOn = !contourOn;
-  document.getElementById("btn_contour").className = contourOn ? "active" : "";
-  if (mode !== "3d" && contourOn) setMode("3d");   // 等高线依赖 DEM 网格，仅 3D 生效
+  return setContour(!contourOn);
 }
 
-function toggleGround() {
-  groundMode = !groundMode;
-  document.getElementById("btn_ground").className = groundMode ? "active" : "";
+function setGround(on) {
+  on = !!on;
+  if (groundMode === on) { updateHud(); return groundMode; }   /* 幂等：同值不重复压/抬机位 */
+  groundMode = on;
+  var btn = document.getElementById("btn_ground");
+  if (btn) btn.className = groundMode ? "active" : "";
   if (groundMode) {
     pitchBeforeGround = pitch;
     if (mode !== "3d") setMode("3d");
@@ -1760,6 +1787,11 @@ function toggleGround() {
     setPitch(pitchBeforeGround);
   }
   updateHud();
+  return groundMode;
+}
+
+function toggleGround() {
+  return setGround(!groundMode);
 }
 
 /* M6 第 6 条：「罗盘复位」的地图侧一半。
@@ -3147,6 +3179,7 @@ function runAT() {
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch", "resetCompass",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
     "getState", "getFps", "setUiMode", "lc_setUiMode", "getAttribution", "setRoadNet",
+    "setGround", "setSitNorth", "setNeedle",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",
     "lc_measure_start", "lc_measure_clear", "lc_measure_undo", "lc_measure_addCenter",

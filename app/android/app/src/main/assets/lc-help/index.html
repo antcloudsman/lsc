@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- GENERATED from docs/product/help-center.md @ 97d33a9ded8ca9e077de940844b363748153e57c - do not edit; 源文件是唯一真相，改这里会被 lint 拦住 -->
+<!-- GENERATED from docs/product/help-center.md @ f03bf086a51916f1b9e3ec05384fa5759066e936 - do not edit; 源文件是唯一真相，改这里会被 lint 拦住 -->
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -77,18 +77,20 @@
 <h3 id="sec-3-2">3.2 读数怎么看</h3>
 <ul>
 <li><b>向/坐</b>、<b>地盘 / 人盘 / 天盘</b>、<b>分金</b>、<b>72 龙 / 60 龙</b>、<b>卦</b>——同一朝向口径成套显示。 状态：<code>已验收</code></li>
-<li>智能读盘弹层里，<code>地盘正针二十四山</code>、<code>穿山七十二龙</code>、<code>百二十分金</code>、<code>透地平分六十龙</code>、<code>人盘中针</code>、<code>天盘缝针</code> 六项，点右侧「点击查看 ›」会<b>就地展开当前圈层的「向：… 坐：…」</b>；数值由本机按朝向计算，<b>不联网、不看账号</b>。 状态：<code>已验收</code></li>
+<li>智能读盘弹层里，<code>地盘正针二十四山</code>、<code>穿山七十二龙</code>、<code>百二十分金</code>、<code>透地平分六十龙</code>、<code>人盘中针</code>、<code>天盘缝针</code> 六项，<b>点该行任意位置</b>（不是只能点右侧文字）会<b>就地展开当前圈层的「向：… 坐：…」</b>；数值由本机按朝向计算，<b>不联网、不看账号</b>。 状态：<code>已验收</code></li>
 <li>另有「先天/后天卦位 + 洛书数」直接显示。 状态：<code>已验收</code></li>
 <li><b>与原版的差异（有意）</b>：原版这六项带付费门槛标记（钻石图标）；<b>本项目无门槛，不保留该标记</b>，明细直接可看。 状态：<code>有意差异</code></li>
 <li><b>缩放途径</b>：双指捏合、右列 <code>+</code>/<code>−</code>、罗盘工具条「缩放」。<b>双击没有缩放语义</b>（两次单点 = 落两个标记）。</li>
 </ul>
 <figure id="fig-08"><img src="fig-08.png" alt="fig-08"><figcaption>fig-08</figcaption></figure>
-<p>图 fig-08：罗盘态 · 打开后静置 · 向/坐与各圈层读数</p>
+<p>图 fig-08：罗盘态 · 智能读盘弹层（<b>未展开态</b>）· 顶部直显向/坐；点行任意位置展开态无法脚本注入，见正文说明</p>
 <figure id="fig-32"><img src="fig-32.png" alt="fig-32"><figcaption>fig-32</figcaption></figure>
-<p>图 fig-32：罗盘态 · 智能读盘弹层 · 六项「点击查看 ›」点开展开向/坐（<b>以删除付费门槛标记后的构建为准</b>）</p>
+<p>图 fig-32：罗盘态 · 智能读盘弹层 · 点该行任意位置就地展开「向：… 坐：…」（<b>以删门槛标记 + 整行可点之后的构建为准</b>）</p>
 <h3 id="sec-3-3">3.3 盘面切换</h3>
 <ul>
-<li>盘面列表四组：<b>自定义 / 常用 / 简易 / 综合</b>；<b>常用 5 项可用</b>，另两组为占位。 状态：<code>已验收（常用）</code>｜<code>待核对（其余组）</code></li>
+<li><b>盘面页两组</b>：<code>内置盘面(5)</code> 与 <code>已导入(0)</code>。内置 5 项为 <code>二十四山(阴)</code>、<code>常用罗盘(当前)</code>、<code>三合罗盘(白)</code>、<code>三元罗盘(金)</code>、<code>综合罗盘(白)</code>；<code>已导入</code> 为空时显示「暂无导入盘面」。 状态：<code>已验收</code></li>
+<li>页面还有「导入盘面」入口。 状态：<code>待核对</code>（导入流程未复验）</li>
+<li>入口：罗盘态底部<b>工具条第一项「切换」</b>。 状态：<code>已验收</code></li>
 <li>设置里「恢复默认」可把盘面栅格与配色恢复。 状态：<code>已验收</code></li>
 </ul>
 <figure id="fig-09"><img src="fig-09.png" alt="fig-09"><figcaption>fig-09</figcaption></figure>
@@ -128,11 +130,8 @@
 <p>图 fig-12：罗盘态右列 · 无需操作 · 地图/实景/坐南朝北/指针开关</p>
 <h3 id="sec-3-7">3.7 校准与精度</h3>
 <ul>
-<li>手机罗盘受磁干扰，<b>建议「8 字晃动」校准</b>；读数旁显示精度提示。 状态：<code>待核对</code>（以实现为准，图与文案须与该页一致）</li>
+<li><b>本版没有校准入口，也没有精度提示界面</b>：罗盘态左列 6 项、右列 4 项、工具条 5 项里都没有校准/精度项（审核验 2026-11-08 全项核过）⇒ 原计划的那张精度提示图<b>按「缺图删条」删除</b>，不造图。 状态：<code>未实现</code>（见 §13）</li>
 </ul>
-<figure id="fig-13"><img src="fig-13.png" alt="fig-13"><figcaption>fig-13</figcaption></figure>
-<p>图 fig-13：罗盘态 · 触发精度提示 · 精度或校准入口</p>
-<p>若当前构建无此界面，删本图与本小节，不造图。</p>
 <hr>
 <h2 id="sec-4">4. 左列 8 个工具</h2>
 <p><code>全地图工具</code> / <code>截屏</code> / <code>超清优化</code> / <code>海拔查询</code> / <code>罗盘</code> / <code>路网</code> / <code>等高线</code> / <code>更多</code></p>
@@ -240,8 +239,7 @@
 <tr><td>登出</td><td>账户设置底部红按钮「退出登录」</td><td><code>已验收</code></td></tr>
 <tr><td>账户设置</td><td>抽屉入口</td><td><code>已验收</code></td></tr>
 </tbody></table></div>
-<figure id="fig-25"><img src="fig-25.png" alt="fig-25"><figcaption>fig-25</figcaption></figure>
-<p>图 fig-25：抽屉「账户」 · 进入登录页 · 账号+密码（密码已遮挡）</p>
+<p>（登录页图已按「缺图删条」删除：<code>LoginActivity</code> 不可外部直达，采集需先登出且无凭据可复登，不为一张图牺牲已测会话。）</p>
 <figure id="fig-26"><img src="fig-26.png" alt="fig-26"><figcaption>fig-26</figcaption></figure>
 <p>图 fig-26：抽屉「账户设置」 · 进入 · 行列表 + 贴底红按钮</p>
 <hr>
@@ -288,7 +286,8 @@
 <tr><td>8</td><td>收藏点删除入口形态</td><td><b>我方形态</b></td><td>原版是「编辑」按钮，我方是长按删除；功能等价、形态不同</td></tr>
 <tr><td>9</td><td>审图号角注</td><td><b>待核对</b></td><td>本项目数据源与审图号另核，文档不写真值</td></tr>
 <tr><td>10</td><td>智能读盘的付费门槛标记</td><td><b>已处置（DI）</b></td><td><b>原版此处为 VIP 门槛，我方无 VIP 体系，故不设门槛</b>（DI，不判 1:1 差异）。六项明细本来就有（<code>CompassReadSheet</code> 本地算「向/坐」，不联网、不看账号）⇒ <b>删该标记、保留「点击查看 ›」就地展开</b>；客户端删钻石的代码笔待落，文档按目标态写</td></tr>
-<tr><td>11</td><td><b>双击缩放</b></td><td><b>未实现</b></td><td><code>map.html</code> 无 <code>dblclick</code>/<code>lastTap</code>/<code>tapTimer</code>，Java 无 <code>GestureDetector</code>/<code>onDoubleTap</code>（审核验 2026-11-08 代码+实测双证）⇒ <b>本版没有双击缩放</b>，双击只是两次单点落点。现有缩放途径：双指捏合 / 右列 <code>+</code>·<code>−</code> / 罗盘工具条「缩放」</td></tr>
+<tr><td>11</td><td>罗盘<b>校准/精度提示</b></td><td><b>未实现</b></td><td>罗盘态左列 6 / 右列 4 / 工具条 5 里都没有校准与精度入口（审核验 2026-11-08 全项核过）⇒ 文档不写校准步骤，图已按缺图删条处理</td></tr>
+<tr><td>12</td><td><b>双击缩放</b></td><td><b>未实现</b></td><td><code>map.html</code> 无 <code>dblclick</code>/<code>lastTap</code>/<code>tapTimer</code>，Java 无 <code>GestureDetector</code>/<code>onDoubleTap</code>（审核验 2026-11-08 代码+实测双证）⇒ <b>本版没有双击缩放</b>，双击只是两次单点落点。现有缩放途径：双指捏合 / 右列 <code>+</code>·<code>−</code> / 罗盘工具条「缩放」</td></tr>
 </tbody></table></div>
 <hr>
 </body>

@@ -393,6 +393,42 @@ radius = Math.floor(window.screen.width / pixelsPerMeter);   // 用 screen.width
 ⇒ **@LC审核验：Q1 不能拿 921 去判 pitch>0 的贴地截图**；pitch>0 时应改为判「盘面中心 = 屏幕中心（或按 quad 中心偏移）」+ 「盘面随 bearing 的转角」（§6.3 那张表），尺寸判据只在 pitch=0 档使用。
 ⇒ @LC地图 你算出的「画满纹理时投影 525 CSS = 1774 device px」是**盘面占满画布**的必然结果（1.93×）；改按 0.375 后 pitch=0 给出 921、pitch=30 给出约 665，两者都对。
 
+## 6.7 贴地层与浮层盘面是**互斥**的（原版出处，解决「两层盘面」）
+
+逐字（`index.946c1624e0.bundle.js` @41924，贴地层类的 `update`）：
+
+```js
+p(this, "update", () => {
+    if (this.isLock) return;
+    let e = this.map.getCenter().lat,
+        t = this.map.getZoom(),
+        r = 75 > Math.abs(e) && t >= 6 && this._isGround;   // 贴地层是否可见
+    this.setVisible(r);                              // 贴地层显隐
+    this.compassUI.setCompassVisible({ value: !r });  // ← 浮层盘面：与贴地层【取反】
+});
+```
+
+⇒ **原版在「贴地层可见」时，把浮层盘面隐藏**（`value: !r`）。**两者互斥，不是叠加。**
+⇒ 而且**互斥与显示用的是同一个门控** `r = |lat| < 75 && zoom ≥ 6 && _isGround`——一个条件同时决定「贴地层亮」和「浮层灭」。
+
+### 6.7.1 `setCompassVisible` 只隐藏**盘面图**，不隐藏十字线与指针
+
+```js
+p(this, "setCompassVisible", ({value: e}) => {
+    this.compassImg && (this.compassImg.style.display = e ? "block" : "none");
+});
+```
+
+⇒ 它只改 `compassImg`（盘面位图）的 `display`。**十字线（`compassLine`）与竖向指针（`pointer` img）都不受它控制**——
+- 十字线：viewport 层，贴地态**仍显示**；
+- 指针：`pointer` 独立 img，`pitchAlignment: "map"`（躺在地面上），贴地态**仍显示**，由 `setPointerVisible` 单独控制。
+
+### 6.7.2 对我方 B1 的措辞修正（更准，不是「未取证」）
+
+我方曾以「做不到倾斜」为由选择**贴地态隐藏指针**（B1，总监已批）。但按本节证据：**原版贴地态指针是显示的，并随地面倾斜**。
+⇒ 台账应写：「**原版贴地时指针仍显示且随地面倾斜（`pitchAlignment:"map"`）；我方因原生 ImageView 无法倾斜，选择隐藏——属实现限制下的差异，非原版行为**」。
+⇒ 这比原先「原版贴地时指针形态未取证」更准确——**原版怎么做的已经取证了**，未取证的是它的具体倾斜视觉效果（无 L1 截图）。
+
 # 七、检索复现命令（审核验可直接照跑）
 
 ## 3.1 代码检索

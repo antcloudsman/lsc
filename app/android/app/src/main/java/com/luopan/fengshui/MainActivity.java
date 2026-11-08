@@ -1380,6 +1380,61 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }, 300);
     }
 
+    /**
+     * 页面状态是权威，Java 镜像只是缓存：**缓存只能被回读刷新，不能被单向写入撒谎**。
+     *
+     * M6 Stage 6 实测到的两例（都是「重放把过期镜像复活」）：
+     *   ① 点「罗盘复位」→ 页面 `sitMode` 2→0，Java `sitMode` 仍是 2 → 重载后 `setSitNorth(2)` 把坐北朝南又打开；
+     *   ② 点「指北针」→ 页面 `needleOn` 置 false，Java `pointerOn` 仍是 true → 重载后 `setNeedle(true)` 把指针又打开。
+     *
+     * 所以凡是由页面改变状态的控件，点完都必须回读一次——调用点集中在 `onToolClick()` 末尾一处，
+     * 而不是散在各 case 里：新加一个控件自动被覆盖，不依赖人记。
+     *
+     * 不能改成「重放前先回读」：map.html **没有任何持久化**（localStorage 命中 0），
+     * 重载后一律回默认值（`base="ter"` / `needleOn=true` / `sitMode=0` / `contourOn=false` / `groundMode=false`）。
+     * 重放前回读等于每次重载都把实景退回地形、把等高线和贴地关掉，把刚验过的四条表现面全部推翻。
+     */
+    private void syncMirrorsFromPage(int delayMs) {
+        if (compassMapView == null) return;
+        compassMapView.postDelayed(() -> {
+            try {
+                compassMapView.evaluateJavascript(
+                        "(function(){if(typeof getState!=='function')return '';var s=getState();"
+                        + "return [s.mode,s.sitMode,(s.needle?1:0),(s.contour?1:0),(s.ground?1:0),"
+                        + "(s.ridge?1:0),s.base].join('|');})()",
+                        value -> {
+                            if (value == null || value.length() < 2) return;
+                            String rawValue = value;
+                            if (rawValue.length() >= 2 && rawValue.startsWith("\"") && rawValue.endsWith("\"")) {
+                                rawValue = rawValue.substring(1, rawValue.length() - 1);
+                            }
+                            String[] p = rawValue.split("\\|", -1);
+                            if (p.length < 7) return;
+                            int sit = 0;
+                            try {
+                                sit = Math.max(0, Math.min(2, Integer.parseInt(p[1].trim())));
+                            } catch (Throwable ignored) {
+                            }
+                            sitMode = sit;
+                            southNorthOn = sit != 0;
+                            pointerOn = "1".equals(p[2].trim());
+                            contourOn = "1".equals(p[3].trim());
+                            groundOn = "1".equals(p[4].trim());
+                            ridgeOn = "1".equals(p[5].trim());
+                            if (!p[6].isEmpty() && !"null".equals(p[6].trim())) baseMode = p[6].trim();
+                            boolean now3d = "3d".equals(p[0].trim());
+                            is3D = now3d;
+                            sIs3D = now3d;
+                            android.util.Log.d("LCMIRROR", "sync mode=" + p[0] + " sit=" + sit
+                                    + " needle=" + pointerOn + " contour=" + contourOn
+                                    + " ground=" + groundOn + " ridge=" + ridgeOn + " base=" + baseMode);
+                        });
+            } catch (Throwable t) {
+                android.util.Log.w("LCMIRROR", "sync failed: " + t.getClass().getSimpleName());
+            }
+        }, delayMs);
+    }
+
     private void sync3DStateFromPage() {
         if (compassMapView == null) return;
         compassMapView.postDelayed(() -> {
@@ -1690,6 +1745,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 break;
             default: toast(label + "：原版为工具子页，本步未实现");
         }
+        // 镜像刷新点：唯一一处。贴地/3D/复位要等 DEM、贴面瓦片与 setMode，给长一点的延迟。
+        syncMirrorsFromPage(("贴地".equals(label) || "3D".equals(label) || "罗盘复位".equals(label)) ? 900 : 500);
     }
 
     /** K-01：罗盘＝同一页面的浮层，切的是「表现」不是页面。 */

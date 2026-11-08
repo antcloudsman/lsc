@@ -79,7 +79,7 @@ def comps(m):
 
 > 判读要点：**先看域数，再看 bbox**。域数不对（1 个 vs 2 个）说明容差/掩膜有问题，此时比 bbox 没有意义。
 
-## M5 出处
+## M5 出处（尺寸/颜色口径）
 
 | 结论 | 出处 |
 |---|---|
@@ -88,8 +88,48 @@ def comps(m):
 | 我方修复后两域/44×22/间隙 4 px | `a85dd72`，证据 `reports/M7-pointer-fix/fix-03.png` |
 | `tol=0` 漏三角 | LC审核验 2026-11-08 提醒（已进判据） |
 
+## M6 APK 体积必须由「删除旧产物后的重建」测得
+
+**事故**（2026-11-08，几乎误判 C 轮门禁）：
+
+```
+app-debug.apk 33,980 KB：中央目录 556 条、压缩合计 13.1 MB、文件却 33.2 MB
+local header 892 个 vs 中央目录 556 条 → 336 条孤儿数据 ≈ 21.6 MB
+删掉 app-debug.apk 重建：13,790,086 B（13.15 MB），556 条目，压缩合计 13.06 MB ✅
+```
+
+**渐进构建不会截断旧产物**：新内容写进去了，旧字节留在文件里。此时看到的体积是「新 + 旧」的混合体，
+拿它去判「压缩没达标」就会白改一轮（真值 13.2MB 本来就 PASS）。
+
+**判据（可执行，不靠肉眼）**：
+
+```
+文件大小 ≈ 本地头(30B × 条数) + 压缩合计 + 中央目录 + EOCD
+① local header 数 == 中央目录条目数
+② 未归属字节（文件大小 − 上式合计）≤ 1 MB
+两条任一不满足 = 读到脏产物，体积数字作废
+```
+
+工具：`tools/device/apk-integrity.py`（新增）
+
+```bash
+python tools/device/apk-integrity.py app/android/app/build/outputs/apk/debug/app-debug.apk
+# 干净：size 13790086 B、central 556 / eocd 556 / local 556、orphan 0.03MB → VERDICT: CLEAN (exit 0)
+# 脏：  local 557 vs central 556 → FAIL orphan local headers: 1 → VERDICT: DIRTY (exit 1)
+```
+
+**操作口径**：量包体前 `rm -f app-debug.apk`（或 `./gradlew clean assembleDebug`）；`SMOKE` 报的体积在判门禁前先过一遍本工具。
+
+## M6.1 反证样例（证明门禁不是空转）
+
+| 用例 | 构造 | 结果 |
+|---|---|---|
+| 干净包 | `develop-int` 重建的 `app-debug.apk` | `CLEAN`，556/556/556，orphan 0.03 MB |
+| 注入残留头 | 在数据区中部写入 `PK\x03\x04` | `FAIL orphan local headers: 1 (local 557 vs central 556)`，exit=1 |
+
 ## 变更记录
 
 | 日期 | 变更 |
 |---|---|
 | 2026-11-08 | 建 M1–M5：并集 bbox 两次事故、描边内外影响判据、容差不得为 0、可复跑连通域代码 |
+| 2026-11-08 | 增 M6/M6.1：APK 体积须删旧产物后重建测得；`apk-integrity.py` 两例反证（干净 556/556/556、注入残留头 557 vs 556 FAIL） |

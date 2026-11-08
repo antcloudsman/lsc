@@ -327,9 +327,11 @@ public class WaterActivity extends LcFeatureActivity {
                 StringBuilder sb = new StringBuilder();
                 String addr = o.optString("address", "");
                 if (!addr.isEmpty()) sb.append(addr).append("\n");
-                if (o.has("elev") && !o.isNull("elev")) {
+                // M-06：「键存在」≠「值可解析」。原来 has+isNull 只证明键在，optDouble(...,0) 又把解析
+                // 失败变成 0，屏幕上是「0 m」，与海平面 0 米不可区分。改成先解析、判 NaN。
+                if (!Double.isNaN(o.optDouble("elev", Double.NaN))) {
                     sb.append(getString(R.string.lc_water_elev,
-                            String.valueOf(Math.round(o.optDouble("elev", 0)))));
+                            String.valueOf(Math.round(o.optDouble("elev", Double.NaN)))));
                 } else {
                     sb.append(getString(R.string.lc_water_elev_unknown));
                 }

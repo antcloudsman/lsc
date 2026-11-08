@@ -42,7 +42,6 @@ public class CompassView extends View {
     private boolean followSensor = true;
     private boolean trustEnabled = false;
     /** K-01：罗盘浮层自己的北针开关（地图层 #needle 不归这里管）。 */
-    private boolean showPointer = true;
     /** F-17（LC 自建，非 1:1）：底盘位图 alpha 0..1；只作用于 artwork，不影响读数/指针层。 */
     private float dialAlpha = 1f;
     /** F-17（LC 自建，非 1:1）：天干地支辅助线开关，默认关。 */
@@ -79,15 +78,6 @@ public class CompassView extends View {
         return followSensor;
     }
 
-    /** 罗盘模式「指针开关」：只影响浮层自绘北针，不触发 followSensor 变化。 */
-    public void setShowPointer(boolean on) {
-        this.showPointer = on;
-        invalidate();
-    }
-
-    public boolean isShowPointer() {
-        return showPointer;
-    }
     /** P0-2: full artwork dial (null = vector mode). */
     private android.graphics.Bitmap artwork;
 
@@ -434,7 +424,7 @@ public class CompassView extends View {
         // 本类**不再画这两样**——原来的 argb(120/80,180,50,50)+1px 只覆盖圆径 906px，
         // 「画了但看不见」的直接原因；顶部那颗 20×16 三角按原版更正为「移到中心 8px」，
         // 由 `MainActivity` 把「指针开关」同步给 crosshairView，避免两层各画一个。
-        // （`showPointer` 字段保留：它是 K-01 / P1-33-C 的状态位，只是不再由本类绘制三角。）
+        // L3：本类不再持有指针开关状态（与 MainActivity.pointerOn 重复的那份副本已删）。
 
         // Center readout.
         CompassData.Reading rd = CompassData.read(heading);

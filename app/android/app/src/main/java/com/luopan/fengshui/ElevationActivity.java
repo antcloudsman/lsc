@@ -184,8 +184,9 @@ public class ElevationActivity extends LcFeatureActivity {
             if (!"elev".equals(o.optString("type", ""))) return;
             double lat = o.optDouble("lat", 0);
             double lng = o.optDouble("lng", 0);
-            boolean hasElev = o.has("elev") && !o.isNull("elev");
-            double elev = hasElev ? o.optDouble("elev", 0) : 0;
+            // M-06：has+isNull 只证明键在；值能不能解析要看 optDouble 的结果（NaN = 未知）
+        boolean hasElev = !Double.isNaN(o.optDouble("elev", Double.NaN));
+            double elev = hasElev ? o.optDouble("elev", Double.NaN) : 0;
 
             emptyView.setText(R.string.lc_elev_panel);
             latView.setText(getString(R.string.lc_elev_lat,

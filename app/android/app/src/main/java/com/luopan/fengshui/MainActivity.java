@@ -68,7 +68,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final float[] orientation = new float[3];
     private long lastRingLog = 0L;
     /** D-005: single 3D pick marker (overwritten on every pick, cleared by pick-clear). */
-    private MapMarker mapMarker;
     /** R2-004: POI 详情面板（挂在立向点上，固定高 443px）。 */
     private LinearLayout poiPanel;
     private MapMarker poiMarker;
@@ -423,7 +422,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             line = line.replace("\\\"", "\"").replace("\\\\", "\\");
                             if (line.startsWith("{") && line.endsWith("}")) {
                                 // is3D 取原生镜像：它与网页 mode 不一致时，正是「镜像漂移」的证据
-                                line = line.substring(0, line.length() - 1) + ",\"is3D\":" + is3D + "}";
+                                line = line.substring(0, line.length() - 1)
+                                        + ",\"is3D\":" + is3D + ",\"jsFail\":" + jsFailCount + "}";
                             }
                             android.util.Log.d("LCDEBUG", "state " + line);
                         });
@@ -1011,7 +1011,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (pointerView == null) return;
         boolean visible = compassMode && !compassHidden
                 && compassMapMode != MAP_MODE_MAP
-                && (compassView == null || compassView.isShowPointer());
+                && pointerOn;   // L3：单真源——指针开关只有 pointerOn，CompassView 不再留副本
         pointerView.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
@@ -1369,8 +1369,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         toast("路网：" + (roadNetOn ? "开" : "关"));
     }
 
-    private void js(String code) {        if (compassMapView == null) return;
-        compassMapView.evaluateJavascript("try{" + code + "}catch(e){}", null);
+    /** M-04：js() 失败计数，经 `cmd state` 的 jsFail 字段暴露（供构造失败验证）。 */
+    private int jsFailCount = 0;
+
+    /**
+     * 桥接调用（M-04）：**失败必须有信号，但不改控制流**。
+     *
+     * 原来写成 `try{code}catch(e){}` + `null` 回调 —— 页面里函数改名、抛异常、页面还没加载完，
+     * Java 侧三种情况完全一样，排障只能靠猜。现在：
+     *   - JS 端把返回值规整成 `'ok'` 或 `'err:'+e`；
+     *   - Java 端在回调里判断，失败落 `LCDEBUG: js fail#N code=… -> …` 并累加 jsFailCount；
+     *   - 不抛、不打断调用点（沿用「无桥不崩」的语义）。
+     */
+    private void js(String code) {
+        if (compassMapView == null) {
+            jsFailCount++;
+            android.util.Log.d("LCDEBUG", "js fail#" + jsFailCount + " no-webview code=" + code);
+            return;
+        }
+        compassMapView.evaluateJavascript(
+                "(function(){try{" + code + ";return 'ok';}catch(e){return 'err:'+e;}})()",
+                v -> {
+                    String s = v == null ? "null" : v.replace("\"", "");
+                    if (s.startsWith("err:") || "null".equals(s) || s.isEmpty()) {
+                        jsFailCount++;
+                        android.util.Log.d("LCDEBUG",
+                                "js fail#" + jsFailCount + " code=" + code + " -> " + s);
+                    }
+                });
     }
 
     /**
@@ -1898,8 +1924,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "指针开关":
                 // 两针分离（map-bridge §10.3）：地图模式管 #needle；罗盘模式管浮层自绘北针。
                 if (compassMode) {
-                    boolean on = compassView != null && !compassView.isShowPointer();
-                    if (compassView != null) compassView.setShowPointer(on);
+                    // L3：删掉 CompassView 那份副本，开关只翻 pointerOn 一个真源
+                    boolean on = !pointerOn;
+                    pointerOn = on;
                     // 指针图显隐统一由 refreshPointerVisibility() 判定（含地图/实景门控与隐藏态）
                     refreshPointerVisibility();
                     toast(on ? "罗盘北针：开" : "罗盘北针：关");
@@ -2110,12 +2137,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         android.util.Log.d("LCCOMPASS", "hidden=" + compassHidden);
     }
 
-    private void setCompassHidden(boolean hidden) {
-        compassHidden = hidden;
-        if (hideButton != null) hideButton.setText(hidden ? "显示" : "隐藏");
-        applyCompassHiddenVisuals();
-    }
-
     /** 隐藏态：盘面/指针/左右工具列/底栏全部消失；读数条与坐标由 readingView 常驻保留。 */
     private void applyCompassHiddenVisuals() {
         boolean showCompass = compassMode && !compassHidden;
@@ -2289,14 +2310,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         drawerPanel.setVisibility(View.VISIBLE);
         drawerPanel.bringToFront();
         android.util.Log.d("LCDRAWER", "open w=" + drawerPanel.getWidth());
-    }
-
-    /** R2-018：推荐给好友 = 系统分享面板（真实动作，不造内容）。 */
-    private void shareApp() {
-        android.content.Intent send = new android.content.Intent(android.content.Intent.ACTION_SEND);
-        send.setType("text/plain");
-        send.putExtra(android.content.Intent.EXTRA_TEXT, "三维山水全景地图（LC）");
-        startActivity(android.content.Intent.createChooser(send, "推荐给好友"));
     }
 
     private void hideDrawer() {
@@ -2723,6 +2736,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void hidePoiPanel() {
         if (poiPanel != null) poiPanel.setVisibility(View.GONE);
+        // L4：选中点只有 poiMarker 一个真源；隐藏面板即清空，不再留另一份 mapMarker
+        poiMarker = null;
     }
 
     /**
@@ -3046,7 +3061,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         clear.setOnClickListener(v -> {
             js("clearMarkers()");
             hidePoiPanel();
-            mapMarker = null;
             poiMarker = null;
         });
         head.addView(clear);
@@ -3600,18 +3614,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 + " cell=" + 296 + "x" + 231);
     }
 
-    /** 知识＝弹层（原版是点圈层文字直达，不做 Tab）。 */
-    /** 知识条目（标题 + 正文）：知识弹层与顶部栏「搜索」共用同一份数据。 */
-    private java.util.List<String[]> knowledgeEntries() {
-        java.util.List<String[]> rows = new java.util.ArrayList<>();
-        rows.add(new String[]{"盘面（5 种，全部免费）", String.join("\n", CompassData.COMPASS_TYPES)});
-        rows.add(new String[]{"圈层（14 种读数）", String.join("\n", CompassData.READ_TYPES)});
-        for (int i = 0; i < CompassData.KNOWLEDGE_TITLES.length; i++) {
-            rows.add(new String[]{CompassData.KNOWLEDGE_TITLES[i], CompassData.KNOWLEDGE_BODIES[i]});
-        }
-        return rows;
-    }
-
     /**
      * 顶部栏「搜索」（K-02）。
      *
@@ -3972,21 +3974,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 .putString(KEY_HISTORY, String.join("\n", h)).apply();
     }
 
-    /** WGS84 → GCJ02（公开偏移算法，中国境内加偏）。 */
-    private static double[] wgs2gcj(double lat, double lng) {
-        double a = 6378245.0, ee = 0.00669342162296594323;
-        if (lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271) return new double[]{lat, lng};
-        double dLat = transformLat(lng - 105.0, lat - 35.0);
-        double dLng = transformLng(lng - 105.0, lat - 35.0);
-        double radLat = lat / 180.0 * Math.PI;
-        double magic = Math.sin(radLat);
-        magic = 1 - ee * magic * magic;
-        double sqrtMagic = Math.sqrt(magic);
-        dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * Math.PI);
-        dLng = (dLng * 180.0) / (a / sqrtMagic * Math.cos(radLat) * Math.PI);
-        return new double[]{lat + dLat, lng + dLng};
-    }
-
     private static double transformLat(double x, double y) {
         double ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
         ret += (20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0 / 3.0;
@@ -4003,13 +3990,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return ret;
     }
 
-    /** GCJ02 → BD09。 */
-    private static double[] gcj2bd(double lat, double lng) {
-        double x = lng, y = lat;
-        double z = Math.sqrt(x * x + y * y) + 0.00002 * Math.sin(y * Math.PI);
-        double theta = Math.atan2(y, x) + 0.000003 * Math.cos(x * Math.PI);
-        return new double[]{z * Math.sin(theta) + 0.006, z * Math.cos(theta) + 0.0065};
-    }
     /**
      * R2-024：知识库 = **14 篇原版 HTML**（`assets/compass-introduce/*.html`，来自原版 APK
      * `assets/compassIntroduce/`，A-02 入库 14 篇，逐篇 sha256 见 docs/fidelity/assets/INDEX.md）。
@@ -4103,13 +4083,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             if ("pick".equals(type) || "marker".equals(type)) {
                 // R2-004：3D pick 与 2D 点图都保留立向点，并把 POI 面板挂上去。
-                mapMarker = marker;
                 // 海拔模式下的点图/3D 点选一律走海拔浮层（不弹 POI 面板）。
                 runOnUiThread(() -> {
                     if (elevationMode) showElevationPanel(marker); else showPoiPanel(marker);
                 });
             } else {
-                mapMarker = null;
                 runOnUiThread(this::hidePoiPanel);
             }
         });
@@ -4491,10 +4469,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             compassMapView.evaluateJavascript("setHeading(" + r.heading + ")", null);
             compassMapView.evaluateJavascript("setSitFace('" + face + "','" + sit + "')", null);
         }
-    }
-
-    private static String clean(String s) {
-        return s == null ? "" : s.replace("\u200c", "");
     }
 
     private boolean isDebuggable() {

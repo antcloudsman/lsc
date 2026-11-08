@@ -4019,7 +4019,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // R2-027/R2-032：web→native UI 事件（attribution / src-panel），契约由总监 2026-11-07 定
         bridge.setUiListener((type, payload) -> runOnUiThread(() -> onMapUiEvent(type, payload)));
         webView.addJavascriptInterface(bridge, "LCAndroid");
+        // 原版做法：assets 走 https 虚拟域（WebViewAssetLoader），不是 file://。
+        // 回滚：把 MapAsset.USE_ASSET_LOADER 改 false 即回到 file://。
+        final androidx.webkit.WebViewAssetLoader assetLoader = MapAsset.USE_ASSET_LOADER
+                ? new androidx.webkit.WebViewAssetLoader.Builder()
+                        .addPathHandler("/assets/",
+                                new androidx.webkit.WebViewAssetLoader.AssetsPathHandler(this))
+                        .build()
+                : null;
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public android.webkit.WebResourceResponse shouldInterceptRequest(
+                    WebView view, android.webkit.WebResourceRequest request) {
+                if (assetLoader != null && request != null) {
+                    android.webkit.WebResourceResponse r =
+                            assetLoader.shouldInterceptRequest(request.getUrl());
+                    if (r != null) return r;   // 只拦 /assets/ 虚拟域，其余（天地图瓦片）返回 null 走网络
+                }
+                return null;
+            }
+
             @Override
             public void onPageFinished(WebView view, String url) {
                 // A10：页面重载（location.reload()）会把 JS 侧 uiMode 复位成默认值，而原生浮层仍在。

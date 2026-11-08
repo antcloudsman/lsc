@@ -19,11 +19,29 @@ import android.net.Uri;
  */
 final class MapAsset {
 
-    private static final String BASE = "file:///android_asset/map.html";
+    /**
+     * 回滚开关：true = 走原版那条路（https 虚拟域 + WebViewAssetLoader），
+     * false = 旧的 file:///android_asset。
+     *
+     * 为什么换：原版用 WebViewAssetLoader 把 assets 挂在
+     * `https://appassets.androidplatform.net/assets/` 下（逆向 M7 `783c806`：
+     * `MapWebView.smali:181-233` 三个 handler + 页址常量），而 `file://` 下
+     * `fetch` 被拒、图片进 canvas 会污染（`texImage2D` 抛 SecurityError）。
+     * 换域后两者同时消失，且这是回到原版做法，不是绕行。
+     */
+    static final boolean USE_ASSET_LOADER = true;
+
+    private static final String BASE_FILE = "file:///android_asset/map.html";
+    private static final String BASE_ASSET =
+            "https://appassets.androidplatform.net/assets/map.html";
+
+    private static String base() {
+        return USE_ASSET_LOADER ? BASE_ASSET : BASE_FILE;
+    }
 
     /** @param hash 形如 `#in3d&uimode=map&lat=..&lng=..`；null/空则不带 hash */
     static String url(String hash) {
-        StringBuilder sb = new StringBuilder(BASE);
+        StringBuilder sb = new StringBuilder(base());
         String tk = BuildConfig.TDT_WEB_KEY;
         if (tk != null && !tk.isEmpty()) sb.append("?tk=").append(Uri.encode(tk));
         if (hash != null && !hash.isEmpty()) {

@@ -328,6 +328,71 @@ if (this.compassUI.compassImg && r) { …绘制… }
 ⇒ **盘面只在「|纬度| < 75° 且 zoom ≥ 6 且 ground 开启」时才画**。超范围时 `if` 不成立，**canvas 不重绘**（保留上一帧内容或空白）。
 ⇒ 这是可判的边界行为：把地图移到纬度 76° 或 zoom 降到 5，原版**不再绘制贴地盘面**。建议进 @LC审核验 的判据（边界态）。
 
+## 6.5 三个尺寸的确切出处（回答 @LC地图：`u` **不是画布**）
+
+逐字（`index.946c1624e0.bundle.js`）：
+
+```js
+// @39353 —— 模块级常量
+let c = window.screen.width / 2 * 1.5,   // c = 0.75 × 屏宽  → 盘面 CSS 尺寸
+    u = 1.2 * window.screen.width;       // u = 1.2 × 屏宽   → 盘面在 scale=100 时的上限【不是画布】
+
+// @51779 createCompass
+t.style.width = `${c}px`;                // 盘面 DOM 宽 = c（默认 273 CSS）
+
+// @49552 getCompassParams
+size = (u - c) * this._compassScale / 100 + c;   // 盘面绘制尺寸（CSS），scale 初值 1 → 274.6
+
+// @42203 —— 地面画布类构造
+let r = this.size = Math.floor(2 * window.screen.width),   // 画布 CSS = 2 × 屏宽 = 728
+    i = this.dpr  = Math.min(Math.floor(window.devicePixelRatio), 2);   // = 2
+o.width = r * i; o.height = r * i;       // backing 1456 × 1456
+o.style.width = `${r}px`;                // CSS 728
+
+// @41208 updateCompass —— 盘面在画布里居中、按 size 绘制
+let a = (i - e) / 2, n = (o - e) / 2;    // e = size
+this.ctx.drawImage(compassImg, a, n, e, e);
+
+// @41208 getCoordinates —— 地面足迹半径
+radius = Math.floor(window.screen.width / pixelsPerMeter);   // 用 screen.width，不是 c
+```
+
+### 三个数各是什么（**别混用**）
+
+| 符号 | 表达式 | 本机值（CSS） | 是什么 |
+| --- | --- | --- | --- |
+| `c` | `screen.width/2*1.5` | **273** | **盘面**默认尺寸 |
+| `u` | `1.2 × screen.width` | **436.8** | **盘面**在 scale=100 时的上限（**不是画布**） |
+| `size` | `(u−c)·scale/100 + c` | 274.6（scale=1） | **盘面**在纹理里的绘制尺寸 |
+| 画布 | `2 × screen.width` | **728** | canvas CSS 尺寸（backing 1456） |
+| `toBounds` 半径 | `screen.width / pixelsPerMeter` | 364 CSS 当量 | 地面足迹**半**边长 ⇒ 边长 728 = **画布** |
+
+⇒ **盘面 / 画布 = 273 / 728 = 0.375**（backing：546 / 1456）。
+⇒ `toBounds` 的半径对应的是**画布**（728），**与盘面尺寸无关**——这条最容易被误当成“半径按盘面算”。
+
+### 6.5.1 给 @LC地图 的结论：画布 728 是对的，**要改的是盘面占画布的比例**
+
+| 项 | 你现状 | 应为 |
+| --- | --- | --- |
+| 画布 | 728 CSS（=2×屏宽） | **不变，正确** |
+| 盘面绘制尺寸 | `drawCompass(ctx, sz.px)` = **画满整张纹理**（1456 backing） | **`drawCompass(ctx, 546)` 居中**（= 0.375×1456） |
+| `toBounds` 半径 | —— | 仍用 `screen.width / pixelsPerMeter`（对应 728 画布） |
+
+自洽验算：`0.375 × 728 CSS = 273 CSS` ⇒ 屏幕 273×3.375 = **921 设备 px** ✓（正是盘径目标）。
+**而且这个 921 只在 pitch = 0 时成立**——贴地平面在 pitch>0 会被透视压缩，屏幕上会变小，**不能拿 921 去判 pitch>0 的贴地截图**（见 §6.6）。
+
+## 6.6 Q1「盘径」判据的适用边界（重要，避免误判）
+
+`盘径 = 0.75 × 屏宽` 这条**只对两张图成立**：
+
+| 场景 | 屏上盘径 | 说明 |
+| --- | --- | --- |
+| 原生盘面（不贴地）/ 贴地且 **pitch = 0** | **921 设备 px**（0.75×1228） | 1:1 投影，纹理与屏幕同尺度 |
+| **贴地且 pitch > 0** | **小于 921**，随 pitch 增大而压缩 | 地面平面透视压缩，是「贴地」的应有表现 |
+
+⇒ **@LC审核验：Q1 不能拿 921 去判 pitch>0 的贴地截图**；pitch>0 时应改为判「盘面中心 = 屏幕中心（或按 quad 中心偏移）」+ 「盘面随 bearing 的转角」（§6.3 那张表），尺寸判据只在 pitch=0 档使用。
+⇒ @LC地图 你算出的「画满纹理时投影 525 CSS = 1774 device px」是**盘面占满画布**的必然结果（1.93×）；改按 0.375 后 pitch=0 给出 921、pitch=30 给出约 665，两者都对。
+
 # 七、检索复现命令（审核验可直接照跑）
 
 ## 3.1 代码检索

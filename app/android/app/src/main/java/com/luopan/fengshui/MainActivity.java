@@ -621,14 +621,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         centerSymbolView.setVisibility(View.VISIBLE);   // 主视图（地图态）默认显示
         frame.addView(centerSymbolView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-        // M7 第 3 条另一半：当前位置符号。原版取证 45×34/47×35 #0077FF + 白描边 + 圈外独立三角 14×8
-        // （连通域两块，三角在描边外侧）⇒ 不能画成水滴。位置随地图走，所以屏幕坐标由页面
-        // screenPointOf(lat,lng) 投影后回传，本层只负责摆位。
-        // 旋转已取证（逆向 a61da79）：三角指向 = +heading，顺时针、0 = 正上，与地图 bearing 无关。
-        locPointerView = new LocationPointerView(this);
-        locPointerView.setVisibility(View.GONE);
-        frame.addView(locPointerView, new FrameLayout.LayoutParams(
-                Math.round(68f / 3.375f * getResources().getDisplayMetrics().density),
+        // M7 第 3 条另一半：当前位置符号。原版取证 45×34/47×35 #0077FF + 白描边 + 圈外独立三角 14×8
+        // （连通域两块，三角在描边外侧）⇒ 不能画成水滴。位置随地图走，所以屏幕坐标由页面
+        // screenPointOf(lat,lng) 投影后回传，本层只负责摆位。
+        // 旋转已取证（逆向 a61da79）：三角指向 = +heading，顺时针、0 = 正上，与地图 bearing 无关。
+        locPointerView = new LocationPointerView(this);
+        locPointerView.setVisibility(View.GONE);
+        frame.addView(locPointerView, new FrameLayout.LayoutParams(
+                Math.round(68f / 3.375f * getResources().getDisplayMetrics().density),
                 Math.round(68f / 3.375f * getResources().getDisplayMetrics().density)));
         // K-01 z 序与触摸（验收 P-08 必读）：浮层之后又加了 读数/状态/左列/罗盘左列/右列/隐藏/底部条，
         // 它们都在浮层之上；其中工具列与「隐藏」是交互层，会正常吃掉落在按钮矩形内的触摸。

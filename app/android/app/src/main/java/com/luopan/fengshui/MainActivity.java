@@ -430,7 +430,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // --es on 0 恢复：按隐藏前的可见性原样还原，不猜状态。
                 boolean hide = !"0".equals(it.getStringExtra("on"));
                 boolean keepSymbol = "1".equals(it.getStringExtra("symbol"));
-                applyTestHideChrome(hide, !keepSymbol);
+                // 红十线默认显示：不传或传 1 都保持可见，只有显式 0 才隐。
+                boolean crosshairOn = !"0".equals(it.getStringExtra("crosshair"));
+                applyTestHideChrome(hide, !keepSymbol, !crosshairOn);
                 // 网页侧 chrome（#controls/#hint/#heading-label/#srcInfo/#hud）由 map.html 的
                 // setChromeVisible(on) 负责；不合并地图那笔时它是 undefined，守卫跳过即可。
                 if (compassMapView != null) {
@@ -1498,13 +1500,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * 屏心符号默认一起隐：它正好画在 (614,1350)，会让「从盘心向外取边」在第 57px 撞到蓝臂，
      * 把盘径量成 114。要保留就传 --es symbol 1。
      */
-    private void applyTestHideChrome(boolean hide, boolean hideSymbol) {
+    private void applyTestHideChrome(boolean hide, boolean hideSymbol, boolean hideCrosshair) {
         View[] chrome = {leftColumn, rightColumn, leftCompassColumn, rightCompassColumn,
                 compassToolBar, hideButton, topBackButton, topLayerButton, menuButton,
                 readingView, coordView, placeView, attrView};
+        // 先复原上一轮：重复调用时（例如先 crosshair=0 再 crosshair=1）
+        // 若直接 clear 列表，上一轮被隐的视图就再也回不来了——这类「回不去」的坑
+        // 在测试钩子里最贵，因为量出来的图会一直是错的。
+        restoreTestHidden();
         if (hide) {
-            testHiddenViews.clear();
-            testHiddenVis.clear();
             for (View v : chrome) {
                 if (v == null) continue;
                 testHiddenViews.add(v);
@@ -1516,14 +1520,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 testHiddenVis.add(centerSymbolView.getVisibility());
                 centerSymbolView.setVisibility(View.GONE);
             }
-        } else {
-            for (int i = 0; i < testHiddenViews.size(); i++) {
-                testHiddenViews.get(i).setVisibility(testHiddenVis.get(i));
+            // 红十线默认显示，只有显式 --es crosshair 0 才隐：6px 贯穿全屏，
+            // 任何穿过屏心的扫描线都会整行全红，Q1 取边必须绕开或临时隐掉它。
+            if (hideCrosshair && crosshairView != null) {
+                testHiddenViews.add(crosshairView);
+                testHiddenVis.add(crosshairView.getVisibility());
+                crosshairView.setVisibility(View.GONE);
             }
-            testHiddenViews.clear();
-            testHiddenVis.clear();
         }
-        android.util.Log.d("LCDEBUG", "hidehud=" + hide + " hidden=" + testHiddenViews.size());
+        android.util.Log.d("LCDEBUG", "hidehud=" + hide + " crosshairHidden=" + (hide && hideCrosshair)
+                + " hidden=" + testHiddenViews.size());
+    }
+
+    /** 复原 hidehud 隐藏过的全部视图（按隐藏前的原始可见性）。 */
+    private void restoreTestHidden() {
+        for (int i = 0; i < testHiddenViews.size(); i++) {
+            testHiddenViews.get(i).setVisibility(testHiddenVis.get(i));
+        }
+        testHiddenViews.clear();
+        testHiddenVis.clear();
     }
 
     private void sync3DStateFromPage() {

@@ -107,6 +107,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /** F-04 路网：原版 MapManager.showRoad 默认 true；状态持久化在 MapManager prefs。 */
     private boolean roadNetOn = true;
 
+    // M6 第 5 条（审计 A 类根因）：页面重放所需的**镜像状态**。
+    // 这几个开关原来是「点一下 toggle」语义、原生不记值，重载后 JS 回默认，再点就反向。
+    // 重放的前提是原生知道当前值，所以每个 toggle 入口都要同步写下这里的字段。
+    private boolean contourOn = false;   // 等高线
+    private boolean groundOn = false;    // 贴地
+    private boolean ridgeOn = false;     // 山脊（setRidge 已有幂等 set）
+    private String baseMode = "vec";     // 底图源 vec/img（setBase 已有幂等 set）
+
     /** M6 第 8 条：3D 状态**由原生持有**（原版在 MainViewModel 的 MutableState，网页重载不丢），
      *  map.html 的 `mode` 只是投影；`onPageFinished` 按它重放 `setMode('3d')`。
      *  值只从 `getState().mode` 回读，不做乐观赋值——原版 `initGL()` 失败会回落 2d，猜就错了。 */
@@ -1524,7 +1532,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "知识": showKnowledgeSheet(); break;
             case "更多": showMoreSheet(); break;
             case "图层": js("openSources()"); break;
-            case "等高线": js("toggleContour()"); break;
+            case "等高线":
+                contourOn = !contourOn;   // 镜像：重放用 setContour(contourOn)
+                js("toggleContour()"); break;
             case "路网":
                 // F-04：左列「路网」= 路网图层开关（默认开，持久化 MapManager.showRoad）。
                 if (new FeatureFlags(this).isEnabled("f04")) {
@@ -1534,6 +1544,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             case "贴地":
+                groundOn = !groundOn;     // 镜像：重放用 setGround(groundOn)（等地图补 set）
                 js("toggleGround()");
                 // 贴地会强制进 3D（原版同一个 ground 位），状态一样要回读
                 sync3DStateFromPage();
@@ -1547,8 +1558,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case "+": js("zoomIn()"); break;
             case "−": js("zoomOut()"); break;
             case "指北针": js("toggleNeedle()"); break;
-            case "地图": js("setBase('vec')"); break;
-            case "实景": js("setBase('img')"); break;
+            case "地图": baseMode = "vec"; js("setBase('vec')"); break;
+            case "实景": baseMode = "img"; js("setBase('img')"); break;
             case "坐南朝北": js("toggleSitNorth()"); break;
             case "指针开关":
                 // 两针分离（map-bridge §10.3）：地图模式管 #needle；罗盘模式管浮层自绘北针。

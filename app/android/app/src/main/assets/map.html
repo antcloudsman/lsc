@@ -121,6 +121,7 @@
 <!-- 盘面数据（11-08）：WebView 源是 file:///android_asset/，Chromium 的 Fetch 与 XHR 都拒绝 file 方案，
      所以数据由生成器同时输出成 JS，用 script 标签加载（不受该限制）。见 tools/fidelity/gen-compass-rings.py -->
 <script src="map/compass-rings.js"></script>
+<script src="map/tilecache-policy.js"></script>
 
 <script>
 /* ============================================================
@@ -163,6 +164,237 @@ var wbRelease = "";            // Wayback 释放号（来自 waybackconfig.json�
 var baseBeforeWb = null;       // 进入历史影像前的底图
 /* F-02 瓦片内存缓存：命中时用 dataURL，不再走网络（Java 侧拼接还有磁盘缓存） */
 var tileCacheOn = false, tileCache = {}, tileCacheKeys = [], TILE_CACHE_MAX = 160;
+
+/* ============================================================================
+ * B 轮：离线瓦片缓存（磁盘级，IndexedDB）
+ * 与瓦片源解耦：只认 (sourceId, z, x, y) → bytes，不写死任何一家源。
+ * 默认「全部源关闭」——是否启用由条款结论决定（产品查不到出处 ⇒ 保持关闭，
+ * 能力交付、默认不启用，而不是把代码删掉或偷偷开着）。
+ * 策略（容量/过期/LRU）在 map/tilecache-policy.js 里，那份文件同时被 Node 单测覆盖。
+ * ========================================================================== */
+var TILE_OFF = {
+  dbName: 'lc-tile-offline-v1',
+  store: 'tiles',
+  capBytes: 64 * 1024 * 1024,      /* 容量上限 64 MB */
+  ttlMs: 30 * 24 * 3600 * 1000,    /* 过期 30 天 */
+  enabledSources: {},              /* sourceId -> true；默认空 = 全部关闭 */
+  db: null, opening: null, busy: false,
+  stats: { net: 0, put: 0, hit: 0, miss: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' }
+};
+
+function tileSourceEnabled(sid) { return !!(TILE_OFF.enabledSources[sid]); }
+function tileKeyOf(sid, z, x, y) { return sid + '/' + z + '/' + x + '/' + y; }
+
+function tileOfflineOpen() {
+  if (TILE_OFF.db) return Promise.resolve(TILE_OFF.db);
+  if (TILE_OFF.opening) return TILE_OFF.opening;
+  TILE_OFF.opening = new Promise(function (resolve, reject) {
+    var req;
+    try { req = indexedDB.open(TILE_OFF.dbName, 1); } catch (e) { reject(e); return; }
+    req.onupgradeneeded = function () {
+      var db = req.result;
+      if (!db.objectStoreNames.contains(TILE_OFF.store)) {
+        var st = db.createObjectStore(TILE_OFF.store, { keyPath: 'key' });
+        st.createIndex('ts', 'ts', { unique: false });
+      }
+    };
+    req.onsuccess = function () { TILE_OFF.db = req.result; resolve(req.result); };
+    req.onerror = function () { reject(req.error || new Error('idb-open')); };
+  }).catch(function (e) {
+    TILE_OFF.opening = null;
+    TILE_OFF.stats.lastErr = 'open: ' + ((e && e.message) || e);
+    throw e;
+  });
+  return TILE_OFF.opening;
+}
+
+function tileOfflineGet(key) {
+  return tileOfflineOpen().then(function (db) {
+    return new Promise(function (resolve) {
+      var tx = db.transaction(TILE_OFF.store, 'readonly');
+      var rq = tx.objectStore(TILE_OFF.store).get(key);
+      rq.onsuccess = function () { resolve(rq.result || null); };
+      rq.onerror = function () { resolve(null); };
+    });
+  }).catch(function () { return null; });
+}
+
+function tileOfflinePut(key, blob) {
+  if (!blob || !blob.size) return Promise.resolve(false);
+  return tileOfflineOpen().then(function (db) {
+    return new Promise(function (resolve) {
+      var tx = db.transaction(TILE_OFF.store, 'readwrite');
+      var st = tx.objectStore(TILE_OFF.store);
+      st.put({ key: key, ts: Date.now(), size: blob.size, blob: blob });
+      tx.oncomplete = function () { resolve(true); };
+      tx.onerror = function () { TILE_OFF.stats.lastErr = 'put: ' + key; resolve(false); };
+    });
+  }).then(function (okv) {
+    if (okv) {
+      TILE_OFF.stats.put++;
+      tileOfflineEnforce();
+      tileOfflineUsage();
+    }
+    return okv;
+  }).catch(function (e) {
+    TILE_OFF.stats.lastErr = 'put: ' + ((e && e.message) || e);
+    return false;
+  });
+}
+
+/* 按策略淘汰：读全部 meta → policy.decide → 删 */
+function tileOfflineEnforce() {
+  if (TILE_OFF.busy) return;
+  TILE_OFF.busy = true;
+  tileOfflineOpen().then(function (db) {
+    return new Promise(function (resolve) {
+      var tx = db.transaction(TILE_OFF.store, 'readonly');
+      var st = tx.objectStore(TILE_OFF.store);
+      var metas = [];
+      st.openCursor().onsuccess = function (ev) {
+        var c = ev.target.result;
+        if (c) { metas.push({ key: c.value.key, size: c.value.size, ts: c.value.ts }); c.continue(); }
+        else resolve(metas);
+      };
+    });
+  }).then(function (metas) {
+    var plan = LCTileCachePolicy.decide(metas, {
+      capBytes: TILE_OFF.capBytes, ttlMs: TILE_OFF.ttlMs, nowMs: Date.now()
+    });
+    if (!plan.evict.length) { TILE_OFF.busy = false; return; }
+    return tileOfflineOpen().then(function (db) {
+      return new Promise(function (resolve) {
+        var tx = db.transaction(TILE_OFF.store, 'readwrite');
+        var st = tx.objectStore(TILE_OFF.store);
+        for (var i = 0; i < plan.evict.length; i++) st.delete(plan.evict[i]);
+        tx.oncomplete = function () {
+          TILE_OFF.stats.evicted += plan.evict.length;
+          console.log('LCTILEOFF evict n=' + plan.evict.length +
+            ' expired=' + plan.expiredCount + ' cap=' + plan.capacityCount +
+            ' bytesAfter=' + plan.bytesAfter);
+          resolve();
+        };
+        tx.onerror = function () { resolve(); };
+      });
+    }).then(function () { TILE_OFF.busy = false; tileOfflineUsage(); });
+  }).catch(function () { TILE_OFF.busy = false; });
+}
+
+function tileOfflineUsage() {
+  return tileOfflineOpen().then(function (db) {
+    return new Promise(function (resolve) {
+      var tx = db.transaction(TILE_OFF.store, 'readonly');
+      var rq = tx.objectStore(TILE_OFF.store).openCursor();
+      var items = 0, bytes = 0;
+      rq.onsuccess = function (ev) {
+        var c = ev.target.result;
+        if (c) { items++; bytes += (c.value.size || 0); c.continue(); }
+        else {
+          TILE_OFF.stats.items = items; TILE_OFF.stats.bytes = bytes;
+          resolve({ items: items, bytes: bytes });
+        }
+      };
+      rq.onerror = function () { resolve({ items: 0, bytes: 0 }); };
+    });
+  }).catch(function () { return { items: 0, bytes: 0 }; });
+}
+
+/* 网络加载成功 → 存字节（fetch 走 HTTP 缓存，通常不再产生完整下行） */
+function tileOfflineStore(img, layer) {
+  if (!tileSourceEnabled(layer)) return;
+  var key = img && img.getAttribute && img.getAttribute('data-tkey');
+  var url = img && img.src;
+  if (!key || !url) return;
+  var rq = img.getAttribute('data-fromcache');
+  if (rq === '1') { img.removeAttribute('data-fromcache'); return; }  /* 缓存回填的图不再回写 */
+  try {
+    fetch(url, { cache: 'force-cache', credentials: 'omit' }).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.blob();
+    }).then(function (b) { return tileOfflinePut(key, b); }).catch(function (e) {
+      TILE_OFF.stats.lastErr = 'store: ' + ((e && e.message) || e);
+    });
+  } catch (e) { TILE_OFF.stats.lastErr = 'store-sync: ' + ((e && e.message) || e); }
+}
+
+/* 网络失败 → 试离线缓存；命中就把 img.src 换成 blob URL（同一 <img>，不改布局） */
+function tileOfflineRecover(img, layer) {
+  if (!tileSourceEnabled(layer)) { tileOfflineMiss(layer); return; }
+  var key = img && img.getAttribute && img.getAttribute('data-tkey');
+  if (!key) { tileOfflineMiss(layer); return; }
+  tileOfflineGet(key).then(function (rec) {
+    if (rec && rec.blob) {
+      try { img.src = URL.createObjectURL(rec.blob); } catch (e) { }
+      img.setAttribute('data-fromcache', '1');
+      img.style.display = '';
+      TILE_OFF.stats.hit++;
+      tileOfflineBanner();
+      console.log('LCTILEOFF hit ' + key);
+    } else {
+      tileOfflineMiss(layer);
+    }
+  }).catch(function () { tileOfflineMiss(layer); });
+}
+
+function tileOfflineMiss(layer) {
+  TILE_OFF.stats.miss++;
+  tileOfflineBanner();
+}
+
+/* 断网/缺块降级提示：只在"有缺块"或浏览器报告离线时出现，恢复后自动消失 */
+function tileOfflineBanner() {
+  var el = document.getElementById('offlineBar');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'offlineBar';
+    el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:60;' +
+      'background:rgba(24,20,16,0.86);color:#f0e6d2;font:12px/1.4 sans-serif;' +
+      'padding:6px 10px;border-radius:6px;display:none;pointer-events:none';
+    document.body.appendChild(el);
+  }
+  var anyEnabled = Object.keys(TILE_OFF.enabledSources).length > 0;
+  var offline = (navigator.onLine === false);
+  var show = TILE_OFF.stats.miss > 0 && (offline || !anyEnabled || TILE_OFF.stats.hit > 0);
+  if (!show) { el.style.display = 'none'; return; }
+  el.textContent = '离线：仅显示已缓存区域（已命中 ' + TILE_OFF.stats.hit +
+    ' 块 / 缺 ' + TILE_OFF.stats.miss + ' 块）' +
+    (anyEnabled ? '' : '；当前离线缓存未启用');
+  el.style.display = 'block';
+}
+
+/* 调试/配置入口（产品条款结论出来后只改这里，不改代码路径） */
+function setTileCacheSource(sid, on) {
+  if (!sid) return null;
+  if (on) TILE_OFF.enabledSources[sid] = true;
+  else delete TILE_OFF.enabledSources[sid];
+  tileOfflineUsage();
+  return TILE_OFF.enabledSources;
+}
+function tileCacheClear() {
+  return tileOfflineOpen().then(function (db) {
+    return new Promise(function (resolve) {
+      var tx = db.transaction(TILE_OFF.store, 'readwrite');
+      tx.objectStore(TILE_OFF.store).clear();
+      tx.oncomplete = function () { TILE_OFF.stats.items = 0; TILE_OFF.stats.bytes = 0; resolve(true); };
+      tx.onerror = function () { resolve(false); };
+    });
+  }).catch(function () { return false; });
+}
+function tileCacheInfo() { return getTileCacheInfo(); }
+function getTileCacheInfo() {
+  var enabled = Object.keys(TILE_OFF.enabledSources);
+  return {
+    enabled: enabled.length > 0, sources: enabled,
+    capMB: Math.round(TILE_OFF.capBytes / 1048576 * 10) / 10,
+    ttlDays: Math.round(TILE_OFF.ttlMs / 86400000),
+    items: TILE_OFF.stats.items, bytes: TILE_OFF.stats.bytes,
+    bytesMB: Math.round(TILE_OFF.stats.bytes / 1048576 * 10) / 10,
+    net: TILE_OFF.stats.net, put: TILE_OFF.stats.put, hit: TILE_OFF.stats.hit,
+    miss: TILE_OFF.stats.miss, evicted: TILE_OFF.stats.evicted,
+    hitRate: LCTileCachePolicy.hitRate(TILE_OFF.stats.hit, TILE_OFF.stats.miss),
+    online: (navigator.onLine !== false), lastErr: TILE_OFF.stats.lastErr
+  };
+}
 
 /* MD-09：桥入参条数上限（防调试注入通道/异常数据把 DOM 撑爆）。
  * 超限按**先到先留**截断，并在对应事件里回传 dropped（被丢掉的条数），客户端可据此提示。 */
@@ -308,6 +540,7 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
       } else {
         tileDiag.net++;                   /* 真正发出去的瓦片请求数（审核验口径：req 只记网络请求） */
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
+          'data-tkey="' + tileKeyOf(layer, zoom, xx, yy) + '" ' +
           (tileCacheOn ? 'crossorigin="anonymous" ' : '') +
           'src="' + url + '" onload="__tileLoaded(this,\'' + url + '\',\'' + layer + '\')" ' +
           'onerror="__tileFailed(this,\'' + url + '\',\'' + layer + '\')">';
@@ -337,8 +570,18 @@ function __tileFailed(img, url, layer) {
   if (tileDiag.err === 1 || tileDiag.err % 32 === 0) {
     console.log('LCTILE fail n=' + tileDiag.err + ' layer=' + layer + ' url=' + tileDiag.lastErrUrl);
   }
+  /* B 轮：网络失败先查离线缓存，命中就用已存字节顶上；未命中才计入降级统计 */
+  try { tileOfflineRecover(img, layer); } catch (e) { }
 }
-function __tileLoaded(img, url, layer) {  tileDiag.ok++; if (!tileCacheOn) return;
+function __tileLoaded(img, url, layer) {
+  tileDiag.ok++;
+  /* B 轮：联网成功时按源开关把字节落盘（与内存 dataURL 缓存互不影响） */
+  try { tileOfflineStore(img, layer); } catch (e) { }
+  if (navigator.onLine !== false) {
+    var ob = document.getElementById('offlineBar');
+    if (ob && TILE_OFF.stats.miss === 0) ob.style.display = 'none';
+  }
+  if (!tileCacheOn) return;
   try {
     var cv = document.createElement("canvas");
     cv.width = 256; cv.height = 256;
@@ -3559,6 +3802,7 @@ function getState() {
     cache: tileCacheOn, cacheCount: tileCacheKeys.length,
     emitDiag: { ok: emitDiag.ok, fail: emitDiag.fail, noBridge: emitDiag.noBridge, lastErr: emitDiag.lastErr },
     tileDiag: { net: tileDiag.net, ok: tileDiag.ok, hit: tileDiag.hit, err: tileDiag.err, lastErrUrl: tileDiag.lastErrUrl },
+    tileOffline: getTileCacheInfo(),
     measure: (function () {
       var s = measureStats();
       return {
@@ -3617,6 +3861,9 @@ window.__LC3D = {
   },
   setGroundRenderer: setGroundRenderer,
   setGroundBaseline: setGroundBaseline,
+  tileCache: getTileCacheInfo,
+  tileCacheSource: setTileCacheSource,
+  tileCacheClear: tileCacheClear,
   setMode: setMode,
   setUiMode: setUiMode,
   attribution: getAttribution,
@@ -3847,7 +4094,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch", "resetCompass",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getGroundQuad", "setGroundRenderer", "setGroundBaseline", "getAttribution", "setRoadNet",
+    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getGroundQuad", "setGroundRenderer", "setGroundBaseline", "setTileCacheSource", "tileCacheClear", "getTileCacheInfo", "getAttribution", "setRoadNet",
     "setGround", "setSitNorth", "setNeedle",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",

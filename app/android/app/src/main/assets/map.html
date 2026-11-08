@@ -2406,8 +2406,19 @@ var groundImg = null;         /* 当前盘面位图（drawImage 用） */
 var groundImgDial = -1;
 var lastGroundQuad = null;    /* 上一帧贴地四角的世界坐标+VP，供 getGroundQuad() 只读复算 */
 
+/* 屏宽口径（11-08 现场修正）：原版公式用的是 `screen.width`，但**原版页面带 viewport meta**，
+ * 那个值是 CSS 视口宽（本机 364）。我们这页 `window.screen.width` 实测是 **1040**（Chromium 默认
+ * 布局视口），于是画布被算成 2080 CSS、地面边长 2080 CSS，pitch 0 下 quad 实测 sideCss=2079.96，
+ * 是期望 728 的 2.857 倍（2080/728 = 2.857）——这正是 Q1 超差的根因，与纹理 549 无关。
+ * 统一改用视口宽（glCanvas.clientWidth），原版公式的语义才成立。 */
+function groundViewportWidth() {
+  if (glCanvas && glCanvas.clientWidth) return glCanvas.clientWidth;
+  if (window.innerWidth) return window.innerWidth;
+  return document.documentElement.clientWidth || 364;
+}
+
 function groundCanvasSize() {
-  var sw = window.screen && window.screen.width ? window.screen.width : (glCanvas.clientWidth || 364);
+  var sw = groundViewportWidth();
   var dpr = Math.min(Math.floor(window.devicePixelRatio || 1), 2) || 1;
   var css = Math.floor(2 * sw);
   return { css: css, dpr: dpr, px: css * dpr };
@@ -2415,7 +2426,7 @@ function groundCanvasSize() {
 
 /* 半径（米）＝屏宽米数；原版 toBounds 的 radius 是半边长 ⇒ 地面边长 = 2×半径米 */
 function groundRadiusMeters() {
-  var sw = window.screen && window.screen.width ? window.screen.width : (glCanvas.clientWidth || 364);
+  var sw = groundViewportWidth();
   var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
   return Math.floor(sw * zMpp);
 }
@@ -2616,7 +2627,8 @@ function drawGroundCompass(vp, target) {
     texCss: sz.css, texDpr: sz.dpr
   };
   groundDiag = 'drawn';
-  console.log('LCGROUND draw side=' + (2 * r) + 'm tex=' + sz.px + 'px dial=' + Math.round(sz.px * GROUND_DIAL_FRAC));
+  console.log('LCGROUND draw side=' + (2 * r) + 'm tex=' + sz.px + 'px dial=' + Math.round(sz.px * GROUND_DIAL_FRAC) +
+    ' vw=' + groundViewportWidth() + ' screenW=' + ((window.screen && window.screen.width) || 0) + ' canvasCss=' + sz.css + ' dpr=' + sz.dpr);
 }
 
 /* ---- 只读调试接口：贴地盘面四角的屏幕坐标（CSS px，原点左上） ----
@@ -3546,6 +3558,11 @@ window.__LC3D = {
       zoom: zoom,
       lat: center.lat,
       gateHit: (Math.abs(center.lat) >= 75 || zoom < 6),
+      vw: groundViewportWidth(),
+      screenW: (window.screen && window.screen.width) || 0,
+      canvasCss: groundCanvasSize().css,
+      canvasBacking: groundCanvasSize().px,
+      radiusMeters: groundRadiusMeters(),
       diag: groundDiag,
       texDirty: groundTexDirty,
       hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),

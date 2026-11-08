@@ -392,7 +392,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--skip-dirs", default="assets-vectors,assets,findings,probes,.git", help="comma-separated dir names to skip")
     ap.add_argument("--strict-root", action="store_true", help="warn when xml root is not <hierarchy>")
     ap.add_argument("--expect-size", help="declared screenshot size WxH, e.g. 1228x2700 (mismatch = warn)")
-    ap.add_argument("--allow", help="allowlist JSON with entries {path, reason, by, verdict} (4 keys required)")
+    ap.add_argument("--allow", help="allowlist JSON with entries {path, reason, by, verdict} (4 keys required); defaults to tools/fidelity/evidence-lint-allow.json when present")
     ap.add_argument("--json", help="write JSON report to this path")
     ap.add_argument("--magic", help="comma-separated image files to check magic/extension consistency")
     ap.add_argument("--eol", nargs="?", const="", help="comma-separated source files to check for CRLF/mixed EOL; REQUIRES an explicit file list (bare --eol prints SKIP)")
@@ -415,6 +415,12 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     allow: list[dict] = []
+    # 默认加载仓库内具名例外清单：否则默认命令会因为已登记的 help-offline.xml 报红，
+    # 逼得所有人加 --allow 或窄 root —— 那正是 T-04「宽泛的红等于没有门禁」要避免的。
+    if not args.allow:
+        default_allow = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evidence-lint-allow.json")
+        if os.path.isfile(default_allow):
+            args.allow = default_allow
     if args.allow:
         if not os.path.isfile(args.allow):
             print(f"ERROR: allowlist not found: {args.allow}", file=sys.stderr)

@@ -1,109 +1,293 @@
 <!DOCTYPE html>
+<!-- GENERATED from docs/product/help-center.md @ 34df019bb9102e6480a61e2157f49d695920ce90 - do not edit; 源文件是唯一真相，改这里会被 lint 拦住 -->
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>帮助中心</title>
 <style>
-  body { margin: 0; padding: 16px 18px 48px; background: #F0F3F7; color: #23272B;
-         font: 15px/1.7 -apple-system, "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
-  h1 { font-size: 19px; margin: 0 0 6px; }
-  h2 { font-size: 16px; margin: 26px 0 8px; padding-left: 8px; border-left: 3px solid #1C45A5; }
-  p, li { margin: 6px 0; }
-  .sub { color: #8D9299; font-size: 13px; margin-bottom: 14px; }
-  .card { background: #FFFFFF; border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
-  .toc a { color: #1C45A5; text-decoration: none; margin-right: 10px; white-space: nowrap; }
-  .limit { background: #FFF7E6; border-radius: 12px; padding: 12px 14px; }
-  .limit li { color: #6B4E00; }
-  code { background: #EDEFF2; border-radius: 4px; padding: 1px 4px; font-size: 13px; }
+  body { margin:0; padding:16px 18px 48px; background:#F0F3F7; color:#23272B;
+         font:15px/1.7 -apple-system,"Noto Sans CJK SC","Microsoft YaHei",sans-serif; }
+  h1 { font-size:19px; margin:0 0 6px; }
+  h2 { font-size:16px; margin:26px 0 8px; padding-left:8px; border-left:3px solid #1C45A5; }
+  h3 { font-size:15px; margin:18px 0 6px; }
+  p, li { margin:6px 0; }
+  code { background:#EDEFF2; border-radius:4px; padding:1px 4px; font-size:13px; }
+  a { color:#1C45A5; text-decoration:none; }
+  figure { margin:12px 0; }
+  figure img { width:100%; border-radius:10px; display:block; }
+  figcaption { color:#8D9299; font-size:12px; margin-top:4px; }
+  .tbl { overflow-x:auto; background:#FFFFFF; border-radius:10px; padding:8px 10px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th, td { border-bottom:1px solid #E6E8EB; padding:6px 8px; text-align:left; }
+  hr { border:0; border-top:1px solid #DDE1E6; margin:18px 0; }
+  ul, ol { padding-left:22px; }
 </style>
 </head>
 <body>
-
-<h1>帮助中心</h1>
-<p class="sub">三维山水全景地图 · 本项目复刻版 · 本文只写当前版本实际有的功能</p>
-
-<div class="card toc">
-  <a href="#compass">罗盘</a><a href="#map">地图</a><a href="#favorite">收藏点</a>
-  <a href="#account">账户</a><a href="#feedback">投诉反馈</a><a href="#about">关于与联系</a>
-  <a href="#limit">已知限制</a>
-</div>
-
-<h2 id="compass">1. 罗盘</h2>
-<div class="card">
-  <p><b>怎么进</b>：主界面左侧竖排按钮中选「罗盘」，进入罗盘浮层；再点一次回到地图态。</p>
-  <p><b>能做什么</b>：</p>
-  <ul>
-    <li>盘面随手机朝向转动，顶部读数区显示当前度数、二十四山与五行；</li>
-    <li>左侧六项：「截屏」「等高线」「罗盘复位」「罗盘锁定」「读盘」「贴地」；</li>
-    <li>「罗盘复位」= <b>立即回正北</b>：盘面回正并清掉「锁定」与「跟随」，3D 下同时退回 2D；不动地图缩放与中心，所以位置不会被重置；需要继续跟随时再点「罗盘锁定」；</li>
-    <li>右侧四枚开关：「地图」「实景」「坐南朝北」「指针开关」，前两项互斥，第三项让地图随坐向旋转；</li>
-    <li>拖动盘面可手动改朝向（松手后保持，直到再点「罗盘锁定」恢复跟随）。</li>
-  </ul>
-  <p><b>红色十字线</b>：贯穿全屏的红色竖向/横向准线是屏幕坐标，不随盘面旋转；十字上游 27% 处那颗小红三角属于十字线本体。</p>
-</div>
-
-<h2 id="map">2. 地图</h2>
-<div class="card">
-  <ul>
-    <li>单指拖动平移、滚轮或「+ / −」缩放；</li>
-    <li>右侧「图层」切底图来源，「叠加」开叠加层，「山脉」「水系」「探索」进对应专题；</li>
-    <li>右下「3D」进入三维地形；再点一次回到二维。切换是瞬时的、没有过渡动画；页面重载后仍保持 3D，杀掉进程重新打开则回到二维（与原版一致）；</li>
-    <li>底部角注显示当前底图数据来源。</li>
-  </ul>
-</div>
-
-<h2 id="favorite">3. 收藏点</h2>
-<div class="card">
-  <ul>
-    <li>左上菜单 →「收藏点」打开收藏列表；长按列表项可删除（需确认）；</li>
-    <li>已同步到服务器的收藏点会先在本地打删除标记，下次同步时推送；未同步的本地收藏点直接删除；</li>
-    <li>收藏点按账号隔离：切换账号后只能看到当前账号的收藏点。</li>
-  </ul>
-</div>
-
-<h2 id="account">4. 账户</h2>
-<div class="card">
-  <ul>
-    <li>左上菜单 →「账户设置」：账号密码登录/注册为本项目新增（原版为手机号验证码等方式）；</li>
-    <li>登录后可修改昵称、修改密码、同步收藏点、退出登录；</li>
-    <li>退出登录会清除本机会话，本地收藏点数据保留。</li>
-  </ul>
-</div>
-
-<h2 id="feedback">5. 投诉反馈</h2>
-<div class="card">
-  <ul>
-    <li>左上菜单 →「投诉反馈」，两级页面：一级列表（「问题反馈」「订单投诉」+ 右上「我的」），点「问题反馈」进表单；</li>
-    <li>表单四项：申请原因、联系方式、问题描述、问题截图；提交需要先登录；</li>
-    <li>提交成功/失败都会在表单下方给出明确状态文字，不会静默。</li>
-  </ul>
-</div>
-
-<h2 id="about">6. 关于与联系</h2>
-<div class="card">
-  <ul>
-    <li>「关于我们」显示产品名、公司主体、版本号与备案编号；</li>
-    <li>「联系我们」是浮在菜单上的对话框：「复制邮箱」把联系邮箱复制到剪贴板，右上角 × 关闭。</li>
-  </ul>
-</div>
-
-<h2 id="limit">7. 已知限制</h2>
-<div class="limit">
-  <ul>
-    <li><b>当前位置符号、屏幕中心符号未实现</b>：原版这两处符号的出处未取证，按项目规矩不自行绘制。</li>
-    <li><b>罗盘「贴地」效果未实现</b>：原版是把盘面画在画布上、按四角投影铺到地形；左列「贴地」目前只做近地视角。</li>
-    <li><b>3D 没有 VIP 门槛</b>：原版非会员用尽免费次数会弹会员页，本版直接可用（有意差异）。</li>
-    <li><b>昵称、头像不可编辑</b>：本版只支持修改昵称与密码，头像上传未接入。</li>
-    <li><b>注销账户未实现</b>：本项目自用、非商用，风险可接受；<b>对外提供账号服务前必须补</b>。</li>
-    <li><b>用户协议、隐私政策页不显示</b>：原版在这两页是零尺寸、屏外不可见，本版照原版不摆。</li>
-    <li><b>离线可读是本版改进</b>：原版帮助中心是远端网页，离线无正文；本版内置本地文档。</li>
-    <li><b>收藏点的删除入口是长按</b>：属本版新增形态，原版入口形态未取证。</li>
-    <li><b>底图角注的审图号待核对</b>：以底图数据源实际返回为准。</li>
-    <li>部分文字宽度与原版存在 5–9 像素的字体度量差异，属字体渲染不同，不影响排版位置。</li>
-  </ul>
-  <p class="sub">本文只写当前版本实际有的功能；上面这些是明知做不到或与原版不同的地方，写在这里而不是写进正文。</p>
-</div>
-
+<h1>LC 山水罗盘 · 帮助中心</h1>
+<p>本手册按<b>当前 App 实际功能</b>编写；未实现或未取证的能力统一列在文末「已知限制」，正文不写成功能。</p>
+<h2 id="sec-1">1. 快速上手（3 步）</h2>
+<div class="tbl"><table><thead><tr>
+<th>步</th>
+<th>做什么</th>
+<th>预期</th>
+<th>图</th>
+</tr></thead><tbody>
+<tr><td>1</td><td>打开 App，等地图加载</td><td>全屏地图 + 左列 8 个工具 + 右列 10 个控件</td><td>见 fig-01</td></tr>
+<tr><td>2</td><td>双指缩放、单指拖动</td><td>地图跟随手指；拖动方向与手指同向</td><td><code>fig-02-drag.png</code></td></tr>
+<tr><td>3</td><td>点左列「罗盘」</td><td>罗盘浮层打开，盘面随朝向转动</td><td>见 fig-03</td></tr>
+</tbody></table></div>
+<figure id="fig-01"><img src="fig-01.png" alt="fig-01"><figcaption>fig-01</figcaption></figure>
+<p>图 fig-01：主界面 · 冷启等首帧 · 全屏地图 + 左列 8 + 右列 10</p>
+<figure id="fig-03"><img src="fig-03.png" alt="fig-03"><figcaption>fig-03</figcaption></figure>
+<p>图 fig-03：左列「罗盘」 · 点入 · 罗盘浮层与左列 6 项</p>
+<hr>
+<h2 id="sec-2">2. 地图基础</h2>
+<h3 id="sec-2-1">2.1 手势</h3>
+<ul>
+<li><b>双指捏合</b>缩放；单指拖动平移；缩放也可用右列 <code>+</code> / <code>−</code>。</li>
+<li><b>本版没有双击缩放</b>：<code>map.html</code> 无 <code>dblclick</code>/<code>lastTap</code>/<code>tapTimer</code>，Java 侧无 <code>GestureDetector</code>/<code>onDoubleTap</code>（审核验 2026-11-08 代码与实测双证）。<b>双击 = 两次单点落点，没有缩放语义</b>。</li>
+<li><b>拖动方向</b>：手指向右，地图内容向右移动（与原版一致，M6 第 2 条已实测：2a 八条 8/8、2b 三档角误差 0°）。 状态：<code>已验收</code></li>
+</ul>
+<figure id="fig-02"><img src="fig-02.png" alt="fig-02"><figcaption>fig-02</figcaption></figure>
+<p>图 fig-02：主界面 · 单指按住向右拖 · 地图内容随手指同向</p>
+<h3 id="sec-2-2">2.2 底图切换（地图 / 实景）</h3>
+<ul>
+<li>罗盘态右列「<b>地图</b>」「<b>实景</b>」两枚，互斥；切换会同时更换底图与罗盘态显示。 状态：<code>已验收</code></li>
+</ul>
+<figure id="fig-05"><img src="fig-05.png" alt="fig-05"><figcaption>fig-05</figcaption></figure>
+<p>图 fig-05：罗盘态 · 点右列「地图」 · 矢量底图、该钮选中</p>
+<figure id="fig-06"><img src="fig-06.png" alt="fig-06"><figcaption>fig-06</figcaption></figure>
+<p>图 fig-06：罗盘态 · 点右列「实景」 · 影像底图、该钮选中</p>
+<p>（两张图同视角，便于对照）</p>
+<h3 id="sec-2-3">2.3 角注与审图号</h3>
+<ul>
+<li>底部有数据来源与审图号角注。<b>本项目为自建/免费数据源，审图号状态为「待核对」</b>——文档里<b>只写「底部显示数据来源角注」，不写具体审图号</b>。 状态：<code>待核对</code></li>
+</ul>
+<figure id="fig-07"><img src="fig-07.png" alt="fig-07"><figcaption>fig-07</figcaption></figure>
+<p>图 fig-07：主界面底部 · 无需操作 · 数据来源角注区</p>
+<hr>
+<h2 id="sec-3">3. 罗盘</h2>
+<h3 id="sec-3-1">3.1 打开与关闭</h3>
+<ul>
+<li><b>左列「罗盘」</b>或「更多」→「罗盘」；罗盘以浮层形式叠在地图上（<b>不是独立页</b>）。 状态：<code>已验收</code></li>
+<li>关闭：罗盘态右列「地图」回到纯地图态，或点浮层「隐藏」。 状态：<code>已验收</code></li>
+</ul>
+<h3 id="sec-3-2">3.2 读数怎么看</h3>
+<ul>
+<li><b>向/坐</b>、<b>地盘 / 人盘 / 天盘</b>、<b>分金</b>、<b>72 龙 / 60 龙</b>、<b>卦</b>——同一朝向口径成套显示。 状态：<code>已验收</code></li>
+<li>智能读盘弹层里，<code>地盘正针二十四山</code>、<code>穿山七十二龙</code>、<code>百二十分金</code>、<code>透地平分六十龙</code>、<code>人盘中针</code>、<code>天盘缝针</code> 六项带「💎 点击查看»」标记；<b>可直接看到的只有「先天/后天卦位 + 洛书数」</b>。 状态：<code>待核对</code></li>
+<li><b>待核缺陷（2026-11-08 审核验实测）</b>：本项目<b>无 VIP 体系</b>，这六项却仍带 💎 门槛标记。若明细点不开 = 与我方「免费无门槛」原则冲突；若点得开 = 文案误导。两种情况都要处理，<b>不能按“原版如此”留着</b>。</li>
+<li><b>缩放途径</b>：双指捏合、右列 <code>+</code>/<code>−</code>、罗盘工具条「缩放」。<b>双击没有缩放语义</b>（两次单点 = 落两个标记）。</li>
+</ul>
+<figure id="fig-08"><img src="fig-08.png" alt="fig-08"><figcaption>fig-08</figcaption></figure>
+<p>图 fig-08：罗盘态 · 打开后静置 · 向/坐与各圈层读数</p>
+<figure id="fig-32"><img src="fig-32.png" alt="fig-32"><figcaption>fig-32</figcaption></figure>
+<p>图 fig-32：罗盘态 · 智能读盘弹层 · 六项带「💎 点击查看»」标记，明细可达性待核</p>
+<h3 id="sec-3-3">3.3 盘面切换</h3>
+<ul>
+<li>盘面列表四组：<b>自定义 / 常用 / 简易 / 综合</b>；<b>常用 5 项可用</b>，另两组为占位。 状态：<code>已验收（常用）</code>｜<code>待核对（其余组）</code></li>
+<li>设置里「恢复默认」可把盘面栅格与配色恢复。 状态：<code>已验收</code></li>
+</ul>
+<figure id="fig-09"><img src="fig-09.png" alt="fig-09"><figcaption>fig-09</figcaption></figure>
+<p>图 fig-09：罗盘态 · 打开盘面列表 · 四组：自定义/常用/简易/综合</p>
+<h3 id="sec-3-4">3.4 罗盘工具条（5 项）</h3>
+<p><b>切换 / 旋转 / 缩放 / 透明度 / 天支线</b>。 状态：<code>已验收</code>（天支线：开关状态持久化）</p>
+<figure id="fig-10"><img src="fig-10.png" alt="fig-10"><figcaption>fig-10</figcaption></figure>
+<p>图 fig-10：罗盘态底部 · 无需操作 · 切换/旋转/缩放/透明度/天支线</p>
+<h3 id="sec-3-5">3.5 罗盘态左列 6 项</h3>
+<p><b>左列六项</b>：截屏 / 等高线 / 罗盘复位 / 罗盘锁定 / 读盘 / 贴地（其中「<b>贴地</b>」入口在、效果未实现，见 §13）</p>
+<div class="tbl"><table><thead><tr>
+<th>项</th>
+<th>做什么</th>
+<th>状态</th>
+</tr></thead><tbody>
+<tr><td>截屏</td><td>保存当前罗盘与地图画面</td><td><code>已验收</code></td></tr>
+<tr><td>等高线</td><td>显隐等高线</td><td><code>已验收</code></td></tr>
+<tr><td><b>罗盘复位</b></td><td><b>把偏转的地图立即回正北</b>（不是切换显隐），清锁定/跟随、3D 下退 2D，<b>不动缩放与中心</b></td><td><code>已验收</code></td></tr>
+<tr><td>罗盘锁定</td><td>锁定当前盘面朝向</td><td><code>已验收</code></td></tr>
+<tr><td>读盘</td><td>读出当前盘面信息</td><td><code>待核对</code></td></tr>
+<tr><td>贴地</td><td><b>入口存在、名称为「贴地」，但效果未实现</b>（见 §13）</td><td><code>未实现</code></td></tr>
+</tbody></table></div>
+<figure id="fig-11"><img src="fig-11.png" alt="fig-11"><figcaption>fig-11</figcaption></figure>
+<p>图 fig-11：罗盘态左列 · 无需操作 · 截屏/等高线/复位/锁定/读盘/贴地</p>
+<h3 id="sec-3-6">3.6 罗盘态右列 4 项</h3>
+<p><b>地图 / 实景 / 坐南朝北 / 指针开关</b></p>
+<div class="tbl"><table><thead><tr>
+<th>项</th>
+<th>做什么</th>
+<th>状态</th>
+</tr></thead><tbody>
+<tr><td>地图 / 实景</td><td>底图与罗盘态互斥切换</td><td><code>已验收</code></td></tr>
+<tr><td>坐南朝北</td><td>盘面朝向取向切换</td><td><code>已验收</code></td></tr>
+<tr><td>指针开关</td><td>纯地图态下指针图隐藏；罗盘态/实景态由开关显示或隐藏</td><td><code>已验收</code></td></tr>
+</tbody></table></div>
+<figure id="fig-12"><img src="fig-12.png" alt="fig-12"><figcaption>fig-12</figcaption></figure>
+<p>图 fig-12：罗盘态右列 · 无需操作 · 地图/实景/坐南朝北/指针开关</p>
+<h3 id="sec-3-7">3.7 校准与精度</h3>
+<ul>
+<li>手机罗盘受磁干扰，<b>建议「8 字晃动」校准</b>；读数旁显示精度提示。 状态：<code>待核对</code>（以实现为准，图与文案须与该页一致）</li>
+</ul>
+<figure id="fig-13"><img src="fig-13.png" alt="fig-13"><figcaption>fig-13</figcaption></figure>
+<p>图 fig-13：罗盘态 · 触发精度提示 · 精度或校准入口</p>
+<p>若当前构建无此界面，删本图与本小节，不造图。</p>
+<hr>
+<h2 id="sec-4">4. 左列 8 个工具</h2>
+<p><code>全地图工具</code> / <code>截屏</code> / <code>超清优化</code> / <code>海拔查询</code> / <code>罗盘</code> / <code>路网</code> / <code>等高线</code> / <code>更多</code></p>
+<div class="tbl"><table><thead><tr>
+<th>工具</th>
+<th>怎么用</th>
+<th>状态</th>
+</tr></thead><tbody>
+<tr><td>全地图工具</td><td>打开工具管理页（16 宫格 + 编辑/勾选/排序），<b>无付费门槛</b></td><td><code>已验收</code></td></tr>
+<tr><td>截屏</td><td>保存当前地图画面，有保存提示</td><td><code>已验收</code></td></tr>
+<tr><td>超清优化</td><td>打开说明面板，当前为本地降级（最大 z18），<b>无「会员/升级」字样</b></td><td><code>已验收</code></td></tr>
+<tr><td>海拔查询</td><td>地图点选 → 结果面板（含海拔）</td><td><code>已验收</code></td></tr>
+<tr><td>罗盘</td><td>打开罗盘浮层（见 §3）</td><td><code>已验收</code></td></tr>
+<tr><td>路网</td><td>显隐路网图层</td><td><code>已验收</code></td></tr>
+<tr><td>等高线</td><td>显隐等高线</td><td><code>已验收</code></td></tr>
+<tr><td>更多</td><td>打开 16 格功能面板（见 §6）</td><td><code>已验收</code></td></tr>
+</tbody></table></div>
+<figure id="fig-14"><img src="fig-14.png" alt="fig-14"><figcaption>fig-14</figcaption></figure>
+<p>图 fig-14：主界面左列 · 无需操作 · 8 项全貌</p>
+<figure id="fig-15"><img src="fig-15.png" alt="fig-15"><figcaption>fig-15</figcaption></figure>
+<p>图 fig-15：左列「全地图工具」 · 点入 · 16 宫格 + 编辑/排序</p>
+<figure id="fig-16"><img src="fig-16.png" alt="fig-16"><figcaption>fig-16</figcaption></figure>
+<p>图 fig-16：左列「更多」 · 点入 · 16 格面板全貌</p>
+<p>配图见 §4 fig-16（同一张，不重复贴图）</p>
+<hr>
+<h2 id="sec-5">5. 右列 10 个控件</h2>
+<p><code>图层</code> / <code>叠加</code> / <code>山脉</code> / <code>水系</code> / <code>探索</code> / <code>指北针</code> / <code>+</code> / <code>−</code> / <code>定位</code> / <code>3D</code></p>
+<div class="tbl"><table><thead><tr>
+<th>控件</th>
+<th>怎么用</th>
+<th>状态</th>
+</tr></thead><tbody>
+<tr><td>图层</td><td>底图与图层选择面板；无可用项时给明确占位，<b>不写「去开通」</b></td><td><code>已验收</code></td></tr>
+<tr><td>叠加</td><td>叠加层选择；无免费源时占位说明</td><td><code>已验收</code></td></tr>
+<tr><td>山脉</td><td>打开山脉页</td><td><code>已验收</code></td></tr>
+<tr><td>水系</td><td>打开水系页</td><td><code>已验收</code></td></tr>
+<tr><td>探索</td><td>打开专题页</td><td><code>已验收</code></td></tr>
+<tr><td>指北针</td><td><b>把偏转的地图立即回正北</b>（= 罗盘复位同一语义）</td><td><code>已验收</code></td></tr>
+<tr><td>+ / −</td><td>缩放</td><td><code>已验收</code></td></tr>
+<tr><td>定位</td><td>回到当前位置</td><td><code>已验收</code></td></tr>
+<tr><td>3D</td><td>切换 3D 地形；<b>我方无门槛、点击即切换</b>（原版有 VIP 门槛，属有意差异，见 §13）</td><td><code>已验收</code></td></tr>
+</tbody></table></div>
+<p><b>3D 的已知行为</b>：页面重载后保持 3D；<b>杀进程冷启回 2D</b>（与原版一致）。切换<b>无过渡动画</b>。 状态：<code>已验收</code></p>
+<figure id="fig-17"><img src="fig-17.png" alt="fig-17"><figcaption>fig-17</figcaption></figure>
+<p>图 fig-17：主界面右列 · 无需操作 · 10 项全貌</p>
+<figure id="fig-18"><img src="fig-18.png" alt="fig-18"><figcaption>fig-18</figcaption></figure>
+<p>图 fig-18：右列「3D」 · 点入并等贴面完成 · 3D 地形</p>
+<hr>
+<h2 id="sec-6">6. 「更多」16 格</h2>
+<p><code>罗盘</code> / <code>超清地图</code> / <code>看山脉</code> / <code>看水系</code> / <code>海拔查询</code> / <code>天气</code> / <code>历史影像</code> / <code>等高线</code> / <code>收藏点</code> / <code>测量</code> / <code>画笔</code> / <code>钓点</code> / <code>轨迹记录</code> / <code>路网</code> / <code>地理影像</code> / <code>超清优化</code></p>
+<ul>
+<li>16 格入口<b>全部可达</b>；各项功能状态见对应小节与 §13。 状态：<code>已验收（入口）</code></li>
+</ul>
+<p>配图见 §4 fig-16（同一张，不重复贴图）</p>
+<hr>
+<h2 id="sec-7">7. 收藏点</h2>
+<div class="tbl"><table><thead><tr>
+<th>动作</th>
+<th>怎么做</th>
+<th>状态</th>
+</tr></thead><tbody>
+<tr><td>收藏当前点</td><td>地图长按/「收藏点」→ 保存页，坐标自动预填</td><td><code>已验收</code></td></tr>
+<tr><td>查看列表</td><td>「更多」→「收藏点」</td><td><code>已验收</code></td></tr>
+<tr><td>点条目跳图</td><td>点行 → 地图定位到该点</td><td><code>已验收</code></td></tr>
+<tr><td>删除</td><td><b>长按条目删除</b>（我方入口形态，原版为「编辑」按钮，见 §13）</td><td><code>已验收</code></td></tr>
+<tr><td>云同步</td><td>登录后与自建服务端同步；未登录时先入本地队列，登录后补同步</td><td><code>已验收</code></td></tr>
+</tbody></table></div>
+<figure id="fig-19"><img src="fig-19.png" alt="fig-19"><figcaption>fig-19</figcaption></figure>
+<p>图 fig-19：更多「收藏点」 · 收藏当前点 · 保存页坐标已预填</p>
+<figure id="fig-20"><img src="fig-20.png" alt="fig-20"><figcaption>fig-20</figcaption></figure>
+<p>图 fig-20：更多「收藏点」 · 进入列表 · 至少两条</p>
+<figure id="fig-21"><img src="fig-21.png" alt="fig-21"><figcaption>fig-21</figcaption></figure>
+<p>图 fig-21：收藏列表 · 长按条目 · 删除确认（我方形态）</p>
+<hr>
+<h2 id="sec-8">8. 测量与画笔</h2>
+<div class="tbl"><table><thead><tr>
+<th>功能</th>
+<th>怎么做</th>
+<th>状态</th>
+</tr></thead><tbody>
+<tr><td>测量</td><td>地图上点选 → 结果面板；<b>单位可切换</b>（km² / 亩 / 公顷，<code>17.80 km² ≈ 26705.6 亩 ≈ 1780.38 公顷</code>）</td><td><code>已验收</code></td></tr>
+<tr><td>画笔</td><td>五色 + 粗细；<b>偏好记忆</b>（退出重进保留）</td><td><code>已验收</code></td></tr>
+</tbody></table></div>
+<figure id="fig-22"><img src="fig-22.png" alt="fig-22"><figcaption>fig-22</figcaption></figure>
+<p>图 fig-22：更多「测量」 · 点选两点或区域 · 结果面板与单位</p>
+<figure id="fig-23"><img src="fig-23.png" alt="fig-23"><figcaption>fig-23</figcaption></figure>
+<p>图 fig-23：更多「画笔」 · 打开面板 · 五色与粗细</p>
+<hr>
+<h2 id="sec-9">9. 轨迹</h2>
+<ul>
+<li>「更多」→「轨迹记录」：列表 → 详情 → <b>地图内回放</b>（不做视频合成）。 状态：<code>待核对</code>（入口在；功能状态以复验为准，未复核前<b>不写成已完成</b>）</li>
+</ul>
+<figure id="fig-24"><img src="fig-24.png" alt="fig-24"><figcaption>fig-24</figcaption></figure>
+<p>图 fig-24：更多「轨迹记录」 · 进入 · 轨迹列表</p>
+<hr>
+<h2 id="sec-10">10. 账户</h2>
+<div class="tbl"><table><thead><tr>
+<th>动作</th>
+<th>怎么做</th>
+<th>状态</th>
+</tr></thead><tbody>
+<tr><td>注册 / 登录</td><td>账号 + 密码（本项目自建服务端）</td><td><code>已验收</code></td></tr>
+<tr><td>修改密码</td><td>账户设置内改密，旧会话失效</td><td><code>已验收</code></td></tr>
+<tr><td>同步收藏点</td><td>账户设置内手动触发</td><td><code>已验收</code></td></tr>
+<tr><td>登出</td><td>账户设置底部红按钮「退出登录」</td><td><code>已验收</code></td></tr>
+<tr><td>账户设置</td><td>抽屉入口</td><td><code>已验收</code></td></tr>
+</tbody></table></div>
+<figure id="fig-25"><img src="fig-25.png" alt="fig-25"><figcaption>fig-25</figcaption></figure>
+<p>图 fig-25：抽屉「账户」 · 进入登录页 · 账号+密码（密码已遮挡）</p>
+<figure id="fig-26"><img src="fig-26.png" alt="fig-26"><figcaption>fig-26</figcaption></figure>
+<p>图 fig-26：抽屉「账户设置」 · 进入 · 行列表 + 贴底红按钮</p>
+<hr>
+<h2 id="sec-11">11. 投诉反馈</h2>
+<ul>
+<li>两级：<b>问题反馈 / 订单投诉</b> → 表单填写 → 提交。<b>未登录时点提交提示「提交前请先登录」</b>（交互提示，不是页面常驻文案）。 状态：<code>已验收</code></li>
+</ul>
+<figure id="fig-27"><img src="fig-27.png" alt="fig-27"><figcaption>fig-27</figcaption></figure>
+<p>图 fig-27：抽屉「投诉反馈」 · 进入一级页 · 两行 + 右上「我的」</p>
+<figure id="fig-28"><img src="fig-28.png" alt="fig-28"><figcaption>fig-28</figcaption></figure>
+<p>图 fig-28：投诉反馈 · 点「问题反馈」 · 空表单</p>
+<hr>
+<h2 id="sec-12">12. 关于我们 / 联系我们 / 帮助中心</h2>
+<div class="tbl"><table><thead><tr>
+<th>页</th>
+<th>形态</th>
+<th>状态</th>
+</tr></thead><tbody>
+<tr><td>关于我们</td><td>整页（Logo、名称、公司、版本、测绘资质、备案编号）</td><td><code>已验收</code></td></tr>
+<tr><td>联系我们</td><td><b>弹窗</b>（叠在抽屉上，关闭回抽屉），显示邮箱 + 「复制邮箱」</td><td><code>已验收</code></td></tr>
+<tr><td>帮助中心</td><td><b>标题栏 + 内嵌网页</b>（本文件即其内容来源）</td><td><code>待核对</code>（入口完成度以复验为准）</td></tr>
+</tbody></table></div>
+<figure id="fig-29"><img src="fig-29.png" alt="fig-29"><figcaption>fig-29</figcaption></figure>
+<p>图 fig-29：抽屉「关于我们」 · 进入 · Logo/名称/公司/版本/资质/备案号</p>
+<figure id="fig-30"><img src="fig-30.png" alt="fig-30"><figcaption>fig-30</figcaption></figure>
+<p>图 fig-30：抽屉「联系我们」 · 点开 · 弹窗叠在抽屉上</p>
+<figure id="fig-31"><img src="fig-31.png" alt="fig-31"><figcaption>fig-31</figcaption></figure>
+<p>图 fig-31：抽屉「帮助中心」 · 进入 · 标题栏 + 网页正文</p>
+<hr>
+<h2 id="sec-13">13. 已知限制（<b>只列在这里，不写进正文当功能</b>）</h2>
+<div class="tbl"><table><thead><tr>
+<th>#</th>
+<th>项</th>
+<th>现状</th>
+<th>说明</th>
+</tr></thead><tbody>
+<tr><td>1</td><td>地图「当前位置符号」「屏幕中心符号」</td><td><b>未取证 / 未实现</b></td><td>原版 web 层资源零命中，无法取证，<b>不自画</b></td></tr>
+<tr><td>2</td><td>罗盘「贴地」效果</td><td><b>未实现</b></td><td>按钮在、名称对；3D 贴地渲染未落地</td></tr>
+<tr><td>3</td><td>3D 的 VIP 门槛</td><td><b>有意差异</b></td><td>原版非 VIP 且免费次数用尽会跳 VIP 页；我方<b>无门槛、恒可用</b></td></tr>
+<tr><td>4</td><td><b>头像</b>上传/编辑</td><td><b>未实现</b></td><td>依赖原版上传接口（<code>updateAvatar</code> key），未取证；<b>昵称可在账户设置内修改（行尾「点此修改」），不属于本限制</b>——此处措辞已按实现更正（审成文 <code>a2a8235</code> M1）</td></tr>
+<tr><td>5</td><td>注销账户</td><td><b>未实现</b></td><td>自用非商用可接受；<b>商用前必须补</b>（合规要求）</td></tr>
+<tr><td>6</td><td>协议页（《用户协议》《隐私政策》）</td><td><b>原版不可见</b></td><td>原版两链接 <code>[0,0][0,0]</code>、滑屏后仍为零尺寸；我方同样不提供入口</td></tr>
+<tr><td>7</td><td>帮助中心离线可读</td><td><b>我方改进项</b></td><td>原版「离线」证据是抓取失败产物，已作废；离线能力按我方实现写，不算 1:1</td></tr>
+<tr><td>8</td><td>收藏点删除入口形态</td><td><b>我方形态</b></td><td>原版是「编辑」按钮，我方是长按删除；功能等价、形态不同</td></tr>
+<tr><td>9</td><td>审图号角注</td><td><b>待核对</b></td><td>本项目数据源与审图号另核，文档不写真值</td></tr>
+<tr><td>10</td><td>智能读盘六项明细</td><td><b>待核缺陷</b></td><td>六项带「💎 点击查看»」标记，但我方无 VIP 体系：点不开＝与「免费无门槛」原则冲突，点得开＝文案误导，两种情况都要处理</td></tr>
+</tbody></table></div>
+<hr>
 </body>
 </html>

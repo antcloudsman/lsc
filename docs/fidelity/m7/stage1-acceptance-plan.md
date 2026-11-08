@@ -391,6 +391,20 @@ slope(B on A) = 0.018    corr = 0.007
 
 **门禁口径提醒**：`evidence-lint` 用**默认 root** 运行会 `fail=1`，原因是历史脏文件 `docs/fidelity/m3/help-offline.xml`，其全文只有一行 `cat: /sdcard/a.xml: No such file or directory`。因此「evidence-lint fail=0」只有在带窄 root 时成立；该文件与 C 轮无关，但会让默认命令变红，建议清理或进 allowlist。
 
+**M-06 已补证（20:33–20:36，`develop 518c99e`，`apk_sha256 5167a1dc…`，pull 回核一致）**：
+
+```
+am start -n com.luopan.fengshui/.ElevationActivity        # 子页在前台，钩子只在 onResume 期间注册
+cmd pagejs --es value 'window.LCAndroid.onEvent(JSON.stringify({type:"elev",lat:39.9042,lng:116.4074,elev:"abc"}))'
+  → 面板显示：纬度 39.904200 / 经度 116.407400 / 「该点无高程数据」
+反证（同一入口）：elev:42
+  → 「海拔：42.0 m」+「含氧量：20.88 %（估算）」
+```
+
+两条一起才作数：**解析失败 → 「无高程数据」**，**可解析 → 「42.0 m」**，屏幕上不再出现把二者混为一谈的 `0 m`。**M-06 判 PASS**。
+
+**构造方法（给后续复用）**：`pagejs` 注入的是**JS 代码**，不是事件 JSON——裸发 `{"type":"elev",…}` 只会被当语句求值、面板不响应；必须包一层 `window.LCAndroid.onEvent(JSON.stringify({…}))`。另外子页必须在前台（否则 `pagejs ignored`），且 `am start` 后要等 3–7 秒让页面加载完。
+
 ### 1.5 失败与回滚
 
 - 任一项超差 → 本条判**不通过**，退回实现方，附超差项与实测值；

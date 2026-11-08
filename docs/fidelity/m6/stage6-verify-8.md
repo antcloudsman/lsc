@@ -14,9 +14,36 @@
 | 3 | 当前位置/屏幕中心两个符号 | **未实现/未取证** | 原版 `userLocation`/`locationMarker`/`geolocate` 全 0 命中（产品关账摘要）；按总监口径不在设备上验 | — |
 | 4 | 四页 1:1 排版 | **已验** | §47：三页标题 `[506,154][722,233]`、返回 `[41,115]`、投诉 352/532、账户 339/502/665/828/991、行高 79、步进 163、我的墨迹中心 1133 vs 1132.5（Δ0.5） | 见 §47：`uiautomator dump` + 像素墨迹扫描（阈值 luma<200） |
 | 5 | 帮助中心带图文档 | **已验** | 可达（`M3WebActivity` 渲染 13 节目录+正文）；飞行模式冷启动仍可读；29 图 lint `fail=0`；sha 门禁 `exit=0` | `adb shell cmd connectivity airplane-mode enable` → 冷启 → 重进；`python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc-help --expect-size 1228x2700` |
-| 6 | 指南针按钮=回正北 | **待验（等 `state` 命令）** | 需 non-zero bearing → 点按钮 → `bearing=0`、`mode=2d`、`center`/`zoom` 不变 | `am broadcast -a com.luopan.fengshui.DEBUG --es cmd state`（未合入） |
+| 6 | 指南针按钮=回正北 | **已验（PASS）** | 罗盘态「罗盘复位」：`bearing 172→0`、`mode 3d→2d`、`center` 与 `zoom` **一位不差**（见 §终值） | `--es cmd state`；进入 3D→坐南朝北两次造 bearing 172→点罗盘复位→再 `state` |
 | 7 | 罗盘贴地 | **未实现**（规则认定，不写已修复） | 无 GPU/渲染通道证据；§13 已登记 | — |
-| 8 | 右侧 3D 按钮 | **部分验**（T1 间接覆盖；T2/T3 待验） | 开等高线/贴地后 reload 截图 sha 相同（3D 保持）；冷启回 2D、无过渡动画未测 | `am broadcast … --es cmd reload` + `am broadcast … --es cmd state`（未合入） |
+| 8 | 右侧 3D 按钮 | **T1 已验 / T2 已验 / T3 未验** | T1 重载后 `mode` 仍 `3d`、`is3D:true`；T2 `am force-stop` 冷启后 `mode:"2d"`、`is3D:false`、`bearing:0`、`zoom:5`；T3「无过渡动画」静态截图判不了 | `--es cmd reload` / `am force-stop` + `monkey … LAUNCHER 1` + `--es cmd state` |
+
+## 终值（`8911c22`，apk_sha `1c340cfc…`，装机 11:11:14）
+
+```
+① 基线(2d)      state {"mode":"2d","bearing":0,"center":[116.4074,39.9042],"zoom":5,"sitMode":0,...}
+② 点 3D         state {"mode":"3d",...,"zoom":9,...,"is3D":true}
+③ 坐南朝北×2    state {"mode":"3d","bearing":172,...,"sitMode":2,...,"is3D":true}      ← 三态确认
+④ 点罗盘复位    state {"mode":"2d","bearing":0,"center":[116.12029198163425,39.9042],"zoom":9,"sitMode":0,"is3D":false}
+   ← 第 6 条：bearing 归 0 ✓、mode 退 2d ✓、center/zoom 与 ③ 完全一致 ✓
+⑤ T1 reload 前  state {"mode":"3d","bearing":0,"center":[116.12029...,39.9042],"zoom":9,"sitMode":0,"needleOn":false}
+⑥ T1 reload 后  state {"mode":"3d","bearing":180,"center":[116.4074,39.9042],"zoom":9,"sitMode":2,"needleOn":true}
+   ← 3D 保持 ✓（T1 PASS），但状态被"复活"，见下节新线索
+⑦ T2 冷启       state {"mode":"2d","bearing":0,"center":[116.4074,39.9042],"zoom":5,"is3D":false}   ← T2 PASS
+```
+
+## 复验中发现的新线索（不进八条，交总监裁定）
+
+**重载会把「已被重置/已关闭」的状态重新打开——Java 镜像没有随页面动作同步。**
+
+| 观测 | 重载前 | 重载后 | 该字段的本轮操作 |
+|---|---|---|---|
+| `sitMode` | 0（罗盘复位后） | **2**（`bearing` 0→**180**） | 罗盘复位只改了页面，未回写 Java `sitMode`（仍为 2），重放 `setSitNorth(2)` 把它复活 |
+| `needleOn` | **false**（点「指北针」关掉） | **true** | 同一类：页面侧关闭，Java `pointerOn` 未跟着变，重放 `setNeedle(true)` 又打开 |
+
+- 影响：用户「关掉指针 / 复位到正北」后，任何一次页面重载都会把它们变回打开/偏转，且**重载越频繁越明显**；这与 Stage 5 修的「重载丢状态」是同一根因的另一面（镜像与页面不同源）。
+- 证据：上面 ⑤→⑥ 两行 `state` 输出（同一次 `reload`，`10:14:30` → `10:14:42`）。
+- 判据建议：重放前先以 `getState()` 回读覆盖 Java 镜像，或让这些控件在改页面后同步写镜像；**不能只做单向重放**。
 
 ## 五个表现面的重载保持（Stage 5 修复复验）
 

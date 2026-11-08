@@ -2578,11 +2578,17 @@ function drawGroundCompass(vp, target) {
   var y = target.y + 0.5;           /* 抬高 0.5m 避免与地形 z-fighting；仍是平面、不跟起伏 */
   var x0 = target.x - r, x1 = target.x + r;
   var z0 = target.z - r, z1 = target.z + r;
+  /* 纹理朝向（Q8，11-08 静态推演修正）：WebGL 从 canvas 上传时默认不翻转，纹理 v=0 取的是
+   * 画布**顶边**；而盘面画布顶边是「北/子」那侧（与 DOM 盘面同向）。
+   * 世界坐标里 z0 = target.z - r 是**北**（bearing 0 时相机 forward = (0,0,-1)），x0 是**西**。
+   * 原写法把 (x0,z0)=西北角配 v=1（画布底边）⇒ 画布顶边落到屏幕南侧 = 整体转了 180°，
+   * 这就是客户端看到的"文字上下颠倒"。改后：北角 v=0、东角 u=1，屏幕顶边与 2D 盘面同向。
+   * 判据：bearing=0、pitch=0 时，顶边应为「子/北」、底边「午/南」（总监 Q8）。 */
   var verts = new Float32Array([
-    x0, y, z0, 0, 1,
-    x1, y, z0, 1, 1,
-    x1, y, z1, 1, 0,
-    x0, y, z1, 0, 0
+    x0, y, z0, 0, 0,
+    x1, y, z0, 1, 0,
+    x1, y, z1, 1, 1,
+    x0, y, z1, 0, 1
   ]);
   gl.useProgram(groundProg);
   gl.bindBuffer(gl.ARRAY_BUFFER, groundBuf);

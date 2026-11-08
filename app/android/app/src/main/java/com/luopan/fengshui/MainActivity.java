@@ -512,7 +512,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             lat = w[0];
                             lng = w[1];
                         }
-                        new GapDb(this).insertInterest(p.name, lat, lng, 0, 180, uid);
+                        // 坐向优先取文件里的 per-point 值；文件没带才用 0/180 默认
+                        double sit = Double.isNaN(p.sittingDeg) ? 0 : p.sittingDeg;
+                        double face = Double.isNaN(p.facingDeg) ? 180 : p.facingDeg;
+                        new GapDb(this).insertInterest(p.name, lat, lng, sit, face, uid);
                         imported.add(new KmlIo.Point(p.name, p.desc, lat, lng));
                     }
                     runOnUiThread(() -> showKmlOnMap(imported));
@@ -2408,7 +2411,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         for (InterestPoint ip : new GapDb(this).listInterest(LcSession.uid(this))) {
             String desc = String.format(java.util.Locale.US, "坐%.1f° 向%.1f°",
                     ip.sittingDeg, ip.facingDeg);
-            out.add(new KmlIo.Point(ip.name, desc, ip.lat, ip.lng));
+            KmlIo.Point kp = new KmlIo.Point(ip.name, desc, ip.lat, ip.lng);
+            // 点上属性：坐向与类型写在每个 Placemark 自带（产品口径），不只写在 Document 层
+            kp.sittingDeg = ip.sittingDeg;
+            kp.facingDeg = ip.facingDeg;
+            kp.kind = "favorite";
+            kp.id = ip.id;
+            kp.createdAt = ip.createdAt;   // 收藏点无海拔字段 → elevM 保持 NaN，导出空串（不写 0 冒充）
+            out.add(kp);
         }
         return out;
     }

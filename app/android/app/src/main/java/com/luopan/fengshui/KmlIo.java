@@ -32,6 +32,18 @@ final class KmlIo {
         String desc;
         final double lat;
         final double lng;
+        /** 坐（度，0..360）；NaN = 文件里没带。 */
+        double sittingDeg = Double.NaN;
+        /** 向（度，0..360）；NaN = 文件里没带。 */
+        double facingDeg = Double.NaN;
+        /** 点类型（项目口径：favorite）；空 = 未声明。 */
+        String kind = "";
+        /** 业务 id（收藏点主键）；-1 = 未带。 */
+        long id = -1;
+        /** 海拔（米）；NaN = 未知（**不写 0 冒充**）。 */
+        double elevM = Double.NaN;
+        /** 创建时间（毫秒）；-1 = 未带。 */
+        long createdAt = -1;
 
         Point(String name, String desc, double lat, double lng) {
             this.name = name == null ? "" : name;
@@ -80,13 +92,36 @@ final class KmlIo {
             sb.append("    <Placemark>\n");
             sb.append("      <name>").append(esc(p.name)).append("</name>\n");
             if (!p.desc.isEmpty()) sb.append("      <description>").append(esc(p.desc)).append("</description>\n");
+            // 点上业务字段：**每个 Placemark 自带 6 项**（产品口径 B-1），只写在 Document 层
+            // 会让导入后丢掉坐向——这个 App 的核心场景就是量坐向，丢了等于导了个半成品。
+            // 缺值写空串，不写 0 冒充（0 米与"没有数据"必须可区分，同 M-06 的口径）。
+            sb.append("      <ExtendedData>\n");
+            pdata(sb, "lc:id", p.id >= 0 ? String.valueOf(p.id) : "");
+            pdata(sb, "lc:type", p.kind);
+            pdata(sb, "lc:sit", Double.isNaN(p.sittingDeg) ? ""
+                    : String.format(java.util.Locale.US, "%.1f", p.sittingDeg));
+            pdata(sb, "lc:heading", Double.isNaN(p.facingDeg) ? ""
+                    : String.format(java.util.Locale.US, "%.1f", p.facingDeg));
+            pdata(sb, "lc:elev", Double.isNaN(p.elevM) ? ""
+                    : String.format(java.util.Locale.US, "%.1f", p.elevM));
+            pdata(sb, "lc:created", p.createdAt >= 0 ? String.valueOf(p.createdAt) : "");
+            sb.append("      </ExtendedData>\n");
             sb.append("      <Point><coordinates>")
-                    .append(fmt(p.lng)).append(',').append(fmt(p.lat)).append(",0</coordinates></Point>\n");
+                    .append(fmt(p.lng)).append(',').append(fmt(p.lat));
+            // alt：**有值才写**；未知时只写 lon,lat——KML 允许省略 alt，不能拿 0 冒充
+            if (!Double.isNaN(p.elevM)) sb.append(',').append(String.format(java.util.Locale.US, "%.1f", p.elevM));
+            sb.append("</coordinates></Point>\n");
             sb.append("    </Placemark>\n");
         }
         sb.append("  </Document>\n");
         sb.append("</kml>\n");
         return sb.toString();
+    }
+
+    /** Placemark 级 Data（与 Document 级的 {@link #data} 分开命名，避免看串）。 */
+    private static void pdata(StringBuilder sb, String k, String v) {
+        sb.append("        <Data name=\"").append(esc(k)).append("\"><value>")
+                .append(esc(v)).append("</value></Data>\n");
     }
 
     private static void data(StringBuilder sb, String k, String v) {
@@ -122,6 +157,10 @@ final class KmlIo {
             String curDesc = "";
             String pendingDataName = null;
             String geometry = null;          // Point / LineString / Polygon
+            double curSitting = Double.NaN, curFacing = Double.NaN;
+            String curKind = "";
+            long curId = -1, curCreated = -1;
+            double curElev = Double.NaN;
             int skipDepth = 0;               // >0 表示处在被跳过的元素内
             int ev;
             while ((ev = xp.next()) != XmlPullParser.END_DOCUMENT) {
@@ -141,6 +180,12 @@ final class KmlIo {
                     } else if ("Placemark".equals(tag)) {
                         curName = "";
                         curDesc = "";
+                        curSitting = Double.NaN;
+                        curFacing = Double.NaN;
+                        curKind = "";
+                        curId = -1;
+                        curCreated = -1;
+                        curElev = Double.NaN;
                     } else if ("name".equals(tag)) {
                         curName = safeText(xp);
                     } else if ("description".equals(tag)) {
@@ -150,7 +195,9 @@ final class KmlIo {
                     } else if ("coordinates".equals(tag)) {
                         String text = safeText(xp).trim();
                         // 只认这三种几何；其他（含 gx:coord）忽略
-                        if (geometry != null) addCoords(r, text, curName, curDesc, geometry);
+                        if (geometry != null) {
+                            addCoords(r, text, curName, curDesc, geometry, curSitting, curFacing, curKind);
+                        }
                     }
                 } else if (ev == XmlPullParser.END_TAG) {
                     if (skipDepth > 0) {
@@ -163,7 +210,25 @@ final class KmlIo {
                     }
                 } else if (ev == XmlPullParser.TEXT && pendingDataName != null) {
                     String v = xp.getText() == null ? "" : xp.getText().trim();
-                    if ("lc:crs".equals(pendingDataName) && !v.isEmpty()) r.crs = v;
+                    if ("lc:crs".equals(pendingDataName) && !v.isEmpty()) {
+                        r.crs = v;
+                    } else if ("lc:sitting".equals(pendingDataName)) {
+                        try { curSitting = Double.parseDouble(v); } catch (Throwable ignored) { }
+                    } else if ("lc:facing".equals(pendingDataName)) {
+                        try { curFacing = Double.parseDouble(v); } catch (Throwable ignored) { }
+                    } else if ("lc:kind".equals(pendingDataName) || "lc:type".equals(pendingDataName)) {
+                        curKind = v;
+                    } else if ("lc:sit".equals(pendingDataName)) {
+                        try { curSitting = Double.parseDouble(v); } catch (Throwable ignored) { }
+                    } else if ("lc:heading".equals(pendingDataName)) {
+                        try { curFacing = Double.parseDouble(v); } catch (Throwable ignored) { }
+                    } else if ("lc:elev".equals(pendingDataName)) {
+                        try { curElev = Double.parseDouble(v); } catch (Throwable ignored) { }
+                    } else if ("lc:id".equals(pendingDataName)) {
+                        try { curId = Long.parseLong(v); } catch (Throwable ignored) { }
+                    } else if ("lc:created".equals(pendingDataName)) {
+                        try { curCreated = Long.parseLong(v); } catch (Throwable ignored) { }
+                    }
                     pendingDataName = null;
                 }
             }
@@ -179,7 +244,8 @@ final class KmlIo {
     }
 
     /** `coordinates` 是空格分隔的 `lon,lat[,alt]` 串；LineString/Polygon 的每个顶点都收成点。 */
-    private static void addCoords(Result r, String text, String name, String desc, String geometry) {
+    private static void addCoords(Result r, String text, String name, String desc, String geometry,
+                                  double sittingDeg, double facingDeg, String kind) {
         String[] tuples = text.split("\\s+");
         int idx = 0;
         for (String tuple : tuples) {
@@ -191,7 +257,11 @@ final class KmlIo {
                 double lat = Double.parseDouble(parts[1].trim());
                 if (Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
                 String tag = "Point".equals(geometry) ? name : (name + "#" + (++idx));
-                r.points.add(new Point(tag, desc, lat, lng));
+                Point np = new Point(tag, desc, lat, lng);
+                np.sittingDeg = sittingDeg;
+                np.facingDeg = facingDeg;
+                np.kind = kind;
+                r.points.add(np);
             } catch (NumberFormatException ignored) {
                 // 单点坏值跳过，不中断整份文件
             }

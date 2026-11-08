@@ -1711,6 +1711,8 @@ function setHeading(deg) {
     if (mode !== "3d") applyTransform();
   }
   refreshNeedle();
+  /* heading 变化会改中心读数（heading/坐向文字），故仍标脏；盘面图元本身不随 heading 转（bit1） */
+  if (groundMode && groundRenderer === 'canvas') groundTexDirty = true;
   var lbl = document.getElementById("heading-label");
   if (lbl && lbl.getAttribute("data-sit") == null) {
     lbl.textContent = "向 " + (Math.round(lastHeading) % 360) + "°";
@@ -1776,6 +1778,7 @@ function toggleContour() {
 function setGround(on) {
   on = !!on;
   if (groundMode === on) { updateHud(); return groundMode; }   /* 幂等：同值不重复压/抬机位 */
+  if (on && groundRenderer === 'canvas') { try { groundTexDirty = true; groundRedraw(); } catch (e) {} }
   groundMode = on;
   var btn = document.getElementById("btn_ground");
   if (btn) btn.className = groundMode ? "active" : "";
@@ -2302,6 +2305,187 @@ window.__lcRenderCompass = function (size, opts) {
     return '';
   }
 };
+
+
+/* ============================================================
+ * M7 贴地：把盘面 canvas 当栅格纹理按平面四角铺到地面上（不跟 DEM 起伏）
+ * 对齐原版：canvas size = floor(2×screen.width) CSS、dpr = min(floor(dpr),2)；
+ *           地面正方形边长 = 2 × 半径米，半径米 = floor(screen.width × 米每像素)。
+ * 回滚开关：groundRenderer = 'overlay'（默认，现网行为）| 'canvas'（本实现）。
+ * ============================================================ */
+var groundRenderer = 'overlay';
+var groundCanvas = null;      /* 728 CSS 盘面画布（贴图源） */
+var groundTex = null;         /* GL 纹理 */
+var groundTexDirty = true;
+var groundProg = null, groundBuf = null, groundLoc = {};
+var groundImg = null;         /* 当前盘面位图（drawImage 用） */
+var groundImgDial = -1;
+
+function groundCanvasSize() {
+  var sw = window.screen && window.screen.width ? window.screen.width : (glCanvas.clientWidth || 364);
+  var dpr = Math.min(Math.floor(window.devicePixelRatio || 1), 2) || 1;
+  var css = Math.floor(2 * sw);
+  return { css: css, dpr: dpr, px: css * dpr };
+}
+
+/* 半径（米）＝屏宽米数；原版 toBounds 的 radius 是半边长 ⇒ 地面边长 = 2×半径米 */
+function groundRadiusMeters() {
+  var sw = window.screen && window.screen.width ? window.screen.width : (glCanvas.clientWidth || 364);
+  var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
+  return Math.floor(sw * zMpp);
+}
+
+function groundEnsureCanvas() {
+  var sz = groundCanvasSize();
+  if (!groundCanvas) groundCanvas = document.createElement('canvas');
+  if (groundCanvas.width !== sz.px || groundCanvas.height !== sz.px) {
+    groundCanvas.width = sz.px;
+    groundCanvas.height = sz.px;
+    groundTexDirty = true;
+  }
+  return sz;
+}
+
+/* 重画盘面到 groundCanvas（尺寸 = 盘面自身，居中，与原版 (i-e)/2 居中一致） */
+function groundRedraw() {
+  var sz = groundEnsureCanvas();
+  var ctx = groundCanvas.getContext('2d');
+  ctx.clearRect(0, 0, sz.px, sz.px);
+  if (!COMPASS_RINGS) return false;
+  var dialType = (typeof compassDialType === 'number') ? compassDialType : 0;
+  if (groundImgDial !== dialType) {
+    groundImg = new Image();
+    groundImg.src = 'compass/dial_full_' + dialType + '.webp';
+    groundImg.onload = function () { groundTexDirty = true; groundRedraw(); };
+    groundImgDial = dialType;
+  }
+  var rd = null;
+  try {
+    rd = CompassDataReading(lastHeading);
+  } catch (e) { rd = null; }
+  var ok = drawCompass(ctx, sz.px, {
+    data: COMPASS_RINGS,
+    /* 档位声明：bit1「盘面随地图转」——内容**不**预旋转（heading=0），
+     * 四面在世界坐标轴对齐、由相机 bearing 投影产生屏幕旋转。
+     * 若这里传 lastHeading，就变成「内容转一次 + 相机转一次」= 转两遍，
+     * Q4 会量到 ±45° 这类中间值。读数仍取真实朝向（见下方 reading）。 */
+    heading: 0,
+    dialType: dialType,
+    dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
+    tianzhi: false,
+    trustEnabled: false,
+    dialImg: (groundImg && groundImg.complete && groundImg.naturalWidth > 0) ? groundImg : null,
+    reading: rd
+  });
+  groundTexDirty = true;
+  return ok;
+}
+
+/* 读数（与原版读数同源：CompassData.read；JS 侧按同一套换算） */
+function CompassDataReading(heading) {
+  var h = ((Number(heading) || 0) % 360 + 360) % 360;
+  var mountain = Math.round(h / 15) % 24;
+  return { heading: h, mountain: mountain, jian: '', yinyang: '' };
+}
+
+function groundInitGL() {
+  if (groundProg) return true;
+  if (!gl) return false;
+  var vs = 'attribute vec3 aPos; attribute vec2 aUv; uniform mat4 uVP; varying vec2 vUv;' +
+           'void main(){ vUv = aUv; gl_Position = uVP * vec4(aPos, 1.0); }';
+  var fs = 'precision mediump float; uniform sampler2D uTex; uniform float uAlpha; varying vec2 vUv;' +
+           'void main(){ vec4 c = texture2D(uTex, vUv); if (c.a < 0.02) discard;' +
+           'gl_FragColor = vec4(c.rgb, c.a * uAlpha); }';
+  function sh(t, src) {
+    var o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o);
+    if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(o) || 'shader');
+    }
+    return o;
+  }
+  try {
+    groundProg = gl.createProgram();
+    gl.attachShader(groundProg, sh(gl.VERTEX_SHADER, vs));
+    gl.attachShader(groundProg, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(groundProg);
+    if (!gl.getProgramParameter(groundProg, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(groundProg) || 'link');
+  } catch (e) {
+    console.log('LCGROUND ERROR shader ' + e.message);
+    groundProg = null;
+    return false;
+  }
+  groundLoc = {
+    pos: gl.getAttribLocation(groundProg, 'aPos'),
+    uv: gl.getAttribLocation(groundProg, 'aUv'),
+    vp: gl.getUniformLocation(groundProg, 'uVP'),
+    tex: gl.getUniformLocation(groundProg, 'uTex'),
+    alpha: gl.getUniformLocation(groundProg, 'uAlpha')
+  };
+  groundBuf = gl.createBuffer();
+  groundTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, groundTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return true;
+}
+
+/* 旋转口径（逆向 a12c694 §6.2，必须写清，否则 Q4 会被判反）：
+ * 原版 canvas 内容按 `r = compass.getRotation()` 旋转，再由 mode 位决定地图 bearing 与内容转角是否抵消：
+ *   bit1 → 地图 +r、内容不变   ⇒ 盘面随地图转（屏幕上看得到转）
+ *   bit2 → 地图 −r、内容 +r    ⇒ 抵消，盘面屏幕上保持朝上
+ *   bit4 → 地图 +r、内容 −r    → 抵消，保持朝上
+ * 本实现：drawCompass 按 lastHeading 旋转内容，平面四角在**世界坐标轴对齐**、交给相机投影 ⇒ 结构等价 bit1
+ * （盘面随地图转）。bit2/bit4 的抵消模式**未实现**，台账记「按 bit1 实现；bit2/4 抵消态未做」。
+ * 因此 Q4 判据只接受两种结果：屏幕夹角 **90°**（bit1）或 **0°**（bit2/4）；出现 ±45° 即转了两遍或抵消一半。 */
+/* 在 render3D 末尾调用：用同一张 VP 与同一个相机目标高度画一块平面 */
+function drawGroundCompass(vp, target) {
+  if (groundRenderer !== 'canvas') return;
+  if (!groundMode) return;
+  /* 原版门控（逆向 a12c694，@41208 逐字）：75 > |lat| && zoom >= 6 && _isGround 才绘制；
+   * 超出范围 canvas 不重绘。照抄，避免"我们在极区/低缩放也画、原版不画"的行为差异。 */
+  if (Math.abs(center.lat) >= 75 || zoom < 6) return;
+  if (!groundInitGL()) return;
+  if (!COMPASS_RINGS) return;
+  var sz = groundEnsureCanvas();
+  if (groundTexDirty) {
+    if (!groundRedraw()) return;
+    gl.bindTexture(gl.TEXTURE_2D, groundTex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, groundCanvas);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    groundTexDirty = false;
+  }
+  var r = groundRadiusMeters();
+  var y = target.y + 0.5;           /* 抬高 0.5m 避免与地形 z-fighting；仍是平面、不跟起伏 */
+  var x0 = target.x - r, x1 = target.x + r;
+  var z0 = target.z - r, z1 = target.z + r;
+  var verts = new Float32Array([
+    x0, y, z0, 0, 1,
+    x1, y, z0, 1, 1,
+    x1, y, z1, 1, 0,
+    x0, y, z1, 0, 0
+  ]);
+  gl.useProgram(groundProg);
+  gl.bindBuffer(gl.ARRAY_BUFFER, groundBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(groundLoc.pos);
+  gl.vertexAttribPointer(groundLoc.pos, 3, gl.FLOAT, false, 20, 0);
+  gl.enableVertexAttribArray(groundLoc.uv);
+  gl.vertexAttribPointer(groundLoc.uv, 2, gl.FLOAT, false, 20, 12);
+  gl.uniformMatrix4fv(groundLoc.vp, false, new Float32Array(vp));
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, groundTex);
+  gl.uniform1i(groundLoc.tex, 0);
+  gl.uniform1f(groundLoc.alpha, (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.enable(gl.DEPTH_TEST);
+  gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+  gl.disable(gl.BLEND);
+  console.log('LCGROUND draw side=' + (2 * r) + 'm tex=' + sz.px + 'px');
+}
 
 /* ---- WebGL 初始化 ---- */
 function initGL() {
@@ -3056,6 +3240,11 @@ function render3D() {
 
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.idx);
   gl.drawElements(gl.TRIANGLES, patch.indexCount, gl.UNSIGNED_SHORT, 0);
+
+  /* M7 贴地：盘面 canvas 当栅格纹理，按平面四角铺地（不跟 DEM 起伏，独立于地形绘制） */
+  try { drawGroundCompass(vp, target); } catch (e) {
+    console.log('LCGROUND ERROR draw ' + (e && e.message ? e.message : e));
+  }
 
   if (!window.__lcDbgDraw) {
     window.__lcDbgDraw = 1;

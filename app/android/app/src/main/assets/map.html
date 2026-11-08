@@ -1838,6 +1838,12 @@ function toggleGround() {
  * 11-08 现场发现：产品「贴地」按钮只走 toggleGround()，**没有**任何路径把
  * groundRenderer 切到 'canvas' ⇒ 贴地画布的绘制通道整段是死代码，屏幕上一直是原生
  * CompassView（屏幕空间正圆）。本钩子先把档位显式化，供审核验在原生盘面隐掉后单独验贴地。 */
+function setGroundBaseline(on) {
+  groundBaseline = (on === 1 || on === true || on === '1') ? 1 : 0;
+  groundTexDirty = true;
+  return groundBaseline;
+}
+
 function setGroundRenderer(v) {
   /* 入参容错（11-08 现场）：传 "canvas" 时常被 shell/求值层带上引号或空白，导致
    * 严格比较失配、静默不生效（审核验实测 state 仍为 overlay）。这里统一归一化，
@@ -2404,6 +2410,7 @@ var groundTexDirty = true;
 var groundProg = null, groundBuf = null, groundLoc = {};
 var groundImg = null;         /* 当前盘面位图（drawImage 用） */
 var groundImgDial = -1;
+var groundBaseline = 0;      /* 调试：1 = 只跳过贴地盘面绘制（相机不动），供 Q3 透明度量基线 */
 var lastGroundQuad = null;    /* 上一帧贴地四角的世界坐标+VP，供 getGroundQuad() 只读复算 */
 
 /* 屏宽口径（11-08 现场修正）：原版公式用的是 `screen.width`，但**原版页面带 viewport meta**，
@@ -2569,6 +2576,11 @@ var groundDiag = 'idle';          /* 贴地绘制路径最后一次停在哪儿�
 function drawGroundCompass(vp, target) {
   if (groundRenderer !== 'canvas') { groundDiag = 'skip:renderer=' + groundRenderer; return; }
   if (!groundMode) { groundDiag = 'skip:ground=off'; return; }
+  /* 调试基线（总监 11-08 定，Q3 透明度用）：只让本函数提前返回，相机/D/pitch/贴地状态全部不动，
+   * 于是同机位两张图（baseline=1 无盘面、baseline=0 有盘面）背景完全一致，
+   * alpha 可由 (有盘面像素 − 无盘面像素) / (纹理像素 − 无盘面像素) 反解。
+   * 不碰产品行为：默认 0，仅显式 setGroundBaseline(1) 时生效。 */
+  if (groundBaseline) { groundDiag = 'baseline:on'; return; }
   /* 原版门控（逆向 a12c694，@41208 逐字）：75 > |lat| && zoom >= 6 && _isGround 才绘制；
    * 超出范围 canvas 不重绘。照抄，避免"我们在极区/低缩放也画、原版不画"的行为差异。 */
   if (Math.abs(center.lat) >= 75 || zoom < 6) { groundDiag = 'skip:gate lat=' + center.lat.toFixed(2) + ' zoom=' + zoom; return; }
@@ -2644,6 +2656,7 @@ function drawGroundCompass(vp, target) {
  * 未绘制（groundRenderer=overlay / 未开贴地 / 门控命中 / 还没有 VP）时返回 null。 */
 function getGroundQuad() {
   if (groundRenderer !== 'canvas' || !groundMode) return null;
+  if (groundBaseline) return null;   /* 基线帧没有贴地盘面，不能给出四角 */
   if (Math.abs(center.lat) >= 75 || zoom < 6) return null;   /* 与原版门控同口径 */
   var s = lastGroundQuad;
   if (!s || !s.vp) return null;
@@ -3579,6 +3592,7 @@ window.__LC3D = {
     };
   },
   setGroundRenderer: setGroundRenderer,
+  setGroundBaseline: setGroundBaseline,
   setMode: setMode,
   setUiMode: setUiMode,
   attribution: getAttribution,
@@ -3809,7 +3823,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch", "resetCompass",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getGroundQuad", "setGroundRenderer", "getAttribution", "setRoadNet",
+    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getGroundQuad", "setGroundRenderer", "setGroundBaseline", "getAttribution", "setRoadNet",
     "setGround", "setSitNorth", "setNeedle",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",

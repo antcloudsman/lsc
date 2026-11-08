@@ -1820,7 +1820,14 @@ function toggleGround() {
  * 11-08 现场发现：产品「贴地」按钮只走 toggleGround()，**没有**任何路径把
  * groundRenderer 切到 'canvas' ⇒ 贴地画布的绘制通道整段是死代码，屏幕上一直是原生
  * CompassView（屏幕空间正圆）。本钩子先把档位显式化，供审核验在原生盘面隐掉后单独验贴地。 */
-function setGroundRenderer(name) {
+function setGroundRenderer(v) {
+  /* 入参容错（11-08 现场）：传 "canvas" 时常被 shell/求值层带上引号或空白，导致
+   * 严格比较失配、静默不生效（审核验实测 state 仍为 overlay）。这里统一归一化，
+   * 并额外支持数字档（1=canvas / 0=overlay），调用方可以完全不写引号。 */
+  var name = v;
+  if (v === 1 || v === true) name = 'canvas';
+  else if (v === 0 || v === false) name = 'overlay';
+  else if (typeof v === 'string') name = v.replace(/["'\s]/g, '').toLowerCase();
   if (name === 'canvas' || name === 'overlay') {
     groundRenderer = name;
     if (groundMode) { groundTexDirty = true; if (name === 'canvas') { try { groundRedraw(); } catch (e) { } } }
@@ -2144,6 +2151,11 @@ function compassDataLoad(cb) {
   });
 }
 
+/* 11-08 现场根因：compassDataLoad() 此前**全仓零调用**，COMPASS_RINGS 永远是 null，
+ * 于是 drawGroundCompass() 在 `if (!COMPASS_RINGS) return;` 处退出、lastGroundQuad 从不赋值、
+ * getGroundQuad() 永远返回 null（审核验实测）。盘面数据是贴地绘制的前置，页面加载即取。 */
+compassDataLoad(function () { groundTexDirty = true; });
+
 function compassWuxingColor(wx) {
   if (wx === '木') return 'rgb(90,180,90)';
   if (wx === '火') return 'rgb(220,90,70)';
@@ -2186,7 +2198,7 @@ function drawCompass(ctx, size, opts) {
   if (!D) return false;
   var u = size / COMPASS_REF;
   var cx = size / 2, cy = size / 2;
-  var r = Math.min(cx, cy) - 8 * u;
+  var r = opts.dialBleed ? Math.min(cx, cy) : Math.min(cx, cy) - 8 * u;
   var heading = Number(opts.heading) || 0;
   var dialType = opts.dialType | 0;
   var tab = D.tables || {};
@@ -2379,7 +2391,15 @@ function groundEnsureCanvas() {
   return sz;
 }
 
-/* 重画盘面到 groundCanvas（尺寸 = 盘面自身，居中，与原版 (i-e)/2 居中一致） */
+/* 重画盘面到 groundCanvas（盘面只占画布的 37.5%，居中；对齐原版 (i-e)/2 居中 + e×e）
+ * 尺寸口径（逆向 aa2024c §6.5/§6.6，三处原文）：
+ *   c    = screen.width/2*1.5 = 0.75×屏宽 = 273 CSS   → 盘面默认尺寸
+ *   u    = 1.2*screen.width   = 436.8 CSS            → 盘面 scale=100 的上限（**不是画布**）
+ *   size = floor(2*screen.width) = 728 CSS           → 地面画布（backing 1456）
+ *   toBounds 半径 = screen.width/ppm（半边长）⇒ 地面边长 = 728 画布宽，与盘面尺寸无关
+ * 因此盘面在画布里的占比 = 273/728 = 0.375，backing 上就是 0.375×1456 = **546**。
+ * 之前直接 drawCompass(ctx, sz.px) 把盘面画满了整张纹理，投影后是目标的 1.93 倍（1774 vs 921）。 */
+var GROUND_DIAL_FRAC = 0.375;     /* c / size = 273 / 728 */
 function groundRedraw() {
   var sz = groundEnsureCanvas();
   var ctx = groundCanvas.getContext('2d');
@@ -2396,7 +2416,11 @@ function groundRedraw() {
   try {
     rd = CompassDataReading(lastHeading);
   } catch (e) { rd = null; }
-  var ok = drawCompass(ctx, sz.px, {
+  var dialPx = Math.round(sz.px * GROUND_DIAL_FRAC);   /* 本机 1456×0.375 = 546 */
+  var off = (sz.px - dialPx) / 2;                      /* 居中：与原版 (i-e)/2 同构 */
+  ctx.save();
+  ctx.translate(off, off);
+  var ok = drawCompass(ctx, dialPx, {
     data: COMPASS_RINGS,
     /* 档位声明：bit1「盘面随地图转」——内容**不**预旋转（heading=0），
      * 四面在世界坐标轴对齐、由相机 bearing 投影产生屏幕旋转。
@@ -2404,12 +2428,16 @@ function groundRedraw() {
      * Q4 会量到 ±45° 这类中间值。读数仍取真实朝向（见下方 reading）。 */
     heading: 0,
     dialType: dialType,
+    /* 画布路径按原版 edge-to-edge 画（updateCompass 里就是 drawImage(img, a, n, e, e)，
+     * 没有原生 CompassView 那圈 8u 内缩），否则盘径会少 1.7%（905 vs 921 device px）。 */
+    dialBleed: true,
     dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
     tianzhi: false,
     trustEnabled: false,
     dialImg: (groundImg && groundImg.complete && groundImg.naturalWidth > 0) ? groundImg : null,
     reading: rd
   });
+  ctx.restore();
   groundTexDirty = true;
   return ok;
 }
@@ -2473,17 +2501,18 @@ function groundInitGL() {
  * （盘面随地图转）。bit2/bit4 的抵消模式**未实现**，台账记「按 bit1 实现；bit2/4 抵消态未做」。
  * 因此 Q4 判据只接受两种结果：屏幕夹角 **90°**（bit1）或 **0°**（bit2/4）；出现 ±45° 即转了两遍或抵消一半。 */
 /* 在 render3D 末尾调用：用同一张 VP 与同一个相机目标高度画一块平面 */
+var groundDiag = 'idle';          /* 贴地绘制路径最后一次停在哪儿（只读诊断用） */
 function drawGroundCompass(vp, target) {
-  if (groundRenderer !== 'canvas') return;
-  if (!groundMode) return;
+  if (groundRenderer !== 'canvas') { groundDiag = 'skip:renderer=' + groundRenderer; return; }
+  if (!groundMode) { groundDiag = 'skip:ground=off'; return; }
   /* 原版门控（逆向 a12c694，@41208 逐字）：75 > |lat| && zoom >= 6 && _isGround 才绘制；
    * 超出范围 canvas 不重绘。照抄，避免"我们在极区/低缩放也画、原版不画"的行为差异。 */
-  if (Math.abs(center.lat) >= 75 || zoom < 6) return;
-  if (!groundInitGL()) return;
-  if (!COMPASS_RINGS) return;
+  if (Math.abs(center.lat) >= 75 || zoom < 6) { groundDiag = 'skip:gate lat=' + center.lat.toFixed(2) + ' zoom=' + zoom; return; }
+  if (!groundInitGL()) { groundDiag = 'fail:glInit'; return; }
+  if (!COMPASS_RINGS) { groundDiag = 'loading:rings'; compassDataLoad(function () { groundTexDirty = true; }); return; }
   var sz = groundEnsureCanvas();
   if (groundTexDirty) {
-    if (!groundRedraw()) return;
+    if (!groundRedraw()) { groundDiag = 'fail:redraw'; return; }
     gl.bindTexture(gl.TEXTURE_2D, groundTex);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, groundCanvas);
@@ -2525,7 +2554,8 @@ function drawGroundCompass(vp, target) {
     cssW: glCanvas.clientWidth || 0, cssH: glCanvas.clientHeight || 0,
     texCss: sz.css, texDpr: sz.dpr
   };
-  console.log('LCGROUND draw side=' + (2 * r) + 'm tex=' + sz.px + 'px');
+  groundDiag = 'drawn';
+  console.log('LCGROUND draw side=' + (2 * r) + 'm tex=' + sz.px + 'px dial=' + Math.round(sz.px * GROUND_DIAL_FRAC));
 }
 
 /* ---- 只读调试接口：贴地盘面四角的屏幕坐标（CSS px，原点左上） ----
@@ -3445,6 +3475,22 @@ window.__LC3D = {
   setView: debugSetView,
   setChrome: setChromeVisible,
   getGroundQuad: getGroundQuad,
+  getGroundDebug: function () {
+    /* 只读诊断：getGroundQuad() 返回 null 时用它区分"档位没切 / 没开贴地 / 门控命中 / 还没画过"。 */
+    return {
+      renderer: groundRenderer,
+      ground: groundMode,
+      mode: mode,
+      zoom: zoom,
+      lat: center.lat,
+      gateHit: (Math.abs(center.lat) >= 75 || zoom < 6),
+      diag: groundDiag,
+      texDirty: groundTexDirty,
+      hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),
+      hasRings: !!COMPASS_RINGS,
+      hasGL: !!gl
+    };
+  },
   setGroundRenderer: setGroundRenderer,
   setMode: setMode,
   setUiMode: setUiMode,

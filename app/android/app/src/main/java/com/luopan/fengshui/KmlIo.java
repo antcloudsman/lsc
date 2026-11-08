@@ -95,17 +95,26 @@ final class KmlIo {
             // 点上业务字段：**每个 Placemark 自带 6 项**（产品口径 B-1），只写在 Document 层
             // 会让导入后丢掉坐向——这个 App 的核心场景就是量坐向，丢了等于导了个半成品。
             // 缺值写空串，不写 0 冒充（0 米与"没有数据"必须可区分，同 M-06 的口径）。
-            sb.append("      <ExtendedData>\n");
-            pdata(sb, "lc:id", p.id >= 0 ? String.valueOf(p.id) : "");
-            pdata(sb, "lc:type", p.kind);
-            pdata(sb, "lc:sit", Double.isNaN(p.sittingDeg) ? ""
-                    : String.format(java.util.Locale.US, "%.1f", p.sittingDeg));
-            pdata(sb, "lc:heading", Double.isNaN(p.facingDeg) ? ""
-                    : String.format(java.util.Locale.US, "%.1f", p.facingDeg));
-            pdata(sb, "lc:elev", Double.isNaN(p.elevM) ? ""
-                    : String.format(java.util.Locale.US, "%.1f", p.elevM));
-            pdata(sb, "lc:created", p.createdAt >= 0 ? String.valueOf(p.createdAt) : "");
-            sb.append("      </ExtendedData>\n");
+            // 缺失值**一律不写这个键**（不写 0、不写空串）：
+            //   写 0 会被当成真实值（M-06 的 elev=0 刚吃过这个亏）；
+            //   写空串只是把"不知道"换个样子，读的人还得再判一次。
+            //   导入端统一按「键不存在 = 未知」处理。
+            StringBuilder pd = new StringBuilder();
+            if (p.id >= 0) pdata(pd, "lc:id", String.valueOf(p.id));
+            if (!p.kind.isEmpty()) pdata(pd, "lc:type", p.kind);
+            if (!Double.isNaN(p.sittingDeg)) {
+                pdata(pd, "lc:sit", String.format(java.util.Locale.US, "%.1f", p.sittingDeg));
+            }
+            if (!Double.isNaN(p.facingDeg)) {
+                pdata(pd, "lc:heading", String.format(java.util.Locale.US, "%.1f", p.facingDeg));
+            }
+            if (!Double.isNaN(p.elevM)) {
+                pdata(pd, "lc:elev", String.format(java.util.Locale.US, "%.1f", p.elevM));
+            }
+            if (p.createdAt >= 0) pdata(pd, "lc:created", String.valueOf(p.createdAt));
+            if (pd.length() > 0) {
+                sb.append("      <ExtendedData>\n").append(pd).append("      </ExtendedData>\n");
+            }
             sb.append("      <Point><coordinates>")
                     .append(fmt(p.lng)).append(',').append(fmt(p.lat));
             // alt：**有值才写**；未知时只写 lon,lat——KML 允许省略 alt，不能拿 0 冒充

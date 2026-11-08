@@ -2143,12 +2143,27 @@ var COMPASS_GOLD = '#dcbe82';      /* rgb(220,190,130) */
 
 function compassDataLoad(cb) {
   if (COMPASS_RINGS) { cb(COMPASS_RINGS); return; }
-  fetch('compass-rings.json').then(function (r) { return r.json(); }).then(function (j) {
-    COMPASS_RINGS = j;
-    cb(j);
-  }).catch(function (e) {
-    console.log('LCGROUND ERROR rings-json ' + (e && e.message ? e.message : e));
-  });
+  /* 11-08 现场第二个根因：文件实际在 assets/map/compass-rings.json，
+   * 而这里原来写 'compass-rings.json' ⇒ 相对 map.html 解析到 assets/ 根 ⇒ 404。
+   * 改成"按序尝试 + 成功即打日志"，路径再变也不会静默失败。 */
+  var paths = ['map/compass-rings.json', 'compass-rings.json'];
+  var i = 0;
+  function next() {
+    if (i >= paths.length) { console.log('LCGROUND ERROR rings-json missing: ' + paths.join(',')); return; }
+    var p = paths[i++];
+    fetch(p).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      COMPASS_RINGS = j;
+      console.log('LCGROUND rings-json ok ' + p + ' rings=' + ((j.rings || []).length));
+      cb(j);
+    }).catch(function (e) {
+      console.log('LCGROUND ERROR rings-json ' + p + ' ' + (e && e.message ? e.message : e));
+      next();
+    });
+  }
+  next();
 }
 
 /* 11-08 现场根因：compassDataLoad() 此前**全仓零调用**，COMPASS_RINGS 永远是 null，

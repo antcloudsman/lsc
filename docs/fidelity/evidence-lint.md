@@ -100,6 +100,10 @@ python tools/fidelity/evidence-lint.py --root <dir> --magic a.webp,b.webp
 
 ## 3 用法
 
+> **路径基准（2026-11-08，技术总监要求）**：工具内一切相对路径（默认 root、默认豁免清单、`--eol`/`--magic` 的文件、豁免条目里的 `path`）**一律以「脚本所在仓库根」为基准**，不依赖 cwd。
+> 理由：门禁工具会被复制、被别的脚本调用、在别的工作树里跑——**依赖 cwd 的工具，换个人跑就是另一个结果**，这种差异最容易被误读成「别人改坏了」。
+> 实测：仓库根、`C:\` 两个目录下不带参数各跑一次，结果同为 `fail=0 warn=0 allowed=1 exit=0`。
+
 ```bash
 # 全量证据（--root 默认 docs/fidelity，可省略）
 python tools/fidelity/evidence-lint.py --allow tools/fidelity/evidence-lint-allow.json

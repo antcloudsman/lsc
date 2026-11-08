@@ -2116,12 +2116,15 @@ function demTile(z, x, y) {
           resolve(f);
         } catch (e) { fail(e); }
       };
-      img.onerror = function () { fail(new Error("dem-load")); };
+      /* M-07：原来这里只造一句固定的 "dem-load"，把「哪块瓦片、哪个 URL、重试几次」
+       * 全丢了，上层只能报 "dem-missing"，等于失败原因在半路蒸发。 */
+      var url = TERRARIUM + z + "/" + x + "/" + y + ".png";
+      img.onerror = function () { fail(new Error("dem-load " + z + "/" + x + "/" + y + " url=" + url)); };
       function fail(e) {
         if (++tries < 2) { setTimeout(attempt, 600); }
         else { delete DEM_PENDING[k]; reject(e); }
       }
-      img.src = TERRARIUM + z + "/" + x + "/" + y + ".png";
+      img.src = url;
     }
     attempt();
   });
@@ -2880,24 +2883,29 @@ function startPatch(z, ox, oy) {
   var seq = ++patchSeq;
   var n = Math.pow(2, z);
   var jobs = [];
+  var firstDemErr = null;              /* M-07：留住第一块失败瓦片的原因，别在 catch 里吞掉 */
   for (var j = 0; j < PATCH_TILES; j++) {
     for (var i = 0; i < PATCH_TILES; i++) {
       var x = wrapX(ox + i, n), y = oy + j;
       if (y < 0 || y >= n) { jobs.push(Promise.resolve(null)); continue; }
-      jobs.push(demTile(z, x, y).catch(function () { return null; }));
+      jobs.push(demTile(z, x, y).catch(function (e) {
+        if (!firstDemErr) firstDemErr = e;
+        return null;
+      }));
     }
   }
   setHud("DEM 加载中…");
   Promise.all(jobs).then(function (tiles) {
     if (seq !== patchSeq) return;
-    for (var i = 0; i < tiles.length; i++) {
-      if (!tiles[i]) {
-        console.log("LC3D ERROR dem-missing");
-        last3dError = "dem-missing";
-        setHud("DEM 加载失败");
-        loadingKey = null;
-        return;
-      }
+    var missing = 0;
+    for (var i = 0; i < tiles.length; i++) if (!tiles[i]) missing++;
+    if (missing) {
+      var why = (firstDemErr && firstDemErr.message) ? firstDemErr.message : "unknown";
+      console.log("LC3D ERROR dem-missing " + missing + "/" + tiles.length + " tiles; first=" + why);
+      last3dError = "dem-missing " + missing + "/" + tiles.length + " " + why;
+      setHud("DEM 加载失败");
+      loadingKey = null;
+      return;
     }
     var mpp = 156543.03392 * Math.cos(tileYToLat(oy + 1.5, z) * Math.PI / 180) / Math.pow(2, z);
     var p = { z: z, ox: ox, oy: oy, mpp: mpp, mesh: null, tex: null, texCanvas: null, indexCount: 0 };
@@ -3149,12 +3157,27 @@ function pan3D(dx, dy) {
  * 屏幕点 → 反投影射线 → 与 DEM 高度场步进求交 → 经纬度/真实海拔 → 立向点
  * 高程缺失时传 null（绝不传 0）；单点覆盖式；不联动罗盘（D-006）
  * ------------------------------------------------------------------------ */
+/* 桥事件（M-05 修复）：原来的 catch 分支只留了一句「静默」注释，把两种完全不同的情况混成一种——
+ *   ① 桥未接入（桌面预览 / AT 环境）：正常态，不该报错；
+ *   ② 桥上抛异常或 JSON.stringify 失败：**真故障**，却和①一样无声无息。
+ * 现在分开：桥未接入只计数不写日志（避免刷屏），真故障落 LCDEBUG + 计数，仍不抛、不改控制流
+ * （emit 有 10+ 调用点，抛一次就会打断它们的后续逻辑）。
+ * 验收：getState().emitDiag 里 ok/fail/noBridge 可读；构造失败＝把 LCAndroid.onEvent 换成 throw。 */
+var emitDiag = { ok: 0, fail: 0, noBridge: 0, lastErr: '' };
 function emit(obj) {
   try {
     if (window.LCAndroid && typeof window.LCAndroid.onEvent === "function") {
-      window.LCAndroid.onEvent(JSON.stringify(obj));
+      var s = JSON.stringify(obj);
+      window.LCAndroid.onEvent(s);
+      emitDiag.ok++;
+      return;
     }
-  } catch (e) { /* 桥未接入时静默 */ }
+    emitDiag.noBridge++;
+  } catch (e) {
+    emitDiag.fail++;
+    emitDiag.lastErr = ((obj && obj.type) ? obj.type + ': ' : '') + ((e && e.message) || String(e));
+    console.log('LCEMIT ERROR ' + emitDiag.lastErr);
+  }
 }
 
 function ensurePickEl() {
@@ -3534,6 +3557,7 @@ function getState() {
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError, last3dWarn: last3dWarn,
     wayback: wbOn, waybackRelease: wbRelease,
     cache: tileCacheOn, cacheCount: tileCacheKeys.length,
+    emitDiag: { ok: emitDiag.ok, fail: emitDiag.fail, noBridge: emitDiag.noBridge, lastErr: emitDiag.lastErr },
     tileDiag: { net: tileDiag.net, ok: tileDiag.ok, hit: tileDiag.hit, err: tileDiag.err, lastErrUrl: tileDiag.lastErrUrl },
     measure: (function () {
       var s = measureStats();

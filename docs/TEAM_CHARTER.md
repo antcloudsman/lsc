@@ -122,4 +122,15 @@ adb -s L2E0222531014833 shell am start -n com.luopan.fengshui/.MainActivity
 | 历史归档 | `E:\APPDetector\output`（分支 `feature/地图-3d-terrain`）与 `E:\APPDetector\fix-p0`（分支 `fix/p0-review-findings`）是**早期阶段的工作树**：只读归档，**不再提交**（不修改、不同步、不 rebase） |
 | AGENTS.md 口径 | `output/AGENTS.md` 里「唯一有效工作树是 fix-p0」**已失效**——该文件未被 git 跟踪、只存在于退役目录。新人/新会话看到这条，**以本章程为准** |
 | 冲突处理 | 本文与任何 AGENTS.md、旧工作树里的说明冲突时，**以 `docs/TEAM_CHARTER.md` 为准** |
+## 10. 技术纪律（并列生效，违反即退回）
 
+> 本节收口「踩过一次、并且已经花了成本」的教训。每条都必须能指出事故实例；没有实例的条目不进本节。
+
+| 编号 | 纪律 | 由来（事故实例） | 落地检查 |
+|---|---|---|---|
+| **T-01** | **遇到平台能力限制（fetch 被拒、canvas 污染、跨域、权限、协议限制），先查原版怎么做的，再想怎么绕。** 原版能正常用而我们不能，优先怀疑「我们走的路和原版不一样」，而不是加补丁 | M7 A 轮：`fetch` 被拒 + `texImage2D` 抛 `SecurityError`，我们先加了两次绕行（`data:` 探针、base64 内联），最后发现原版用 `WebViewAssetLoader` 走 `https://appassets.androidplatform.net/assets/`——原版从一开始就不存在这两个问题（`MapWebView.smali:181-233`） | 任何「改安全设置 / 内联数据 / 关检查」的方案，提交前必须先给一句「原版怎么做」的结论；写不出就退回取证 |
+| **T-02** | **二进制文件不许过文本管道。** 禁止用 `Set-Content` / `Get-Content` / `WriteAllText` / `>` 重定向处理 png、webp、apk、db、字体等二进制 | M6：`reports/M6-stage2/drag/` 22 张 png 的签名首字节 `0x89` 被替换为 UTF-8 替换符（`EF BF BD`），文件 2.5–3.8 MB 却无法解码，全部作废（见该目录 `INVALID.md`） | 采集脚本只能 `adb exec-out screencap -p > file`（cmd 层）或二进制写；入库前跑 `evidence-lint.py`（decode 失败即 FAIL） |
+| **T-03** | **一条根因不拆多条。** 同一根因的多个表现面合并为一条，列「表现面」而不是列条数 | M6 审计：`onPageFinished` 重放不全 + 缺幂等 set 一个根因，若按 5 个表现面拆成 5 条，清单虚高 4 条（`m6-audit-close-list.md` A 类明确「不拆」） | 审计/关账清单里每条必须能回答「根因是什么」；答不出的先归并 |
+| **T-04** | **门禁要精确：宽泛的红等于没有门禁。** 只对「本次改动碰到的文件/变更集」判死，不做全仓判死；存量债单独记、专项清 | M7：`--eol` 若默认全仓判，296/699 个存量含 CR 的文件会让人一跑就红，几轮后全员开始忽略已知红 | 例：`evidence-lint.py --eol` 必须带显式文件列表，裸 `--eol` 打印 `EOL: SKIP` 并跳过 |
+
+> 与本章程其它条款冲突时，以更严格者为准；技术纪律不接受「下一轮再改」的口头豁免，要么本轮守，要么在关账表里书面登记例外并写明补齐时间。

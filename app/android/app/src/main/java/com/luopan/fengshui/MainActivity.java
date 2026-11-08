@@ -31,6 +31,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private CompassView compassView;
     /** M6 第 1 条：贯穿全屏的红色十字经线（独立层，盘面几何不受影响）。 */
     private CompassCrosshairView crosshairView;
+    /** M7 第 3 条：屏心符号（四段蓝线 + 红点），viewport 覆盖层，不进 WebView。 */
+    private MapCenterSymbolView centerSymbolView;
+    /** TEST HOOK：hidehud 前被隐藏视图的原始可见性，用于复原（不猜状态）。 */
+    private final java.util.List<View> testHiddenViews = new java.util.ArrayList<>();
+    private final java.util.List<Integer> testHiddenVis = new java.util.ArrayList<>();
     private TextView readingView;
     /** R2-005：罗盘中心指针（原版 pointer 节点 81×324）。 */
     private android.widget.ImageView pointerView;
@@ -420,6 +425,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         });
                 break;
             }
+            case "hidehud": {
+                // TEST HOOK：只藏 chrome，保留盘面 + 红十线，供 Q1/Q2 干净取边。
+                // --es on 0 恢复：按隐藏前的可见性原样还原，不猜状态。
+                boolean hide = !"0".equals(it.getStringExtra("on"));
+                boolean keepSymbol = "1".equals(it.getStringExtra("symbol"));
+                // 红十线默认显示：不传或传 1 都保持可见，只有显式 0 才隐。
+                boolean crosshairOn = !"0".equals(it.getStringExtra("crosshair"));
+                applyTestHideChrome(hide, !keepSymbol, !crosshairOn);
+                // 网页侧 chrome（#controls/#hint/#heading-label/#srcInfo/#hud）由 map.html 的
+                // setChromeVisible(on) 负责；不合并地图那笔时它是 undefined，守卫跳过即可。
+                if (compassMapView != null) {
+                    compassMapView.evaluateJavascript(
+                            "(typeof setChromeVisible==='function')?(String(setChromeVisible("
+                                    + (hide ? 1 : 0) + "))):'no-chrome-api'",
+                            v -> android.util.Log.d("LCDEBUG", "chrome -> " + v));
+                }
+                break;
+            }
+            case "view": {
+                // TEST HOOK：直接设视野。走 window.__LC3D.setView（= debugSetView(lat,lng,z,p,b)）。
+                // 不能用 setHeading：map.html:1705 只在 sitMode≠0 时才改 bearing，sitMode=0 时什么都不做，
+                // 拿它验「贴地盘面随 bearing 转 90°」会永远得 0°。
+                // 缺省参数传 null，对应字段保持当前值（debugSetView 内部按 typeof number 判断）。
+                String vLat = it.hasExtra("lat") ? String.valueOf(it.getFloatExtra("lat", 0f)) : "null";
+                String vLng = it.hasExtra("lng") ? String.valueOf(it.getFloatExtra("lng", 0f)) : "null";
+                String vZoom = it.hasExtra("zoom") ? String.valueOf(it.getFloatExtra("zoom", 0f)) : "null";
+                String vPitch = it.hasExtra("pitch") ? String.valueOf(it.getFloatExtra("pitch", 0f)) : "null";
+                String vBearing = it.hasExtra("bearing") ? String.valueOf(it.getFloatExtra("bearing", 0f)) : "null";
+                String js = "(function(){if(window.__LC3D&&typeof __LC3D.setView==='function'){"
+                        + "__LC3D.setView(" + vLat + "," + vLng + "," + vZoom + "," + vPitch + "," + vBearing
+                        + ");return 'ok';}"
+                        + "if(typeof setView==='function'){setView(" + vLat + "," + vLng + "," + vZoom
+                        + ");return 'partial-no-bearing';}"
+                        + "return 'no-view-api';})()";
+                if (compassMapView != null) {
+                    compassMapView.evaluateJavascript(js, v -> android.util.Log.d("LCDEBUG", "view -> " + v));
+                }
+                break;
+            }
             case "url": {
                 String url = it.getStringExtra("value");
                 if (url != null && compassMapView != null) {
@@ -562,6 +606,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         crosshairView.setId(R.id.lc_compass_crosshair);
         crosshairView.setVisibility(View.GONE);
         frame.addView(crosshairView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        // M7 第 3 条之一：屏心符号（四段圆头蓝线 + 中心红点）。原版取证 21/55 张 HIT：
+        // 地图 2D、3D、罗盘态都有，弹层/面板/子页无；23 张不同位置缩放的截图里圆心恒为 (614,1350)
+        // ⇒ viewport 对齐、钉屏幕中心，不随拖动/zoom/pitch。所以放原生层，与红十线同一类、同一层。
+        // 规格：红点 13×13 #FF5163 / 蓝线 57×7 #009DFF 圆头 / 整体 114×114（设备 px @3.375）。
+        // 不贴 cross.png：素材色 #6488FC 偏紫、尺寸小一半，且主图 bundle 未引用它。
+        centerSymbolView = new MapCenterSymbolView(this);
+        centerSymbolView.setId(View.generateViewId());
+        centerSymbolView.setVisibility(View.VISIBLE);   // 主视图（地图态）默认显示
+        frame.addView(centerSymbolView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         // K-01 z 序与触摸（验收 P-08 必读）：浮层之后又加了 读数/状态/左列/罗盘左列/右列/隐藏/底部条，
         // 它们都在浮层之上；其中工具列与「隐藏」是交互层，会正常吃掉落在按钮矩形内的触摸。
@@ -1435,6 +1489,58 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }, delayMs);
     }
 
+    /**
+     * TEST HOOK（仅 debug 包，随 DebugBridge 的 isDebuggable 门槛）：只隐藏「chrome」——
+     * 左右按钮列、开关列、工具条、「隐藏」按钮、顶部返回/图层、读数条、坐标条、地名条、地图角注，
+     * 保留盘面（CompassView）、红十线（CompassCrosshairView）与竖向指针。
+     *
+     * 为什么需要它：产品里的「隐藏」按钮语义是「隐藏罗盘浮层」，会把盘面一起收起来
+     * （总监 2026-11-08 确认：设计如此、不是 bug）。验收要的「无 UI 但有盘面」只能由测试钩子提供。
+     *
+     * 屏心符号默认一起隐：它正好画在 (614,1350)，会让「从盘心向外取边」在第 57px 撞到蓝臂，
+     * 把盘径量成 114。要保留就传 --es symbol 1。
+     */
+    private void applyTestHideChrome(boolean hide, boolean hideSymbol, boolean hideCrosshair) {
+        View[] chrome = {leftColumn, rightColumn, leftCompassColumn, rightCompassColumn,
+                compassToolBar, hideButton, topBackButton, topLayerButton, menuButton,
+                readingView, coordView, placeView, attrView};
+        // 先复原上一轮：重复调用时（例如先 crosshair=0 再 crosshair=1）
+        // 若直接 clear 列表，上一轮被隐的视图就再也回不来了——这类「回不去」的坑
+        // 在测试钩子里最贵，因为量出来的图会一直是错的。
+        restoreTestHidden();
+        if (hide) {
+            for (View v : chrome) {
+                if (v == null) continue;
+                testHiddenViews.add(v);
+                testHiddenVis.add(v.getVisibility());
+                v.setVisibility(View.GONE);
+            }
+            if (hideSymbol && centerSymbolView != null) {
+                testHiddenViews.add(centerSymbolView);
+                testHiddenVis.add(centerSymbolView.getVisibility());
+                centerSymbolView.setVisibility(View.GONE);
+            }
+            // 红十线默认显示，只有显式 --es crosshair 0 才隐：6px 贯穿全屏，
+            // 任何穿过屏心的扫描线都会整行全红，Q1 取边必须绕开或临时隐掉它。
+            if (hideCrosshair && crosshairView != null) {
+                testHiddenViews.add(crosshairView);
+                testHiddenVis.add(crosshairView.getVisibility());
+                crosshairView.setVisibility(View.GONE);
+            }
+        }
+        android.util.Log.d("LCDEBUG", "hidehud=" + hide + " crosshairHidden=" + (hide && hideCrosshair)
+                + " hidden=" + testHiddenViews.size());
+    }
+
+    /** 复原 hidehud 隐藏过的全部视图（按隐藏前的原始可见性）。 */
+    private void restoreTestHidden() {
+        for (int i = 0; i < testHiddenViews.size(); i++) {
+            testHiddenViews.get(i).setVisibility(testHiddenVis.get(i));
+        }
+        testHiddenViews.clear();
+        testHiddenVis.clear();
+    }
+
     private void sync3DStateFromPage() {
         if (compassMapView == null) return;
         compassMapView.postDelayed(() -> {
@@ -1771,6 +1877,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (compassView != null) compassView.setVisibility(on ? View.VISIBLE : View.GONE);
         // M6 第 1 条：十字经线只在罗盘态显示（原版 marker 只在罗盘浮层存在）
         if (crosshairView != null) crosshairView.setVisibility(on ? View.VISIBLE : View.GONE);
+        // M7 第 3 条：屏心符号在罗盘态也显示（原版 compass-main-01 中心像素 #FF5163），
+        // 与红十线不同——那条只在罗盘态/隐藏态跟着走，这条主视图常显。
+        if (centerSymbolView != null) centerSymbolView.setVisibility(View.VISIBLE);
         if (leftColumn != null) leftColumn.setVisibility(on ? View.GONE : View.VISIBLE);
         // R2-005 + M6 第 3 条：指针可见性统一判定（罗盘态 × 未隐藏 × 非纯地图模式 × 开关）
         refreshPointerVisibility();
@@ -1916,6 +2025,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (compassView != null) compassView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         // M6 第 1 条：隐藏态（R2-006）连十字一起隐——原版「隐藏」隐的是整个罗盘浮层
         if (crosshairView != null) crosshairView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        // M7 第 3 条：屏心符号「隐藏」态一并隐——隐藏隐的是整个罗盘浮层，与红十线同规则
+        // （原版隐藏态下这个符号显不显示未取证，跟随浮层是保守选择，记已知边界）。
+        if (centerSymbolView != null) {
+            centerSymbolView.setVisibility(compassMode && compassHidden ? View.GONE : View.VISIBLE);
+        }
         // M6 第 3 条：隐藏态此前漏了 pointerView（罗盘/十字/工具列都隐了，只剩指针图飘着）
         refreshPointerVisibility();
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
@@ -2560,6 +2674,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // 「超清优化」(mleft3 [33,1294][191,1452]) 相交；「全地图工具」在 y357..515，纵向范围外不动。
             // 原版面板由上层的 web 树绘制、会盖住这两枚右半截；我们面板在 WebView 里，只能开合时隐藏/恢复。
             setPanelCoveredLeftItems(open);
+            // M7 第 3 条：底图源面板是网页内绘制，原生覆盖层会浮在它上面；原版该态中心符号 NONE，
+            // 所以面板开合时同步隐/显（弹层是 Dialog 的（更多面板/读盘 sheet）自动被盖住，不用管）。
+            if (centerSymbolView != null) {
+                centerSymbolView.setVisibility(
+                        open || (compassMode && compassHidden) ? View.GONE : View.VISIBLE);
+            }
             android.util.Log.d("LCATTR", "src-panel open=" + open);
         }
     }
@@ -3355,6 +3475,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             toast("编辑：原版为网格编辑态，本步未实现");
         });
         dialog.show();
+        // M7 第 3 条：原版「更多」面板态中心符号 NONE（more-sheet-01 中心像素 255,255,255）。
+        // 我方 sheet 只占 y1350..2578、遮罩 0.35 挡不住屏心（实测面板打开后 (614,1350) 仍是 #FF5163），
+        // 所以显式隐藏，并在 dismiss 时按当前状态恢复——Dialog 挡不住的地方要自己补。
+        if (centerSymbolView != null) centerSymbolView.setVisibility(View.GONE);
+        dialog.setOnDismissListener(d -> {
+            if (centerSymbolView != null) {
+                centerSymbolView.setVisibility(compassMode && compassHidden ? View.GONE : View.VISIBLE);
+            }
+        });
         android.view.Window w = dialog.getWindow();
         if (w != null) {
             w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));

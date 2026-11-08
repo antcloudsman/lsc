@@ -2085,6 +2085,224 @@ function demAt(z, gx, gy) {
   return a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) + c * (1 - fx) * fy + d * fx * fy;
 }
 
+
+/* ============================================================
+ * M7 A 路线：盘面 canvas 渲染（贴地栅格纹理用）
+ * 逐条对照 CompassView.onDraw（544 行，绘制面约 259 行）：
+ *   pos(cx,cy,r,deg,heading) 的原生角度约定 = Math.toRadians(deg - heading)，
+ *   点 = (cx + r*sin(a), cy - r*cos(a))；本处照抄。
+ * 比例：原生以 922 设备 px 视口为基准（r = min(w,h)/2 - 8），
+ *   任意 size 下统一用 u = size / 922 缩放，原生里 sp*density 的量在 JS 就是 sp*3.375*u。
+ * 本函数只负责"画"，不接贴地通道；改 size/源图分辨率不需要改这里。
+ * ============================================================ */
+var COMPASS_RINGS = null;          /* compass-rings.json（由 tools/fidelity/gen-compass-rings.py 从 mechanics.json 生成） */
+var COMPASS_REF = 922;             /* 原生盘面参考视口（设备 px） */
+var COMPASS_GOLD = '#dcbe82';      /* rgb(220,190,130) */
+
+function compassDataLoad(cb) {
+  if (COMPASS_RINGS) { cb(COMPASS_RINGS); return; }
+  fetch('compass-rings.json').then(function (r) { return r.json(); }).then(function (j) {
+    COMPASS_RINGS = j;
+    cb(j);
+  }).catch(function (e) {
+    console.log('LCGROUND ERROR rings-json ' + (e && e.message ? e.message : e));
+  });
+}
+
+function compassWuxingColor(wx) {
+  if (wx === '木') return 'rgb(90,180,90)';
+  if (wx === '火') return 'rgb(220,90,70)';
+  if (wx === '土') return 'rgb(190,150,80)';
+  if (wx === '金') return 'rgb(220,190,90)';
+  if (wx === '水') return 'rgb(90,150,220)';
+  return '#ffffff';
+}
+
+function compassGuaWuxing(g) {
+  if (g === '坎') return '水';
+  if (g === '离' || g === '震' || g === '巽') return '木';
+  if (g === '乾' || g === '兑') return '金';
+  if (g === '坤' || g === '艮') return '土';
+  return '';
+}
+
+function compassPos(cx, cy, r, deg, heading) {
+  var a = (deg - heading) * Math.PI / 180;
+  return [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+}
+
+/* 逐字移植 CompassView.drawText：深色描边 2px + 填充 + 垂直居中（ascent/descent 用近似 0.8/-0.2 em） */
+function compassText(ctx, str, x, y, size, color, u) {
+  ctx.font = size + 'px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  var by = y - (0.8 * size - 0.2 * size) / 2;
+  ctx.lineWidth = Math.max(1, 2 * u);
+  ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+  ctx.strokeText(str, x, by);
+  ctx.fillStyle = color;
+  ctx.fillText(str, x, by);
+}
+
+/* 主入口：把整套盘面画到 ctx 上。size = 目标边长（backing px），opts.heading 为盘面朝向。 */
+function drawCompass(ctx, size, opts) {
+  opts = opts || {};
+  var D = opts.data || COMPASS_RINGS;
+  if (!D) return false;
+  var u = size / COMPASS_REF;
+  var cx = size / 2, cy = size / 2;
+  var r = Math.min(cx, cy) - 8 * u;
+  var heading = Number(opts.heading) || 0;
+  var dialType = opts.dialType | 0;
+  var tab = D.tables || {};
+  var MOUNTAINS = tab.mountains || [];
+  var WUXING = tab.wuxing || [];
+  var RINGS = D.rings || [];
+  var alpha = (opts.dialAlpha == null) ? 1 : Number(opts.dialAlpha);
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  /* 1) 底盘位图（dial_full_N） */
+  if (opts.dialImg) {
+    ctx.drawImage(opts.dialImg, cx - r, cy - r, r * 2, r * 2);
+    drawOutlineRings(ctx, cx, cy, r, u);
+  } else {
+    /* 无位图时走矢量路径（与原生命令一致），保证任何档位都不是空盘 */
+    vectorFace(ctx, cx, cy, r, u, heading, dialType, MOUNTAINS, WUXING, RINGS);
+  }
+
+  /* 2) 天池 + 中心读数（位图/矢量两条路都要） */
+  if (opts.trustEnabled) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.085, 0, Math.PI * 2);
+    ctx.lineWidth = 1.5 * u;
+    ctx.strokeStyle = COMPASS_GOLD;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r * 0.085);
+    ctx.lineTo(cx, cy - r * 0.045);
+    ctx.lineWidth = 1 * u;
+    ctx.stroke();
+  }
+
+  /* 3) 中心读数：向 xx.x° / 山·五行 / 坐·阴阳（原样 30/17/13sp） */
+  var rd = opts.reading;
+  if (rd) {
+    compassText(ctx, rd.heading.toFixed(1) + '°', cx, cy - 22 * 3.375 * u, 30 * 3.375 * u, '#ffffff', u);
+    compassText(ctx, MOUNTAINS[rd.mountain] + '山 · ' + WUXING[rd.mountain],
+      cx, cy + 10 * 3.375 * u, 17 * 3.375 * u, compassWuxingColor(WUXING[rd.mountain]), u);
+    compassText(ctx, rd.jian + ' · ' + (rd.yinyang || ''),
+      cx, cy + 34 * 3.375 * u, 13 * 3.375 * u, COMPASS_GOLD, u);
+  }
+
+  ctx.restore();
+  return true;
+}
+
+/* 常驻低透明度轮廓 + 30° 刻度：位图模式下也必须能看出盘面在哪 */
+function drawOutlineRings(ctx, cx, cy, r, u) {
+  ctx.lineWidth = 2 * u;
+  ctx.strokeStyle = COMPASS_GOLD;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 1 * u;
+  ctx.strokeStyle = 'rgba(220,190,130,0.45)';
+  for (var k = 1; k <= 3; k++) {
+    ctx.beginPath(); ctx.arc(cx, cy, r * (1 - k * 0.09), 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.beginPath();
+  for (var d = 0; d < 360; d += 30) {
+    var p0 = compassPos(cx, cy, r * 0.965, d, 0);
+    var p1 = compassPos(cx, cy, r * 0.90, d, 0);
+    ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]);
+  }
+  ctx.stroke();
+}
+
+/* 矢量盘面（无位图时的等价路径，按 onDraw 的半径系数逐条搬） */
+function vectorFace(ctx, cx, cy, r, u, heading, dialType, MOUNTAINS, WUXING, RINGS) {
+  ctx.lineWidth = 2 * u;
+  ctx.strokeStyle = COMPASS_GOLD;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  drawOutlineRings(ctx, cx, cy, r, u);
+
+  /* 5° 刻度 + 30° 度数 */
+  ctx.lineWidth = 1 * u;
+  ctx.strokeStyle = 'rgb(160,135,90)';
+  for (var d = 0; d < 360; d += 5) {
+    var a0 = r * 0.965;
+    var a1 = (d % 30 === 0) ? r * 0.90 : (d % 10 === 0 ? r * 0.925 : r * 0.945);
+    var q0 = compassPos(cx, cy, a0, d, heading), q1 = compassPos(cx, cy, a1, d, heading);
+    ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo(q1[0], q1[1]); ctx.stroke();
+  }
+  for (var dd = 0; dd < 360; dd += 30) {
+    var pp = compassPos(cx, cy, r * 0.865, dd, heading);
+    compassText(ctx, String(dd), pp[0], pp[1], 11 * 3.375 * u, COMPASS_GOLD, u);
+  }
+
+  /* 3°/5°/6° 细节刻环（dial 0 不画） */
+  if (dialType > 0) {
+    ctx.strokeStyle = 'rgb(120,100,70)';
+    for (var f = 0; f < 360; f += 3) tick(ctx, cx, cy, r * 0.845, r * 0.825, f, heading);
+    ctx.strokeStyle = 'rgb(110,130,90)';
+    for (var g = 0; g < 360; g += 5) tick(ctx, cx, cy, r * 0.805, r * 0.785, g, heading);
+    ctx.strokeStyle = 'rgb(90,110,130)';
+    for (var k = 0; k < 60; k++) tick(ctx, cx, cy, r * 0.775, r * 0.755, 1.5 + k * 6, heading);
+  }
+
+  /* 六十四卦刻环（仅综合盘 dial 4） */
+  if (dialType === 4) {
+    ctx.strokeStyle = 'rgb(150,120,150)';
+    for (var h = 0; h < 64; h++) tick(ctx, cx, cy, r * 0.745, r * 0.725, h * 5.625, heading);
+  }
+
+  /* 二十四山三盘：地盘 0.715 / 人盘 0.52(-7.5°) / 天盘 0.34(+7.5°) */
+  for (var m = 0; m < 24; m++) {
+    var p1 = compassPos(cx, cy, r * 0.715, m * 15, heading);
+    compassText(ctx, MOUNTAINS[m], p1[0], p1[1], 17 * 3.375 * u, compassWuxingColor(WUXING[m]), u);
+  }
+  for (var m2 = 0; m2 < 24; m2++) {
+    var p2 = compassPos(cx, cy, r * 0.52, m2 * 15 - 7.5, heading);
+    compassText(ctx, MOUNTAINS[m2], p2[0], p2[1], 13 * 3.375 * u, 'rgb(180,200,220)', u);
+  }
+  for (var m3 = 0; m3 < 24; m3++) {
+    var p3 = compassPos(cx, cy, r * 0.34, m3 * 15 + 7.5, heading);
+    compassText(ctx, MOUNTAINS[m3], p3[0], p3[1], 13 * 3.375 * u, 'rgb(230,200,170)', u);
+  }
+
+  /* 后天卦位（RINGS[1]）内圈小字 */
+  var bagua = RINGS[1];
+  if (bagua && bagua.labels) {
+    for (var i = 0; i < bagua.labels.length; i++) {
+      var deg = bagua.offset + (i + 0.5) * bagua.interval;
+      var pb = compassPos(cx, cy, r * 0.18, deg, heading);
+      var name = String(bagua.labels[i]).replace(/\u200c/g, '');
+      compassText(ctx, name, pb[0], pb[1], 12 * 3.375 * u,
+        compassWuxingColor(compassGuaWuxing(name.substring(0, 1))), u);
+    }
+  }
+}
+
+function tick(ctx, cx, cy, r0, r1, deg, heading) {
+  var a = compassPos(cx, cy, r0, deg, heading), b = compassPos(cx, cy, r1, deg, heading);
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+}
+
+/* 无头自检用：离屏渲染一张 size×size 的 PNG dataURL（L2a 用，不上机也能比） */
+window.__lcRenderCompass = function (size, opts) {
+  try {
+    var cv = document.createElement('canvas');
+    cv.width = size; cv.height = size;
+    var ctx = cv.getContext('2d');
+    var ok = drawCompass(ctx, size, opts || {});
+    return ok ? cv.toDataURL('image/png') : '';
+  } catch (e) {
+    console.log('LCGROUND ERROR render ' + (e && e.message ? e.message : e));
+    return '';
+  }
+};
+
 /* ---- WebGL 初始化 ---- */
 function initGL() {
   if (gl) return true;

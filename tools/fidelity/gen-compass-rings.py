@@ -39,13 +39,17 @@ def build(src, sha):
             'offset': r.get('offset'),
             'labels': r.get('labels', []),
         })
+    # 注意：mechanics.json 里 dials[] **没有** `rings` 键。`rings_status` 是一句状态描述
+    # （"dial_is_full_artwork_image__no_per_dial_ring_set"），说明"盘面用整张图、不按盘分配环"。
+    # 曾把它塞进 `rings` 字段：值是**字符串**，下游按数组遍历会拿到一串字符 —— 已改为原名保留，
+    # 并且**不再**伪造 `rings` 键；圈层数据一律只从顶层 `rings`（14 条）取。
     dials = []
     for d in src.get('dials', []):
         dials.append({
             'id': d.get('id'),
             'text': d.get('text'),
             'vip': bool(d.get('vip')),
-            'rings': d.get('rings', d.get('rings_status', [])),
+            'rings_status': d.get('rings_status'),
         })
     return {
         'schema': 1,

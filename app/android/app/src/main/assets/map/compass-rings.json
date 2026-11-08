@@ -8,31 +8,31 @@
    "id": "COMPASS_0",
    "text": "二十四山(阴)",
    "vip": false,
-   "rings": "dial_is_full_artwork_image__no_per_dial_ring_set"
+   "rings_status": "dial_is_full_artwork_image__no_per_dial_ring_set"
   },
   {
    "id": "COMPASS_1",
    "text": "常用罗盘",
    "vip": false,
-   "rings": "dial_is_full_artwork_image__no_per_dial_ring_set"
+   "rings_status": "dial_is_full_artwork_image__no_per_dial_ring_set"
   },
   {
    "id": "COMPASS_2",
    "text": "三合罗盘(白)",
    "vip": true,
-   "rings": "dial_is_full_artwork_image__no_per_dial_ring_set"
+   "rings_status": "dial_is_full_artwork_image__no_per_dial_ring_set"
   },
   {
    "id": "COMPASS_3",
    "text": "三元罗盘(金)",
    "vip": true,
-   "rings": "dial_is_full_artwork_image__no_per_dial_ring_set"
+   "rings_status": "dial_is_full_artwork_image__no_per_dial_ring_set"
   },
   {
    "id": "COMPASS_4",
    "text": "综合罗盘(白)",
    "vip": true,
-   "rings": "dial_is_full_artwork_image__no_per_dial_ring_set"
+   "rings_status": "dial_is_full_artwork_image__no_per_dial_ring_set"
   }
  ],
  "rings": [

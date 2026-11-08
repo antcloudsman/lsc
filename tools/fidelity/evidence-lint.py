@@ -23,6 +23,10 @@
   python tools/fidelity/evidence-lint.py --root docs/fidelity
   python tools/fidelity/evidence-lint.py --root docs/fidelity/m3 --strict --json out.json
 
+  生成物溯源（MD 为唯一源，HTML 是生成物）：
+  python tools/fidelity/evidence-lint.py --generated-html app/android/app/src/main/assets/lc-help/index.html \
+         --source docs/product/help-center.md
+
 退出码：0 = 无 fail；1 = 有 fail（--strict 时 warn 也算）；2 = 参数/路径错误。
 """
 
@@ -32,8 +36,154 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 import xml.etree.ElementTree as ET
+
+GEN_HEADER_RE = re.compile(r"GENERATED from\s+(\S+)\s+@\s+([0-9a-fA-F]{7,40})")
+
+
+def check_eol(path: str, strict_crlf: bool) -> list[dict]:
+    """源码换行符检查（技术债示例：MainActivity 4083 CRLF + 203 裸 LF 混用 → 编辑工具重排产生 203 行假 diff）。
+
+    规则：
+      - **混用（既有 CRLF 又有裸 LF）→ FAIL**：这正是假 diff 的直接来源；
+      - **纯 CRLF → WARN**，`strict_crlf=True` 时也判 FAIL（本仓约定源码 LF）；
+      - 裸 CR → FAIL。
+    只检查显式传入的文件；**不做全仓判死**（存量债：全仓 296/699 文件含 CR，需单独立项规范化）。
+    """
+    out: list[dict] = []
+    try:
+        with open(path, "rb") as fh:
+            data = fh.read()
+    except OSError as exc:
+        return [{"level": "fail", "kind": "eol", "reason": f"unreadable: {exc}", "path": path}]
+
+    crlf = data.count(b"\r\n")
+    bare_lf = data.count(b"\n") - crlf
+    bare_cr = data.count(b"\r") - crlf
+
+    if crlf == 0 and bare_cr == 0:
+        return out  # 纯 LF，合规
+    if crlf > 0 and bare_lf > 0:
+        out.append(
+            {
+                "level": "fail",
+                "kind": "eol",
+                "reason": f"mixed EOL: {crlf} CRLF + {bare_lf} bare LF (fake-diff risk)",
+                "path": path,
+                "crlf": crlf,
+                "bare_lf": bare_lf,
+            }
+        )
+    elif crlf > 0:
+        out.append(
+            {
+                "level": "fail" if strict_crlf else "warn",
+                "kind": "eol",
+                "reason": f"CRLF-only ({crlf} CRLF, 0 bare LF): repo convention is LF",
+                "path": path,
+                "crlf": crlf,
+            }
+        )
+    else:
+        out.append(
+            {"level": "fail", "kind": "eol", "reason": f"bare CR x{bare_cr}", "path": path}
+        )
+    return out
+
+
+def check_generated(html_path: str, source_path: str) -> list[dict]:
+    """HTML 是生成物：头部 `GENERATED from <md> @ <blob sha>` 必须与 md 当前 blob sha 一致。
+
+    一致 = 生成物没被手改、也没落后于源；不一致或缺失 = FAIL。
+    源文件 blob sha 用 `git hash-object` 现算（与 git 内部一致），不依赖提交历史。
+    """
+    out: list[dict] = []
+    if not os.path.isfile(html_path):
+        return [
+            {
+                "level": "fail",
+                "kind": "generated",
+                "reason": f"generated file not found: {html_path}",
+                "path": html_path,
+            }
+        ]
+    if not os.path.isfile(source_path):
+        return [
+            {
+                "level": "fail",
+                "kind": "generated",
+                "reason": f"source file not found: {source_path}",
+                "path": source_path,
+            }
+        ]
+    try:
+        with open(html_path, "rb") as fh:
+            head = fh.read(8192).decode("utf-8", errors="replace")
+    except OSError as exc:
+        return [
+            {
+                "level": "fail",
+                "kind": "generated",
+                "reason": f"unreadable: {exc}",
+                "path": html_path,
+            }
+        ]
+
+    m = GEN_HEADER_RE.search(head)
+    if not m:
+        out.append(
+            {
+                "level": "fail",
+                "kind": "generated",
+                "reason": "missing header 'GENERATED from <src> @ <blob sha>' (hand-written or generator not wired)",
+                "path": html_path,
+            }
+        )
+        return out
+
+    declared_path, declared_sha = m.group(1), m.group(2).lower()
+    if os.path.normcase(os.path.basename(declared_path)) != os.path.normcase(os.path.basename(source_path)):
+        out.append(
+            {
+                "level": "fail",
+                "kind": "generated",
+                "reason": f"header source {declared_path!r} != expected {source_path!r}",
+                "path": html_path,
+            }
+        )
+        return out
+
+    try:
+        actual = subprocess.run(
+            ["git", "hash-object", source_path],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip().lower()
+    except Exception as exc:  # noqa: BLE001
+        return [
+            {
+                "level": "fail",
+                "kind": "generated",
+                "reason": f"cannot compute blob sha for {source_path}: {type(exc).__name__}",
+                "path": source_path,
+            }
+        ]
+
+    if not actual.startswith(declared_sha):
+        out.append(
+            {
+                "level": "fail",
+                "kind": "generated",
+                "reason": f"stale/mismatched: header {declared_sha[:12]}… != source blob {actual[:12]}… (regenerate)",
+                "path": html_path,
+                "header_sha": declared_sha,
+                "source_blob": actual,
+            }
+        )
+    return out
 
 SHELL_ERROR_PATTERNS = [
     r"^cat:\s",
@@ -212,6 +362,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--expect-size", help="declared screenshot size WxH, e.g. 1228x2700 (mismatch = warn)")
     ap.add_argument("--allow", help="allowlist JSON with entries {path, reason, by, verdict} (4 keys required)")
     ap.add_argument("--json", help="write JSON report to this path")
+    ap.add_argument("--eol", help="comma-separated source files to check for CRLF/mixed EOL")
+    ap.add_argument("--eol-strict", action="store_true", help="also FAIL on CRLF-only files (repo convention is LF)")
+    ap.add_argument("--generated-html", help="generated artifact (e.g. lc-help/index.html) to verify against its source")
+    ap.add_argument("--source", help="source markdown for --generated-html (e.g. docs/product/help-center.md)")
     args = ap.parse_args(argv)
 
     if not os.path.isdir(args.root):
@@ -260,6 +414,20 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
     allowed_map = {os.path.normcase(os.path.abspath(e["path"])): e for e in allow}
+
+    if args.generated_html or args.source:
+        if not (args.generated_html and args.source):
+            print("ERROR: --generated-html and --source must be used together", file=sys.stderr)
+            return 2
+        findings.extend(check_generated(args.generated_html, args.source))
+
+    if args.eol:
+        for p in [s.strip() for s in args.eol.split(",") if s.strip()]:
+            if not os.path.isfile(p):
+                print(f"ERROR: --eol file not found: {p}", file=sys.stderr)
+                return 2
+            findings.extend(check_eol(p, args.eol_strict))
+
     for f in findings:
         entry = allowed_map.get(os.path.normcase(os.path.abspath(f["path"])))
         if entry:

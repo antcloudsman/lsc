@@ -44,6 +44,22 @@ sha256 校验对它是 PASS —— 哈希只能证明「文件没被改过」，
 1. **不要用「文件小于 X KB」判垃圾**：审核验全量扫描 183 个 png，10 个 < 8 KB 的全是正常小图标（`pointer` / `ic_3d_white` / 分享图标…），用体积阈值会一次误报 10 个。
 2. **不要只靠「纯色方差」判空屏**：`assets/compass/plate/compass5.png` 方差 1.75（近乎纯色），但它是盘面图层，纯色本来就合理 → 这类归「待确认」，不进缺陷；纯色判据只对**截图类** png（min side ≥ 600）生效。
 
+### 2.4 源码换行符（`--eol`，2026-11-08 技术总监要求）
+
+| 情形 | 判定 | 说明 |
+|---|---|---|
+| 纯 LF | pass | 本仓约定 |
+| **混用**（既有 CRLF 又有裸 LF） | **FAIL** | 假 diff 的直接来源：编辑工具重排后一次三行改动被淹没成 203 行 |
+| 纯 CRLF | WARN（`--eol-strict` 时 FAIL） | 存量债，需单独立项规范化 |
+
+```
+python tools/fidelity/evidence-lint.py --root docs/fidelity \
+  --eol app/android/app/src/main/java/com/luopan/fengshui/MainActivity.java
+FAIL eol …/MainActivity.java: mixed EOL: 4117 CRLF + 203 bare LF (fake-diff risk)
+```
+
+**只检查显式传入的文件，不做全仓判死**：全仓 296/699 个源码/配置含 CR（存量债），一次性判红没有意义；改哪个文件就先查哪个。
+
 ## 3 用法
 
 ```bash
@@ -141,6 +157,7 @@ EVIDENCE-LINT: scanned xml=3 png=0 fail=1 warn=0
 
 | 日期 | 变更 |
 |---|---|
+| 2026-11-08 | 补 --eol：混用换行 FAIL、纯 CRLF WARN（--eol-strict 判 FAIL）；只查显式文件、不做全仓判死（存量 296/699 含 CR） |
 | 2026-11-08 | 按 LC审核验 建议补两条：**空 dump（`<hierarchy>` 根、0 个 `<node>`）判 FAIL**（仅对 dump，SVG 不适用）；**`--root` 默认 `docs/fidelity`**（不再必填，避免上手 `exit 2`）。实测：真实证据 `fail=0 allowed=1`（带清单），`empty.xml` 单测 FAIL |
 | 2026-11-08 | 增具名例外清单 `--allow`（四键必填，FAIL→ALLOWED 但永远打印）；基线更新为 `fail=0 / allowed=1 / exit 0`（带清单）与 `fail=1`（不带，反证）；证据文件不删不改 |
 | 2026-11-08 | 建工具与规则；首次全量基线：`xml=155 / png=130 / fail=1（help-offline.xml）/ warn=0`；自测 6 FAIL 2 PASS 通过 |

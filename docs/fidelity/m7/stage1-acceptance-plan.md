@@ -238,6 +238,29 @@ getGroundQuad() pitch0
 
 **仍未测**：Q0-4 四项回归（拖动/3D/收藏/底图切换）、Q3 透明度、Q5 平地山地、Q7 门控、`USE_ASSET_LOADER=false` 回滚值。贴地整体仍**不宣布通过**——Q1/Q2/Q4/Q8 只是四项判据，不等于整条第 7 条过。
 
+### 1.4i Stage 1 贴地收尾五项（19:27–19:37，包已拉回核对）
+
+**本轮的包先核过再测**（自 `60DAC7F8` 事故后列为强制前置）：`adb pull /data/app/.../base.apk` 比对 sha = `6f7a31e579169452b339d5cbf50c5bfe7198cda44225ac17c20931a5b309354c`（=本人构建的 `2efec59`），`lastUpdateTime=2026-11-08 19:30:37`。
+
+| 项 | 实测 | 判据 | 判 |
+|---|---|---|---|
+| Q7 门控 | `lat 76` → `quad:null` + `diag:"skip:gate lat=76.00 zoom=12"`；`zoom 5` → `quad:null` + `diag:"skip:gate lat=39.90 zoom=5"` | `null` 且 `diag` 以 `skip:gate` 开头 | **PASS** |
+| Q5 不跟 DEM | 北京（`elev 53`）四角 `(-182.008,35.992)(546.008,35.992)(546.008,764.008)(-182.008,764.008)`、`side 728.016`；珠峰（`elev 8699`）四角 `(-181.969,36.031)(545.969,36.031)(545.969,763.969)(-181.969,763.969)`、`side 727.938` | 同机位下北边两角 y 相等、南边两角 y 相等（±0.5）、对角线交点=屏幕中心 | **PASS**（两处海拔差 164×，角点最大差 **0.039 px**；南北边 y 各自逐位相等；交点 (182, 400)） |
+| Q3 透明度 | **未取证** | 见下 | **待确认** |
+| Q0-4 拖动 | `input swipe 400 1500 700 1500`（dx=+300）→ `lng 116.4074 → 116.3769`，内容随手指同向 | 同号 | **PASS** |
+| Q0-4 3D | `toggle3D()` → `mode:"2d"`、`hasTexture:true`、`last3dError:null` | 能进出、纹理在 | **PASS** |
+| Q0-4 底图切换 | `setBase('img')` → `setBase('vec')`，全程 `tileDiag.net/ok 310/310`、`err 0`、`lastErrUrl:""` | 切换后瓦片继续加载且不被拒 | **PASS** |
+| Q0-4 收藏 | `overlays:{}`（本机无收藏数据）；`map.html` 全仓零 `localStorage/sessionStorage/indexedDB`，收藏走原生 `SharedPreferences`（`FavoriteSync.java:111`） | 换域不丢 | **代码层排除**；无数据可实测，记「无数据」不记 PASS |
+| 回滚值 | 装 `USE_ASSET_LOADER=false` 的包（sha `60dac7f8…`，pull 核对一致）→ `href:"file:///android_asset/map.html"`、`tileDiag.net/ok 120/120`、`err 0`、`FATAL EXCEPTION` **0** | 能退回且地图不崩 | **PASS**（贴地 canvas 在 `file://` 下 `fail:upload SecurityError` 属已知，不判缺陷） |
+
+**Q3 为什么没取到证**（不是没测，是缺基线）：Q3 要「同机位、同一背景，盘面开/关两张」。本实现里两条路都挡住了这个基线——
+- `setGroundRenderer('overlay')` **仍会画盘面**（原生浮层盘面），不是“无盘面”；
+- `toggleGround()` 关贴地会把 `D` 从 `×0.35` 还原，**整个 3D 场景比例变化 2.857 倍**（实测两图整幅差异，`frac>60 = 41.8%`），背景完全不同，不能当基线。
+
+代码层事实（可写进台账，但不能替代像素）：盘面 alpha 两档同源——`map.html:2498` `dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1`、`map.html:2622` `gl.uniform1f(groundLoc.alpha, …)`，即 canvas 档与浮层档读同一个变量，数值分歧只可能来自混合/合成顺序。
+
+**要补齐 Q3 只需一个调试开关**：让 `drawGroundCompass()` 在不改相机的前提下直接返回（例如 `__LC3D.setGroundVisible(false)`），则同机位“有盘面/无盘面”两图即可取得，alpha 可由 `C_on = a·C_tex + (1−a)·C_off` 反解。预计 10 分钟内可复验。
+
 ### 1.5 失败与回滚
 
 - 任一项超差 → 本条判**不通过**，退回实现方，附超差项与实测值；

@@ -302,9 +302,11 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
       if (!url) continue;                 /* 无 key：不渲染破图，保持灰底并已 console.warn */
       var cached = tileCacheOn ? tileCache[url] : null;
       if (cached) {
+        tileDiag.hit++;                   /* 缓存命中：不发网络请求（与 net/ok 分开计，避免"全命中"被当成"加载成功"） */
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           'src="' + cached + '">';
       } else {
+        tileDiag.net++;                   /* 真正发出去的瓦片请求数（审核验口径：req 只记网络请求） */
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           (tileCacheOn ? 'crossorigin="anonymous" ' : '') +
           'src="' + url + '" onload="__tileLoaded(this,\'' + url + '\',\'' + layer + '\')" ' +
@@ -326,7 +328,7 @@ function isAlphaLayer(layer) { return layer === "cta" || layer === "cia" || laye
 /* 瓦片诊断（给 Q0 验收用，不改变加载行为）：换到 WebViewAssetLoader 的 https 虚拟域后，
  * 天地图瓦片会带上新的 Referer/Origin，可能被服务端拒绝——这条把"有没有被拒"变成可读数字，
  * 不必靠肉眼找空白块。getState().tileDiag 可读。 */
-var tileDiag = { ok: 0, err: 0, lastErr: '', lastErrUrl: '' };
+var tileDiag = { net: 0, ok: 0, hit: 0, err: 0, lastErr: '', lastErrUrl: '' };
 function __tileFailed(img, url, layer) {
   try { if (img) img.style.display = 'none'; } catch (e) { }
   tileDiag.err++;
@@ -3493,7 +3495,7 @@ function getState() {
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError, last3dWarn: last3dWarn,
     wayback: wbOn, waybackRelease: wbRelease,
     cache: tileCacheOn, cacheCount: tileCacheKeys.length,
-    tileDiag: { ok: tileDiag.ok, err: tileDiag.err, lastErrUrl: tileDiag.lastErrUrl },
+    tileDiag: { net: tileDiag.net, ok: tileDiag.ok, hit: tileDiag.hit, err: tileDiag.err, lastErrUrl: tileDiag.lastErrUrl },
     measure: (function () {
       var s = measureStats();
       return {

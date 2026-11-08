@@ -103,6 +103,8 @@ android {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
+    // 原版用 WebViewAssetLoader 提供 assets（https 虚拟域）：fetch 可用、画布不被污染。
+    implementation 'androidx.webkit:webkit:1.12.0'
 }
 
 // Kotlin 1.8+ bundles jdk7/jdk8 helpers into kotlin-stdlib; drop the old split artifacts.

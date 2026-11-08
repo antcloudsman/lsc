@@ -118,6 +118,10 @@
 <div id="needle"></div>
 <div id="heading-label">向 0°</div>
 
+<!-- 盘面数据（11-08）：WebView 源是 file:///android_asset/，Chromium 的 Fetch 与 XHR 都拒绝 file 方案，
+     所以数据由生成器同时输出成 JS，用 script 标签加载（不受该限制）。见 tools/fidelity/gen-compass-rings.py -->
+<script src="map/compass-rings.js"></script>
+
 <script>
 /* ============================================================
  * 山水罗盘 · map.html
@@ -298,13 +302,15 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
       if (!url) continue;                 /* 无 key：不渲染破图，保持灰底并已 console.warn */
       var cached = tileCacheOn ? tileCache[url] : null;
       if (cached) {
+        tileDiag.hit++;                   /* 缓存命中：不发网络请求（与 net/ok 分开计，避免"全命中"被当成"加载成功"） */
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           'src="' + cached + '">';
       } else {
+        tileDiag.net++;                   /* 真正发出去的瓦片请求数（审核验口径：req 只记网络请求） */
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           (tileCacheOn ? 'crossorigin="anonymous" ' : '') +
           'src="' + url + '" onload="__tileLoaded(this,\'' + url + '\',\'' + layer + '\')" ' +
-          'onerror="this.style.display=\'none\'">';
+          'onerror="__tileFailed(this,\'' + url + '\',\'' + layer + '\')">';
       }
     }
   }
@@ -319,8 +325,20 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
  * 所以按图层选格式：注记层 PNG（保 alpha），底图层（img/ter/vec，不透明）继续 JPEG 0.85 省内存。 */
 function isAlphaLayer(layer) { return layer === "cta" || layer === "cia" || layer === "cva"; }
 
-function __tileLoaded(img, url, layer) {
-  if (!tileCacheOn) return;
+/* 瓦片诊断（给 Q0 验收用，不改变加载行为）：换到 WebViewAssetLoader 的 https 虚拟域后，
+ * 天地图瓦片会带上新的 Referer/Origin，可能被服务端拒绝——这条把"有没有被拒"变成可读数字，
+ * 不必靠肉眼找空白块。getState().tileDiag 可读。 */
+var tileDiag = { net: 0, ok: 0, hit: 0, err: 0, lastErr: '', lastErrUrl: '' };
+function __tileFailed(img, url, layer) {
+  try { if (img) img.style.display = 'none'; } catch (e) { }
+  tileDiag.err++;
+  tileDiag.lastErrUrl = String(url || '').slice(0, 200);
+  tileDiag.lastErr = (new Date()).toISOString();
+  if (tileDiag.err === 1 || tileDiag.err % 32 === 0) {
+    console.log('LCTILE fail n=' + tileDiag.err + ' layer=' + layer + ' url=' + tileDiag.lastErrUrl);
+  }
+}
+function __tileLoaded(img, url, layer) {  tileDiag.ok++; if (!tileCacheOn) return;
   try {
     var cv = document.createElement("canvas");
     cv.width = 256; cv.height = 256;
@@ -1701,6 +1719,25 @@ function setUiMode(m) {
 /* 客户端习惯的别名（回放页直接用 lc_setUiMode('canvas')） */
 function lc_setUiMode(m) { return setUiMode(m); }
 
+/* TEST HOOK（技术总监 11-08 定，Q1/Q2/Q3 验收用）：只藏 chrome、保留贴地盘面。
+ * 产品里「隐藏」的语义是藏整个罗盘浮层（盘面一起藏），验收需要的「有盘面、无 chrome」
+ * 状态产品中本就不存在，只能由测试钩子提供——所以这条**不进产品按钮**。
+ * 藏的是本页自身 chrome：#controls 左侧工具列、#hint、#heading-label、#srcInfo、3D #hud。
+ * 保留：贴地盘面（glCanvas 纹理）、#needle 指针；红十线在原生层，本钩子不碰。
+ * 恢复：回到隐藏前的 uiMode（不硬写 full，避免把产品态改掉）。 */
+var chromePrevUiMode = null;
+function setChromeVisible(on) {
+  if (on) {
+    if (chromePrevUiMode === null) chromePrevUiMode = uiMode;
+    if (uiMode === "full") setUiMode("map");   /* map 档：chrome 全隐、指针/盘面仍在（applyNeedleVisibility） */
+    return uiMode;
+  }
+  var prev = chromePrevUiMode;
+  chromePrevUiMode = null;
+  setUiMode(prev === null ? "full" : prev);
+  return uiMode;
+}
+
 /* ---------------- 罗盘坐向指针 ---------------- */
 function setHeading(deg) {
   lastHeading = Number(deg) || 0;
@@ -1711,6 +1748,8 @@ function setHeading(deg) {
     if (mode !== "3d") applyTransform();
   }
   refreshNeedle();
+  /* heading 变化会改中心读数（heading/坐向文字），故仍标脏；盘面图元本身不随 heading 转（bit1） */
+  if (groundMode && groundRenderer === 'canvas') groundTexDirty = true;
   var lbl = document.getElementById("heading-label");
   if (lbl && lbl.getAttribute("data-sit") == null) {
     lbl.textContent = "向 " + (Math.round(lastHeading) % 360) + "°";
@@ -1776,6 +1815,7 @@ function toggleContour() {
 function setGround(on) {
   on = !!on;
   if (groundMode === on) { updateHud(); return groundMode; }   /* 幂等：同值不重复压/抬机位 */
+  if (on && groundRenderer === 'canvas') { try { groundTexDirty = true; groundRedraw(); } catch (e) {} }
   groundMode = on;
   var btn = document.getElementById("btn_ground");
   if (btn) btn.className = groundMode ? "active" : "";
@@ -1792,6 +1832,32 @@ function setGround(on) {
 
 function toggleGround() {
   return setGround(!groundMode);
+}
+
+/* 回滚/调试开关（默认 overlay = 现网行为，不改变产品表现）。
+ * 11-08 现场发现：产品「贴地」按钮只走 toggleGround()，**没有**任何路径把
+ * groundRenderer 切到 'canvas' ⇒ 贴地画布的绘制通道整段是死代码，屏幕上一直是原生
+ * CompassView（屏幕空间正圆）。本钩子先把档位显式化，供审核验在原生盘面隐掉后单独验贴地。 */
+function setGroundBaseline(on) {
+  groundBaseline = (on === 1 || on === true || on === '1') ? 1 : 0;
+  groundTexDirty = true;
+  return groundBaseline;
+}
+
+function setGroundRenderer(v) {
+  /* 入参容错（11-08 现场）：传 "canvas" 时常被 shell/求值层带上引号或空白，导致
+   * 严格比较失配、静默不生效（审核验实测 state 仍为 overlay）。这里统一归一化，
+   * 并额外支持数字档（1=canvas / 0=overlay），调用方可以完全不写引号。 */
+  var name = v;
+  if (v === 1 || v === true) name = 'canvas';
+  else if (v === 0 || v === false) name = 'overlay';
+  else if (typeof v === 'string') name = v.replace(/["'\s]/g, '').toLowerCase();
+  if (name === 'canvas' || name === 'overlay') {
+    groundRenderer = name;
+    if (groundMode) { groundTexDirty = true; if (name === 'canvas') { try { groundRedraw(); } catch (e) { } } }
+    updateHud();
+  }
+  return groundRenderer;
 }
 
 /* M6 第 6 条：「罗盘复位」的地图侧一半。
@@ -2083,6 +2149,552 @@ function demAt(z, gx, gy) {
    * 调用方必须显式处理 null。 */
   if (a === null || b === null || c === null || d === null) return null;
   return a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) + c * (1 - fx) * fy + d * fx * fy;
+}
+
+
+/* ============================================================
+ * M7 A 路线：盘面 canvas 渲染（贴地栅格纹理用）
+ * 逐条对照 CompassView.onDraw（544 行，绘制面约 259 行）：
+ *   pos(cx,cy,r,deg,heading) 的原生角度约定 = Math.toRadians(deg - heading)，
+ *   点 = (cx + r*sin(a), cy - r*cos(a))；本处照抄。
+ * 比例：原生以 922 设备 px 视口为基准（r = min(w,h)/2 - 8），
+ *   任意 size 下统一用 u = size / 922 缩放，原生里 sp*density 的量在 JS 就是 sp*3.375*u。
+ * 本函数只负责"画"，不接贴地通道；改 size/源图分辨率不需要改这里。
+ * ============================================================ */
+var COMPASS_RINGS = null;          /* compass-rings.json（由 tools/fidelity/gen-compass-rings.py 从 mechanics.json 生成） */
+var COMPASS_REF = 922;             /* 原生盘面参考视口（设备 px） */
+var COMPASS_GOLD = '#dcbe82';      /* rgb(220,190,130) */
+
+function compassDataLoad(cb) {
+  if (COMPASS_RINGS) { cb(COMPASS_RINGS); return; }
+  /* 首选：生成器随包输出的 JS（<script src="map/compass-rings.js"> 已在上方加载）。
+   * 原因（审核验 11-08 实测）：页面源 file:///android_asset/ 下，Chromium 的 Fetch API 与 XHR
+   * 都直接拒绝 —— "URL scheme 'file' is not supported"，与路径无关。script 标签不受此限制。 */
+  if (window.__LC_COMPASS_RINGS) {
+    COMPASS_RINGS = window.__LC_COMPASS_RINGS;
+    console.log('LCGROUND rings-inline ok rings=' + ((COMPASS_RINGS.rings || []).length));
+    cb(COMPASS_RINGS);
+    return;
+  }
+  /* 后备：http(s) 源（桌面预览）仍可 fetch；file 源下会失败并走下面的日志 */
+  var paths = ['map/compass-rings.json', 'compass-rings.json'];
+  var i = 0;
+  function next() {
+    if (i >= paths.length) { console.log('LCGROUND ERROR rings-json missing: ' + paths.join(',')); return; }
+    var p = paths[i++];
+    fetch(p).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      COMPASS_RINGS = j;
+      console.log('LCGROUND rings-json ok ' + p + ' rings=' + ((j.rings || []).length));
+      cb(j);
+    }).catch(function (e) {
+      console.log('LCGROUND ERROR rings-json ' + p + ' ' + (e && e.message ? e.message : e));
+      next();
+    });
+  }
+  next();
+}
+
+/* 11-08 现场根因：compassDataLoad() 此前**全仓零调用**，COMPASS_RINGS 永远是 null，
+ * 于是 drawGroundCompass() 在 `if (!COMPASS_RINGS) return;` 处退出、lastGroundQuad 从不赋值、
+ * getGroundQuad() 永远返回 null（审核验实测）。盘面数据是贴地绘制的前置，页面加载即取。 */
+compassDataLoad(function () { groundTexDirty = true; });
+
+function compassWuxingColor(wx) {
+  if (wx === '木') return 'rgb(90,180,90)';
+  if (wx === '火') return 'rgb(220,90,70)';
+  if (wx === '土') return 'rgb(190,150,80)';
+  if (wx === '金') return 'rgb(220,190,90)';
+  if (wx === '水') return 'rgb(90,150,220)';
+  return '#ffffff';
+}
+
+function compassGuaWuxing(g) {
+  if (g === '坎') return '水';
+  if (g === '离' || g === '震' || g === '巽') return '木';
+  if (g === '乾' || g === '兑') return '金';
+  if (g === '坤' || g === '艮') return '土';
+  return '';
+}
+
+function compassPos(cx, cy, r, deg, heading) {
+  var a = (deg - heading) * Math.PI / 180;
+  return [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+}
+
+/* 逐字移植 CompassView.drawText：深色描边 2px + 填充 + 垂直居中（ascent/descent 用近似 0.8/-0.2 em） */
+function compassText(ctx, str, x, y, size, color, u) {
+  ctx.font = size + 'px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  var by = y - (0.8 * size - 0.2 * size) / 2;
+  ctx.lineWidth = Math.max(1, 2 * u);
+  ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+  ctx.strokeText(str, x, by);
+  ctx.fillStyle = color;
+  ctx.fillText(str, x, by);
+}
+
+/* 主入口：把整套盘面画到 ctx 上。size = 目标边长（backing px），opts.heading 为盘面朝向。 */
+function drawCompass(ctx, size, opts) {
+  opts = opts || {};
+  var D = opts.data || COMPASS_RINGS;
+  if (!D) return false;
+  var u = size / COMPASS_REF;
+  var cx = size / 2, cy = size / 2;
+  var r = opts.dialBleed ? Math.min(cx, cy) : Math.min(cx, cy) - 8 * u;
+  var heading = Number(opts.heading) || 0;
+  var dialType = opts.dialType | 0;
+  var tab = D.tables || {};
+  var MOUNTAINS = tab.mountains || [];
+  var WUXING = tab.wuxing || [];
+  var RINGS = D.rings || [];
+  var alpha = (opts.dialAlpha == null) ? 1 : Number(opts.dialAlpha);
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  /* 1) 底盘位图（dial_full_N） */
+  if (opts.dialImg) {
+    ctx.drawImage(opts.dialImg, cx - r, cy - r, r * 2, r * 2);
+    drawOutlineRings(ctx, cx, cy, r, u);
+  } else {
+    /* 无位图时走矢量路径（与原生命令一致），保证任何档位都不是空盘 */
+    vectorFace(ctx, cx, cy, r, u, heading, dialType, MOUNTAINS, WUXING, RINGS);
+  }
+
+  /* 2) 天池 + 中心读数（位图/矢量两条路都要） */
+  if (opts.trustEnabled) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.085, 0, Math.PI * 2);
+    ctx.lineWidth = 1.5 * u;
+    ctx.strokeStyle = COMPASS_GOLD;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r * 0.085);
+    ctx.lineTo(cx, cy - r * 0.045);
+    ctx.lineWidth = 1 * u;
+    ctx.stroke();
+  }
+
+  /* 3) 中心读数：向 xx.x° / 山·五行 / 坐·阴阳（原样 30/17/13sp） */
+  var rd = opts.reading;
+  if (rd) {
+    compassText(ctx, rd.heading.toFixed(1) + '°', cx, cy - 22 * 3.375 * u, 30 * 3.375 * u, '#ffffff', u);
+    compassText(ctx, MOUNTAINS[rd.mountain] + '山 · ' + WUXING[rd.mountain],
+      cx, cy + 10 * 3.375 * u, 17 * 3.375 * u, compassWuxingColor(WUXING[rd.mountain]), u);
+    compassText(ctx, rd.jian + ' · ' + (rd.yinyang || ''),
+      cx, cy + 34 * 3.375 * u, 13 * 3.375 * u, COMPASS_GOLD, u);
+  }
+
+  ctx.restore();
+  return true;
+}
+
+/* 常驻低透明度轮廓 + 30° 刻度：位图模式下也必须能看出盘面在哪 */
+function drawOutlineRings(ctx, cx, cy, r, u) {
+  ctx.lineWidth = 2 * u;
+  ctx.strokeStyle = COMPASS_GOLD;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 1 * u;
+  ctx.strokeStyle = 'rgba(220,190,130,0.45)';
+  for (var k = 1; k <= 3; k++) {
+    ctx.beginPath(); ctx.arc(cx, cy, r * (1 - k * 0.09), 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.beginPath();
+  for (var d = 0; d < 360; d += 30) {
+    var p0 = compassPos(cx, cy, r * 0.965, d, 0);
+    var p1 = compassPos(cx, cy, r * 0.90, d, 0);
+    ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]);
+  }
+  ctx.stroke();
+}
+
+/* 矢量盘面（无位图时的等价路径，按 onDraw 的半径系数逐条搬） */
+function vectorFace(ctx, cx, cy, r, u, heading, dialType, MOUNTAINS, WUXING, RINGS) {
+  ctx.lineWidth = 2 * u;
+  ctx.strokeStyle = COMPASS_GOLD;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  drawOutlineRings(ctx, cx, cy, r, u);
+
+  /* 5° 刻度 + 30° 度数 */
+  ctx.lineWidth = 1 * u;
+  ctx.strokeStyle = 'rgb(160,135,90)';
+  for (var d = 0; d < 360; d += 5) {
+    var a0 = r * 0.965;
+    var a1 = (d % 30 === 0) ? r * 0.90 : (d % 10 === 0 ? r * 0.925 : r * 0.945);
+    var q0 = compassPos(cx, cy, a0, d, heading), q1 = compassPos(cx, cy, a1, d, heading);
+    ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo(q1[0], q1[1]); ctx.stroke();
+  }
+  for (var dd = 0; dd < 360; dd += 30) {
+    var pp = compassPos(cx, cy, r * 0.865, dd, heading);
+    compassText(ctx, String(dd), pp[0], pp[1], 11 * 3.375 * u, COMPASS_GOLD, u);
+  }
+
+  /* 3°/5°/6° 细节刻环（dial 0 不画） */
+  if (dialType > 0) {
+    ctx.strokeStyle = 'rgb(120,100,70)';
+    for (var f = 0; f < 360; f += 3) tick(ctx, cx, cy, r * 0.845, r * 0.825, f, heading);
+    ctx.strokeStyle = 'rgb(110,130,90)';
+    for (var g = 0; g < 360; g += 5) tick(ctx, cx, cy, r * 0.805, r * 0.785, g, heading);
+    ctx.strokeStyle = 'rgb(90,110,130)';
+    for (var k = 0; k < 60; k++) tick(ctx, cx, cy, r * 0.775, r * 0.755, 1.5 + k * 6, heading);
+  }
+
+  /* 六十四卦刻环（仅综合盘 dial 4） */
+  if (dialType === 4) {
+    ctx.strokeStyle = 'rgb(150,120,150)';
+    for (var h = 0; h < 64; h++) tick(ctx, cx, cy, r * 0.745, r * 0.725, h * 5.625, heading);
+  }
+
+  /* 二十四山三盘：地盘 0.715 / 人盘 0.52(-7.5°) / 天盘 0.34(+7.5°) */
+  for (var m = 0; m < 24; m++) {
+    var p1 = compassPos(cx, cy, r * 0.715, m * 15, heading);
+    compassText(ctx, MOUNTAINS[m], p1[0], p1[1], 17 * 3.375 * u, compassWuxingColor(WUXING[m]), u);
+  }
+  for (var m2 = 0; m2 < 24; m2++) {
+    var p2 = compassPos(cx, cy, r * 0.52, m2 * 15 - 7.5, heading);
+    compassText(ctx, MOUNTAINS[m2], p2[0], p2[1], 13 * 3.375 * u, 'rgb(180,200,220)', u);
+  }
+  for (var m3 = 0; m3 < 24; m3++) {
+    var p3 = compassPos(cx, cy, r * 0.34, m3 * 15 + 7.5, heading);
+    compassText(ctx, MOUNTAINS[m3], p3[0], p3[1], 13 * 3.375 * u, 'rgb(230,200,170)', u);
+  }
+
+  /* 后天卦位（RINGS[1]）内圈小字 */
+  var bagua = RINGS[1];
+  if (bagua && bagua.labels) {
+    for (var i = 0; i < bagua.labels.length; i++) {
+      var deg = bagua.offset + (i + 0.5) * bagua.interval;
+      var pb = compassPos(cx, cy, r * 0.18, deg, heading);
+      var name = String(bagua.labels[i]).replace(/\u200c/g, '');
+      compassText(ctx, name, pb[0], pb[1], 12 * 3.375 * u,
+        compassWuxingColor(compassGuaWuxing(name.substring(0, 1))), u);
+    }
+  }
+}
+
+function tick(ctx, cx, cy, r0, r1, deg, heading) {
+  var a = compassPos(cx, cy, r0, deg, heading), b = compassPos(cx, cy, r1, deg, heading);
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+}
+
+/* 无头自检用：离屏渲染一张 size×size 的 PNG dataURL（L2a 用，不上机也能比） */
+window.__lcRenderCompass = function (size, opts) {
+  try {
+    var cv = document.createElement('canvas');
+    cv.width = size; cv.height = size;
+    var ctx = cv.getContext('2d');
+    var ok = drawCompass(ctx, size, opts || {});
+    return ok ? cv.toDataURL('image/png') : '';
+  } catch (e) {
+    console.log('LCGROUND ERROR render ' + (e && e.message ? e.message : e));
+    return '';
+  }
+};
+
+
+/* ============================================================
+ * M7 贴地：把盘面 canvas 当栅格纹理按平面四角铺到地面上（不跟 DEM 起伏）
+ * 对齐原版：canvas size = floor(2×screen.width) CSS、dpr = min(floor(dpr),2)；
+ *           地面正方形边长 = 2 × 半径米，半径米 = floor(screen.width × 米每像素)。
+ * 回滚开关：groundRenderer = 'overlay'（默认，现网行为）| 'canvas'（本实现）。
+ * ============================================================ */
+var groundRenderer = 'overlay';
+var groundCanvas = null;      /* 728 CSS 盘面画布（贴图源） */
+var groundTex = null;         /* GL 纹理 */
+var groundTexDirty = true;
+var groundProg = null, groundBuf = null, groundLoc = {};
+var groundImg = null;         /* 当前盘面位图（drawImage 用） */
+var groundImgDial = -1;
+var groundBaseline = 0;      /* 调试：1 = 只跳过贴地盘面绘制（相机不动），供 Q3 透明度量基线 */
+var lastGroundQuad = null;    /* 上一帧贴地四角的世界坐标+VP，供 getGroundQuad() 只读复算 */
+
+/* 屏宽口径（11-08 现场修正）：原版公式用的是 `screen.width`，但**原版页面带 viewport meta**，
+ * 那个值是 CSS 视口宽（本机 364）。我们这页 `window.screen.width` 实测是 **1040**（Chromium 默认
+ * 布局视口），于是画布被算成 2080 CSS、地面边长 2080 CSS，pitch 0 下 quad 实测 sideCss=2079.96，
+ * 是期望 728 的 2.857 倍（2080/728 = 2.857）——这正是 Q1 超差的根因，与纹理 549 无关。
+ * 统一改用视口宽（glCanvas.clientWidth），原版公式的语义才成立。 */
+function groundViewportWidth() {
+  if (glCanvas && glCanvas.clientWidth) return glCanvas.clientWidth;
+  if (window.innerWidth) return window.innerWidth;
+  return document.documentElement.clientWidth || 364;
+}
+
+function groundCanvasSize() {
+  var sw = groundViewportWidth();
+  var dpr = Math.min(Math.floor(window.devicePixelRatio || 1), 2) || 1;
+  var css = Math.floor(2 * sw);
+  return { css: css, dpr: dpr, px: css * dpr };
+}
+
+/* 半径（米）＝屏宽米数 × 机位压缩系数；原版 toBounds 的 radius 是半边长 ⇒ 地面边长 = 2×半径米。
+ * 乘 GROUND_CAM_COMPRESS 是因为屏幕比例尺被扩大 1/0.35，屏上尺寸才回到 2×视口宽（728 CSS）。 */
+function groundRadiusMeters() {
+  var sw = groundViewportWidth();
+  var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
+  return Math.floor(sw * zMpp * GROUND_CAM_COMPRESS);
+}
+
+function groundEnsureCanvas() {
+  var sz = groundCanvasSize();
+  if (!groundCanvas) groundCanvas = document.createElement('canvas');
+  if (groundCanvas.width !== sz.px || groundCanvas.height !== sz.px) {
+    groundCanvas.width = sz.px;
+    groundCanvas.height = sz.px;
+    groundTexDirty = true;
+  }
+  return sz;
+}
+
+/* 重画盘面到 groundCanvas（盘面只占画布的 37.5%，居中；对齐原版 (i-e)/2 居中 + e×e）
+ * 尺寸口径（逆向 aa2024c §6.5/§6.6，三处原文）：
+ *   c    = screen.width/2*1.5 = 0.75×屏宽 = 273 CSS   → 盘面默认尺寸
+ *   u    = 1.2*screen.width   = 436.8 CSS            → 盘面 scale=100 的上限（**不是画布**）
+ *   size = floor(2*screen.width) = 728 CSS           → 地面画布（backing 1456）
+ *   toBounds 半径 = screen.width/ppm（半边长）⇒ 地面边长 = 728 画布宽，与盘面尺寸无关
+ * 因此盘面在画布里的占比 = 273/728 = 0.375，backing 上就是 0.375×1456 = **546**。
+ * 之前直接 drawCompass(ctx, sz.px) 把盘面画满了整张纹理，投影后是目标的 1.93 倍（1774 vs 921）。 */
+/* 盘面在画布里的占比（逆向 783c806 §6.5.2 + 审核验独立复算 f1bb3d6，裁定值）：
+ *   size = (u − c) × _compassScale/100 + c，而 _compassScale 初值 = 1（不是 0）
+ *        = (436.8 − 273) × 0.01 + 273 = 274.638 CSS
+ *   frac = 274.638 / 728 = 0.377250 → backing = round(274.638 × 2) = 549
+ *   pitch 0 屏宽 = 274.638 × 3.375 = 926.9 设备 px ⇒ 判据 927 ± 4
+ * 旧值 0.375(=546/1456) 对应 scale=0 的近似，与默认态差 0.58%，已按裁定替换。 */
+var GROUND_DIAL_FRAC = 0.37725;   /* 274.638 / 728 */
+/* 贴地机位压缩系数（11-08 定位的 2.857 倍根因，总监裁定唯一来源）：
+ * render3D 里 `if (groundMode) D *= GROUND_CAM_COMPRESS` 把相机距离压到 35%，
+ * 屏幕比例尺随之放大 1/0.35 = 2.857 倍，所以地面半边长 r 必须同乘同一个系数，
+ * 否则 quad 实测 sideCss=2079.96 而期望 728（2079.96 × 0.35 = 727.99）。
+ * 已知偏差（台账口径）：地面世界覆盖范围 = 原版的 0.35 倍，屏上尺寸 1:1；视差比原版略小。 */
+var GROUND_CAM_COMPRESS = 0.35;
+function groundRedraw() {
+  var sz = groundEnsureCanvas();
+  var ctx = groundCanvas.getContext('2d');
+  ctx.clearRect(0, 0, sz.px, sz.px);
+  if (!COMPASS_RINGS) return false;
+  var dialType = (typeof compassDialType === 'number') ? compassDialType : 0;
+  if (groundImgDial !== dialType) {
+    groundImg = new Image();
+    groundImg.src = 'compass/dial_full_' + dialType + '.webp';
+    groundImg.onload = function () { groundTexDirty = true; groundRedraw(); };
+    groundImgDial = dialType;
+  }
+  var rd = null;
+  try {
+    rd = CompassDataReading(lastHeading);
+  } catch (e) { rd = null; }
+  var dialPx = Math.round(sz.px * GROUND_DIAL_FRAC);   /* 本机 1456×0.37725 = 549 */
+  var off = (sz.px - dialPx) / 2;                      /* 居中：与原版 (i-e)/2 同构 */
+  ctx.save();
+  ctx.translate(off, off);
+  var ok = drawCompass(ctx, dialPx, {
+    data: COMPASS_RINGS,
+    /* 档位声明：bit1「盘面随地图转」——内容**不**预旋转（heading=0），
+     * 四面在世界坐标轴对齐、由相机 bearing 投影产生屏幕旋转。
+     * 若这里传 lastHeading，就变成「内容转一次 + 相机转一次」= 转两遍，
+     * Q4 会量到 ±45° 这类中间值。读数仍取真实朝向（见下方 reading）。 */
+    heading: 0,
+    dialType: dialType,
+    /* 画布路径按原版 edge-to-edge 画（updateCompass 里就是 drawImage(img, a, n, e, e)，
+     * 没有原生 CompassView 那圈 8u 内缩），否则盘径会少 1.7%（905 vs 921 device px）。 */
+    dialBleed: true,
+    dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
+    tianzhi: false,
+    trustEnabled: false,
+    dialImg: (groundImg && groundImg.complete && groundImg.naturalWidth > 0) ? groundImg : null,
+    reading: rd
+  });
+  ctx.restore();
+  groundTexDirty = true;
+  return ok;
+}
+
+/* 读数（与原版读数同源：CompassData.read；JS 侧按同一套换算） */
+function CompassDataReading(heading) {
+  var h = ((Number(heading) || 0) % 360 + 360) % 360;
+  var mountain = Math.round(h / 15) % 24;
+  return { heading: h, mountain: mountain, jian: '', yinyang: '' };
+}
+
+function groundInitGL() {
+  if (groundProg) return true;
+  if (!gl) return false;
+  var vs = 'attribute vec3 aPos; attribute vec2 aUv; uniform mat4 uVP; varying vec2 vUv;' +
+           'void main(){ vUv = aUv; gl_Position = uVP * vec4(aPos, 1.0); }';
+  var fs = 'precision mediump float; uniform sampler2D uTex; uniform float uAlpha; varying vec2 vUv;' +
+           'void main(){ vec4 c = texture2D(uTex, vUv); if (c.a < 0.02) discard;' +
+           'gl_FragColor = vec4(c.rgb, c.a * uAlpha); }';
+  function sh(t, src) {
+    var o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o);
+    if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(o) || 'shader');
+    }
+    return o;
+  }
+  try {
+    groundProg = gl.createProgram();
+    gl.attachShader(groundProg, sh(gl.VERTEX_SHADER, vs));
+    gl.attachShader(groundProg, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(groundProg);
+    if (!gl.getProgramParameter(groundProg, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(groundProg) || 'link');
+  } catch (e) {
+    console.log('LCGROUND ERROR shader ' + e.message);
+    groundProg = null;
+    return false;
+  }
+  groundLoc = {
+    pos: gl.getAttribLocation(groundProg, 'aPos'),
+    uv: gl.getAttribLocation(groundProg, 'aUv'),
+    vp: gl.getUniformLocation(groundProg, 'uVP'),
+    tex: gl.getUniformLocation(groundProg, 'uTex'),
+    alpha: gl.getUniformLocation(groundProg, 'uAlpha')
+  };
+  groundBuf = gl.createBuffer();
+  groundTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, groundTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return true;
+}
+
+/* 旋转口径（逆向 a12c694 §6.2，必须写清，否则 Q4 会被判反）：
+ * 原版 canvas 内容按 `r = compass.getRotation()` 旋转，再由 mode 位决定地图 bearing 与内容转角是否抵消：
+ *   bit1 → 地图 +r、内容不变   ⇒ 盘面随地图转（屏幕上看得到转）
+ *   bit2 → 地图 −r、内容 +r    ⇒ 抵消，盘面屏幕上保持朝上
+ *   bit4 → 地图 +r、内容 −r    → 抵消，保持朝上
+ * 本实现：drawCompass 按 lastHeading 旋转内容，平面四角在**世界坐标轴对齐**、交给相机投影 ⇒ 结构等价 bit1
+ * （盘面随地图转）。bit2/bit4 的抵消模式**未实现**，台账记「按 bit1 实现；bit2/4 抵消态未做」。
+ * 因此 Q4 判据只接受两种结果：屏幕夹角 **90°**（bit1）或 **0°**（bit2/4）；出现 ±45° 即转了两遍或抵消一半。 */
+/* 在 render3D 末尾调用：用同一张 VP 与同一个相机目标高度画一块平面 */
+var groundDiag = 'idle';          /* 贴地绘制路径最后一次停在哪儿（只读诊断用） */
+function drawGroundCompass(vp, target) {
+  if (groundRenderer !== 'canvas') { groundDiag = 'skip:renderer=' + groundRenderer; return; }
+  if (!groundMode) { groundDiag = 'skip:ground=off'; return; }
+  /* 调试基线（总监 11-08 定，Q3 透明度用）：只让本函数提前返回，相机/D/pitch/贴地状态全部不动，
+   * 于是同机位两张图（baseline=1 无盘面、baseline=0 有盘面）背景完全一致，
+   * alpha 可由 (有盘面像素 − 无盘面像素) / (纹理像素 − 无盘面像素) 反解。
+   * 不碰产品行为：默认 0，仅显式 setGroundBaseline(1) 时生效。 */
+  if (groundBaseline) { groundDiag = 'baseline:on'; return; }
+  /* 原版门控（逆向 a12c694，@41208 逐字）：75 > |lat| && zoom >= 6 && _isGround 才绘制；
+   * 超出范围 canvas 不重绘。照抄，避免"我们在极区/低缩放也画、原版不画"的行为差异。 */
+  if (Math.abs(center.lat) >= 75 || zoom < 6) { groundDiag = 'skip:gate lat=' + center.lat.toFixed(2) + ' zoom=' + zoom; return; }
+  if (!groundInitGL()) { groundDiag = 'fail:glInit'; return; }
+  if (!COMPASS_RINGS) { groundDiag = 'loading:rings'; compassDataLoad(function () { groundTexDirty = true; }); return; }
+  var sz = groundEnsureCanvas();
+  if (groundTexDirty) {
+    if (!groundRedraw()) { groundDiag = 'fail:redraw'; return; }
+    gl.bindTexture(gl.TEXTURE_2D, groundTex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    /* file:// 源下盘面图会污染 2D 画布，这里 texImage2D 会抛 SecurityError；
+     * 之前异常被 render3D 外层 catch 吞掉、groundDiag 停在旧值（审核验因此误判"没跑到"）。
+     * 现在把这一步单独记成 fail:taint，Q0 门禁一眼可判。切到 WebViewAssetLoader（https 虚拟域）后自然消失。 */
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, groundCanvas);
+    } catch (e) {
+      groundDiag = 'fail:upload ' + ((e && e.name) || 'error');
+      console.log('LCGROUND ERROR upload ' + ((e && e.name) || '') + ' ' + ((e && e.message) || e));
+      return;
+    }
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    groundTexDirty = false;
+  }
+  var r = groundRadiusMeters();
+  var y = target.y + 0.5;           /* 抬高 0.5m 避免与地形 z-fighting；仍是平面、不跟起伏 */
+  var x0 = target.x - r, x1 = target.x + r;
+  var z0 = target.z - r, z1 = target.z + r;
+  /* 纹理朝向（Q8，11-08 静态推演修正）：WebGL 从 canvas 上传时默认不翻转，纹理 v=0 取的是
+   * 画布**顶边**；而盘面画布顶边是「北/子」那侧（与 DOM 盘面同向）。
+   * 世界坐标里 z0 = target.z - r 是**北**（bearing 0 时相机 forward = (0,0,-1)），x0 是**西**。
+   * 原写法把 (x0,z0)=西北角配 v=1（画布底边）⇒ 画布顶边落到屏幕南侧 = 整体转了 180°，
+   * 这就是客户端看到的"文字上下颠倒"。改后：北角 v=0、东角 u=1，屏幕顶边与 2D 盘面同向。
+   * 判据：bearing=0、pitch=0 时，顶边应为「子/北」、底边「午/南」（总监 Q8）。 */
+  var verts = new Float32Array([
+    x0, y, z0, 0, 0,
+    x1, y, z0, 1, 0,
+    x1, y, z1, 1, 1,
+    x0, y, z1, 0, 1
+  ]);
+  gl.useProgram(groundProg);
+  gl.bindBuffer(gl.ARRAY_BUFFER, groundBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(groundLoc.pos);
+  gl.vertexAttribPointer(groundLoc.pos, 3, gl.FLOAT, false, 20, 0);
+  gl.enableVertexAttribArray(groundLoc.uv);
+  gl.vertexAttribPointer(groundLoc.uv, 2, gl.FLOAT, false, 20, 12);
+  gl.uniformMatrix4fv(groundLoc.vp, false, new Float32Array(vp));
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, groundTex);
+  gl.uniform1i(groundLoc.tex, 0);
+  gl.uniform1f(groundLoc.alpha, (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.enable(gl.DEPTH_TEST);
+  gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+  gl.disable(gl.BLEND);
+  /* 只读快照：供 getGroundQuad() 用同一张 VP、同一组世界坐标复算屏幕四角。
+   * 顺序与缓冲区一致：0=NW(x0,z0) 1=NE(x1,z0) 2=SE(x1,z1) 3=SW(x0,z1)，
+   * 于是 0→1 是「西→东」那条边，bearing 0 时与屏幕 x 轴平行，Q4 可直接取它的角度差。 */
+  lastGroundQuad = {
+    x0: x0, x1: x1, z0: z0, z1: z1, y: y, vp: vp, sideM: 2 * r,
+    cssW: glCanvas.clientWidth || 0, cssH: glCanvas.clientHeight || 0,
+    texCss: sz.css, texDpr: sz.dpr
+  };
+  groundDiag = 'drawn';
+  console.log('LCGROUND draw side=' + (2 * r) + 'm tex=' + sz.px + 'px dial=' + Math.round(sz.px * GROUND_DIAL_FRAC) +
+    ' vw=' + groundViewportWidth() + ' screenW=' + ((window.screen && window.screen.width) || 0) + ' canvasCss=' + sz.css + ' dpr=' + sz.dpr);
+}
+
+/* ---- 只读调试接口：贴地盘面四角的屏幕坐标（CSS px，原点左上） ----
+ * 技术总监 11-08 批准（审核验提）：把 Q1 盘径 / Q2 中心 / Q4 转角 / Q5 不跟 DEM
+ * 从"猜像素"改成算术，不受色域、路网、UI 遮挡干扰。
+ * 未绘制（groundRenderer=overlay / 未开贴地 / 门控命中 / 还没有 VP）时返回 null。 */
+function getGroundQuad() {
+  if (groundRenderer !== 'canvas' || !groundMode) return null;
+  if (groundBaseline) return null;   /* 基线帧没有贴地盘面，不能给出四角 */
+  if (Math.abs(center.lat) >= 75 || zoom < 6) return null;   /* 与原版门控同口径 */
+  var s = lastGroundQuad;
+  if (!s || !s.vp) return null;
+  var m = s.vp, out = [], i;
+  for (i = 0; i < 4; i++) {
+    var wx = ((i === 1 || i === 2) ? s.x1 : s.x0);
+    var wz = ((i >= 2) ? s.z1 : s.z0);
+    /* 列主序：clip = m * (wx, y, wz, 1) */
+    var cx = m[0] * wx + m[4] * s.y + m[8] * wz + m[12];
+    var cy = m[1] * wx + m[5] * s.y + m[9] * wz + m[13];
+    var cw = m[3] * wx + m[7] * s.y + m[11] * wz + m[15];
+    if (!(cw > 1e-6)) return null;                           /* 角点跑到相机背后 */
+    out.push({
+      x: (cx / cw * 0.5 + 0.5) * s.cssW,
+      y: (0.5 - cy / cw * 0.5) * s.cssH
+    });
+  }
+  function len(a, b) { return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)); }
+  var top = len(out[0], out[1]), right = len(out[1], out[2]);
+  var cxp = (out[0].x + out[1].x + out[2].x + out[3].x) / 4;
+  var cyp = (out[0].y + out[1].y + out[2].y + out[3].y) / 4;
+  return {
+    corners: out,
+    center: { x: cxp, y: cyp },
+    sideCss: { top: top, right: right },
+    /* 0→1（西→东）边的屏幕角度：bearing 0 时应为 0°，bearing 90 时应为 ±90° */
+    angleDeg: Math.atan2(out[1].y - out[0].y, out[1].x - out[0].x) * 180 / Math.PI,
+    aspect: top > 0 ? (right / top) : 0,
+    pitch: pitch,
+    bearing: bearing,
+    zoom: zoom,
+    lat: center.lat,
+    sideMeters: s.sideM,
+    cssW: s.cssW,
+    cssH: s.cssH,
+    texCss: s.texCss,
+    texDpr: s.texDpr
+  };
 }
 
 /* ---- WebGL 初始化 ---- */
@@ -2748,7 +3360,8 @@ function render3D() {
   var zMpp = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom);
   var hCss = Math.max(1, glCanvas.clientHeight);
   var D = (hCss * zMpp) / (2 * Math.tan(FOV / 2));
-  if (groundMode) D *= 0.35;          /* 贴地：机位压低到 35%，配合俯仰 60° */
+  if (groundMode) D *= GROUND_CAM_COMPRESS;   /* 贴地：机位压低到该系数，配合俯仰 60°；
+                                               * groundRadiusMeters() 用同一常量反补，改一处即两处同步 */
 
   var t = lonLatToTile(center.lng, center.lat, patch.z);
   var gx = t.x * 256, gy = t.y * 256;
@@ -2839,6 +3452,11 @@ function render3D() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.idx);
   gl.drawElements(gl.TRIANGLES, patch.indexCount, gl.UNSIGNED_SHORT, 0);
 
+  /* M7 贴地：盘面 canvas 当栅格纹理，按平面四角铺地（不跟 DEM 起伏，独立于地形绘制） */
+  try { drawGroundCompass(vp, target); } catch (e) {
+    console.log('LCGROUND ERROR draw ' + (e && e.message ? e.message : e));
+  }
+
   if (!window.__lcDbgDraw) {
     window.__lcDbgDraw = 1;
     console.log("LC3D draw W=" + W + " H=" + H + " idx=" + patch.indexCount +
@@ -2911,10 +3529,12 @@ function getState() {
     demZoom: patch ? patch.z : null, hasTexture: !!(patch && patch.tex),
     sitMode: sitMode, sitNorth: sitMode !== 0,
     contour: contourOn, ground: groundMode, needle: needleOn,
+    groundRenderer: groundRenderer,
     base: base, drape: drape, roadNet: roadNet,
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError, last3dWarn: last3dWarn,
     wayback: wbOn, waybackRelease: wbRelease,
     cache: tileCacheOn, cacheCount: tileCacheKeys.length,
+    tileDiag: { net: tileDiag.net, ok: tileDiag.ok, hit: tileDiag.hit, err: tileDiag.err, lastErrUrl: tileDiag.lastErrUrl },
     measure: (function () {
       var s = measureStats();
       return {
@@ -2948,6 +3568,31 @@ try {
 
 window.__LC3D = {
   setView: debugSetView,
+  setChrome: setChromeVisible,
+  getGroundQuad: getGroundQuad,
+  getGroundDebug: function () {
+    /* 只读诊断：getGroundQuad() 返回 null 时用它区分"档位没切 / 没开贴地 / 门控命中 / 还没画过"。 */
+    return {
+      renderer: groundRenderer,
+      ground: groundMode,
+      mode: mode,
+      zoom: zoom,
+      lat: center.lat,
+      gateHit: (Math.abs(center.lat) >= 75 || zoom < 6),
+      vw: groundViewportWidth(),
+      screenW: (window.screen && window.screen.width) || 0,
+      canvasCss: groundCanvasSize().css,
+      canvasBacking: groundCanvasSize().px,
+      radiusMeters: groundRadiusMeters(),
+      diag: groundDiag,
+      texDirty: groundTexDirty,
+      hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),
+      hasRings: !!COMPASS_RINGS,
+      hasGL: !!gl
+    };
+  },
+  setGroundRenderer: setGroundRenderer,
+  setGroundBaseline: setGroundBaseline,
   setMode: setMode,
   setUiMode: setUiMode,
   attribution: getAttribution,
@@ -3178,7 +3823,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch", "resetCompass",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "lc_setUiMode", "getAttribution", "setRoadNet",
+    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getGroundQuad", "setGroundRenderer", "setGroundBaseline", "getAttribution", "setRoadNet",
     "setGround", "setSitNorth", "setNeedle",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",

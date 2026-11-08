@@ -1,0 +1,56 @@
+{
+ "long_edge": 800,
+ "quality": 85,
+ "format": "webp",
+ "source_dir": "app/android/app/src/main/res/drawable-nodpi",
+ "target_dir": "app/android/app/src/main/assets/compass",
+ "total_source_bytes": 3105148,
+ "total_bytes": 1200656,
+ "items": [
+  {
+   "file": "assets/compass/dial_full_0.webp",
+   "source": "res/drawable-nodpi/dial_full_0.png",
+   "source_size": "1080x1080",
+   "source_bytes": 130543,
+   "out_size": "800x800",
+   "bytes": 194290,
+   "sha256": "ea9656a83785add4c6ac8e05a33955e6b3ed1dd24dc48b8e5588df541166f30e"
+  },
+  {
+   "file": "assets/compass/dial_full_1.webp",
+   "source": "res/drawable-nodpi/dial_full_1.png",
+   "source_size": "2048x2048",
+   "source_bytes": 562028,
+   "out_size": "800x800",
+   "bytes": 198426,
+   "sha256": "c15aab0507facd7d364f396233cc23edb9dc15960f93ac4936e92d3d2c13f6c9"
+  },
+  {
+   "file": "assets/compass/dial_full_2.webp",
+   "source": "res/drawable-nodpi/dial_full_2.png",
+   "source_size": "2048x2048",
+   "source_bytes": 742097,
+   "out_size": "800x800",
+   "bytes": 241144,
+   "sha256": "8f180e69200093d1dcfabc259a4d1ed0abf708ce8d0c7019559150d6cedac838"
+  },
+  {
+   "file": "assets/compass/dial_full_3.webp",
+   "source": "res/drawable-nodpi/dial_full_3.png",
+   "source_size": "2045x2045",
+   "source_bytes": 829947,
+   "out_size": "800x800",
+   "bytes": 297628,
+   "sha256": "882ef9a3fc9d5e6ff607d304aaacf9934bcad03391a21ba938ef4b7e8b96f8b9"
+  },
+  {
+   "file": "assets/compass/dial_full_4.webp",
+   "source": "res/drawable-nodpi/dial_full_4.png",
+   "source_size": "2048x2048",
+   "source_bytes": 840533,
+   "out_size": "800x800",
+   "bytes": 269168,
+   "sha256": "5104aa7cff450458dabe1aaeb8f628f893b297f321bfa6a06e1b129310122633"
+  }
+ ]
+}

@@ -113,7 +113,7 @@ console.log("\n--- 反解半径（pitch 60，目标：盘面屏幕宽 273 CSS = 
 console.log("原公式 r = floor(screen.width*mpp) = " + Math.floor(CSSW * zMpp0) + " m");
 console.log("A) 盘面画满纹理 f=1.000   -> r = " + Math.round(solveRadius(60, 1.0)) + " m");
 console.log("B) 盘面占 273/728 f=0.375 -> r = " + Math.round(solveRadius(60, 0.375)) + " m");
-/* ---- 盘面屏宽预期（口径：盘面占四边形 0.375，逆向 aa2024c） ----
+/* ---- 盘面屏宽预期（口径：盘面占四边形 0.37725 = 274.638/728，逆向 783c806 §6.5.2 裁定） ----
  * up 向量按 render3D 的规则（pitch<0.5 用 bearing 方向，否则 +Y），否则 pitch 0 会退化。 */
 function dialWidthDevice(pitch) {
   var zMpp = 156543.03392 * Math.cos(LAT * Math.PI / 180) / Math.pow(2, ZOOM);
@@ -128,9 +128,9 @@ function dialWidthDevice(pitch) {
   var w = [[-r, y, -r], [r, y, -r], [r, y, r], [-r, y, r]].map(function (q) {
     return proj(vp, [q[0], q[1], q[2], 1]);
   });
-  return (len(w[0], w[1]) * 0.375 * DPR);
+  return (len(w[0], w[1]) * 0.37725 * DPR);
 }
 console.log("\n--- 盘面屏宽预期（0.375×四边形，device px）---");
 [0, 1, 5, 30, 45, 60].forEach(function (p) {
-  console.log("pitch " + p + " -> " + dialWidthDevice(p).toFixed(0) + " px   (目标 921 @pitch0)");
+  console.log("pitch " + p + " -> " + dialWidthDevice(p).toFixed(0) + " px   (目标 927 @pitch0)");
 });

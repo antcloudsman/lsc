@@ -308,7 +308,7 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           (tileCacheOn ? 'crossorigin="anonymous" ' : '') +
           'src="' + url + '" onload="__tileLoaded(this,\'' + url + '\',\'' + layer + '\')" ' +
-          'onerror="this.style.display=\'none\'">';
+          'onerror="__tileFailed(this,\'' + url + '\',\'' + layer + '\')">';
       }
     }
   }
@@ -323,8 +323,20 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
  * 所以按图层选格式：注记层 PNG（保 alpha），底图层（img/ter/vec，不透明）继续 JPEG 0.85 省内存。 */
 function isAlphaLayer(layer) { return layer === "cta" || layer === "cia" || layer === "cva"; }
 
-function __tileLoaded(img, url, layer) {
-  if (!tileCacheOn) return;
+/* 瓦片诊断（给 Q0 验收用，不改变加载行为）：换到 WebViewAssetLoader 的 https 虚拟域后，
+ * 天地图瓦片会带上新的 Referer/Origin，可能被服务端拒绝——这条把"有没有被拒"变成可读数字，
+ * 不必靠肉眼找空白块。getState().tileDiag 可读。 */
+var tileDiag = { ok: 0, err: 0, lastErr: '', lastErrUrl: '' };
+function __tileFailed(img, url, layer) {
+  try { if (img) img.style.display = 'none'; } catch (e) { }
+  tileDiag.err++;
+  tileDiag.lastErrUrl = String(url || '').slice(0, 200);
+  tileDiag.lastErr = (new Date()).toISOString();
+  if (tileDiag.err === 1 || tileDiag.err % 32 === 0) {
+    console.log('LCTILE fail n=' + tileDiag.err + ' layer=' + layer + ' url=' + tileDiag.lastErrUrl);
+  }
+}
+function __tileLoaded(img, url, layer) {  tileDiag.ok++; if (!tileCacheOn) return;
   try {
     var cv = document.createElement("canvas");
     cv.width = 256; cv.height = 256;
@@ -2425,7 +2437,13 @@ function groundEnsureCanvas() {
  *   toBounds 半径 = screen.width/ppm（半边长）⇒ 地面边长 = 728 画布宽，与盘面尺寸无关
  * 因此盘面在画布里的占比 = 273/728 = 0.375，backing 上就是 0.375×1456 = **546**。
  * 之前直接 drawCompass(ctx, sz.px) 把盘面画满了整张纹理，投影后是目标的 1.93 倍（1774 vs 921）。 */
-var GROUND_DIAL_FRAC = 0.375;     /* c / size = 273 / 728 */
+/* 盘面在画布里的占比（逆向 783c806 §6.5.2 + 审核验独立复算 f1bb3d6，裁定值）：
+ *   size = (u − c) × _compassScale/100 + c，而 _compassScale 初值 = 1（不是 0）
+ *        = (436.8 − 273) × 0.01 + 273 = 274.638 CSS
+ *   frac = 274.638 / 728 = 0.377250 → backing = round(274.638 × 2) = 549
+ *   pitch 0 屏宽 = 274.638 × 3.375 = 926.9 设备 px ⇒ 判据 927 ± 4
+ * 旧值 0.375(=546/1456) 对应 scale=0 的近似，与默认态差 0.58%，已按裁定替换。 */
+var GROUND_DIAL_FRAC = 0.37725;   /* 274.638 / 728 */
 function groundRedraw() {
   var sz = groundEnsureCanvas();
   var ctx = groundCanvas.getContext('2d');
@@ -2442,7 +2460,7 @@ function groundRedraw() {
   try {
     rd = CompassDataReading(lastHeading);
   } catch (e) { rd = null; }
-  var dialPx = Math.round(sz.px * GROUND_DIAL_FRAC);   /* 本机 1456×0.375 = 546 */
+  var dialPx = Math.round(sz.px * GROUND_DIAL_FRAC);   /* 本机 1456×0.37725 = 549 */
   var off = (sz.px - dialPx) / 2;                      /* 居中：与原版 (i-e)/2 同构 */
   ctx.save();
   ctx.translate(off, off);
@@ -2541,7 +2559,16 @@ function drawGroundCompass(vp, target) {
     if (!groundRedraw()) { groundDiag = 'fail:redraw'; return; }
     gl.bindTexture(gl.TEXTURE_2D, groundTex);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, groundCanvas);
+    /* file:// 源下盘面图会污染 2D 画布，这里 texImage2D 会抛 SecurityError；
+     * 之前异常被 render3D 外层 catch 吞掉、groundDiag 停在旧值（审核验因此误判"没跑到"）。
+     * 现在把这一步单独记成 fail:taint，Q0 门禁一眼可判。切到 WebViewAssetLoader（https 虚拟域）后自然消失。 */
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, groundCanvas);
+    } catch (e) {
+      groundDiag = 'fail:upload ' + ((e && e.name) || 'error');
+      console.log('LCGROUND ERROR upload ' + ((e && e.name) || '') + ' ' + ((e && e.message) || e));
+      return;
+    }
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     groundTexDirty = false;
   }
@@ -3466,6 +3493,7 @@ function getState() {
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError, last3dWarn: last3dWarn,
     wayback: wbOn, waybackRelease: wbRelease,
     cache: tileCacheOn, cacheCount: tileCacheKeys.length,
+    tileDiag: { ok: tileDiag.ok, err: tileDiag.err, lastErrUrl: tileDiag.lastErrUrl },
     measure: (function () {
       var s = measureStats();
       return {

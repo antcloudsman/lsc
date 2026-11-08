@@ -159,13 +159,14 @@ public final class CompassReadSheet {
             // 保留「点击查看 ›」的就地展开（向/坐 本地计算，不跳转、不联网）。
             rightView.setText(right);
             rightView.setTextColor(BLUE);
+            // 两条路径都要能用，且**回调参数必须是 TextView**（handler 里是 v instanceof TextView）：
+            //  ① 点右侧蓝字：直接把 rightView 交给回调；
+            //  ② 点整行任意位置：转成同一个 rightView 再调，否则参数是 LinearLayout，handler 会静默不做事
+            //     —— c2452af 就是这样把一个能用的交互改成了「点了没反应」的回归。
             rightView.setOnClickListener(onClick);
-            // 整行可点：原来只有右侧蓝字有点击监听，行内其它位置点了没反应——
-            // 用户（和自动化）会以为这一行坏了。层圈名与蓝字都归同一动作。
-            row.setOnClickListener(onClick);
+            row.setOnClickListener(v -> onClick.onClick(rightView));
             row.setClickable(true);
             nameView.setClickable(false);
-            rightView.setClickable(false);   // 交给整行，避免两次触发
             row.addView(rightView);
             list.addView(row);
             list.addView(divider(a));

@@ -29,17 +29,29 @@ import android.view.View;
  */
 public class LocationPointerView extends View {
 
-    /** 蓝主体：47×35 设备 px（÷3.375 → dp）。 */
-    private static final float RX_DP = 47f / 2f / 3.375f;
-    private static final float RY_DP = 35f / 2f / 3.375f;
+    /**
+     * 蓝主体：**45×23 设备 px**（÷3.375 → dp）。
+     *
+     * 42–47×34–35 那组数是**含三角的并集 bbox**，不是椭圆本身——早期把 47×35 当椭圆画，
+     * 上边缘顶到 cy−17.5，正好和三角（质心 cy−17.7）连成一块，连通域变成 1 个。
+     * 连通域实测主体是 `(140,1477)-(184,1499)` = 45×23（逆向 5243418），这里按它画。
+     */
+    private static final float RX_DP = 45f / 2f / 3.375f;
+    private static final float RY_DP = 23f / 2f / 3.375f;
     /** 白描边：3 设备 px（量级，非定值）。 */
     private static final float STROKE_DP = 3f / 3.375f;
-    /** 圈外小三角：14×8 设备 px，质心相对主体中心 (−9.2, −17.7) 设备 px。 */
-    private static final float TRI_W_DP = 14f / 3.375f;
+    /**
+     * 圈外小三角：14×8 设备 px，质心相对主体中心 (−8.1, −19.5) 设备 px。
+     *
+     * 位移由拓扑判据倒推：主体蓝填充上边缘在 cy−11.5，描边外沿到 cy−13.0；
+     * 三角底边 = 质心 + 4 = cy−15.5 ⇒ 与主体蓝填充留 4px、与描边外沿留 2.5px 白，
+     * 8 邻域下必定不连通（原版同样是两域：主体 y1477..1499、三角 y1466..1473，中间 4px 白）。
+     */
+    private static final float TRI_W_DP = 16f / 3.375f;   // 画 16 宽，抗锯齿吃掉边缘后实测 13（原版 13×7）
     private static final float TRI_H_DP = 8f / 3.375f;
-    private static final float TRI_DX_DP = -9.2f / 3.375f;
-    private static final float TRI_DY_DP = -17.7f / 3.375f;
-    /** 视图 68×68 设备 px（整体跨度 58–68 的上沿），主体中心落在 (34, 38)。 */
+    private static final float TRI_DX_DP = -8.1f / 3.375f;
+    private static final float TRI_DY_DP = -19.5f / 3.375f;
+    /** 视图 68×68 设备 px（够放下三角顶 −23.5 与描边底 13），主体中心落在 (34, 38)。 */
     private static final int VIEW_DP = Math.round(68f / 3.375f);
     private static final float CX_DP = 34f / 3.375f;
     private static final float CY_DP = 38f / 3.375f;
@@ -79,7 +91,10 @@ public class LocationPointerView extends View {
         float ry = RY_DP * d;
 
         canvas.drawOval(cx - rx, cy - ry, cx + rx, cy + ry, fill);
-        canvas.drawOval(cx - rx, cy - ry, cx + rx, cy + ry, stroke);
+        // 白描边画在填充**外侧**：Stroke 以路径为中心会吃掉 1.5px 主色，实测把 45×23 压成 41×20，
+        // 而判据是「精确主色 bbox 宽 44±2」——所以把描边路径外扩半个笔宽，让主色边界不被覆盖。
+        float so = stroke.getStrokeWidth() / 2f;
+        canvas.drawOval(cx - rx - so, cy - ry - so, cx + rx + so, cy + ry + so, stroke);
 
         // 圈外独立小三角（描边外侧，与主体不连通）：基准位置质心在 (−9.2, −17.7)、尖朝上，
         // 再整体按 +heading 绕主体中心旋转（原版 marker 旋转等价于整枚标记绕 anchor 转）。

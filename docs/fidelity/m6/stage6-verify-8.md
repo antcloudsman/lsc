@@ -45,6 +45,27 @@
 - 证据：上面 ⑤→⑥ 两行 `state` 输出（同一次 `reload`，`10:14:30` → `10:14:42`）。
 - 判据建议：重放前先以 `getState()` 回读覆盖 Java 镜像，或让这些控件在改页面后同步写镜像；**不能只做单向重放**。
 
+## 新线索的修复复验（`af8950d`，apk_sha `3fe4da1b…`，装机 11:23:46）
+
+修法最终定为「**事件驱动回读 + 重放**」：回读集中在 `onToolClick()` 末尾一处，覆盖 `mode/sitMode(+southNorthOn)/needle/contour/ground/ridge/base` **7 个字段**；重放仍在 `onPageFinished`，且 `set*` 全部在重放段。客户端未采纳「重放前回读」，理由是 `map.html` 的 `localStorage/sessionStorage` 命中 0、重载后页面回默认，重放前回读会读到默认值——**该反驳成立，我复核代码后认可**。
+
+三条判定（原始 `state` 行，均含改动前/重载后两行）：
+
+| # | 步骤 | 重载前 | 重载后 | 判 |
+|---|---|---|---|---|
+| ① | 坐南朝北×2 → 罗盘复位 → reload | `"sitMode":2,"bearing":172` → 复位后 `"sitMode":0,"bearing":0` | **`"sitMode":0,"bearing":0`** | **PASS**（修复前会复活成 2/180） |
+| ② | 关「指北针」→ reload | `"needleOn":false` | **`"needleOn":false`** | **PASS**（修复前会回 true） |
+| ③ | 实景/等高线/贴地/指针开 → reload | `base:"img"`、`contourOn:true`、`groundOn:true`、`needleOn:true` | 四个字段**全部保持**，`mode:"3d"`、`center/zoom` 不变 | **PASS（无回归）** |
+
+`LCMIRROR` 实测（回读落地）：
+```
+11:24:17 sync mode=2d sit=2 needle=true contour=false ground=false ridge=false base=vec
+11:24:23 sync mode=2d sit=0 …（罗盘复位那一刻回读，sit 2→0）
+11:25:08 sync mode=2d sit=0 needle=false …（关指北针那一刻回读）
+11:27:35 sync mode=3d sit=0 needle=true contour=true ground=true ridge=false base=img
+```
+→ 镜像只在**事件触发**时刷新，重载后用该镜像重放，未再出现「复活过期状态」。
+
 ## 五个表现面的重载保持（Stage 5 修复复验）
 
 | 表现面 | 结果 | logcat 时间戳 | 证据 |

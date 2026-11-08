@@ -318,5 +318,8 @@
     <item name="lc_track_replay_speed" type="id" />
     <item name="lc_track_replay_legend" type="id" />
     <item name="lc_track_replay_empty" type="id" />
+    <!-- B 轮 P0：KML 导入导出（收藏点底部条） -->
+    <item name="lc_fav_export_kml" type="id" />
+    <item name="lc_fav_import_kml" type="id" />
 
 </resources>

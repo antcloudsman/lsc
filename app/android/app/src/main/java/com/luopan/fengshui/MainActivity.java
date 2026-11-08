@@ -37,6 +37,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private LocationPointerView locPointerView;
     /** 位置轮询开关：拖图/缩放后重新向页面要屏幕坐标（250ms）。 */
     private boolean locPointerRunning = false;
+
+    /** B 轮 P0：KML 导出/导入的 SAF 请求码。 */
+    private static final int REQ_KML_EXPORT = 9001;
+    private static final int REQ_KML_IMPORT = 9002;
+    /** 导出的 KML 文本暂存（文件选择器是异步的，回调里才写盘）。 */
+    private String pendingKmlText;
     /** TEST HOOK：hidehud 前被隐藏视图的原始可见性，用于复原（不猜状态）。 */
     private final java.util.List<View> testHiddenViews = new java.util.ArrayList<>();
     private final java.util.List<Integer> testHiddenVis = new java.util.ArrayList<>();
@@ -465,6 +471,57 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         + "return 'no-view-api';})()";
                 if (compassMapView != null) {
                     compassMapView.evaluateJavascript(js, v -> android.util.Log.d("LCDEBUG", "view -> " + v));
+                }
+                break;
+            }
+            case "kml-export": {
+                // TEST HOOK（B 轮验收）：收藏点 → KML。路径相对 getExternalFilesDir，
+                // 该目录 adb 可直接读写（/sdcard/Android/data/<pkg>/files/），不涉及存储权限。
+                String path = it.getStringExtra("path");
+                java.io.File f = kmlFile(path == null || path.isEmpty() ? "lc-favorites.kml" : path);
+                java.util.List<KmlIo.Point> pts = favoriteKmlPoints();
+                String text = KmlIo.toKml(pts, isoNow());
+                try (java.io.FileOutputStream os = new java.io.FileOutputStream(f)) {
+                    os.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    os.flush();
+                    android.util.Log.d("LCDEBUG", "kml-export ok points=" + pts.size() + " path=" + f.getAbsolutePath());
+                } catch (Throwable ex) {
+                    android.util.Log.d("LCDEBUG", "kml-export fail " + ex + " path=" + f.getAbsolutePath());
+                }
+                break;
+            }
+            case "kml-import": {
+                // TEST HOOK（B 轮验收）：KML → 收藏点。判据同产品口径（声明缺失时按 WGS84 并提示）。
+                String path = it.getStringExtra("path");
+                if (path == null || path.isEmpty()) path = "lc-favorites.kml";
+                java.io.File f = kmlFile(path);
+                try (java.io.InputStream in = new java.io.FileInputStream(f)) {
+                    KmlIo.Result r = KmlIo.parse(in);
+                    if (r.error != null) {
+                        android.util.Log.d("LCDEBUG", "kml-import fail " + r.error);
+                        break;
+                    }
+                    boolean gcj = KmlIo.isGcj02(r.crs);
+                    boolean known = gcj || KmlIo.isKnownWgsFamily(r.crs);
+                    int uid = LcSession.uid(this);
+                    java.util.List<KmlIo.Point> imported = new java.util.ArrayList<>();
+                    for (KmlIo.Point p : r.points) {
+                        double lat = p.lat, lng = p.lng;
+                        if (gcj) {
+                            double[] w = KmlIo.gcj02ToWgs84(lat, lng);
+                            lat = w[0];
+                            lng = w[1];
+                        }
+                        new GapDb(this).insertInterest(p.name, lat, lng, 0, 180, uid);
+                        imported.add(new KmlIo.Point(p.name, p.desc, lat, lng));
+                    }
+                    runOnUiThread(() -> showKmlOnMap(imported));
+                    android.util.Log.d("LCDEBUG", "kml-import ok points=" + imported.size()
+                            + " crs=" + r.crs + " converted=" + gcj + " known=" + known
+                            + " skipped=" + r.skippedTotal() + " path=" + f.getAbsolutePath());
+                    if (!known) runOnUiThread(() -> toast("坐标系未知，按 WGS84 处理（共 " + r.points.size() + " 点）"));
+                } catch (Throwable ex) {
+                    android.util.Log.d("LCDEBUG", "kml-import fail " + ex + " path=" + f.getAbsolutePath());
                 }
                 break;
             }
@@ -2335,6 +2392,147 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return col;
     }
 
+    // ---------------- B 轮 P0：KML 导入导出 ----------------
+
+    /** 调试用 KML 落盘位置：相对 getExternalFilesDir；绝对路径原样用。 */
+    private java.io.File kmlFile(String path) {
+        java.io.File f = new java.io.File(path);
+        if (f.isAbsolute()) return f;
+        java.io.File dir = getExternalFilesDir(null);
+        return dir == null ? f : new java.io.File(dir, path);
+    }
+
+    /** 当前账号的收藏点 → KML 点列（导出与往返比对都用这一份，避免两处取数不一致）。 */
+    private java.util.List<KmlIo.Point> favoriteKmlPoints() {
+        java.util.List<KmlIo.Point> out = new java.util.ArrayList<>();
+        for (InterestPoint ip : new GapDb(this).listInterest(LcSession.uid(this))) {
+            String desc = String.format(java.util.Locale.US, "坐%.1f° 向%.1f°",
+                    ip.sittingDeg, ip.facingDeg);
+            out.add(new KmlIo.Point(ip.name, desc, ip.lat, ip.lng));
+        }
+        return out;
+    }
+
+    /** 导出：SELECT 文件 → 写 KML（WGS84，文件内显式声明 lc:crs）。 */
+    private void exportKml() {
+        java.util.List<KmlIo.Point> pts = favoriteKmlPoints();
+        if (pts.isEmpty()) {
+            toast("没有收藏点可导出");
+            return;
+        }
+        pendingKmlText = KmlIo.toKml(pts, isoNow());
+        android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_CREATE_DOCUMENT);
+        i.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+        i.setType("application/vnd.google-earth.kml+xml");
+        i.putExtra(android.content.Intent.EXTRA_TITLE, "lc-favorites.kml");
+        try {
+            startActivityForResult(i, REQ_KML_EXPORT);
+        } catch (Throwable ex) {
+            pendingKmlText = null;
+            toast("没有可用的文件选择器：" + ex.getClass().getSimpleName());
+        }
+    }
+
+    /** 导入：OPEN 文件 → 解析 → 按声明转换 → 入库 + 上图。 */
+    private void importKml() {
+        android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
+        i.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+        i.setType("*/*");
+        try {
+            startActivityForResult(i, REQ_KML_IMPORT);
+        } catch (Throwable ex) {
+            toast("没有可用的文件选择器：" + ex.getClass().getSimpleName());
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        android.net.Uri uri = data.getData();
+        if (requestCode == REQ_KML_EXPORT) {
+            String text = pendingKmlText;
+            pendingKmlText = null;
+            if (text == null) return;
+            try (java.io.OutputStream os = getContentResolver().openOutputStream(uri)) {
+                if (os == null) { toast("导出失败：无法写入"); return; }
+                os.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                os.flush();
+                int n = Math.max(0, text.split("<Placemark>").length - 1);
+                toast("已导出 " + n + " 个点（WGS84）");
+                android.util.Log.d("LCKML", "export ok points=" + n + " bytes=" + text.length());
+            } catch (Throwable ex) {
+                toast("导出失败：" + ex.getClass().getSimpleName());
+                android.util.Log.d("LCKML", "export fail " + ex);
+            }
+            return;
+        }
+        if (requestCode == REQ_KML_IMPORT) {
+            try (java.io.InputStream in = getContentResolver().openInputStream(uri)) {
+                if (in == null) { toast("导入失败：读不到文件"); return; }
+                KmlIo.Result r = KmlIo.parse(in);
+                if (r.error != null) {
+                    toast("KML 解析失败：" + r.error);
+                    android.util.Log.d("LCKML", "parse error " + r.error);
+                    return;
+                }
+                if (r.points.isEmpty()) { toast("KML 里没有可用坐标点"); return; }
+                // 坐标系：声明缺失/无法识别时**明确提示**，不静默按某个系处理
+                boolean gcj = KmlIo.isGcj02(r.crs);
+                boolean known = gcj || KmlIo.isKnownWgsFamily(r.crs);
+                if (!known) {
+                    toast("坐标系未知，按 WGS84 处理（共 " + r.points.size() + " 点）");
+                }
+                int uid = LcSession.uid(this);
+                int added = 0;
+                java.util.List<KmlIo.Point> imported = new java.util.ArrayList<>();
+                for (KmlIo.Point p : r.points) {
+                    double lat = p.lat, lng = p.lng;
+                    if (gcj) {
+                        double[] w = KmlIo.gcj02ToWgs84(lat, lng);
+                        lat = w[0];
+                        lng = w[1];
+                    }
+                    new GapDb(this).insertInterest(p.name, lat, lng, 0, 180, uid);
+                    imported.add(new KmlIo.Point(p.name, p.desc, lat, lng));
+                    added++;
+                }
+                showKmlOnMap(imported);
+                toast("已导入 " + added + " 个点" + (gcj ? "（GCJ02→WGS84）" : ""));
+                android.util.Log.d("LCKML", "import ok points=" + added + " crs=" + r.crs
+                        + " converted=" + gcj + " known=" + known);
+            } catch (Throwable ex) {
+                toast("导入失败：" + ex.getClass().getSimpleName());
+                android.util.Log.d("LCKML", "import fail " + ex);
+            }
+        }
+    }
+
+    /** 把导入点画到地图（复用页面既有的 setOverlay，不新增页面侧协议）。 */
+    private void showKmlOnMap(java.util.List<KmlIo.Point> pts) {
+        if (compassMapView == null) return;
+        try {
+            org.json.JSONArray arr = new org.json.JSONArray();
+            for (KmlIo.Point p : pts) {
+                org.json.JSONObject o = new org.json.JSONObject();
+                o.put("name", p.name);
+                o.put("address", p.desc);
+                o.put("lat", p.lat);
+                o.put("lng", p.lng);
+                arr.put(o);
+            }
+            js("setOverlay('kml', " + arr.toString() + ")");
+            toast("已在地图上显示 " + pts.size() + " 个点");
+        } catch (Throwable t) {
+            android.util.Log.d("LCKML", "overlay push fail " + t);
+        }
+    }
+
+    private static String isoNow() {
+        return new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.US)
+                .format(new java.util.Date());
+    }
+
     private LinearLayout buildFavoriteBottomBar() {
         LinearLayout bar = new LinearLayout(this);
         bar.setId(R.id.lc_fav_bottom);
@@ -2345,6 +2543,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         add.setTextSize(13f);
         add.setOnClickListener(v -> addFavoriteAtCenter());
         bar.addView(add, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)));
+        // B 轮 P0：KML 导入导出（收藏点 ↔ KML 2.2）。两枚按钮放在同一条水平行里，
+        // 不占更多面板的 4×4 网格（那是原版 1:1 版式，加一项会破坏行数）。
+        LinearLayout kmlRow = new LinearLayout(this);
+        kmlRow.setOrientation(LinearLayout.HORIZONTAL);
+        Button exp = newToolButton("导出 KML");
+        exp.setId(R.id.lc_fav_export_kml);
+        exp.setTextSize(12f);
+        exp.setOnClickListener(v -> exportKml());
+        Button imp = newToolButton("导入 KML");
+        imp.setId(R.id.lc_fav_import_kml);
+        imp.setTextSize(12f);
+        imp.setOnClickListener(v -> importKml());
+        kmlRow.addView(exp, new LinearLayout.LayoutParams(0, dp(40), 1f));
+        kmlRow.addView(imp, new LinearLayout.LayoutParams(0, dp(40), 1f));
+        bar.addView(kmlRow, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(40)));
         return bar;
     }
 

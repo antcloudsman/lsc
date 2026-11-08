@@ -118,6 +118,17 @@ python tools/fidelity/evidence-lint.py --root docs/fidelity/m6
 
 ### 3.1 具名例外清单（技术总监 2026-11-08 裁定）
 
+**默认自动加载**：不带 `--allow` 时，工具自动读 `tools/fidelity/evidence-lint-allow.json`；因此**默认命令（默认 root）就是绿的**，不需要每次记着加参数、也不必改用窄 root。
+
+```bash
+python tools/fidelity/evidence-lint.py                # 默认 root + 默认清单
+ALLOWED xml docs/fidelity/m3/help-offline.xml …
+EVIDENCE-LINT: scanned xml=155 png=130 other=141 fail=0 warn=0 allowed=1   exit=0
+
+python tools/fidelity/evidence-lint.py --allow <空清单>  # 反证：没有豁免就 red
+FAIL xml docs/fidelity/m3/help-offline.xml: cat: /sdcard/a.xml: …          exit=1
+```
+
 **证据文件不删、不改**（动了就毁审计痕迹）。确实要放过某份垃圾证据时，登记到
 `tools/fidelity/evidence-lint-allow.json`，由工具把该条从 FAIL 降为 **ALLOWED** 并打印理由：
 

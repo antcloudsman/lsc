@@ -377,6 +377,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 injectedPitch = it.getFloatExtra("pitch", 0f);
                 injectedRoll = it.getFloatExtra("roll", 0f);
                 break;
+            case "reload": {
+                // 测试钩子（M6 审计 A 类）：按真实路径重载页面，用于验证 onPageFinished 的状态重放。
+                // 走 WebView.reload() 而不是 loadUrl(某URL) —— 后者会因缺 ?tk= 拿不到瓦片，干扰判断。
+                if (compassMapView != null) {
+                    compassMapView.reload();
+                    android.util.Log.d("LCDEBUG", "reload requested");   // 无敏感信息
+                }
+                break;
+            }
             case "url": {
                 String url = it.getStringExtra("value");
                 if (url != null && compassMapView != null) {

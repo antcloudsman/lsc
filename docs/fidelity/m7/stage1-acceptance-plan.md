@@ -85,6 +85,30 @@ am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value "setGroundRende
 2. 构建期把 `compass-rings.json` 内联进 `map.html` —— 零运行时 IO；
 3. 开 `setAllowFileAccessFromFileURLs(true)` 并把 `fetch` 改成 `XMLHttpRequest`（`fetch` 是否可经设置放行**待确认**，Chromium 原文只证明当前被拒；仅改设置而不换 API，按现有证据无效）。
 
+### 1.4c Q0 第二轮：内联数据成立，纹理上传被「画布污染」挡住（`e678419`，16:21–16:25）
+
+本人独立构建 `e678419`（apk_sha `dcf9ec5a…`，装机 `lastUpdateTime=2026-11-08 16:21:56`，`INSTALL_OK taps=2`）。
+
+**已通过的一半**（内联 `compass-rings.js` 方案成立）：`getGroundDebug()` = `{...,"hasRings":true,"hasGL":true,...}`，`logcat` 无 `rings-json` 失败，无 `Failed to fetch`。上一版 §1.4b 的机制性阻塞**已解除**。
+
+**未通过的一半**（新的机制性阻塞，已证实）：
+
+```
+hwschromium-21705: [INFO:CONSOLE(3389)] "LCGROUND ERROR draw Failed to execute 'texImage2D' on
+'WebGLRenderingContext': Tainted canvases may not be loaded."
+```
+
+停在 `texImage2D(groundCanvas)`：`drawGroundCompass` 已越过 renderer/ground/门控/glInit/rings 全部检查与 `groundRedraw()`，只剩把画布上传成纹理这一步抛 `SecurityError`。旁证：此时 `getGroundDebug()` 仍是 `diag:"skip:ground=off"`（上一状态），因为 `groundDiag='drawn'` 写在 `texImage2D` 之后，异常被 `map.html` 最外层 `catch` 吞掉，`hasQuad` 仍 `false`、`getGroundQuad()` 仍 `null`。
+
+**污染源（代码级，已定位）**：`map.html:2436-2437` `groundImg.src = 'compass/dial_full_' + dialType + '.webp'` —— `file://` 源的图片画进 2D 画布会使画布 tainted；Chromium 对 `file://` 页面按不透明源处理，同目录图片同样污染。
+
+**关门级探针（16:24，本机同一 WebView）**：把 1×1 PNG 做成 `data:image/png;base64,…` 画进 canvas 后 `texImage2D` —— 结果 `TAINT_DATA ok upload-succeeded`。即 `data:` 图片**不污染**画布。
+
+**出路（不改 WebView 安全设置，与 §1.4b 同思路）**：把盘面位图也做成生成产物——`dial_full_<n>.webp` 转 base64 输出成 `dial-…js`（`window.__LC_DIAL[n] = 'data:image/webp;base64,…'`），`groundImg.src` 从该常量取；JSON/JS 双份校验沿用 `gen-compass-rings.py --check` 的做法。
+另一条（跨模块，需客户端配合）：`MainActivity` 开 `setAllowUniversalAccessFromFileURLs(true)` 解除 `file://` 图片污染——本轮不选，避免放松 WebView 安全。
+
+**判据不变**：`hasRings:true` **且** `hasQuad:true` 才进 Q1–Q7；本轮仍判「阻塞」，不判 PASS/FAIL。
+
 ### 1.5 失败与回滚
 
 - 任一项超差 → 本条判**不通过**，退回实现方，附超差项与实测值；

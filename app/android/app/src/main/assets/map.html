@@ -172,18 +172,22 @@ var tileCacheOn = false, tileCache = {}, tileCacheKeys = [], TILE_CACHE_MAX = 16
  * 能力交付、默认不启用，而不是把代码删掉或偷偷开着）。
  * 策略（容量/过期/LRU）在 map/tilecache-policy.js 里，那份文件同时被 Node 单测覆盖。
  * ========================================================================== */
+/* 已知限制（审核验 11-08 提）：IndexedDB 按 origin 隔离。主图跑在 https://appassets.androidplatform.net，
+ * 一旦 USE_ASSET_LOADER=false 退回 file://，同一份缓存会「消失」（换了 origin 读不到）；
+ * 清除应用数据也会一并清空。这两条都是预期行为，不是缺陷。 */
 var TILE_OFF = {
   dbName: 'lc-tile-offline-v1',
   store: 'tiles',
-  capBytes: 64 * 1024 * 1024,      /* 容量上限 64 MB */
-  ttlMs: 30 * 24 * 3600 * 1000,    /* 过期 30 天 */
+  capBytes: 200 * 1024 * 1024,     /* 容量上限 200 MB（产品口径 m7-b-round-spec §4） */
+  ttlMs: 7 * 24 * 3600 * 1000,     /* TTL 7 天：过期不自动删（离线可用性优先），命中时标 stale 并计数 */
   enabledSources: {},              /* sourceId -> true；默认空 = 全部关闭 */
+  keyVersion: 'v1',                /* 键含 version：换编码/换源格式时可整体失效，不用清库 */
   db: null, opening: null, busy: false,
-  stats: { net: 0, put: 0, hit: 0, miss: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' }
+  stats: { net: 0, put: 0, hit: 0, miss: 0, stale: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' }
 };
 
 function tileSourceEnabled(sid) { return !!(TILE_OFF.enabledSources[sid]); }
-function tileKeyOf(sid, z, x, y) { return sid + '/' + z + '/' + x + '/' + y; }
+function tileKeyOf(sid, z, x, y) { return sid + '/' + z + '/' + x + '/' + y + '@' + TILE_OFF.keyVersion; }
 
 function tileOfflineOpen() {
   if (TILE_OFF.db) return Promise.resolve(TILE_OFF.db);
@@ -213,7 +217,11 @@ function tileOfflineGet(key) {
     return new Promise(function (resolve) {
       var tx = db.transaction(TILE_OFF.store, 'readonly');
       var rq = tx.objectStore(TILE_OFF.store).get(key);
-      rq.onsuccess = function () { resolve(rq.result || null); };
+      rq.onsuccess = function () {
+        var rec = rq.result || null;
+        if (rec && TILE_OFF.ttlMs > 0 && Date.now() - (rec.ts || 0) > TILE_OFF.ttlMs) { rec.stale = true; }
+        resolve(rec);
+      };
       rq.onerror = function () { resolve(null); };
     });
   }).catch(function () { return null; });
@@ -259,7 +267,7 @@ function tileOfflineEnforce() {
     });
   }).then(function (metas) {
     var plan = LCTileCachePolicy.decide(metas, {
-      capBytes: TILE_OFF.capBytes, ttlMs: TILE_OFF.ttlMs, nowMs: Date.now()
+      capBytes: TILE_OFF.capBytes, ttlMs: 0, nowMs: Date.now()   /* TTL 不在这里删：过期只标 stale，容量才删 */
     });
     if (!plan.evict.length) { TILE_OFF.busy = false; return; }
     return tileOfflineOpen().then(function (db) {
@@ -326,6 +334,7 @@ function tileOfflineRecover(img, layer) {
     if (rec && rec.blob) {
       try { img.src = URL.createObjectURL(rec.blob); } catch (e) { }
       img.setAttribute('data-fromcache', '1');
+      if (rec.stale) { TILE_OFF.stats.stale++; }
       img.style.display = '';
       TILE_OFF.stats.hit++;
       tileOfflineBanner();
@@ -356,9 +365,9 @@ function tileOfflineBanner() {
   var offline = (navigator.onLine === false);
   var show = TILE_OFF.stats.miss > 0 && (offline || !anyEnabled || TILE_OFF.stats.hit > 0);
   if (!show) { el.style.display = 'none'; return; }
-  el.textContent = '离线：仅显示已缓存区域（已命中 ' + TILE_OFF.stats.hit +
-    ' 块 / 缺 ' + TILE_OFF.stats.miss + ' 块）' +
-    (anyEnabled ? '' : '；当前离线缓存未启用');
+  el.textContent = '当前区域未缓存，联网后可查看' +
+    '（已命中 ' + TILE_OFF.stats.hit + ' 块 / 缺 ' + TILE_OFF.stats.miss + ' 块' +
+    (anyEnabled ? '' : '；离线缓存未启用') + '）';
   el.style.display = 'block';
 }
 
@@ -388,9 +397,11 @@ function getTileCacheInfo() {
     capMB: Math.round(TILE_OFF.capBytes / 1048576 * 10) / 10,
     ttlDays: Math.round(TILE_OFF.ttlMs / 86400000),
     items: TILE_OFF.stats.items, bytes: TILE_OFF.stats.bytes,
+    cacheBytes: TILE_OFF.stats.bytes,
     bytesMB: Math.round(TILE_OFF.stats.bytes / 1048576 * 10) / 10,
     net: TILE_OFF.stats.net, put: TILE_OFF.stats.put, hit: TILE_OFF.stats.hit,
-    miss: TILE_OFF.stats.miss, evicted: TILE_OFF.stats.evicted,
+    miss: TILE_OFF.stats.miss,
+    evicted: TILE_OFF.stats.evicted, evictions: TILE_OFF.stats.evicted, stale: TILE_OFF.stats.stale,
     hitRate: LCTileCachePolicy.hitRate(TILE_OFF.stats.hit, TILE_OFF.stats.miss),
     online: (navigator.onLine !== false), lastErr: TILE_OFF.stats.lastErr
   };

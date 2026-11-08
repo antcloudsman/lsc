@@ -12,6 +12,8 @@ import android.util.Log;
  *   adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd accuracy --ei value 1
  *   adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd tilt --ef pitch 12 --ef roll 0
  *   adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd reset
+ *   adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd reload
+ *   adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd state   # 一行 JSON 到 LCDEBUG（只读）
  *
  * Injected heading/accuracy/tilt persist until {@code reset}; real sensor samples do
  * not clear them (only reset does), otherwise RT-002/004 would be overwritten by the

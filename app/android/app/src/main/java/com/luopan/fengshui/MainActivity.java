@@ -386,6 +386,40 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             }
+            case "state": {
+                // M6 验收观测入口：把网页真实状态打成一行 JSON 到 LCDEBUG。
+                // 用途：坐向三态（0/1/2）、拖动方向（center 经纬度）、回正北（bearing/mode/zoom）
+                // 这些只能靠数据判读——界面开关只有开/关两态，看界面分不出「停在 1 还是 2」。
+                // 只读：调 getState() 取值，不写任何状态，不触发渲染。
+                if (compassMapView == null) {
+                    android.util.Log.d("LCDEBUG", "state unavailable: no webview");
+                    break;
+                }
+                compassMapView.evaluateJavascript(
+                        "(function(){if(typeof getState!=='function')return 'null';var s=getState();"
+                        + "return JSON.stringify({mode:s.mode,bearing:s.bearing,center:[s.lng,s.lat],"
+                        + "zoom:s.zoom,sitMode:s.sitMode,contourOn:s.contour,groundOn:s.ground,"
+                        + "needleOn:s.needle,base:s.base});})()",
+                        value -> {
+                            if (value == null) {
+                                android.util.Log.d("LCDEBUG", "state null");
+                                return;
+                            }
+                            // evaluateJavascript 回传的是 JSON 字符串字面量（外层引号 + 内部转义），
+                            // 还原成裸 JSON，否则 logcat 里是一行双重转义，人工判读容易看错。
+                            String line = value;
+                            if (line.length() >= 2 && line.startsWith("\"") && line.endsWith("\"")) {
+                                line = line.substring(1, line.length() - 1);
+                            }
+                            line = line.replace("\\\"", "\"").replace("\\\\", "\\");
+                            if (line.startsWith("{") && line.endsWith("}")) {
+                                // is3D 取原生镜像：它与网页 mode 不一致时，正是「镜像漂移」的证据
+                                line = line.substring(0, line.length() - 1) + ",\"is3D\":" + is3D + "}";
+                            }
+                            android.util.Log.d("LCDEBUG", "state " + line);
+                        });
+                break;
+            }
             case "url": {
                 String url = it.getStringExtra("value");
                 if (url != null && compassMapView != null) {

@@ -1724,6 +1724,41 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (locPointerView != null) locPointerView.setVisibility(View.GONE);
     }
 
+    /**
+     * 把**原生底部栏**实际占用的高度下发给页面，供页面把浮层（如离线降级 banner）抬起来。
+     *
+     * 为什么由原生算、不写死：页面不知道原生栏多高，写死「上移 30px」在换机型、改字号、
+     * 栏显隐变化时立刻再坏一次，而且坏得很难查。**知道尺寸的一方负责传下去。**
+     *
+     * 单位换算：WebView 的 CSS px = 设备 px / density（viewport meta 是 width=device-width）。
+     * 页面侧消费约定：`setSafeArea({bottom: N})`，N 为 CSS px；页面把 banner 的 bottom 设为 N + 8。
+     * 页面没有这个函数时静默跳过（守卫），不影响老页面。
+     */
+    private void pushSafeArea() {
+        if (compassMapView == null) return;
+        final android.view.View bar = trustRow;
+        if (bar == null) return;
+        compassMapView.post(() -> {
+            try {
+                int winH = getWindow() != null ? getWindow().getDecorView().getHeight() : 0;
+                if (winH <= 0 || bar.getVisibility() != android.view.View.VISIBLE) {
+                    js("(typeof setSafeArea==='function')&&setSafeArea({bottom:0})");
+                    android.util.Log.d("LCDEBUG", "safeArea bottom=0 (bar hidden)");
+                    return;
+                }
+                int[] loc = new int[2];
+                bar.getLocationInWindow(loc);
+                int insetPx = Math.max(0, winH - loc[1]);
+                float density = getResources().getDisplayMetrics().density;
+                int css = Math.round(insetPx / density);
+                js("(typeof setSafeArea==='function')&&setSafeArea({bottom:" + css + "})");
+                android.util.Log.d("LCDEBUG", "safeArea bottom=" + css + "css (" + insetPx + "px win=" + winH + ")");
+            } catch (Throwable ex) {
+                android.util.Log.d("LCDEBUG", "safeArea push fail " + ex);
+            }
+        });
+    }
+
     private void sync3DStateFromPage() {
         if (compassMapView == null) return;
         compassMapView.postDelayed(() -> {
@@ -4365,6 +4400,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // M6 第 8 条：3D 状态同样按原生重放（页面级 `var mode` 一重载就回 2d，
                     // 用户会以为「3D 自己关了」；不许改用 localStorage —— 那会变成两份状态）
                     if (is3D) view.evaluateJavascript("try{setMode('3d')}catch(e){}", null);
+                    // 原生底部栏高度 → 页面（离线下沉 banner 用），见 pushSafeArea 注释
+                    pushSafeArea();
                     // R2-026：地图就绪后补一次左上地名（罗盘态不显示，不必取）。
                     if (!compassMode) refreshPlaceName();
                 }

@@ -2,7 +2,7 @@
 
 - 审计人：LC审客户端
 - 基线：`develop` **`622cf28`**（`git rev-parse origin/develop` 实测）
-- 范围：`MainActivity`（3961 行）、`M3PageActivity`、`M3WebActivity`、`CompassReadSheet`、`CompassCrosshairView`，以及与 `lc_*` 资源相关的布局/开关代码
+- 范围：`MainActivity`（**4223 行**）、`M3PageActivity`、`M3WebActivity`、`CompassReadSheet`、`CompassCrosshairView`，以及与 `lc_*` 资源相关的布局/开关代码
 - 方法：只读源码 + `git grep` 计数核对调用点；每条给出「文件:行号 + 原文 + 为什么是问题 + 影响面」；**未上机、未改一行**
 - 结论：**P1 两条、P2 四条、登记一条、待确认一条**；其中 **L2 是现网可复现的状态不同步**，其余为维护性/占位类
 
@@ -26,7 +26,7 @@
 1551: case "实景": js("setBase('img')"); break;
 1552: case "坐南朝北": js("toggleSitNorth()"); break;
 ```
-- **为什么是问题**：`map.html` 的 `mode` 刚被 `is3D` 重放修过（M6 第 8 条），但同一类状态的 `setBase`、`toggleSitNorth` **没有进入重放清单**。页面一重载（`location.reload()`、Activity 重建、WebView 崩溃恢复），JS 侧底图与坐 norte 回到默认，而 Java 侧 `compassMapMode` / `southNorthOn` 仍是开——**开关图形与画面相反**。
+- **为什么是问题**：`map.html` 的 `mode` 刚被 `is3D` 重放修过（M6 第 8 条），但同一类状态的 `setBase`、`toggleSitNorth` **没有进入重放清单**。触发路径是**桥接 `url` 重载**（`MainActivity` 的 `case "url": loadUrl(url)`）或 **WebView 渲染进程重启**（`map.html` 内 `reload(` **0 命中**，`:3752` 那句只是注释，不是现存调用）；重载后 JS 侧底图与坐向回到默认，而 Java 侧 `compassMapMode` / `southNorthOn` 仍是开——**开关图形与画面相反**。
 - **影响面**：罗盘态切「实景」后旋转屏幕/重载 → 画面回到矢量底图但「实景」仍蓝；「坐南朝北」同理失效。用户会认为开关失灵，且与 R2-032 角注条（`syncAttributionBar()` 从 JS 读源）一起出现「角注说地图、开关说实景」的双重矛盾。
 - **修法**：照 `is3D` 的做法，在 `:3765` 之后补 `setBase(compassMapMode == MAP_MODE_REALITY ? 'img' : 'vec')` 与 `if (southNorthOn) toggleSitNorth()`（或改成幂等 `setSitNorth(bool)`，避免 toggle 语义在重放下翻转）。
 
@@ -54,14 +54,14 @@
 
 | # | 位置 | 原文 | 说明 / 影响 |
 |---|---|---|---|
-| D1 | `MainActivity.java:4097` | `private static String clean(String s) { return s == null ? "" : s.replace("\u200c", ""); }` | 读数改单行后不再使用；`CompassReadSheet:222`、`CompassView:412` 各自还有同名实现，**三份重复** |
+| D1 | `MainActivity.java:4097` | `private static String clean(String s) { return s == null ? "" : s.replace("\u200c", ""); }` | 读数改单行后不再使用；同名**方法**还有一份在 `CompassReadSheet:221-223`（共**两份**）；`CompassView:412` 是**内联** `.replace("\u200c","")`，不是方法 |
 | D2 | `MainActivity.java:3606` | `private static double[] wgs2gcj(double lat, double lng)` | 与 `CoordConv.wgs84ToGcj02` 重复；两套转换并存，改一处另一处不会跟着变 |
 | D3 | `MainActivity.java:3637` | `private static double[] gcj2bd(double lat, double lng)` | 同上，BD09 转换重复实现 |
 | D4 | `MainActivity.java:3235` | `private java.util.List<String[]> knowledgeEntries()` | 知识弹层改走 asset HTML 后残留（`:3647` 注释已写「不再用我们自己写的…」） |
 | D5 | `MainActivity.java:1940` | `private void shareApp()` | 抽屉「推荐给好友」已改走 `M3PageActivity` 页内分享（`:2040-2045`），此方法无人调用；另外 `:3993` 还有第三份 `ACTION_SEND` 实现 |
 | D6 | `MainActivity.java:1763` | `private void setCompassHidden(boolean hidden)` | 与 `toggleCompassHidden()`（`:1754`）功能重叠，且**无人调用**；将来若有人用它，会和 `hideButton` 文案/图形两套逻辑打架 |
 
-- **影响面**：不影响现网行为；但 D2/D3 是**两套坐标转换**、D1 是**三份 ZWNJ 清理**、D5 是**三份分享**——下一轮改口径时最容易只改一处。
+- **影响面**：不影响现网行为；但 D2/D3 是**两套坐标转换**、D1 是**两份方法 + 一处内联** ZWNJ 清理、D5 是**三份分享**——下一轮改口径时最容易只改一处。
 - **修法**：删除 6 个方法；D2/D3 若确需保留，改为调用 `CoordConv` 的单实现。
 
 ---
@@ -121,7 +121,7 @@
 | A1 | `MainActivity.java:2525`、`:2531` | `queryMountainNamesForLayer(39.9042, 116.4074);` / `double lat = 39.9042, lng = 116.4074;` | **写死坐标兜底**：WebView 为空或 `getState()` 解析失败时，山脉面板仍会按北京查山名。屏幕上没有「这是默认中心」的提示 → 用户可能把北京山名当成当前视野 |
 | A2 | `MainActivity.java:1080` | `icon = new View(this);   // 占位，不画假图标` | 右列 10 控件中缺图标的项渲染为空白块；是**有意占位**（不造假），但用户看到的是空位，需在验收表里明确登记 |
 | A3 | `MainActivity.java:1137` | `// 渲染出来是人形/立方体箭头/左右箭头，与原版开关图形不符，已撤掉，留占位等形态口径。` | 同上，开关图形占位 |
-| A4 | `MainActivity.java` 共 **25 处** `toast(label + "：原版为工具子页，本步未实现")`（`:1452`…`:3142`） | 例：`:1452` | **默认不可达**：`FeatureFlags.java:37` `isEnabled` 默认 `true`，只有手动关掉 flag 才走 stub。属调试回退分支，**不判用户可见缺陷**，但 25 条字符串应登记为「占位分支」而非「已实现」 |
+| A4 | `MainActivity.java` 共 **26 处** `toast(label + "：原版为工具子页，本步未实现")`（`:1452`…`:3142`） | 例：`:1452` | **默认不可达**：`FeatureFlags.java:37` `isEnabled` 默认 `true`，只有手动关掉 flag 才走 stub。属调试回退分支，**不判用户可见缺陷**，但 26 条字符串应登记为「占位分支」而非「已实现」 |
 
 ---
 
@@ -142,4 +142,18 @@
 
 ---
 
-证据：`git show origin/develop:...MainActivity.java`（`622cf28`，3961 行）；`FeatureFlags.java:37`；`AndroidManifest.xml:40/47`；`CompassView.java:45/83/88`；`CoordConv.java:22/36`。每条行号均在 `622cf28` 工作树复核，未占设备、未改代码。
+证据：`git show origin/develop:...MainActivity.java`（审计基线 `622cf28`，复核基线 `ac2fee6`；**4223 行**，两次取数一致，行号未漂移）；`FeatureFlags.java:37`；`AndroidManifest.xml:40/47`；`CompassView.java:45/83/88`；`CompassReadSheet.java:221-223`；`CoordConv.java:22/36`。未占设备、未改代码。
+
+---
+
+## 8. 复核更正记录（2026-11-08，按 LC审核验 复核 + 总监裁定）
+
+| # | 原写法 | 更正后 | 我的复核命令 / 结果 |
+|---|---|---|---|
+| 1 | `MainActivity` **3961 行** | **4223 行** | `git show origin/develop:...MainActivity.java` 行数组 `Count=4223`（`Measure-Object -Line` 在管道输入下给出的 3961 不可靠，已弃用该口径） |
+| 2 | `clean` **三份**（含 `CompassView:412`） | **两份方法**（`MainActivity:4097`、`CompassReadSheet:221`）＋`CompassView:412` 是**内联** `.replace` | `git grep -n 'String clean(String'` → 恰好 2 个方法定义 |
+| 3 | `本步未实现` **25 处** | **26 处** | 同文件 `Select-String '本步未实现' \| Measure-Object` → Count=26 |
+| 4 | 触发例举写 `location.reload()` | 改为「**桥接 `url` 重载 / 渲染进程重启**」；`map.html` 内 `reload(` **0 命中**，`:3752` 是注释 | `git show origin/develop:...map.html \| Select-String 'reload\('` → 0 |
+
+- 四条都不改变任何条目的「真/证据不足」判定；引用行号逐字未漂移（复核在 `ac2fee6`、审计在 `622cf28`）。
+- 关账口径我认同审核验的合并：**1 条根因（replay 块不全 + 缺幂等 set）→ 5 个表现面**，`P1-1` 只是其中之一，不与 `M-01/M-02` 重复计条。

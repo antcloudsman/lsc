@@ -183,7 +183,8 @@ var TILE_OFF = {
   enabledSources: {},              /* sourceId -> true；默认空 = 全部关闭 */
   keyVersion: 'v1',                /* 键含 version：换编码/换源格式时可整体失效，不用清库 */
   db: null, opening: null, busy: false,
-  stats: { net: 0, put: 0, hit: 0, miss: 0, stale: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' }
+  stats: { net: 0, put: 0, hit: 0, miss: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' },
+  diag: { called: 0, disabled: 0, noKey: 0, fromCache: 0, fetchErr: 0, putOk: 0 }
 };
 
 function tileSourceEnabled(sid) { return !!(TILE_OFF.enabledSources[sid]); }
@@ -309,12 +310,13 @@ function tileOfflineUsage() {
 
 /* 网络加载成功 → 存字节（fetch 走 HTTP 缓存，通常不再产生完整下行） */
 function tileOfflineStore(img, layer) {
-  if (!tileSourceEnabled(layer)) return;
+  TILE_OFF.diag.called++;
+  if (!tileSourceEnabled(layer)) { TILE_OFF.diag.disabled++; return; }
   var key = img && img.getAttribute && img.getAttribute('data-tkey');
   var url = img && img.src;
-  if (!key || !url) return;
+  if (!key || !url) { TILE_OFF.diag.noKey++; return; }
   var rq = img.getAttribute('data-fromcache');
-  if (rq === '1') { img.removeAttribute('data-fromcache'); return; }  /* 缓存回填的图不再回写 */
+  if (rq === '1') { TILE_OFF.diag.fromCache++; img.removeAttribute('data-fromcache'); return; }  /* 缓存回填的图不再回写 */
   try {
     fetch(url, { cache: 'force-cache', credentials: 'omit' }).then(function (r) {
       if (!r.ok) throw new Error('http ' + r.status);
@@ -334,6 +336,7 @@ function tileOfflineRecover(img, layer) {
     if (rec && rec.blob) {
       try { img.src = URL.createObjectURL(rec.blob); } catch (e) { }
       img.setAttribute('data-fromcache', '1');
+      TILE_OFF.stats.shown++;
       if (rec.stale) { TILE_OFF.stats.stale++; }
       img.style.display = '';
       TILE_OFF.stats.hit++;
@@ -399,7 +402,8 @@ function getTileCacheInfo() {
     items: TILE_OFF.stats.items, bytes: TILE_OFF.stats.bytes,
     cacheBytes: TILE_OFF.stats.bytes,
     bytesMB: Math.round(TILE_OFF.stats.bytes / 1048576 * 10) / 10,
-    net: TILE_OFF.stats.net, put: TILE_OFF.stats.put, hit: TILE_OFF.stats.hit,
+    net: tileDiag.net, netOk: tileDiag.netOk, shown: TILE_OFF.stats.shown,
+    put: TILE_OFF.stats.put, hit: TILE_OFF.stats.hit, storeDiag: TILE_OFF.diag,
     miss: TILE_OFF.stats.miss,
     evicted: TILE_OFF.stats.evicted, evictions: TILE_OFF.stats.evicted, stale: TILE_OFF.stats.stale,
     hitRate: LCTileCachePolicy.hitRate(TILE_OFF.stats.hit, TILE_OFF.stats.miss),
@@ -548,6 +552,14 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
         tileDiag.hit++;                   /* 缓存命中：不发网络请求（与 net/ok 分开计，避免"全命中"被当成"加载成功"） */
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           'src="' + cached + '">';
+      } else if (navigator.onLine === false && tileSourceEnabled(layer)) {
+        /* 离线 + 该源启用：**不发网络请求**，直接用占位图等离线缓存回填。
+         * 之前只靠 onerror 兜底，但 WebView 自带的 HTTP 缓存离线时仍能命中，
+         * img 根本不会 error ⇒ 我们的缓存层永远不被调用（实测 hit=0、netOk 仍在涨）。 */
+        html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
+          'data-tkey="' + tileKeyOf(layer, zoom, xx, yy) + '" data-offline="1" ' +
+          'src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" ' +
+          'onload="__tileOfflineLoad(this,\'' + layer + '\')">';
       } else {
         tileDiag.net++;                   /* 真正发出去的瓦片请求数（审核验口径：req 只记网络请求） */
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
@@ -572,7 +584,15 @@ function isAlphaLayer(layer) { return layer === "cta" || layer === "cia" || laye
 /* 瓦片诊断（给 Q0 验收用，不改变加载行为）：换到 WebViewAssetLoader 的 https 虚拟域后，
  * 天地图瓦片会带上新的 Referer/Origin，可能被服务端拒绝——这条把"有没有被拒"变成可读数字，
  * 不必靠肉眼找空白块。getState().tileDiag 可读。 */
-var tileDiag = { net: 0, ok: 0, hit: 0, err: 0, lastErr: '', lastErrUrl: '' };
+var tileDiag = { net: 0, netOk: 0, ok: 0, hit: 0, err: 0, lastErr: '', lastErrUrl: '' };
+/* 离线占位图加载完成 → 立刻用 IndexedDB 里的字节回填（不发网络请求）。
+ * 先摘掉 data-offline，避免 blob URL 二次 onload 时再次进入本函数。 */
+function __tileOfflineLoad(img, layer) {
+  if (!img) return;
+  if (img.getAttribute('data-offline') !== '1') return;
+  img.removeAttribute('data-offline');
+  try { tileOfflineRecover(img, layer); } catch (e) { }
+}
 function __tileFailed(img, url, layer) {
   try { if (img) img.style.display = 'none'; } catch (e) { }
   tileDiag.err++;
@@ -586,6 +606,9 @@ function __tileFailed(img, url, layer) {
 }
 function __tileLoaded(img, url, layer) {
   tileDiag.ok++;
+  /* netOk 只记「真的从网络拿到的图」：离线时 net(尝试数) 会涨，netOk 不会，判据用它才不被尝试数误导 */
+  if (img && img.getAttribute && img.getAttribute('data-fromcache') === '1') TILE_OFF.stats.shown++;
+  else tileDiag.netOk++;
   /* B 轮：联网成功时按源开关把字节落盘（与内存 dataURL 缓存互不影响） */
   try { tileOfflineStore(img, layer); } catch (e) { }
   if (navigator.onLine !== false) {

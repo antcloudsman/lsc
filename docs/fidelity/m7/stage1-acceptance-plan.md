@@ -56,6 +56,35 @@ adb shell am broadcast -a com.luopan.fengshui.DEBUG --es cmd state
 | Q5 不跟 DEM 起伏 | 平地与山地各贴地一次，比外接四边形四顶点 | 两次截图同法取四角 | 四个顶点坐标差 ≤ **2 px**（跟 DEM 会明显变形） |
 | Q6 遮罩/可交互 | 贴地态下点右侧「3D」「图层」是否仍可点 | 点击后 `state.mode` 变化 | 变化即算通过（盘面不得吃掉全屏触摸） |
 
+### 1.4b 前置门禁 Q0：`COMPASS_RINGS` 必须真加载（不通过则 Q1–Q7 一律不判）
+
+2026-11-08 16:11–16:16 实测提交 `7d248aa`（本人独立构建 apk_sha `6f773a66…`，装机 `lastUpdateTime=2026-11-08 16:11:32`，`INSTALL_OK taps=2`；实现方自报的 `E509F15E…` 与我的构建哈希不同，属 APK 打包不可重现，不作差异）。
+
+命令链（顺序固定，未通过前不测任何像素项）：
+
+```
+am broadcast -a com.luopan.fengshui.DEBUG --es cmd view --ef lat 39.9042 --ef lng 116.4074 --ef zoom 12 --ef pitch 60 --ef bearing 0
+am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value "toggleGround()"
+am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es value "setGroundRenderer(1)"
+```
+
+实测（**已证实，阻塞**）：
+
+- `getGroundDebug()` = `{"renderer":"canvas","ground":true,"mode":"3d","zoom":12,"lat":39.9042,"gateHit":false,"diag":"loading:rings","texDirty":true,"hasQuad":false,"hasRings":false,"hasGL":true}`；`getGroundQuad()` = `null`。
+- Chromium 原文（`logcat -d`，tag `hwschromium-21705`）：`Fetch API cannot load file:///android_asset/map/compass-rings.json. URL scheme "file" is not supported.`；同一条 `fetch` 的两个候选路径均如此。
+- 同页独立探针：`fetch('map.html')` 亦失败；同步 `XMLHttpRequest` 失败，报 `Failed to load 'file:///android_asset/map/compass-rings.json'`。
+- 包内确认：`assets/map/compass-rings.json` 22,385 B **确实在 APK 里**（ZipFile 直读）；`MainActivity.java:3964` 只设 `setAllowFileAccess(true)`，**无** `setAllowFileAccessFromFileURLs(true)`。
+
+判读：`7d248aa` 修的「fetch 相对路径少一层目录」是**真缺陷**（`map.html` 在 `assets/` 根，文件在 `assets/map/`），但不是全部原因——页面源是 `file:///android_asset/`，`fetch` 被 Fetch API 的 file 方案限制直接拒绝，`XHR` 又被 `setAllowFileAccessFromFileURLs` 默认 false 挡住，**两条路都不通**，故 `COMPASS_RINGS` 仍恒为 null，贴地 canvas 路径永远到不了 `drawn`、不产出 VP。
+
+判据：进 Q1–Q7 之前先跑上述三条命令，**`hasRings:true` 且 `hasQuad:true` 才开工**；否则本轮整批判「阻塞」，不判 PASS、不判 FAIL。
+
+可选出路（由实现方与总监定，验收方不代选）：
+
+1. 原生读 assets 后经 `evaluateJavascript("__LC3D.setRings(<json>)")` 注入 —— 不动 WebView 安全设置；
+2. 构建期把 `compass-rings.json` 内联进 `map.html` —— 零运行时 IO；
+3. 开 `setAllowFileAccessFromFileURLs(true)` 并把 `fetch` 改成 `XMLHttpRequest`（`fetch` 是否可经设置放行**待确认**，Chromium 原文只证明当前被拒；仅改设置而不换 API，按现有证据无效）。
+
 ### 1.5 失败与回滚
 
 - 任一项超差 → 本条判**不通过**，退回实现方，附超差项与实测值；

@@ -50,8 +50,12 @@
 判据  getGroundQuad() 返回长度 4 的数组，且每个元素 {x,y} 为有限数
       getGroundDebug(): renderer='canvas'、ground=true、hasQuad=true、diag='drawn'
       canvasBacking = 546（=273 CSS × dpr2）、radiusMeters > 0
-反例  diag 为 'skip:renderer=overlay' / 'skip:ground=off' / 'loading:rings' / 'fail:*' 一律 FAIL，
+等待  diag='loading:rings' 是**异步等待态，不是失败**：最多等 5s（每 500ms 重读一次），
+      期间不判红；5s 后仍是 loading:rings 才判 FAIL 并记录
+反例  diag 为 'skip:renderer=overlay' / 'skip:ground=off' / 'fail:*' 一律 FAIL，
       并原样记录 diag 字符串（它是区分「没接线」和「画了但错」的唯一依据）
+口径  所有读数一律以 getState() / getGroundDebug() **主动拉取**的值为准；
+      事件（groundstate）只当「有变化了，去拉一下」的触发信号，不采信事件内容
 ```
 
 ### G1.2 角序
@@ -192,6 +196,9 @@ WebGL 挂掉时必须回退显示原生盘面；否则用户按「贴地」等�
          groundCanvasOk = false、groundDiag = 'fail:glinit'（与注入值一致）
       ③ 原生侧读数与 ② **逐字相同**（不许多一个字、不许少一个字）
 反证  __forceGroundFail(null) 复位后重测 ⇒ ①原生盘面转隐、②groundCanvasOk=true、③同步一致
+复位时序（**必守，否则假红**）：`__forceGroundFail(null)` 只清注入并置 texDirty，**下一帧**才回到 'drawn'；
+      复位后立刻读会读到旧的 `fail:*`。正确做法：复位 → 连读两次（间隔 ≥1 帧，
+      或轮询到 diag 变化，上限 3s）→ 取稳定值再判。复位的判据不含「复位瞬间的状态」
 说明  ② 防「静默」（失败了却还说自己好），③ 防「两边各说各话」（原生化成一句人话就丢了原因）
 ```
 
@@ -215,6 +222,9 @@ WebGL 挂掉时必须回退显示原生盘面；否则用户按「贴地」等�
       原生侧读到的是页面原样字符串（groundDiag），**不许在本机重写成一句人话覆盖它**
       原生回退条件只看 groundOn && !groundCanvasOk，**不许自己推断「好像没画出来」**
       fail-safe 默认值：还没收到任何页面状态之前，原生盘面保持可见
+已知缺口（实现方自报，判据据此放宽到「可接受」而不是判红）：
+      `loading:rings` 是等待态、**不触发 groundstate 事件**；只靠事件驱动的原生侧会停在旧 diag。
+      因此允许原生保留 700ms 定时回读作为补充手段；判据只看**拉取值**，不看事件次数
 反证  把 sticky 逻辑改坏（让 diag 可被覆盖成空）⇒ 本判据必须 FAIL
 含义  G5 判的不是「有没有回退」，而是「退得对不对、说得出为什么退」；只说「回退正常」不算过
 ```

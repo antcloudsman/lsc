@@ -155,12 +155,27 @@ if (-not (Test-Path -LiteralPath $generatorScript)) {
     $mechanicsCode = Invoke-Gate 'mechanics single-source (gen-mechanics.ps1 -Check)' $hostExe $generatorArgs $mechanicsLog
 }
 
-# --- 6/6 android ----------------------------------------------------------
+# --- 6/7 android ----------------------------------------------------------
 $androidArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $androidScript, '-OutDir', $androidOut)
 if ($DeviceId) { $androidArgs += @('-DeviceId', $DeviceId) }
 if ($SkipDevice) { $androidArgs += @('-SkipDevice') }
 & $hostExe @androidArgs
 $androidCode = $LASTEXITCODE
+
+# --- 7/7 ground (M8 贴地接线：静态断言 + 反证 + node --check + policy 单测) ----
+# 判据：产品路径 setGround() 必须把 groundRenderer 切到 'canvas'，且反证能抓住故意改坏。
+# 注意：这道门在「贴地接线尚未落地」时是红的——那是如实反映，不是回归。
+$groundLog = Join-Path $OutDir 'ground.log'
+$groundScript = Join-Path $repoRoot 'tools\map\run-m8-ground-gate.ps1'
+$groundCode = 1
+$groundDetail = ''
+if (-not (Test-Path -LiteralPath $groundScript)) {
+    Write-Host "[FAIL] missing ground gate: $groundScript" -ForegroundColor Red
+} else {
+    $groundArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $groundScript, '-OutDir', (Join-Path $OutDir 'ground'))
+    $groundCode = Invoke-Gate 'M8 ground gate (tools\map\run-m8-ground-gate.ps1)' $hostExe $groundArgs $groundLog
+    $groundDetail = ((Select-String -LiteralPath $groundLog -Pattern '^M8-GROUND:|^NEGATIVES:' | ForEach-Object { $_.Line.Trim() }) -join ' ')
+}
 
 # --- summary -------------------------------------------------------------
 function Get-Result([int]$Code) { if ($Code -eq 0) { 'PASS' } elseif ($Code -eq 3) { 'SKIP' } else { 'FAIL' } }
@@ -170,8 +185,9 @@ $desktopResult = Get-Result $desktopCode
 $numericResult = Get-Result $numericCode
 $mechanicsResult = Get-Result $mechanicsCode
 $androidResult = Get-Result $androidCode
+$groundResult = Get-Result $groundCode
 $overallCode = 0
-foreach ($code in @($copyCode, $secretCode, $desktopCode, $numericCode, $mechanicsCode, $androidCode)) {
+foreach ($code in @($copyCode, $secretCode, $desktopCode, $numericCode, $mechanicsCode, $androidCode, $groundCode)) {
     if ($code -eq 1) { $overallCode = 1 }
     elseif ($code -eq 3 -and $overallCode -eq 0) { $overallCode = 3 }
 }
@@ -209,6 +225,11 @@ if ($SkipDevice) {
 } else {
     Write-Host ("android  : {0}  (logs: {1})" -f $androidResult, $androidOut)
 }
+if ($groundDetail) {
+    Write-Host ("ground   : {0}  ({1})" -f $groundResult, $groundDetail)
+} else {
+    Write-Host ("ground   : {0}  (log: {1})" -f $groundResult, $groundLog)
+}
 Write-Host ("overall  : {0}" -f (Get-Result $overallCode))
 
 $summary = @(
@@ -221,6 +242,7 @@ $summary = @(
     "numeric=$numericResult",
     "mech_src=$mechanicsResult",
     "android=$androidResult",
+    "ground=$groundResult",
     "device_skipped=$([bool]$SkipDevice)",
     "overall=$(Get-Result $overallCode)",
     "out=$OutDir"

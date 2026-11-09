@@ -480,19 +480,31 @@ def check_duplicate_images(root: str, skip_dirs: set[str]) -> tuple[list[dict], 
 
 
 def expected_size_for(
-    path: str, default: tuple[int, int] | None, rules: list[tuple[str, tuple[int, int]]]
+    path: str,
+    default: tuple[int, int] | None,
+    rules: list[tuple[str, tuple[int, int]]],
+    hits: dict[str, list[str]] | None = None,
+    default_hits: list[str] | None = None,
 ) -> tuple[int, int] | None:
     """逐图声明尺寸：先按「仓库相对路径」匹配，再按 basename 匹配，都没命中才用全局默认。
 
     为什么要有逐图表：`lc-help` 的 6 张局部图裁切后尺寸各不相同（1228x68 / 201x1111 …），
     拿一个 `--expect-size 1228x2700` 套全目录，裁切一落地就全红；而没有逐图表，
     真正该红的那张（尺寸与图注不符）又查不出来。
+
+    `hits` 记录每条规则实际命中的文件（键=pattern）。这不是统计装饰：规则指向一个
+    不存在的文件时，旧实现既不比较也不报告——「先写表、后补图」于是得到一张
+    「已声明但其实没验过」的绿（2026-11-10 LC审成文实测）。命中数是要拿来报的。
     """
     rel = os.path.relpath(os.path.abspath(path), REPO_ROOT).replace("\\", "/")
     base = os.path.basename(path)
     for pattern, size in rules:
         if fnmatch.fnmatchcase(rel, pattern) or fnmatch.fnmatchcase(base, pattern):
+            if hits is not None:
+                hits.setdefault(pattern, []).append(base)
             return size
+    if default_hits is not None:
+        default_hits.append(base)
     return default
 
 
@@ -581,6 +593,8 @@ def main(argv: list[str] | None = None) -> int:
     findings: list[dict] = []
     counts = {"xml": 0, "png": 0, "other": 0}
     skip = {s.strip() for s in args.skip_dirs.split(",") if s.strip()}
+    rule_hits: dict[str, list[str]] = {p: [] for p, _ in size_rules}
+    default_hits: list[str] = []
     for path in (walk(args.root, skip) if scan_evidence else []):
         ext = os.path.splitext(path)[1].lower()
         try:
@@ -594,13 +608,57 @@ def main(argv: list[str] | None = None) -> int:
                         path,
                         args.mono_ratio,
                         args.min_png_side,
-                        expected_size_for(path, expect, size_rules),
+                        expected_size_for(path, expect, size_rules, rule_hits, default_hits),
                     )
                 )
             else:
                 counts["other"] += 1
         except FileNotFoundError:
             continue
+
+    # 空转条目必须报出来：规则一条都没命中时，旧实现「既不比也不报」，
+    # 于是凭一张表就能宣称「逐图验过」。命中 0 文件 = 覆盖洞，判 FAIL。
+    if scan_evidence and not size_rules and expect is None:
+        # 参数没给就跳过检查时，必须留一行 SKIP（2026-11-09 门禁工具通则）：
+        # 静默 exit 0 会被读成「尺寸全对」。这里不判 FAIL，但绝不能不说话。
+        print("SIZE: SKIP (no --expect-size and no --expect-size-map: images are NOT size-checked)")
+    if scan_evidence and size_rules:
+        for pattern, size in size_rules:
+            got = rule_hits.get(pattern) or []
+            if got:
+                print("SIZE-MAP-HIT: {} -> {}x{} <- {}".format(pattern, size[0], size[1], ", ".join(sorted(got))))
+            else:
+                print(f"SIZE-MAP-MISS: {pattern} -> {size[0]}x{size[1]} <- (0 files)")
+                findings.append(
+                    {
+                        "kind": "size-rule",
+                        "level": "fail",
+                        "path": pattern,
+                        "reason": (
+                            f"size rule matched 0 file(s) under {os.path.basename(args.root)} "
+                            f"(declared {size[0]}x{size[1]}) - declared-but-never-compared (idle rule)"
+                        ),
+                    }
+                )
+        matched = sum(1 for got in rule_hits.values() if got)
+        by_rule = sum(len(v) for v in rule_hits.values())
+        print(
+            f"SIZE-MAP-COVERAGE: rules {matched}/{len(size_rules)} matched; "
+            f"files by rule={by_rule} by default={len(default_hits)}"
+            + ("" if expect is not None else " (no --expect-size: files outside the map are NOT size-checked)")
+        )
+        if expect is None and default_hits:
+            findings.append(
+                {
+                    "kind": "size-default",
+                    "level": "warn",
+                    "path": args.root,
+                    "reason": (
+                        f"{len(default_hits)} file(s) fall outside the size map and no --expect-size was given "
+                        "- those files are NOT size-checked (not a pass)"
+                    ),
+                }
+            )
 
     allowed_map = {os.path.normcase(os.path.abspath(resolve(e["path"]))): e for e in allow}
 

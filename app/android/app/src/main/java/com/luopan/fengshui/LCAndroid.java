@@ -47,8 +47,10 @@ public class LCAndroid {
         try {
             JSONObject o = new JSONObject(json);
             String type = o.optString("type", "");
-            if ("attribution".equals(type) || "src-panel".equals(type)) {
+            if ("attribution".equals(type) || "src-panel".equals(type)
+                    || "groundstate".equals(type)) {
                 // 无坐标事件：不走 pick 的范围校验，直接透传给 MainActivity。
+                // M8：groundstate 带 {ok, diag, reason, renderer, ground}，供原生决定贴地显隐。
                 Log.d("LCUI", type + " " + json);
                 if (uiListener != null) uiListener.onUiEvent(type, o);
                 return;

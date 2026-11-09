@@ -28,15 +28,18 @@ function patchTileUrlDead(w) {
   w.tileUrl = function (layer, z, x, y) { return 'http://127.0.0.1:1/tile/' + layer + '/' + z + '/' + x + '/' + y + '.png'; };
 }
 function resetStats(w) {
-  w.TILE_OFF.stats = { net: 0, put: 0, hit: 0, miss: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, lastErr: '',
-    missAttempts: 0, putNew: 0, putOverwrite: 0, itemsAt: 0 };
+  /* 原地清零而不是整体替换：develop 的 v1.8 计数键（missKeyedAttempts/missUnsupported/…）
+   * 若被替换掉，后续 `x++` 会变成 NaN。这里只把数值字段归零，键集保持页面自己的那份。 */
+  var st = w.TILE_OFF.stats;
+  for (var k in st) { if (typeof st[k] === 'number') st[k] = 0; }
+  st.lastErr = '';
   w.tileDiag = { net: 0, netOk: 0, ok: 0, hit: 0, err: 0, lastErr: '', lastErrUrl: '' };
 }
 function info(w) {
   var t = w.getState().tileOffline || {};
   var d = w.tileDiag || {};
   return {
-    put: t.put, putNew: t.putNew, putOverwrite: t.putOverwrite, items: t.items,
+    put: t.put, putNew: t.putNew, putOverwrite: t.putOverwrite, items: t.items, itemsAt: t.itemsAt,
     hit: t.hit, miss: t.miss, missAttempts: t.missAttempts, net: t.net,
     sources: (t.sources || []).join('+'), persisted: t.sourcesPersisted,
     diagNet: d.net, diagOk: d.ok, diagErr: d.err, lastErr: t.lastErr
@@ -44,6 +47,7 @@ function info(w) {
 }
 function infoStr(x) {
   return 'put=' + x.put + '(new=' + x.putNew + ',over=' + x.putOverwrite + ') items=' + x.items +
+    (x.itemsAt ? '(at ' + (x.itemsAt > 0 ? 'set' : '0') + ')' : '(at missing)') +
     ' hit=' + x.hit + ' miss=' + x.miss + '(attempts=' + x.missAttempts + ')' +
     ' net=' + x.net + ' src=[' + x.sources + '] persisted=' + x.persisted +
     ' tileDiag=' + x.diagNet + '/' + x.diagOk + '/' + x.diagErr + (x.lastErr ? ' lastErr=' + x.lastErr : '');
@@ -80,9 +84,9 @@ function clearAll() {
     var a = info(w);
     log('A-online', infoStr(a));
     var keysA = await w.cacheKeys(3);
-    for (var i = 0; i < keysA.length; i++) log('A-writeKey' + (i + 1), keysA[i].key + ' size=' + keysA[i].size);
+    for (var i = 0; i < keysA.length; i++) log('A-writeKey' + (i + 1), String(keysA[i]));
     var expA = await w.cacheExpect();
-    log('A-expect', 'checked=' + expA.checked + ' hit=' + expA.hit + ' miss=' + expA.miss + ' rate=' + expA.rate);
+    log('A-expect', 'expected=' + expA.expected + ' present=' + expA.present + ' missing=' + expA.missing);
 
     /* ---------------- B：重载 + 离线 + 不重新启用 ---------------- */
     w = await loadMap(2);
@@ -113,10 +117,10 @@ function clearAll() {
     w.setView(39.9, 116.4, 10);
     await wait(1200);
     var keysC = await w.cacheKeys(3);
-    for (var j = 0; j < keysC.length; j++) log('C-storeKey' + (j + 1), keysC[j].key + ' size=' + keysC[j].size);
+    for (var j = 0; j < keysC.length; j++) log('C-storeKey' + (j + 1), String(keysC[j]));
     var expC = await w.cacheExpect();
-    log('C-expect', 'checked=' + expC.checked + ' hit=' + expC.hit + ' miss=' + expC.miss + ' rate=' + expC.rate +
-      ' missKeys=' + (expC.missKeys || []).slice(0, 3).join(','));
+    log('C-expect', 'layer=' + expC.layer + ' z=' + expC.zoom + ' scheme=' + expC.scheme +
+      ' expected=' + expC.expected + ' present=' + expC.present + ' missing=' + expC.missing);
 
     /* ---------------- D：离线 + 关掉源（旧行为的等价态）→ hit 恒 0 ----------------
      * 这就是缺陷报告里「离线回到已缓存层级 hit=0」的成因：源开关关着时，

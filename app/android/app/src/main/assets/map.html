@@ -2139,7 +2139,7 @@ function lvIsRealReview(rv) {
 }
 
 function attributionText(s) {
-  s = s || { name: "天地图地形", review: "待核对" };
+  s = s || { name: "天地图地形", review: "" };   /* 兜底对象不许是占位词（总监 11-09 裁定） */
   if (s.text) return s.text;   /* 自带完整文案的来源（wayback：境外影像，无审图号）不套天地图模板 */
   /* R2-032：按源分源显示。原版角注把「世纪空间 + 其审图号」绑在一起（具体号见 docs/fidelity 复核判词，
    * 不入发行面：copy 门禁禁原版审图号）；我方图源换成天地图后，来源名按当前源给，
@@ -2158,7 +2158,7 @@ function attributionText(s) {
 function getAttribution() {
   var i = sourceOfBase(base);
   if (i < 0) i = srcIndex;
-  var s = MAP_SOURCES[i] || { name: "天地图地形", review: "待核对" };
+  var s = MAP_SOURCES[i] || { name: "天地图地形", review: "" };
   var wb = (s.layer === "wayback");
   return {
     source: s.name,
@@ -2172,7 +2172,7 @@ function getAttribution() {
 function updateSrcInfo() {
   var i = sourceOfBase(base);
   if (i >= 0) srcIndex = i;
-  var s = MAP_SOURCES[srcIndex] || { name: "天地图地形", review: "待核对" };
+  var s = MAP_SOURCES[srcIndex] || { name: "天地图地形", review: "" };
   var text = attributionText(s);
   var el = document.getElementById("srcInfo");
   if (el) el.textContent = text;

@@ -147,7 +147,9 @@ this.map.unproject([screen.width/2, screen.height/2])
 
 ## 6. 回滚点
 
-1. **开关**：新增 `groundRenderer = "canvas" | "overlay"`（默认 `"overlay"` 即现网行为），`setGround(true)` 时按它分派；一行改回即恢复现状。
+1. **开关**：`groundRenderer = "canvas" | "overlay"`。**变量的初始值仍是 `"overlay"`，但产品路径已经变了**：`setGround(true)` 会强制把 `groundRenderer` 置为 `"canvas"`，退出贴地时置回 `"overlay"`（`map.html` 的 `setGround`，M8 第二阶段接线）。所以「点贴地还是屏幕空间正圆」不再受这个初始值影响。
+   **回滚方式**：把 `setGround()` 里那一行 `groundRenderer = on ? 'canvas' : 'overlay';` 改成 `'overlay'`，或直接删掉它，产品路径即退回纯 overlay（原生盘面），无需改素材、无需重建资产。
+   调试钩子 `__LC3D.setGroundRenderer('overlay')` 仍然可用，但它只影响当前会话，不改这个默认路径。
 2. **代码不回删**：迁移期**保留 `CompassView` 绘制面**（不删 259 行），只在 canvas 路径启用时隐藏原生盘面。L1–L3 全过后再单独立一笔删除，避免「一次改动里既搬家又删家」导致不可回退。
 3. **素材不回删**：`dial_full_0..4.png` 原文件保留在 `res/`，assets 里的是**导出副本**；回滚只需关开关，无需恢复素材。
 4. **验证留痕**：每层验证的图与 diff 结果落 `docs/fidelity/m7/ground/`，回滚判断有据可查。
@@ -161,7 +163,7 @@ this.map.unproject([screen.width/2, screen.height/2])
 - **A1（已批、已执行）**：降采样到长边 **800**、WebP **q85**，导出到 `assets/compass/dial_full_N.webp`。
   **实测（不是我早先估的 300–600KB，那个估计错了）**：5 张合计 **1,200,656 B（1.15 MB）**，源 3,105,148 B，**省 61%**；
   参数扫描实数：1200/q90=2.31MB、1200/q80=1.81MB、1024/q85=1.67MB、900/q85=1.38MB、**800/q85=1.15MB**、900/q78=1.19MB。
-  选 800 的理由：贴地时盘面只占 **546 backing px**（273 CSS × dpr 2），800 已是 **1.47× 过采样**，再大只增包体不提清晰度。
+  选 800 的理由：贴地时盘面直径 **549 backing px**（`GROUND_DIAL_FRAC 0.37725 × 1456 canvasBacking`；早期按「盘面占画布 0.375」推算出的 546 已作废，见 §5 L2），800 已是 **1.46× 过采样**，再大只增包体不提清晰度。
   **净包体影响**：迁移期 `res/` 原图与 assets 副本并存（+1.15MB）；L1–L3 全过、下线 `res/` 副本后 **净减约 1.9MB**。
   manifest（含每张 sha256 与尺寸）落 `docs/fidelity/m7/dial-export-manifest.json`，L2 基线直接引用它。
 - A2：原尺寸原样复制进 assets（+3.1 MB 包体；M6 已因帮助中心图涨到 34.7 MB，C 轮正要压，不宜再加）。

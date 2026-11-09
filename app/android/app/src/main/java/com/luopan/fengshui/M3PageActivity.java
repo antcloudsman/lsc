@@ -330,9 +330,15 @@ public class M3PageActivity extends Activity {
             buildComplaintForm(list);
         });
         // pitch = minHeight + 分隔高度(3)：目标步进 180 -> minHeight 177
+        // M7 收尾（2026-11-09）：原版「问题反馈」节点高 79 是 Compose 语义框，不是字高——
+        // 截图实测墨迹高 46（我方 47），差 1px。真实偏差是墨迹**位置**：原版墨迹顶 367、
+        // 我方 363，高 4px。行高与步进（pitch 180）不动，只把上下内距 24/24 调成 32/24，
+        // 居中后的 tv 下移 4px，墨迹顶落到 367。不追 79：那只会撑大框、字形不变。
         if (r1 != null) r1.setMinimumHeight(177);
+        if (r1 != null) r1.setPadding(0, 32, 0, 24);
         LinearLayout r2 = addRow(list, "订单投诉", "未选择任何订单", false, null);
         if (r2 != null) r2.setMinimumHeight(177);
+        if (r2 != null) r2.setPadding(0, 32, 0, 24);
     }
 
     private void buildComplaintForm(LinearLayout list) {

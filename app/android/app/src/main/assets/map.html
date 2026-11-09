@@ -532,23 +532,16 @@ function tileOfflineBanner() {
   }
   var anyEnabled = Object.keys(TILE_OFF.enabledSources).length > 0;
   var offline = (navigator.onLine === false);
-  /* 主文案二选一，但「过期」不与之互斥（总监 11-09 补定）：
-   *   ① 有缺块 = 没数据 → 「当前区域未缓存，联网后可查看」
-   *   ② 无缺块但有过期命中 = 有数据但可能旧 → 「已缓存，但数据可能已过期（缓存超 7 天）」
-   * 关键：真实视野几乎总有至少一块未缓存，若把过期只放在 miss===0 分支，
-   * 这条提示永远不可达（实测 stale=200 / miss=20 时仍走 ①）。所以 ① 里追加过期块数。 */
-  var staleOnly = (TILE_OFF.stats.miss === 0 && TILE_OFF.stats.stale > 0);
-  var showMiss = TILE_OFF.stats.miss > 0 && (offline || !anyEnabled || TILE_OFF.stats.hit > 0);
-  if (!showMiss && !staleOnly) { el.style.display = 'none'; return; }
-  if (staleOnly) {
-    el.textContent = '已缓存，但数据可能已过期（缓存超 7 天）';
-    el.style.display = 'block';
-    return;
-  }
-  el.textContent = '当前区域未缓存，联网后可查看' +
-    '（已命中 ' + TILE_OFF.stats.hit + ' 块 / 缺 ' + TILE_OFF.stats.miss + ' 块' +
-    (anyEnabled ? '' : '；离线缓存未启用') +
-    (TILE_OFF.stats.stale > 0 ? '；其中 ' + TILE_OFF.stats.stale + ' 块数据可能已过期' : '') + '）';
+  /* 文案由策略模块出（LCTileCachePolicy.bannerText），这里只负责上屏：
+   * 三条分支（缺块 / 过期 / 两者并存）在 Node 单测里覆盖，不必上机才知道走没走到。
+   * 11-09 总监裁定：stale 不许与 miss 互斥。旧写法 staleOnly=(miss===0 && stale>0)
+   * 在真实视野里几乎永不成立（实测 stale=200 / miss=20 却只出缺块文案），等于死代码。
+   * 几何与底部避让不动：banner 是 bottom 锚定，文案变长只向上长高。 */
+  var banner = LCTileCachePolicy.bannerText(
+    { hit: TILE_OFF.stats.hit, miss: TILE_OFF.stats.miss, stale: TILE_OFF.stats.stale },
+    { anyEnabled: anyEnabled, offline: offline, ttlMs: TILE_OFF.ttlMs });
+  if (!banner.show) { el.style.display = 'none'; return; }
+  el.textContent = banner.text;
   el.style.display = 'block';
 }
 

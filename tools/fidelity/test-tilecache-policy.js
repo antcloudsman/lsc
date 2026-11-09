@@ -90,5 +90,20 @@ ok("ttl 注入 1 天 ⇒ 过期句天数跟着变", b6.text === "已缓存，但
 var b7 = P.bannerText({ hit: 3, miss: 0, stale: 0 }, { anyEnabled: true, offline: false, ttlMs: 7 * DAY });
 ok("在线·已启用·无缺块 ⇒ 不显示", b7.show === false);
 
+/* case 8：天数回退只在「未配置」时生效（审核验 11-09 实测 ttlMs=1 仍写 7 天） */
+var b8 = P.bannerText({ hit: 5, miss: 0, stale: 5 }, { anyEnabled: true, ttlMs: 1 });
+ok("ttlMs=1(1 毫秒) ⇒ 不得回退 7 天", b8.text === "已缓存，但数据可能已过期（缓存超 1 天）", b8.text);
+var b9 = P.bannerText({ hit: 5, miss: 0, stale: 5 }, { anyEnabled: true, ttlMs: 3 * DAY });
+ok("ttlMs=3 天 ⇒ 显示 3 天", b9.text === "已缓存，但数据可能已过期（缓存超 3 天）", b9.text);
+var b10 = P.bannerText({ hit: 5, miss: 0, stale: 5 }, { anyEnabled: true, ttlMs: 0 });
+ok("ttlMs=0（未配置）⇒ 回退 7 天", b10.text === "已缓存，但数据可能已过期（缓存超 7 天）", b10.text);
+
+/* case 9：banner 底部避让（审核验 11-09 实测回归：冷启下 bottom 冻在 8，元素底边 792≠760）
+ * 屏幕 800、原生下发 safeArea.bottom=32 ⇒ CSS bottom=40 ⇒ 元素底边 y = 800−40 = 760 */
+ok("bannerBottom(32) = 40（CSS bottom）", P.bannerBottom(32) === 40, String(P.bannerBottom(32)));
+ok("800 − bannerBottom(32) = 760（元素底边）", 800 - P.bannerBottom(32) === 760, String(800 - P.bannerBottom(32)));
+ok("未下发 ⇒ 按 0，bottom=8", P.bannerBottom(undefined) === 8 && P.bannerBottom(null) === 8);
+ok("非法值 ⇒ 按 0，bottom=8", P.bannerBottom("abc") === 8 && P.bannerBottom(-5) === 8);
+
 console.log("\nRESULT: " + (fails === 0 ? "PASS" : "FAIL") + " fails=" + fails);
 process.exit(fails === 0 ? 0 : 1);

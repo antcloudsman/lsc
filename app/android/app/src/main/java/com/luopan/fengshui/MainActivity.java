@@ -1842,6 +1842,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     private void pushSafeArea() {
         if (compassMapView == null) return;
+        /* M8 第三阶段（总监 2026-11-09 最终裁定）：**只补工具条**，不量整条带。
+         *
+         * 旧写法只量 trustRow（= 读数条），漏了罗盘态工具条 dp(38)，罗盘态下贴地提示与
+         * 离线 banner 都被工具条压住（M7 那次 760 是在地图态验的，罗盘态一直没验过）。
+         *
+         * 为什么不是量 bottomPanel：那样地图态也会变（父容器里还有角注 attrView），
+         * 而 760 是 M7 在最终树上实测过的基线，动了它就得回头重开 M7 判据复核；
+         * 角注从未被计入是**另一个既有缺口**，不该与「工具条遮挡」合成一笔改。
+         *
+         * 口径：地图态 safeArea 保持 32（banner 760 不变）；罗盘态 += 工具条高度，
+         * 预期 722 = 800 − (32 + 38) − 8。角注缺口记入下一轮。 */
         final android.view.View bar = trustRow;
         if (bar == null) return;
         compassMapView.post(() -> {
@@ -1855,10 +1866,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 int[] loc = new int[2];
                 bar.getLocationInWindow(loc);
                 int insetPx = Math.max(0, winH - loc[1]);
+                // 罗盘态：工具条在读数条之上，补上它；地图态工具条 GONE，分毫不加（760 不变）
+                boolean toolVisible = compassToolBar != null
+                        && compassToolBar.getVisibility() == android.view.View.VISIBLE;
+                if (toolVisible) insetPx += compassToolBar.getHeight();
                 float density = getResources().getDisplayMetrics().density;
                 int css = Math.round(insetPx / density);
                 js("(typeof setSafeArea==='function')&&setSafeArea({bottom:" + css + "})");
-                android.util.Log.d("LCDEBUG", "safeArea bottom=" + css + "css (" + insetPx + "px win=" + winH + ")");
+                android.util.Log.d("LCDEBUG", "safeArea bottom=" + css + "css (" + insetPx + "px win=" + winH
+                        + " bar=trustRow barH=" + bar.getHeight()
+                        + " toolBar=" + (toolVisible ? "visible+" + compassToolBar.getHeight() : "gone+0")
+                        + ")");
             } catch (Throwable ex) {
                 android.util.Log.d("LCDEBUG", "safeArea push fail " + ex);
             }

@@ -27,13 +27,20 @@
 
 ## 2. 五个场景
 
-### S1 · `pm install -r -t` 主路径（不弹 UI）
-- **构造**：设备已装同包（可先手工装一版旧包），然后跑脚本默认主路径。
+### S1 · 统一装机主路径（`install-debug.ps1`，脚本化点按）
+> **判据口径已于 2026-11-09 由技术总监改定**：装机一律走脚本、禁止人工点按和裸 `adb install`；**纯净模式开着时出现 UI 不算失败**，只要点按由脚本完成。
+- **构造**：设备已装同包（可先装一版旧包），然后跑脚本默认主路径。
 - **命令**：`pwsh -File tools\device\install-debug.ps1 -Apk <apk> -Device L2E0222531014833`（参数以脚本实际 `-?` 为准，实际参数原样记 SUMMARY）。
-- **期望**：一次 `Success`；全程无安装器 UI（脚本运行期间轮询 `mCurrentFocus` 不得出现 `packageinstaller`/`UnifiedAuthenticationDialogActivity`）；`lastUpdateTime` 与 `s0-baseline.txt` 不同；退出码 0。
-- **判据**：`lastUpdateTime` 变化 + 无 UI + 退出码 0 → PASS；任一不满足 → FAIL（记 dump + logcat）。
-- **纯净模式前提（2026-11-07 现场观察，待本轮确认）**：设备当前 `hw_mc.pure_mode.enable=true`、`pure_enhanced_mode_state=1`。14:5x 另一会话执行 `adb shell pm install -r -t /data/local/tmp/...` 时，前台停在 `com.android.packageinstaller/InstallStaging`——**说明纯净模式开启时 `pm` 主路径可能也会弹安装器 UI**。本轮 S1 如实记录「是否出现 UI + 出现的页码」；若出现，先判 FAIL 并请技术总监裁「S1 前提应为纯净模式关闭」还是「脚本需处理 pm 路径的 UI」。
-- **关键证据**：`s1/before-after-lastUpdateTime.txt`、`s1/focus-poll.txt`（每 300ms 采样）、`s1/logcat.txt`。
+- **期望**：脚本自动走完安装（风险页 + 安装确认页各一次「继续安装」），`pm path` 与 `lastUpdateTime` 校验通过，退出码 0；**全程无人工介入**。
+- **判据（现行，四条全过才 PASS）**：
+  1. **无人工介入**——脚本运行期间没有任何人工点击/确认（人工介入一次即 FAIL，且不得以人工点按绕过脚本失败）；
+  2. **脚本退出码 0**——`exit≠0` 时把脚本原始输出报技术总监，**不许改人工装**（失败是信号，绕过会掩盖缺陷）；
+  3. **有两次 UI 点按记录**——脚本自报 `INSTALL_OK taps=2`（或等价的两页两次「继续安装」点按序列，含被点节点 text/bounds）；纯净模式开启导致出现 UI **本身不判失败**；
+  4. **`lastUpdateTime` 变化**——装机前后 `dumpsys package com.luopan.fengshui` 取值不同，且与 `s0-baseline.txt` 不同。
+  → 任一条不满足即 **FAIL/BLOCKED**（按实情区分：环境不具备记 BLOCKED，脚本行为不合规记 FAIL），记 dump + logcat。
+- **交付须记**：「APK 路径 + 装机耗时 + 脚本退出码」（脚本日志里都有，属工时台账一部分）。
+- **纯净模式背景（2026-11-07 现场观察，已被上面口径取代为「不算失败」）**：设备 `hw_mc.pure_mode.enable=true`、`pure_enhanced_mode_state=1`；此时 `pm install -r -t` 也会停在 `com.android.packageinstaller/InstallStaging`，因此**必须有 UI 点按**，S1 只核「点按是否由脚本完成」。
+- **关键证据**：`s1/before-after-lastUpdateTime.txt`、`s1/focus-poll.txt`（每 300ms 采样）、`s1/stdout.txt`（含 `taps=N` 与退出码）、`s1/logcat.txt`。
 
 ### S2 · `adb install` 触发纯净模式风险页（脚本自动点「继续安装/仍要安装」）
 - **构造**：触发脚本的 UI 兜底路径（脚本只在 `pm install` 不成功时才走 `adb install`）。本机纯净模式已知会拦 ADB 装包（`INSTALL_FAILED_ABORTED: User rejected permissions` 是 commit 阶段被拒，风险页是另一形态）。
@@ -82,7 +89,7 @@
 - 基线：lastUpdateTime=<...>；pm list packages -d 快照见 s0-baseline.txt
 | 场景 | 路径 | 耗时(s) | 退出码 | 结论 | 证据 |
 |---|---|---|---|---|---|
-| S1 pm 主路径 | pm | | | PASS/FAIL/BLOCKED | s1/ |
+| S1 装机主路径（脚本点按） | pm/UI | | | 无人工介入 + exit 0 + taps=2 + lastUpdateTime 变化 | s1/ |
 | S2 纯净模式风险页 | UI | | | | s2/ |
 | S3 认证对话框 | PIN | | | | s3/ |
 | S4 市场抢前台 | disable-user | | | | s4/ |

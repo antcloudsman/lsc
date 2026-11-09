@@ -3125,6 +3125,12 @@ function groundInitGL() {
 /* 在 render3D 末尾调用：用同一张 VP 与同一个相机目标高度画一块平面 */
 var groundDiag = 'idle';          /* 贴地绘制路径最后一次停在哪儿（只读诊断用） */
 var groundCanvasOk = false;       /* 贴地画布是否真的画成功（仅 diag='drawn' 时为 true） */
+/* 单调序号 + 变化时刻（11-09 加，解决「两个读数源看起来打架」）：
+ * 页面里 groundCanvasOk/diag **只有一个来源**（就是上面这一对变量），getState() 与
+ * getGroundDebug() 读的是同一个闭包变量，单次 JS 求值内不可能不一致。
+ * 看起来不一致，是因为它们是**两次独立求值**，中间夹了一帧状态迁移（pending→drawn）。
+ * 给出 seq 后：同一次求值把两边一起读回来，seq 相同就不该有差异；跨次读取则可用 seq 判新旧。 */
+var groundSeq = 0, groundChangedAt = 0;
 var groundFailInject = null;      /* 调试注入 'glinit'|'upload'|'rings'：给 G5/N6 造失败态，产品默认 null */
 var groundStateKey = '';          /* 上次上报的 (ok|diag|reason)，去重防逐帧刷桥 */
 /* 贴地状态唯一写入口：更新三字段 + 状态变化时向原生发一次 groundstate 事件。
@@ -3140,8 +3146,10 @@ function groundStateSet(ok, diag, reason) {
   var key = (ok ? '1' : '0') + '|' + groundDiag + '|' + reason;
   if (key !== groundStateKey) {
     groundStateKey = key;
+    groundSeq++;
+    groundChangedAt = Date.now();
     emit({
-      type: 'groundstate', ok: ok, diag: diag, reason: reason,
+      type: 'groundstate', ok: ok, diag: diag, reason: reason, seq: groundSeq,
       renderer: groundRenderer, ground: !!groundMode
     });
     /* 状态变化时刷新降级提示条（地图态贴地失败要能看见，见 tileOfflineBanner 的首个分支）。
@@ -4135,6 +4143,7 @@ function getState() {
     contour: contourOn, ground: groundMode, needle: needleOn,
     groundRenderer: groundRenderer,
     groundCanvasOk: groundCanvasOk, groundDiag: groundDiag,
+    groundSeq: groundSeq, groundChangedAt: groundChangedAt,
     base: base, drape: drape, roadNet: roadNet,
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError, last3dWarn: last3dWarn,
     wayback: wbOn, waybackRelease: wbRelease,
@@ -4193,6 +4202,7 @@ window.__LC3D = {
       radiusMeters: groundRadiusMeters(),
       diag: groundDiag,
       canvasOk: groundCanvasOk,
+      seq: groundSeq, changedAt: groundChangedAt,
       failInject: groundFailInject,
       /* G2 锁基线用（审核验 11-09）：贴地画布**实际**用的盘面类型与透明度。
        * 注意口径：这是页面的渲染输入，不是原生 CompassView 的当前档位——

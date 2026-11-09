@@ -114,6 +114,12 @@ function staticChecks(src) {
     /Object\.defineProperties\(window\.__LC3D[\s\S]*?dialAlpha:[\s\S]*?get:/.test(src)]);
   ls.push(["dial 字段没有 setter（只读，判据改不动它）",
     !/Object\.defineProperties\(window\.__LC3D[\s\S]{0,600}?set:/.test(src)]);
+  /* 「两个读数源打架」的加固（11-09）：页面只有一个来源，但两次独立求值会夹住一帧状态迁移。
+   * 给出单调 seq 后，单次求值把两边一起读回、seq 相同即不该有差异。 */
+  ls.push(["getState / getGroundDebug 都暴露同一个 groundSeq（单来源可自证）",
+    /groundSeq:\s*groundSeq/.test(stripComments(src)) && /seq:\s*groundSeq/.test(stripComments(src))]);
+  ls.push(["状态变化才递增 seq（不是每次调用都加）",
+    /if \(key !== groundStateKey\) \{[\s\S]{0,220}?groundSeq\+\+/.test(src)]);
   // 回退条件用页面 ground，不用原生镜像：页面侧只认 groundMode
   ls.push(["回退依据是页面状态（groundMode），不读原生 groundOn",
     !/groundOn/.test(setState) && !/groundOn/.test(stripComments(fnSource(src, "drawGroundCompass")))]);
@@ -129,6 +135,7 @@ function behaviourChecks(src) {
 
   var harness = [
     "var groundDiag='idle', groundCanvasOk=false, groundStateKey='', groundRenderer='canvas', groundMode=true;",
+    "var groundSeq=0, groundChangedAt=0;",
     "var events=[];",
     "function emit(o){ events.push(o); }",
     setStateSrc,
@@ -255,7 +262,9 @@ var MUTATIONS = [
     "贴地失败有可见提示分支"],
   ["状态变化不再刷提示条（失败不上屏）",
     function (s) { return s.replace("    try { tileOfflineBanner(); } catch (e) { }\n", ""); },
-    "状态变化时刷新提示条"],  ["dial 字段不暴露（G2 锁不住基线）",
+    "状态变化时刷新提示条"],  ["seq 不再递增（跨次读取无法判新旧）",
+    function (s) { return s.replace("    groundSeq++;\n", ""); },
+    "状态变化才递增 seq"],  ["dial 字段不暴露（G2 锁不住基线）",
     function (s) { return s.replace(/\s*dialType: \(typeof compassDialType === 'number'\) \? compassDialType : 0,\n/, "\n"); },
     "getGroundDebug 暴露 dialType / dialAlpha"],  ["getState 丢掉三个新字段（原生读不到）",
     function (s) { return s.replace("groundCanvasOk: groundCanvasOk, groundDiag: groundDiag,", ""); },

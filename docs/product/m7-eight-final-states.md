@@ -1,10 +1,10 @@
 # 用户报的 8 条 · 终态表（M7 定版 → M8 贴地兑现后更新）
 
 - 作者：LC产品｜初版 2026-11-09｜本版 **2026-11-10**｜版本：**v1.5**
-- 当前基线：`develop` = **`1bb650c`**（`Merge commit '2eb18be' into develop`，`fig-32` 真展开态入册后的收官树）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**；`help-center.md` `blob:6a3ebdd988178d52fd0b1d7355f92228ac0833fb` = `index.html` 头部 `@` 串（逐字符相同）
+- 当前基线（**最终冻结点**）：`develop` = **`d260b78`**（`Merge commit 'c3796c0' into develop`，空转规则检查合入后的收官树）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**；`help-center.md` `blob:6a3ebdd988178d52fd0b1d7355f92228ac0833fb` = `index.html` 头部 `@` 串（逐字符相同）；`lc-help` webp **29** 张
 - 上一基线：`d60a61d`（`app` 树 `0c5da8e`，贴地交付树；`fig-32` 尚未入册、`lc-help` 28 张）。**`1bb650c` 与 `d60a61d` 的 `app` 树不同**（`0c5da8e` → `b203750`），但差异**只有两项、都在帮助中心静态资源**：`assets/lc-help/fig-32.webp`（新增 109,944 B）与 `assets/lc-help/index.html`（+4/−2）；`map.html` / `MainActivity` / `KmlIo` / 全部 Java **零改动**（`git diff --name-only d60a61d 1bb650c -- app` 只这两行）。
   - **台账禁令**：不得写「门禁包与真机读数是同一棵 `app` 树」——树确实变了；应写「**渲染相关零改动，差异仅在帮助中心静态资源，故贴地/十字经线真机读数继续有效**」。M8 真机读数引用时标「`d60a61d` 树」。
-- 门禁状态：`1bb650c` 上的四道门禁 + 七门 smoke 由 @LC测试 重跑中（`lc-help` 28→29、尺寸规则 6→7，上一轮 `73886ed` 的结果**不适用于 29 图**）；本文引用门禁结论时以 `gates\exit-codes.txt` 原始输出为准
+- 门禁状态：`d260b78` 上的七门 smoke + 四道门禁由 @LC测试 执行（**最后一次跑，树不再动**）；本文引用的 ② 输出取自**合入后的工具**在同样 29 张图上的实跑，@LC测试（`c3796c0`）、@LC审成文（独立复跑）、@LC技术总监（合并后自跑）三处一致；`d260b78` 的正式门禁以 `gates\exit-codes.txt` 原文为准
 - 历史基线（M7 定版）：`dc21f08`（`app` 树 `d1a186d`）；`953fb8b`（审核验签字点）与 `3ffe142` 均为其祖先、`app` 树同为 `d1a186d`。凡引 M7 树读数处标「M7 树」，**不得当 M8 读数**
 - 判据来源：`docs/fidelity/m6-close-summary.md` §1、`docs/fidelity/m7/symbols-stage1.md`、`docs/fidelity/m8/ground-drape-acceptance.md`、`docs/fidelity/m7/ground-drape-migration.md`、`docs/qa/help-figures-audit.md`
 - 证据目录：`reports/M8-g2-final/`、`reports/M8-final-d60a61d/`、`reports/M8-device-175d1fb/`、`reports/m7-complaint/`、`reports/M7-center-symbol/`、`reports/M7-center-verify/`、`reports/M7-final-fa97c96/`（旧树）、`reports/M6-pages-96be059/`、`reports/m7-about-root/`
@@ -87,19 +87,23 @@
 
 **工具已补「空转规则」检查**（@LC测试 `c3796c0`，`tools/fidelity/evidence-lint.py` +60/−2）：规则命中 0 文件 → `FAIL size-rule …(declared-but-never-compared (idle rule))`；只给表不给 `--expect-size` → `WARN size-default`（`--strict` 下 `exit 1`）；两个尺寸参数都不给 → `SIZE: SKIP`（不再静默 `exit 0`）。六种情况自测过，其中 B（幽灵规则 `fig-99`）与 C（`fig-32` 写错尺寸）为反证，均能报错。
 
-**门禁跑出后，本节按这三行原文写死**（合并后以 `gates\` 原始输出为准）：
+**门禁原文（合入后工具在 29 张图上的实跑，三处独立复跑一致）**：
 
 ```
 SIZE-MAP: 7 rule(s) from tools/fidelity/evidence-size-map.json
+SIZE-MAP-HIT: …/lc-help/fig-07.* -> 1228x68   <- fig-07.webp   （7 行逐条命中，含 fig-32 -> 1228x2700）
 SIZE-MAP-COVERAGE: rules 7/7 matched; files by rule=7 by default=22
+DUP: files=29 unique=29 duplicated=0 redundant=0
 EVIDENCE-LINT: scanned xml=0 png=29 other=1 fail=0 warn=0 allowed=0   exit=0
 ```
 
-⇒ 到那时才能写「**规则命中 7/7、无空转条目**」——这是能数出来的，不是一句「全过」。
+⇒ **「规则命中 7/7、无空转条目」现在写死**——`rules 7/7 matched` 与 `by rule=7 by default=22` 都是能数出来的，不是一句「全过」。
+
+**这条检查本身也有反证**（@LC测试 与 @LC审成文 各自跑过）：把规则指向不存在的 `fig-99.*` → `SIZE-MAP-MISS … <- (0 files)` + `FAIL size-rule …(declared-but-never-compared (idle rule))`，`fail=1 exit=1`。
 
 **这条规则自己做过反证**（客户端 `2eb18be`）：把声明改成 `1228x2699` → `FAIL png …fig-32.webp: declared 1228x2699, actual 1228x2700`，`fail=1`、`exit=1`；还原后 `fail=0`。**第一次反证假绿**（替换模式少个前引号、文件没改到），第二次才真红——这条与「参数给了没执行」同族，一并记档。
 
-**工具边界（@LC审成文 2026-11-10 实测，归 @LC测试 修）**：`evidence-size-map.json` 里**指向不存在文件的规则，工具既不比也不报**（无 WARN / 无 FAIL / 无「unused rule」）⇒「先加表、后补图」会得到一条**已声明但其实没验**的空转规则，把它故意改坏也不会变红。这与 `--expect-size` 空转是同一类：**声明与实际对象没对上，检查静默通过**。工具补上「规则命中 0 文件即 WARN/FAIL」之后，台账才能写「7/7 命中、无空转条目」。
+**工具边界（已修，留档以免复发）**：修前 `evidence-size-map.json` 里**指向不存在文件的规则，工具既不比也不报**（无 WARN / 无 FAIL / 无「unused rule」）⇒「先加表、后补图」会得到一条**已声明但其实没验**的空转规则，把它故意改坏也不会变红——与 `--expect-size` 空转同一类：**声明与实际对象没对上，检查静默通过**。@LC测试 `c3796c0` 已补 `FAIL size-rule (idle rule)`，`d260b78` 起生效；这条留档是为了以后有人再写「先表后图」时知道它曾经是个洞。
 
 ### 2.6 第 6 条：语义是「动作」不是「开关」
 
@@ -221,7 +225,8 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
-| v1.13 | 2026-11-10 | 覆盖写法全组统一为 **`22+6+1`**（不再混用「22 整屏 + 6 裁切 + fig-32 显式入表」变体，便于 grep 核对）；§2.5 接入 @LC测试 `c3796c0` 的**空转规则检查**（规则命中 0 文件 → `FAIL size-rule (idle rule)`；只给表 → `WARN size-default`；两参数都不给 → `SIZE: SKIP` 不再静默 exit 0），并预写门禁三行原文，**合并跑出后才写「规则命中 7/7、无空转条目」** |
+| v1.14 | 2026-11-10 | 冻结点定为 **`d260b78`**（`app` 树 `b203750`，空转规则检查已合）；§2.5 把「规则命中 7/7、无空转条目」**写成硬判据**并引用门禁原文（`SIZE-MAP-HIT` 7 行、`SIZE-MAP-COVERAGE rules 7/7 matched; files by rule=7 by default=22`、`DUP 29/29/0`、`fail=0 exit=0`），补该检查的反证（`fig-99` → `FAIL size-rule (idle rule)` exit 1）；「工具边界」段改为**已修留档**；门禁状态注明 `d260b78` 由测试最后一次跑、以 `gates` 原文为准 |
+| v1.13 | 2026-11-10 | 覆盖写法全组统一为 **`22+6+1`**（不再混用「22 整屏 + 6 裁切 + fig-32 显式入表」变体，便于 grep 核对）；§2.5 接入 @LC测试 `c3796c0` 的**空转规则检查**（规则命中 0 文件 → `FAIL size-rule (idle rule)`；只给表 → `WARN size-default`；两参数都不给 → `SIZE: SKIP` 不再静默 exit 0），并预写门禁三行原文 |
 | v1.12 | 2026-11-10 | 按 @LC审成文 的更正标注证据边界：`verify_bounds.py` **只输出 bounds、不做 PASS/FAIL 判定**，五判据比对与红按钮像素判据须由 @LC审核验 自己写自己跑（原「可直接跑五判据」的说法已收回） |
 | v1.11 | 2026-11-10 | 补**台账禁令**：`1bb650c` 与 `d60a61d` 的 `app` 树不同（`0c5da8e`→`b203750`），差异只有 `fig-32.webp`（新增 109,944 B）与 `index.html`（+4/−2）两项、均在 `lc-help`；不得写「门禁包与真机读数是同一棵 `app` 树」，只能写「渲染相关零改动、差异仅在帮助中心静态资源」；`map.html`/`MainActivity`/`KmlIo`/Java 零改动（`git diff --name-only d60a61d 1bb650c -- app` 只这两行） |
 | v1.10 | 2026-11-10 | `fig-32` 真展开态入册后的收官版：基线升 **`1bb650c`**（`app` `b203750`、`help-center.md` `blob:6a3ebdd9…` = `index.html` 头部）；第 5 条 **28→29 张**、引用↔文件 **29=29**、`fig-32` 由 CONFIRMED-MISSING 转为已采（含 dump 两节点）；§2.5 覆盖口径改为 **22 默认 + 6 裁切 + 1 显式整屏 = 29，规则 7 条命中 7 个文件**，并记「入表才算专门验过」与其反证（`1228x2699` → FAIL）；门禁改为「`1bb650c` 上由测试重跑中，以 `gates\exit-codes.txt` 为准」（上一轮 `73886ed` 结果不适用 29 图） |

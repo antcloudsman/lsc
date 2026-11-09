@@ -57,10 +57,16 @@ function Invoke-AdbLines {
     return @($out)
 }
 
+function Build-JsBroadcastArgs {
+    # 单独抽出来：-WhatIf 要能逐项打印这条 argv，才能看出引号层级对不对
+    param([string]$Code)
+    return @('shell', 'am', 'broadcast', '-a', "$Pkg.DEBUG", '-es', 'cmd', 'js', '-es', 'value', $Code)
+}
+
 function Send-JsAndRead {
     param([string]$Code)
     Invoke-AdbLines @('logcat', '-c') | Out-Null
-    $b = @('shell', 'am', 'broadcast', '-a', "$Pkg.DEBUG", '-es', 'cmd', 'js', '-es', 'value', $Code)
+    $b = Build-JsBroadcastArgs $Code
     if ($PSCmdlet.ShouldProcess("$Pkg (js)", "broadcast $Code")) {
         Invoke-AdbLines $b | Out-Null
     }
@@ -70,6 +76,24 @@ function Send-JsAndRead {
     if (-not $hit) { return $null }
     $idx = $hit.IndexOf('map -> ')
     return $hit.Substring($idx + 7).Trim()
+}
+
+function Test-JsEcho {
+    # 回声自检：先发 1+1，确认 logcat 真能打出 "map -> 2" 再发真查询。
+    # JSON.stringify(...) 的输出自带双引号，要过 PowerShell → adb → sh 到 am broadcast --es value，
+    # 引号极易被吃掉；被吃掉的后果与「没有数据」一样都是 MISSING，不先验回声就分辨不出来。
+    $raw = Send-JsAndRead '1+1'
+    if (-not $raw) {
+        Write-Output '[ECHO] FAIL：1+1 没有回声（logcat 无 LCJS map -> 行）。广播链路断了，停止取数。'
+        return $false
+    }
+    $val = $raw.Trim().Trim('"')
+    if ($val -eq '2') {
+        Write-Output "[ECHO] PASS：1+1 → $raw（广播与 logcat 链路正常）"
+        return $true
+    }
+    Write-Output "[ECHO] FAIL：1+1 返回 $raw，不是 2。停止取数。"
+    return $false
 }
 
 function ConvertFrom-JsString {
@@ -89,16 +113,25 @@ $plan = @"
 [PLAN] outdir      = $OutDir
 [PLAN] wait_ms     = $WaitMs
 [PLAN] step 1      = 记录网络状态（airplane_mode_on / Active default network）
-[PLAN] step 2      = logcat -c → broadcast js JSON.stringify(__LC3D.tileCache()) → logcat -d -s LCJS
-[PLAN] step 3      = logcat -c → broadcast js JSON.stringify(__LC3D.cacheExpect()) → logcat -d -s LCJS
-[PLAN] step 4      = 原样打印：七个计数逐项 + cacheExpect.expected/present + 恒等式两侧原值
-[PLAN] step 5      = 全量写入 <$OutDir>\sample-<label>-<ts>.txt（经 LogRedact）
+[PLAN] step 2      = 回声自检 1+1（确认 logcat 能打出 map -> 2，再发真查询）
+[PLAN] step 3      = logcat -c → broadcast js JSON.stringify(__LC3D.tileCache()) → logcat -d -s LCJS
+[PLAN] step 4      = logcat -c → broadcast js JSON.stringify(__LC3D.cacheExpect()) → logcat -d -s LCJS
+[PLAN] step 5      = 原样打印：七个计数逐项 + cacheExpect.expected/present + 恒等式两侧原值
+[PLAN] step 6      = 全量写入 <$OutDir>\sample-<label>-<ts>.txt（经 LogRedact）
 [PLAN] 判读          = 本脚本不计算差值、不判 pass；恒等式是否相等由审核验算
 "@
 
 if (-not $PSCmdlet.ShouldProcess('device', "collect tile cache sample ($Label)")) {
     # -WhatIf：只做参数与语法自检，不碰 adb
     Write-Output $plan
+    Write-Output ''
+    Write-Output '[WHATIF] 最终 argv（逐项打印，用来核对引号层级；这是将要执行的精确参数）'
+    $probe = Build-JsBroadcastArgs 'JSON.stringify(__LC3D.tileCache())'
+    for ($i = 0; $i -lt $probe.Count; $i++) {
+        $tag = if ($i -eq ($probe.Count - 1)) { '  (value=最后一个参数，含双引号)' } else { '' }
+        Write-Output ("  [{0,2}] {1}{2}" -f $i, $probe[$i], $tag)
+    }
+    Write-Output ("  argv_count = {0}  （adb -s {1} 之后传这些）" -f $probe.Count, $Device)
     Write-Output '[WHATIF] adb 未被调用；参数与脚本语法自检通过'
     exit 0
 }
@@ -140,7 +173,14 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $airplane = (Invoke-AdbLines @('shell', 'settings', 'get', 'global', 'airplane_mode_on') | Select-Object -First 1)
 $conn = (Invoke-AdbLines @('shell', 'dumpsys', 'connectivity') | Where-Object { $_ -match 'Active default network|NetworkAgentInfo' } | Select-Object -First 3)
 
-# --- step 2/3: 两次数值 ---
+# --- step 2: 回声自检（先证明广播链路通，再发真查询；否则 MISSING 分不清是链路断还是钩子缺） ---
+$echoOk = Test-JsEcho
+if (-not $echoOk) {
+    Write-Output 'STOP_AT_ECHO = 1'
+    exit 3
+}
+
+# --- step 3/4: 两次数值 ---
 $rawCache = Send-JsAndRead 'JSON.stringify(__LC3D.tileCache())'
 $rawExpect = Send-JsAndRead 'JSON.stringify(__LC3D.cacheExpect())'
 

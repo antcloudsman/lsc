@@ -20,6 +20,7 @@
 | OBS-002 | — | 桌面截图工具 | `--screenshot` 中心读数硬编码「正向」 | LC客户端 | 备忘（当前不触发） |
 | OBS-003 | — | Android P0-2 | 留档文件名是「坐向酉向卯_…」，PRD 写「坐向X**山**向Y**山**_…」少了「山」字 | LC产品（定名） | 待口径（不影响文件身份） |
 | QA-001 | — | 测试资产 | `test_divergences.py:36` 两行被并成一行（IndentationError），套件整体红 | LC测试 | **已修复**（2026-11-05 02:41 拆行，74 PASS） |
+| QA-002 | P1（门禁） | 测试资产 / evidence-lint | `--expect-size` **只解析不比较**：参数收下了，`check_png` 从未用它判定 → 尺寸不符从来不会被发现 | LC测试 | **已修复（`f76b0ad`）+ 补实后重测（`5f227f9`）6 条逐图尺寸全过** |
 
 > 2026-11-05 02:40 更新：BUG-001 / BUG-002 已随 `409ad5f` 修复，单测 5 条 xfail 转正、
 > 套件 74 项全绿；回归证据见各条目「修复与回归」。
@@ -345,5 +346,51 @@ pwsh -File tests\at\run-final.ps1 -Apk app\android\app\build\outputs\apk\debug\a
 **证据**：`round-k01`@`2696c19` 罗盘态文字 **19/19**；罗盘态点「图层」→ `#srcPanel` 12 源（与 `M4-layer` 同一判据）；`smoke10` 22/0/0/0，新增 `M2-topbar`、`M2-compass-layer` 两条覆盖本条。
 
 **搜索的定性**：原版搜索语义 = 地名/景观 POI（世纪空间底图服务侧）；本实现 = 盘面/圈层/知识条目检索。数据域不同，属**等价替代**，不属「有意差异」，也不假装有 POI。定性依据写在 `MainActivity` 方法注释内。
+
+## QA-002（P1·门禁）`evidence-lint --expect-size` 空转：参数收下了，从来没比较
+
+**发现（2026-11-09 12:1x，LC测试 加逐图尺寸表时）**：给 `lc-help` 加「逐图期望尺寸」时，先查 `expect_size` 到底在哪用了：
+
+```
+Select-String tools/fidelity/evidence-lint.py -Pattern 'expect_size'
+  337  def check_png(..., expect_size: tuple[int,int] | None) -> ...
+  490  if args.expect_size:                    # main 里解析
+  492      w_s, h_s = args.expect_size...      # 解析
+  495      print("ERROR: bad --expect-size")   # 解析失败
+  529  findings.extend(check_png(..., expect)) # 传进去了
+```
+
+**函数体里 0 处引用 `expect_size`** —— 参数从 `main` 传进 `check_png` 之后就被丢掉了。
+
+**影响（比它抓到的图更严重）**：
+
+- C 轮那句「尺寸 29/29 全对」**没有经过这个检查**，是「没人查过」而不是「查过通过」；
+- 任何引用过它的结论都要补上「**未经该检查**」；要在补实后的检查上重测才能立这条结论；
+- 同理，M6/M7 期间所有「尺寸一致」的旁证都不能当判据用。
+
+**修复（`f76b0ad`）**：
+
+1. `check_png` 内补实比较（放在 `min_side` 早退**之前**，否则 201px 宽的裁切图根本进不来）；
+2. 不符判 **FAIL**（不是 warn）——声明了尺寸就代表「这张图应该长这样」；
+3. 新增 `--expect-size-map <json>` 逐图期望尺寸表（键=仓库相对路径或 basename 的 glob），`--expect-size` 退为未命中时的默认值；
+4. 逐图表 `tools/fidelity/evidence-size-map.json` 6 条，尺寸来自 `docs/qa/help-figures-audit.md`。
+
+**补实后重测（`5f227f9`，客户端六张裁切已入库）**：
+
+```powershell
+python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc-help \
+  --expect-size 1228x2700 --expect-size-map tools/fidelity/evidence-size-map.json
+# SIZE-MAP: 6 rule(s) …
+# FAIL dup …fig-32.webp: identical bytes to fig-08.webp (sha256 882225ab3eb5), group=2
+# DUP: files=29 unique=28 duplicated=2 redundant=1
+# EVIDENCE-LINT: … fail=1 warn=0
+```
+
+- **6 条逐图尺寸全过**（1228×68 / 1228×136 / 201×1111 / 230×758 / 201×2048 / 201×1889）——这是这些尺寸**第一次真被检查**，此前为空转；
+- 重复由 **10 → 2**：`fig-03/07/10/11/12` 与 `fig-01/14/17` 两组已随裁切消失，只剩 `fig-08/fig-32`（`fig-32` = 假展开态，已定 `CONFIRMED-MISSING`，等设备重拍）。
+
+**判据反向自测（证明不是恒红也不是恒绿）**：仓库外临时目录 2 张同图 → `fail=1 exit=1`；删掉一张 → `fail=0 exit=0`。尺寸表：`fig-07 1228×68` / `fig-11 201×1111` 通过，`fig-10 1228×135`（声明 136）→ `FAIL declared 1228x136, actual 1228x135`。
+
+**教训**：一个门禁参数「存在」不等于门禁「生效」——加参数时要能指到比较那一行；否则它会连年绿灯，把「没人查」伪装成「查过没问题」。
 
 

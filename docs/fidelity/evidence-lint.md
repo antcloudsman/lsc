@@ -98,6 +98,62 @@ python tools/fidelity/evidence-lint.py --root <dir> --magic a.webp,b.webp
 
 > 这批**不影响** `assets.py` 清单（它按 sha 记账、不看扩展名）；专项清时统一改 `.webp` 或按原版真实格式命名，改后重跑 `assets.py manifest/verify`。
 
+### 2.6 同目录内图片字节查重（`DUP`，2026-11-09 技术总监要求）
+
+**规则**：同一目录内，两张图片 sha256 相同 → **FAIL**（不是 warn）。跨目录复用不计——合法复用（如 `lc_splash_logo.webp` 同时存在于 `res/drawable-nodpi` 与 `docs/fidelity/assets/brand/`）本来就该存在。
+判法通用：`同一目录内按内容 sha256 去重`，不写死任何目录名。
+
+**为什么加这条**：`lc-help/` 29 张图里 10 张是别的图的副本，而四条既有门禁一条都报不出来——尺寸 1228×2700 全对、可解码、引用 29=29、blob 门禁只看 `index.html`。
+最严重的一例是 `fig-32`（图注写「点一下『点击查看 ›』就地展开」）与 `fig-08`（未展开态）**字节完全相同**：等于用点击前的画面冒充展开后的画面。
+所以判 FAIL 不判 warn：发现它这件事本身就说明这类重复会冒充别的证据。
+
+```bash
+python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc-help --expect-size 1228x2700
+# DUP: files=29 unique=22 duplicated=10 redundant=7
+# EVIDENCE-LINT: … fail=7 …  → exit=1（真红）
+```
+
+三个数的口径：`files`=图片数、`unique`=唯一内容数、`duplicated`=落进重复组的文件数、`redundant`=删掉后可减少的文件数（=duplicated − 重复组数）。
+
+**已知待处置（2026-11-09 首次开启时的既有存量，不在本轮改图范围）**：
+
+| 目录 | 重复对 |
+|---|---|
+| `docs/fidelity/m3/` | `complaint.png` = `complaint-tab1.png` |
+| `docs/fidelity/m3/stage3/` | `i-share-wx.png` = `i-share-circle.png` |
+
+这两对可能是「原版两次截图本来就一样」，属**真实且合法**的证据；要么走 §3.1 具名例外（带 `reason`/`by`/`verdict`），要么重拍成可区分的画面，**不许直接关掉这条检查**。
+
+### 2.7 逐图声明尺寸（`--expect-size-map`，2026-11-09）
+
+**先修一个空转**：`--expect-size` 在 2026-11-09 之前**只解析、不比较**——参数收下了，`check_png` 里根本没用它，所以「尺寸不符」从来没被查过。现在补实，并且：
+
+- `--expect-size` = **未命中逐图表时的默认值**（整屏图 1228×2700）；
+- `--expect-size-map <json>` = **逐图期望尺寸表**，键是「仓库相对路径 glob」或「basename glob」，值是 `WxH`；以 `_` 开头的键当注释跳过；
+- **不符判 FAIL**（不是 warn）：声明了尺寸就代表「这张图应该长这样」，不符说明它不是它声称的那张。
+
+逐图表在 `tools/fidelity/evidence-size-map.json`，6 条来自 `docs/qa/help-figures-audit.md`（LC审成文 2026-11-09 从原图逐张裁出、样张复核）：
+
+| 图 | 声明尺寸 |
+|---|---|
+| `fig-07` 角注条 | 1228×68 |
+| `fig-10` 工具条 5 项 | 1228×136 |
+| `fig-11` 左列 6 项 | 201×1111 |
+| `fig-12` 右列 4 开关 | 230×758 |
+| `fig-14` 左列 8 项 | 201×2048 |
+| `fig-17` 右列 10 项 | 201×1889 |
+
+```bash
+# 裁切前（按现网未裁的图跑）→ 6 条 declared/actual 不符，真红
+python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc-help \
+  --expect-size 1228x2700 --expect-size-map tools/fidelity/evidence-size-map.json
+# SIZE-MAP: 6 rule(s) … / FAIL png …fig-07.webp: declared 1228x68, actual 1228x2700 … → exit=1
+
+# 裁切后 → 这 6 条应转绿（自测用同尺寸噪声图，见 §5）
+```
+
+> 落地顺序：**先裁图、再开这个参数**。图没裁就带上逐图表，门禁必红——这是设计如此，不是误报。
+
 ## 3 用法
 
 > **路径基准（2026-11-08，技术总监要求）**：工具内一切相对路径（默认 root、默认豁免清单、`--eol`/`--magic` 的文件、豁免条目里的 `path`）**一律以「脚本所在仓库根」为基准**，不依赖 cwd。

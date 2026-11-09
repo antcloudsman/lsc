@@ -1,0 +1,9 @@
+{
+  "_note": "逐图声明尺寸（2026-11-09 技术总监裁定）。键=仓库相对路径或 basename 的 glob，值=WxH。未命中的图沿用 --expect-size（默认 1228x2700 整屏）。数量与裁切框出处：docs/qa/help-figures-audit.md（LC审成文 2026-11-09 逐张从原图裁出并复核）。",
+  "app/android/app/src/main/assets/lc-help/fig-07.*": "1228x68",
+  "app/android/app/src/main/assets/lc-help/fig-10.*": "1228x136",
+  "app/android/app/src/main/assets/lc-help/fig-11.*": "201x1111",
+  "app/android/app/src/main/assets/lc-help/fig-12.*": "230x758",
+  "app/android/app/src/main/assets/lc-help/fig-14.*": "201x2048",
+  "app/android/app/src/main/assets/lc-help/fig-17.*": "201x1889"
+}

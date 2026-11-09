@@ -33,6 +33,8 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -347,6 +349,19 @@ def check_png(path: str, mono_ratio: float, min_side: int, expect_size: tuple[in
                 return [
                     {"level": "fail", "kind": "png", "reason": f"bad size {w}x{h}", "path": path}
                 ]
+            # 声明尺寸：逐图表（--expect-size-map）优先，其次全局（--expect-size）。
+            # 2026-11-09 前这个参数只解析不比较（空转），此处补实；不符判 fail。
+            # 注意必须在 min_side 早退之前判，否则 201px 宽的裁切图根本进不来。
+            if expect_size is not None and (w, h) != tuple(expect_size):
+                return [
+                    {
+                        "level": "fail",
+                        "kind": "png",
+                        "reason": f"declared {expect_size[0]}x{expect_size[1]}, actual {w}x{h}",
+                        "path": path,
+                        "wh": f"{w}x{h}",
+                    }
+                ]
             if min(w, h) < min_side:
                 # 素材图标/小图不按「证据截图」判纯色
                 return []
@@ -408,6 +423,77 @@ def walk(root: str, skip_dirs: set[str]):
             yield os.path.join(dirpath, name)
 
 
+def _sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def check_duplicate_images(root: str, skip_dirs: set[str]) -> tuple[list[dict], dict]:
+    """同一目录内字节完全相同的图片 → fail（只比同目录；跨目录的合法复用不计）。
+
+    背景（2026-11-09）：`lc-help/fig-32.webp` 与 `fig-08.webp` 字节相同——图注写「点一下
+    『点击查看 ›』就地展开」，画面其实是点击前的未展开态；另有 7 张整屏被当成局部图注
+    （fig-07/10/11/12/14/17）。尺寸 1228x2700 全对、可解码、引用 29=29，现有四条检查
+    一条都报不出来，只有按内容哈希查重才抓得到。判 fail 而不是 warn：发现它的事实本身
+    就说明这类重复会冒充别的证据。
+    """
+    by_dir: dict[str, dict[str, list[str]]] = {}
+    for path in walk(root, skip_dirs):
+        if os.path.splitext(path)[1].lower() not in IMG_EXTS:
+            continue
+        try:
+            digest = _sha256_file(path)
+        except OSError:
+            continue
+        by_dir.setdefault(os.path.dirname(os.path.abspath(path)), {}).setdefault(digest, []).append(path)
+
+    findings: list[dict] = []
+    stats = {"files": 0, "unique": 0, "duplicated": 0, "redundant": 0}
+    for directory in sorted(by_dir):
+        groups = by_dir[directory]
+        stats["files"] += sum(len(v) for v in groups.values())
+        stats["unique"] += len(groups)
+        for digest, paths in sorted(groups.items()):
+            if len(paths) < 2:
+                continue
+            ordered = sorted(paths)
+            stats["duplicated"] += len(ordered)
+            stats["redundant"] += len(ordered) - 1
+            for dup in ordered[1:]:
+                findings.append(
+                    {
+                        "level": "fail",
+                        "kind": "dup",
+                        "path": dup,
+                        "reason": (
+                            f"identical bytes to {os.path.basename(ordered[0])} "
+                            f"(sha256 {digest[:12]}), group={len(ordered)}"
+                        ),
+                    }
+                )
+    return findings, stats
+
+
+def expected_size_for(
+    path: str, default: tuple[int, int] | None, rules: list[tuple[str, tuple[int, int]]]
+) -> tuple[int, int] | None:
+    """逐图声明尺寸：先按「仓库相对路径」匹配，再按 basename 匹配，都没命中才用全局默认。
+
+    为什么要有逐图表：`lc-help` 的 6 张局部图裁切后尺寸各不相同（1228x68 / 201x1111 …），
+    拿一个 `--expect-size 1228x2700` 套全目录，裁切一落地就全红；而没有逐图表，
+    真正该红的那张（尺寸与图注不符）又查不出来。
+    """
+    rel = os.path.relpath(os.path.abspath(path), REPO_ROOT).replace("\\", "/")
+    base = os.path.basename(path)
+    for pattern, size in rules:
+        if fnmatch.fnmatchcase(rel, pattern) or fnmatch.fnmatchcase(base, pattern):
+            return size
+    return default
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Content validity lint for fidelity evidence (.xml/.png)")
     ap.add_argument("--root", default="docs/fidelity", help="evidence root (default: <repo>/docs/fidelity, resolved against the script location)")
@@ -416,7 +502,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--min-png-side", type=int, default=600, help="only lint png with min(w,h) >= this (default 600)")
     ap.add_argument("--skip-dirs", default="assets-vectors,assets,findings,probes,.git", help="comma-separated dir names to skip")
     ap.add_argument("--strict-root", action="store_true", help="warn when xml root is not <hierarchy>")
-    ap.add_argument("--expect-size", help="declared screenshot size WxH, e.g. 1228x2700 (mismatch = warn)")
+    ap.add_argument("--expect-size", help="declared screenshot size WxH for images not covered by the map, e.g. 1228x2700 (mismatch = fail)")
+    ap.add_argument("--expect-size-map", help="JSON {pattern: WxH} per-image declared sizes; pattern matches repo-relative path or basename (glob)")
     ap.add_argument("--allow", help="allowlist JSON with entries {path, reason, by, verdict} (4 keys required)")
     ap.add_argument("--json", help="write JSON report to this path")
     ap.add_argument("--magic", help="comma-separated image files to check magic/extension consistency")
@@ -439,6 +526,25 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError:
             print(f"ERROR: bad --expect-size {args.expect_size!r}", file=sys.stderr)
             return 2
+
+    size_rules: list[tuple[str, tuple[int, int]]] = []
+    if args.expect_size_map:
+        map_path = resolve(args.expect_size_map)
+        if not os.path.isfile(map_path):
+            print(f"ERROR: size map not found: {map_path}", file=sys.stderr)
+            return 2
+        with open(map_path, encoding="utf-8") as fh:
+            raw_map = json.load(fh)
+        for pattern, spec in raw_map.items():
+            if pattern.startswith("_"):
+                continue  # 说明/备注键，不参与匹配
+            try:
+                w_s, h_s = str(spec).lower().split("x")
+                size_rules.append((pattern, (int(w_s), int(h_s))))
+            except ValueError:
+                print(f"ERROR: bad size in map: {pattern!r} -> {spec!r}", file=sys.stderr)
+                return 2
+        print(f"SIZE-MAP: {len(size_rules)} rule(s) from {map_path}")
 
     allow: list[dict] = []
     if not args.allow:
@@ -471,13 +577,23 @@ def main(argv: list[str] | None = None) -> int:
                 findings.extend(check_xml(path, args.strict_root))
             elif ext in IMG_EXTS:
                 counts["png"] += 1
-                findings.extend(check_png(path, args.mono_ratio, args.min_png_side, expect))
+                findings.extend(
+                    check_png(
+                        path,
+                        args.mono_ratio,
+                        args.min_png_side,
+                        expected_size_for(path, expect, size_rules),
+                    )
+                )
             else:
                 counts["other"] += 1
         except FileNotFoundError:
             continue
 
     allowed_map = {os.path.normcase(os.path.abspath(resolve(e["path"]))): e for e in allow}
+
+    dup_findings, dup_stats = check_duplicate_images(args.root, skip)
+    findings.extend(dup_findings)
 
     if args.generated_html or args.source:
         if not (args.generated_html and args.source):
@@ -528,6 +644,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{label} {f['kind']} {f['path']}: {extra}")
 
     print(
+        f"DUP: files={dup_stats['files']} unique={dup_stats['unique']} "
+        f"duplicated={dup_stats['duplicated']} redundant={dup_stats['redundant']}"
+    )
+    print(
         f"EVIDENCE-LINT: scanned xml={counts['xml']} png={counts['png']} other={counts['other']} "
         f"fail={len(fails)} warn={len(warns)} allowed={len(alloweds)}"
     )
@@ -536,7 +656,7 @@ def main(argv: list[str] | None = None) -> int:
         os.makedirs(os.path.dirname(os.path.abspath(args.json)), exist_ok=True)
         with open(args.json, "w", encoding="utf-8") as fh:
             json.dump(
-                {"root": args.root, "counts": counts, "findings": findings},
+                {"root": args.root, "counts": counts, "dup": dup_stats, "findings": findings},
                 fh,
                 ensure_ascii=False,
                 indent=2,

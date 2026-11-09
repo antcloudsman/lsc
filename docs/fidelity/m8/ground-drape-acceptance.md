@@ -102,6 +102,10 @@
 canvas 渲染区 = canvasBacking × canvasBacking = 546 × 546 backing px
 基线         = assets/compass/dial_full_N.webp（800×800）先降采样到 546×546 再比
               —— 两边同口径，避免把「分辨率先天不同」判成「迁移错误」
+降采样算法   **必须双线性（bilinear）**，与贴地纹理上传的 `gl.TEXTURE_MIN_FILTER/MAG_FILTER = gl.LINEAR`
+             一致（`map.html:3070-3071`）。用 Lanczos / nearest / area 都不行：
+             插值差异会直接算进平均 ΔE2000，等于把「换了个缩放算法」判成「迁移错误」。
+             所用 filter 必须写进比对输出（可复核项）。脚本不接受「未声明 filter」的结果。
 ```
 
 ### 3.2 阈值（照方案 §5 已批口径，不放宽）
@@ -122,8 +126,10 @@ canvas 渲染区 = canvasBacking × canvasBacking = 546 × 546 backing px
 ### 3.4 基线用错时的拦截（**必跑，防止算出大数就判 FAIL**）
 ```
 脚本第一步先校验基线：long_edge 必须 = 800、5 张合计 = 1,200,656 B、逐张 sha256 与 manifest 相等
+、且已声明降采样 filter = bilinear
 任一条不符 ⇒ 输出 BASELINE_INVALID 并作废该次比对（exit≠0），不许继续算差异
-反证：拿 res/ 原图(2048) 冒充基线跑一次 ⇒ 必须被拦成 BASELINE_INVALID
+反证①：拿 res/ 原图(2048) 冒充基线跑一次 ⇒ 必须被拦成 BASELINE_INVALID
+反证②：把降采样换成 nearest 跑一次 ⇒ 必须被拦成 BASELINE_INVALID（filter 未声明/不合规）
 ```
 
 ---
@@ -152,17 +158,70 @@ canvas 渲染区 = canvasBacking × canvasBacking = 546 × 546 backing px
 ## 5. G4 十字经线不变（回归保护）
 
 ```
-对象  原生 CompassCrosshairView（竖向 cx、横向 cy，CSS_PX=2）
-判据  纯红 #FF0000（通道容差 ±2）
-      竖线列 612..616、横线行 1347..1351（设备 px）
-      overlay 态与 canvas 贴地态各测一次，两组**逐值相等**（±1 px）
+对象  原生 CompassCrosshairView（`paint.setColor(Color.RED)` @:44、`FILL_AND_STROKE` @:58、
+      7px 描边、`ANTI_ALIAS_FLAG` @:40 ⇒ 两侧边缘是抗锯齿过渡）
+判据① 描边中心取样：竖线取列 614、横线取行 1349，判 #FF0000（通道容差 ±2）
+判据② 覆盖区间 612..616 / 1347..1351 只判「非背景」（不许按纯红卡边缘，否则合法实现会被抗锯齿判红）
+判据③ overlay 态与 canvas 贴地态各测一次，三条结果**逐值相等**（±1 px）
 含义  这是「canvas 不许自己再画一遍十字」的守卫；两条测的是同一视图，理应完全不变
 反例  把 crosshair 平移 3 px 立刻重测 ⇒ 必须 FAIL（证明本判据抓得住位移）
+```
+> 取样位置写死为「描边中心」不是随意选的：`FILL_AND_STROKE` + 抗锯齿会让 `612/616` 两列呈现渐变，
+> 用纯红判会把「抗锯齿正常」判成「颜色变了」。中心列稳定，边缘列只作存在性判。
+
+---
+
+## 6. G5 canvas 不可用时的回退（「失败要能看出来，不能静默」）
+
+WebGL 挂掉时必须回退显示原生盘面；否则用户按「贴地」等于什么都没发生，比不实现更糟。
+
+### G5.1 静态：实现里必须存在失败回退分支
+```
+判据  canvas 路径返回失败（glInit 失败 / diag 以 'fail:' 开头）时，代码必须有分支把原生盘面恢复可见
+要求  交付时指出该分支的文件:行号，并说明它覆盖哪几种失败（glInit / 纹理上传 / 四角缺失）
+反证  把该分支临时去掉 ⇒ 下面 G5.2 必须变红（否则说明这条根本没被执行到）
+```
+
+### G5.2 真机：失败态下原生盘面仍可见（**可构造**）
+```
+构造  __LC3D.__forceGroundFail('glinit' | 'upload' | 'rings')   ← 页面侧提供的失败注入，可复位
+      再 setGroundRenderer(1) → setGround(true)
+判据  三件必须同时成立（缺一件即 FAIL）：
+      ① 原生盘面可见：dump 里 compass 节点回来；截图盘面掩膜计数 > 0
+      ② 页面读数不撒谎：getState().groundRenderer 仍 = 'canvas'（用户意图不被改写）、
+         groundCanvasOk = false、groundDiag = 'fail:glinit'（与注入值一致）
+      ③ 原生侧读数与 ② **逐字相同**（不许多一个字、不许少一个字）
+反证  __forceGroundFail(null) 复位后重测 ⇒ ①原生盘面转隐、②groundCanvasOk=true、③同步一致
+说明  ② 防「静默」（失败了却还说自己好），③ 防「两边各说各话」（原生化成一句人话就丢了原因）
+```
+
+### G5.2b 取不到失败态时的退路（仅在 __forceGroundFail 未实现时）
+```
+判据  diag 以 'fail:' 开头 ⇒ 截图中盘面像素必须仍存在（沿用 G3 盘面掩膜）
+可构造性：真机无法稳定构造 glInit 失败 ⇒ 记「不可构造」，以 G5.1 静态断言 + 日志证据代替，
+      不得写成「已验证回退」
+```
+
+### G5.3 未知档位不改行为（可构造，必跑）
+```
+操作  __LC3D.setGroundRenderer('bogus')
+判据  renderer 仍为 'overlay'、diag 以 'skip:renderer=' 开头、原生盘面照常显示
+含义  「不认识的值」不许被当成 canvas 处理；这是 setGroundRenderer 归一化逻辑的守卫
+```
+
+### G5.4 失败原因必须读得出来（「说得清为什么退」）
+```
+判据  getState().groundDiag **粘滞（sticky）**：一旦失败，不许被后续空值 / 成功前状态覆盖成空或 'idle'
+      原生侧读到的是页面原样字符串（groundDiag），**不许在本机重写成一句人话覆盖它**
+      原生回退条件只看 groundOn && !groundCanvasOk，**不许自己推断「好像没画出来」**
+      fail-safe 默认值：还没收到任何页面状态之前，原生盘面保持可见
+反证  把 sticky 逻辑改坏（让 diag 可被覆盖成空）⇒ 本判据必须 FAIL
+含义  G5 判的不是「有没有回退」，而是「退得对不对、说得出为什么退」；只说「回退正常」不算过
 ```
 
 ---
 
-## 6. 负向对照（**最容易被跳过、但没它整张表不算数**）
+## 7. 负向对照（**最容易被跳过、但没它整张表不算数**）
 
 把档位改回旧态，看判据是否**变红**；如果旧态也能「通过」，说明判的是别的东西。
 
@@ -173,12 +232,14 @@ canvas 渲染区 = canvasBacking × canvasBacking = 546 × 546 backing px
 | N3 基线误用 | 用 2048 原图当 L2 基线 | `BASELINE_INVALID`，比对作废 |
 | N4 十字位移 | crosshair 平移 3 px | G4 FAIL |
 | N5 斜切冒充透视 | pitch 0→60 但 r 不变（或 r 反向） | G1.4 FAIL |
+| N6 失败注入 | `__forceGroundFail('glinit')` 后按贴地 | G5.2 三件同时成立才算过；任何一件不成立 → FAIL |
+| N7 sticky 被改坏 | 让 diag 可被覆盖成空 | G5.4 FAIL（这是「防静默」的核心反证） |
 
 **N1、N2 必须在设备窗口里真跑一遍**，输出与原值一起贴；只写「应该会红」不算。
 
 ---
 
-## 7. 执行命令（可复制；`-s` 指定设备）
+## 8. 执行命令（可复制；`-s` 指定设备）
 
 ```powershell
 $d='L2E0222531014833'
@@ -203,7 +264,7 @@ JS "__LC3D.setGroundRenderer(1)"; adb -s $d exec-out screencap -p > B-canvas.png
 
 ---
 
-## 8. 判定与签名
+## 9. 判定与签名
 
 | 项 | 判 | 证据（每项三件：读数 + 截图/png + dump 或 JS 原文） |
 |---|---|---|
@@ -211,7 +272,7 @@ JS "__LC3D.setGroundRenderer(1)"; adb -s $d exec-out screencap -p > B-canvas.png
 | G2 像素阈值 |  | diff 图 + 数值表（两档 dialAlpha） |
 | G3 指针隐藏 |  | A/B 两帧 + 针掩膜命中数 |
 | G4 十字经线 |  | 两态红线列/行区间 |
-| N1–N5 负向对照 |  | 每条的原始输出 |
+| N1–N7 负向对照 |  | 每条的原始输出 |
 
 - 跑在哪个 sha、`app` 树、装机包 `sha256:` 必须写在证据头
 - 证据落 `docs/fidelity/m8/ground/`（图与数值分开存）
@@ -219,7 +280,7 @@ JS "__LC3D.setGroundRenderer(1)"; adb -s $d exec-out screencap -p > B-canvas.png
 
 ---
 
-## 9. 不覆盖范围（写清，避免被当成已验）
+## 10. 不覆盖范围（写清，避免被当成已验）
 
 - 原版贴地截图：**未见**。L2b 若拿不到，只判我方自洽并注明。
 - 逐帧动画（贴地过渡）：设备无 `screenrecord`，本表不判动画，只判稳态四角与像素。

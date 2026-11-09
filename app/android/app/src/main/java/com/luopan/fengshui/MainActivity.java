@@ -2615,7 +2615,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private FrameLayout buildDrawer() {
         FrameLayout panel = new FrameLayout(this);
         panel.setId(R.id.lc_drawer_panel);
-        panel.setBackgroundColor(Color.rgb(26, 22, 18));
+        // M7 B（2026-11-09）：面板底色按原版**实测**取值，不再是自选深色。
+        // 原版 `docs/fidelity/m3/contact.png` 弹层外抽屉区 x<160,y1200..1600 众数
+        //   = #101215 (16,18,21) 61562 px（冷，B>G>R）；
+        // 旧值 #1A1612 (26,22,18) 暖褐且 R>G>B，色相与原版相反，来源是自选色
+        // （`docs/fidelity/m6/client-four-pages-diff.md:50` 有记录，不是从原版量的）。
+        panel.setBackgroundColor(Color.rgb(16, 18, 21));
 
         for (int i = 0; i < DRAWER_ITEMS.length; i++) {
             final String label = DRAWER_ITEMS[i];
@@ -2827,6 +2832,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             lp.width = cardW;
             lp.height = cardH;
             lp.gravity = android.view.Gravity.CENTER;
+            // M7 B（2026-11-09）：去掉弹层压暗。
+            // 依据：我方旧实现走 Dialog 默认主题的 backgroundDimAmount，0.6 -> 透过 0.4，
+            //   实测抽屉 #1A1612 × 0.4 = (10.4,8.8,7.2) 与 (10,9,7) 逐通道吻合；
+            //   原版同一区域没有这个量级的压暗（亮度上界法：原图弹层外最亮 156，
+            //   k >= 156/255 = 0.612，即原版 dimAmount <= 0.388）。
+            //   总监裁定置 0；原版精确值**未确认**（待逆向从原版 APK 取真值），
+            //   取 0 落在 [0, 0.388] 区间内，也是「无压暗」这个最简假设。
+            lp.dimAmount = 0f;
+            d.getWindow().clearFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
             d.getWindow().setAttributes(lp);
         }
         d.show();

@@ -2077,7 +2077,9 @@ function openSources() {
     var s = MAP_SOURCES[i];
     if (s.hidden) continue;                 /* 来源表里的隐藏项（wayback）不进面板 */
     var cls = (s.layer === null) ? "srcCard off" : ((i === srcIndex) ? "srcCard on" : "srcCard");
-    var tip = (s.layer === null) ? s.note : ("审图号 " + s.review);
+    /* 产品 v1.6 §4.1②③：占位词「待核对 / 未确认 / 不适用」任何可达路径都不得上屏。
+   * 源面板 tip 也是可达路径（点「底图源」就能看到），所以这里同样按真实值判断。 */
+  var tip = (s.layer === null) ? s.note : (lvIsRealReview(s.review) ? ("审图号 " + s.review) : ("数据来源：" + s.name));
     var thumb = s.thumb
       ? '<img class="srcThumb" src="' + s.thumb + '" alt="">'
       : '<span class="srcNoThumb">无缩略图</span>';
@@ -2121,6 +2123,11 @@ function selectSource(i) {
   closeSources();
 }
 
+/* 占位词判定（产品 v1.6 口径）：这几个词是「未取证」的代码标记，不许出现在任何用户可见路径。 */
+function lvIsRealReview(rv) {
+  return !!rv && rv !== '待核对' && rv !== '未确认' && rv !== '不适用';
+}
+
 function attributionText(s) {
   s = s || { name: "天地图地形", review: "待核对" };
   if (s.text) return s.text;   /* 自带完整文案的来源（wayback：境外影像，无审图号）不套天地图模板 */
@@ -2132,7 +2139,7 @@ function attributionText(s) {
    * 且「待核对」「未确认」绝不上屏（代码默认值不能是占位词）。 */
   var txt = "数据来源：天地图 www.tianditu.gov.cn";
   var rv = s.review || "";
-  if (rv && rv !== "待核对" && rv !== "未确认" && rv !== "不适用") txt += " 审图号：" + rv;
+  if (lvIsRealReview(rv)) txt += " 审图号：" + rv;
   return txt;
 }
 
@@ -2145,7 +2152,7 @@ function getAttribution() {
   var wb = (s.layer === "wayback");
   return {
     source: s.name,
-    review: s.review || "未确认",
+    review: lvIsRealReview(s.review) ? s.review : "",
     original: wb ? null : "世纪空间",
     equivalent: !wb,
     text: attributionText(s)

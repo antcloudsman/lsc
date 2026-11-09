@@ -558,6 +558,11 @@ def main(argv: list[str] | None = None) -> int:
                 return 2
         print(f"SIZE-MAP: {len(size_rules)} rule(s) from {map_path}")
 
+    # 通则（2026-11-09 技术总监定）：任何「未提供参数就跳过」的路径必须明说 SKIP 及跳过了什么，
+    # 不许静默冒充通过。两个尺寸参数都没给时，尺寸检查根本没发生。
+    if not size_rules and expect is None:
+        print("SIZE: SKIP (no --expect-size / --expect-size-map given; image sizes are NOT checked)")
+
     allow: list[dict] = []
     if not args.allow:
         default_allow = os.path.join(SCRIPT_DIR, "evidence-lint-allow.json")
@@ -581,6 +586,7 @@ def main(argv: list[str] | None = None) -> int:
     findings: list[dict] = []
     counts = {"xml": 0, "png": 0, "other": 0}
     skip = {s.strip() for s in args.skip_dirs.split(",") if s.strip()}
+    size_unchecked = 0
     for path in (walk(args.root, skip) if scan_evidence else []):
         ext = os.path.splitext(path)[1].lower()
         try:
@@ -589,18 +595,37 @@ def main(argv: list[str] | None = None) -> int:
                 findings.extend(check_xml(path, args.strict_root))
             elif ext in IMG_EXTS:
                 counts["png"] += 1
+                want = expected_size_for(path, expect, size_rules)
+                if want is None:
+                    size_unchecked += 1
                 findings.extend(
                     check_png(
                         path,
                         args.mono_ratio,
                         args.min_png_side,
-                        expected_size_for(path, expect, size_rules),
+                        want,
                     )
                 )
             else:
                 counts["other"] += 1
         except FileNotFoundError:
             continue
+
+    # 只给逐图表、不给全局默认值时，表外的图根本没参与尺寸比较，却照样 exit=0。
+    # 2026-11-09 实际发生过：② 只带 --expect-size-map，22 张整屏图未受检，输出全绿被当成通过。
+    # 所以这里判 fail，而不是 warn——「没检查」不能长得像「检查通过」。
+    if size_rules and expect is None and size_unchecked > 0:
+        findings.append(
+            {
+                "level": "fail",
+                "kind": "size",
+                "path": args.root,
+                "reason": (
+                    f"--expect-size-map given without --expect-size: {size_unchecked} image(s) "
+                    f"outside the map were NOT size-checked (pass both, e.g. --expect-size 1228x2700)"
+                ),
+            }
+        )
 
     allowed_map = {os.path.normcase(os.path.abspath(resolve(e["path"]))): e for e in allow}
 

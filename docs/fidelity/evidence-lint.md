@@ -177,6 +177,22 @@ python tools/fidelity/evidence-lint.py --generated-html app/android/app/src/main
 python tools/fidelity/evidence-lint.py --root docs/fidelity --generated-html … --source …
 ```
 
+### 2.9 「跳过」必须说出来（口径通则，2026-11-09 技术总监）
+
+**通则**：任何「未提供参数就跳过」的路径，输出必须写明 `SKIP` + 跳过了什么，**不许静默冒充通过**。理由不是工具好恶——门禁报绿的时候，人得能相信该项检查真的执行过。
+
+落地两条：
+
+1. **两个尺寸参数都没给** → 打 `SIZE: SKIP (no --expect-size / --expect-size-map given; image sizes are NOT checked)`（退出码不变，只把「没检查」摆到台面上）；
+2. **只给逐图表、没给全局默认** → 判 **FAIL**（不是 warn）。表外的图根本没法判尺寸，可它照样会 `exit=0`：
+   ```
+   FAIL size <root>: --expect-size-map given without --expect-size: 22 image(s)
+        outside the map were NOT size-checked (pass both, e.g. --expect-size 1228x2700)
+   ```
+   实际发生过：2026-11-09 B 轮门禁②只带 `--root` + 逐图表，22 张整屏图未受检、输出全绿，差点被当成通过。反例输出已按要求改名保留、不作判据。
+
+> 同一通则的既有例子：`--generated-html` 单独使用时打 `ROOT: SKIP evidence scan (only --generated-html/--source given; pass --root to lint evidence too)`（§2.8）——**跳过但明说跳过了什么**，这是范本。
+
 ## 3 用法
 
 > **路径基准（2026-11-08，技术总监要求）**：工具内一切相对路径（默认 root、默认豁免清单、`--eol`/`--magic` 的文件、豁免条目里的 `path`）**一律以「脚本所在仓库根」为基准**，不依赖 cwd。

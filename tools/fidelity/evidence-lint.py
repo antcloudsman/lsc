@@ -33,6 +33,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -408,6 +409,60 @@ def walk(root: str, skip_dirs: set[str]):
             yield os.path.join(dirpath, name)
 
 
+def _sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def check_duplicate_images(root: str, skip_dirs: set[str]) -> tuple[list[dict], dict]:
+    """同一目录内字节完全相同的图片 → fail（只比同目录；跨目录的合法复用不计）。
+
+    背景（2026-11-09）：`lc-help/fig-32.webp` 与 `fig-08.webp` 字节相同——图注写「点一下
+    『点击查看 ›』就地展开」，画面其实是点击前的未展开态；另有 7 张整屏被当成局部图注
+    （fig-07/10/11/12/14/17）。尺寸 1228x2700 全对、可解码、引用 29=29，现有四条检查
+    一条都报不出来，只有按内容哈希查重才抓得到。判 fail 而不是 warn：发现它的事实本身
+    就说明这类重复会冒充别的证据。
+    """
+    by_dir: dict[str, dict[str, list[str]]] = {}
+    for path in walk(root, skip_dirs):
+        if os.path.splitext(path)[1].lower() not in IMG_EXTS:
+            continue
+        try:
+            digest = _sha256_file(path)
+        except OSError:
+            continue
+        by_dir.setdefault(os.path.dirname(os.path.abspath(path)), {}).setdefault(digest, []).append(path)
+
+    findings: list[dict] = []
+    stats = {"files": 0, "unique": 0, "duplicated": 0, "redundant": 0}
+    for directory in sorted(by_dir):
+        groups = by_dir[directory]
+        stats["files"] += sum(len(v) for v in groups.values())
+        stats["unique"] += len(groups)
+        for digest, paths in sorted(groups.items()):
+            if len(paths) < 2:
+                continue
+            ordered = sorted(paths)
+            stats["duplicated"] += len(ordered)
+            stats["redundant"] += len(ordered) - 1
+            for dup in ordered[1:]:
+                findings.append(
+                    {
+                        "level": "fail",
+                        "kind": "dup",
+                        "path": dup,
+                        "reason": (
+                            f"identical bytes to {os.path.basename(ordered[0])} "
+                            f"(sha256 {digest[:12]}), group={len(ordered)}"
+                        ),
+                    }
+                )
+    return findings, stats
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Content validity lint for fidelity evidence (.xml/.png)")
     ap.add_argument("--root", default="docs/fidelity", help="evidence root (default: <repo>/docs/fidelity, resolved against the script location)")
@@ -479,6 +534,9 @@ def main(argv: list[str] | None = None) -> int:
 
     allowed_map = {os.path.normcase(os.path.abspath(resolve(e["path"]))): e for e in allow}
 
+    dup_findings, dup_stats = check_duplicate_images(args.root, skip)
+    findings.extend(dup_findings)
+
     if args.generated_html or args.source:
         if not (args.generated_html and args.source):
             print("ERROR: --generated-html and --source must be used together", file=sys.stderr)
@@ -528,6 +586,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{label} {f['kind']} {f['path']}: {extra}")
 
     print(
+        f"DUP: files={dup_stats['files']} unique={dup_stats['unique']} "
+        f"duplicated={dup_stats['duplicated']} redundant={dup_stats['redundant']}"
+    )
+    print(
         f"EVIDENCE-LINT: scanned xml={counts['xml']} png={counts['png']} other={counts['other']} "
         f"fail={len(fails)} warn={len(warns)} allowed={len(alloweds)}"
     )
@@ -536,7 +598,7 @@ def main(argv: list[str] | None = None) -> int:
         os.makedirs(os.path.dirname(os.path.abspath(args.json)), exist_ok=True)
         with open(args.json, "w", encoding="utf-8") as fh:
             json.dump(
-                {"root": args.root, "counts": counts, "findings": findings},
+                {"root": args.root, "counts": counts, "dup": dup_stats, "findings": findings},
                 fh,
                 ensure_ascii=False,
                 indent=2,

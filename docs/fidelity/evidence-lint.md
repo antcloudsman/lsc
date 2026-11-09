@@ -124,6 +124,36 @@ python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc
 
 这两对可能是「原版两次截图本来就一样」，属**真实且合法**的证据；要么走 §3.1 具名例外（带 `reason`/`by`/`verdict`），要么重拍成可区分的画面，**不许直接关掉这条检查**。
 
+### 2.7 逐图声明尺寸（`--expect-size-map`，2026-11-09）
+
+**先修一个空转**：`--expect-size` 在 2026-11-09 之前**只解析、不比较**——参数收下了，`check_png` 里根本没用它，所以「尺寸不符」从来没被查过。现在补实，并且：
+
+- `--expect-size` = **未命中逐图表时的默认值**（整屏图 1228×2700）；
+- `--expect-size-map <json>` = **逐图期望尺寸表**，键是「仓库相对路径 glob」或「basename glob」，值是 `WxH`；以 `_` 开头的键当注释跳过；
+- **不符判 FAIL**（不是 warn）：声明了尺寸就代表「这张图应该长这样」，不符说明它不是它声称的那张。
+
+逐图表在 `tools/fidelity/evidence-size-map.json`，6 条来自 `docs/qa/help-figures-audit.md`（LC审成文 2026-11-09 从原图逐张裁出、样张复核）：
+
+| 图 | 声明尺寸 |
+|---|---|
+| `fig-07` 角注条 | 1228×68 |
+| `fig-10` 工具条 5 项 | 1228×136 |
+| `fig-11` 左列 6 项 | 201×1111 |
+| `fig-12` 右列 4 开关 | 230×758 |
+| `fig-14` 左列 8 项 | 201×2048 |
+| `fig-17` 右列 10 项 | 201×1889 |
+
+```bash
+# 裁切前（按现网未裁的图跑）→ 6 条 declared/actual 不符，真红
+python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc-help \
+  --expect-size 1228x2700 --expect-size-map tools/fidelity/evidence-size-map.json
+# SIZE-MAP: 6 rule(s) … / FAIL png …fig-07.webp: declared 1228x68, actual 1228x2700 … → exit=1
+
+# 裁切后 → 这 6 条应转绿（自测用同尺寸噪声图，见 §5）
+```
+
+> 落地顺序：**先裁图、再开这个参数**。图没裁就带上逐图表，门禁必红——这是设计如此，不是误报。
+
 ## 3 用法
 
 > **路径基准（2026-11-08，技术总监要求）**：工具内一切相对路径（默认 root、默认豁免清单、`--eol`/`--magic` 的文件、豁免条目里的 `path`）**一律以「脚本所在仓库根」为基准**，不依赖 cwd。

@@ -33,6 +33,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import hashlib
 import json
 import os
@@ -348,6 +349,19 @@ def check_png(path: str, mono_ratio: float, min_side: int, expect_size: tuple[in
                 return [
                     {"level": "fail", "kind": "png", "reason": f"bad size {w}x{h}", "path": path}
                 ]
+            # 声明尺寸：逐图表（--expect-size-map）优先，其次全局（--expect-size）。
+            # 2026-11-09 前这个参数只解析不比较（空转），此处补实；不符判 fail。
+            # 注意必须在 min_side 早退之前判，否则 201px 宽的裁切图根本进不来。
+            if expect_size is not None and (w, h) != tuple(expect_size):
+                return [
+                    {
+                        "level": "fail",
+                        "kind": "png",
+                        "reason": f"declared {expect_size[0]}x{expect_size[1]}, actual {w}x{h}",
+                        "path": path,
+                        "wh": f"{w}x{h}",
+                    }
+                ]
             if min(w, h) < min_side:
                 # 素材图标/小图不按「证据截图」判纯色
                 return []
@@ -463,6 +477,23 @@ def check_duplicate_images(root: str, skip_dirs: set[str]) -> tuple[list[dict], 
     return findings, stats
 
 
+def expected_size_for(
+    path: str, default: tuple[int, int] | None, rules: list[tuple[str, tuple[int, int]]]
+) -> tuple[int, int] | None:
+    """逐图声明尺寸：先按「仓库相对路径」匹配，再按 basename 匹配，都没命中才用全局默认。
+
+    为什么要有逐图表：`lc-help` 的 6 张局部图裁切后尺寸各不相同（1228x68 / 201x1111 …），
+    拿一个 `--expect-size 1228x2700` 套全目录，裁切一落地就全红；而没有逐图表，
+    真正该红的那张（尺寸与图注不符）又查不出来。
+    """
+    rel = os.path.relpath(os.path.abspath(path), REPO_ROOT).replace("\\", "/")
+    base = os.path.basename(path)
+    for pattern, size in rules:
+        if fnmatch.fnmatchcase(rel, pattern) or fnmatch.fnmatchcase(base, pattern):
+            return size
+    return default
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Content validity lint for fidelity evidence (.xml/.png)")
     ap.add_argument("--root", default="docs/fidelity", help="evidence root (default: <repo>/docs/fidelity, resolved against the script location)")
@@ -471,7 +502,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--min-png-side", type=int, default=600, help="only lint png with min(w,h) >= this (default 600)")
     ap.add_argument("--skip-dirs", default="assets-vectors,assets,findings,probes,.git", help="comma-separated dir names to skip")
     ap.add_argument("--strict-root", action="store_true", help="warn when xml root is not <hierarchy>")
-    ap.add_argument("--expect-size", help="declared screenshot size WxH, e.g. 1228x2700 (mismatch = warn)")
+    ap.add_argument("--expect-size", help="declared screenshot size WxH for images not covered by the map, e.g. 1228x2700 (mismatch = fail)")
+    ap.add_argument("--expect-size-map", help="JSON {pattern: WxH} per-image declared sizes; pattern matches repo-relative path or basename (glob)")
     ap.add_argument("--allow", help="allowlist JSON with entries {path, reason, by, verdict} (4 keys required)")
     ap.add_argument("--json", help="write JSON report to this path")
     ap.add_argument("--magic", help="comma-separated image files to check magic/extension consistency")
@@ -494,6 +526,25 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError:
             print(f"ERROR: bad --expect-size {args.expect_size!r}", file=sys.stderr)
             return 2
+
+    size_rules: list[tuple[str, tuple[int, int]]] = []
+    if args.expect_size_map:
+        map_path = resolve(args.expect_size_map)
+        if not os.path.isfile(map_path):
+            print(f"ERROR: size map not found: {map_path}", file=sys.stderr)
+            return 2
+        with open(map_path, encoding="utf-8") as fh:
+            raw_map = json.load(fh)
+        for pattern, spec in raw_map.items():
+            if pattern.startswith("_"):
+                continue  # 说明/备注键，不参与匹配
+            try:
+                w_s, h_s = str(spec).lower().split("x")
+                size_rules.append((pattern, (int(w_s), int(h_s))))
+            except ValueError:
+                print(f"ERROR: bad size in map: {pattern!r} -> {spec!r}", file=sys.stderr)
+                return 2
+        print(f"SIZE-MAP: {len(size_rules)} rule(s) from {map_path}")
 
     allow: list[dict] = []
     if not args.allow:
@@ -526,7 +577,14 @@ def main(argv: list[str] | None = None) -> int:
                 findings.extend(check_xml(path, args.strict_root))
             elif ext in IMG_EXTS:
                 counts["png"] += 1
-                findings.extend(check_png(path, args.mono_ratio, args.min_png_side, expect))
+                findings.extend(
+                    check_png(
+                        path,
+                        args.mono_ratio,
+                        args.min_png_side,
+                        expected_size_for(path, expect, size_rules),
+                    )
+                )
             else:
                 counts["other"] += 1
         except FileNotFoundError:

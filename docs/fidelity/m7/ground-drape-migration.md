@@ -1,7 +1,7 @@
 # M7 A 轮 · 罗盘贴地迁移方案（A 路线：盘面搬进 map.html canvas 当栅格纹理）
 
-> 归属：LC地图。状态：**方案待批，未动一行代码**。
-> 基线 `develop` = `6141508`。对照：原版 1.6.1（`index.946c1624e0.bundle.js` canvas source + `compass_ground` raster 图层）。
+> 归属：LC地图。状态：**方案定稿（2026-11-09 总监批 A1 / B1 / 800 基线），代码待实施**。
+> 基线 `develop` = `ea82c77`（M7 收官顶点）。对照：原版 1.6.1（`index.946c1624e0.bundle.js` canvas source + `compass_ground` raster 图层）。
 > 规则复用：不改冻结文献；证据与代码分离；实现方不自签。
 
 ---
@@ -31,13 +31,15 @@
 | 图元 | 当前实现 | 理由 |
 |---|---|---|
 | 红色十字经线 + 中心/27% 处红三角 | `CompassCrosshairView.java`（78 行，`CSS_PX × density` = 6.75→7px，`TRIANGLE_TOP_RATIO 0.27`） | M6 第 1 条已真机验收（竖线 x612..616、横线 y1347..1351、交点 (614,1350)）；它是**屏幕层**，原版也是 viewport 对齐的 DOM 元素，不进地面栅格 |
-| 竖向指针 `pointer.png` | 客户端 `pointerView`（M6 `d28cb9f` 门控已收口） | 原版指针是独立 DOM `<img>`（`pitchAlignment:"map"`），**不在盘面 canvas 内**；我方贴地态如何处理见 §7 决策 B |
+| 竖向指针 `pointer.png` | 客户端 `pointerView`（M6 `d28cb9f` 门控已收口） | 原版指针是独立 DOM `<img>`（`pitchAlignment:"map"`），**不在盘面 canvas 内**；贴地态按 §7 决策 **B1 隐藏**（不倾斜、不画进 canvas） |
 | 传感器/朝向与读数状态机 | `CompassView` 的 `setSensorHeading/reset/setFollowSensor/...` | 搬的只是绘制，状态与 API 保留 |
 
 ### 1.3 数据源（**硬规矩：唯一真相源**）
 
 `CompassData.java`：7 个字符串数组（`MOUNTAINS / WUXING / YINYANG / HOUTIAN / XIANTIAN / JIAZI / NAYIN`）+ `RingDef[] RINGS` + 5 个步进常量（`MOUNTAIN_STEP 15`、`MOUNTAIN_HALF 7.5`、`EARTH_OFFSET 0`、`HUMAN_OFFSET -7.5`、`HEAVEN_OFFSET 7.5`）。
 **做法**：构建期由 Gradle 任务导出 `assets/compass/rings.json`（带 sha256，与 `mechanics.json` 同一套路），**JS 不许手抄第二份**。这一条沿用 M6 已批的「数据单一化」口径。
+
+
 
 ### 1.4 屏幕中心符号 —— **不在本方案范围（总监 11-08 裁定）**
 
@@ -118,6 +120,7 @@ this.map.unproject([screen.width/2, screen.height/2])
 - 原因：贴地盘面在 canvas 里只占 **546 backing px**（273 CSS × dpr 2），而原生盘面是 **922 设备 px**；两者清晰度口径不同，直接比会把「分辨率先天不同」判成「迁移错误」。原版自己的栅格路径也受同一个 dpr 上限约束。
 - 正确做法两条并行：
   - **L2a 图元一致性**：把原生盘面**渲染到 546×546** 再与 canvas 546×546 比（同口径），逐像素 diff：
+
   - 差异像素 **≤2%**；平均 **ΔE2000 ≤3**；关键色（金环、五行字色、天支线色）**ΔE ≤2**；
   - 文字区域（二十四山/卦名/读数）用**掩膜单判**，阈值不放宽；超标即返工，不接受「整体放宽」。
   - **L2b 贴地观感**：真机贴地截图 vs **原版贴地截图（L1）**，判整体观感与透明度；L1 拿不到就按审核验的三级降级规则只判我方自洽，关账写「无原版对照」。
@@ -142,7 +145,7 @@ this.map.unproject([screen.width/2, screen.height/2])
 
 ---
 
-## 7. 两个必须先拍的决策（不拍就动不了）
+## 7. 两个决策（2026-11-09 已批：A1 + B1）
 
 **决策 A：`dial_full_0..4.png` 怎么进 WebView？**
 它们在 `res/drawable-nodpi/`（2048×2048 左右，合计 3.1 MB），**WebView 读不到 `res/`**。三条路：
@@ -154,14 +157,14 @@ this.map.unproject([screen.width/2, screen.height/2])
   manifest（含每张 sha256 与尺寸）落 `docs/fidelity/m7/dial-export-manifest.json`，L2 基线直接引用它。
 - A2：原尺寸原样复制进 assets（+3.1 MB 包体；M6 已因帮助中心图涨到 34.7 MB，C 轮正要压，不宜再加）。
 - A3：原生解码后 base64 传 JS（每帧/每次切换传 3 MB，内存与帧率都不划算，且与「B 方案不做」同因）。
-> 注：A1 会损失位图细节，**L2 diff 必须在 1200 采样后的基线上比**，否则会拿「降采样差异」判成「迁移错误」。这一点请一并批。
+> 注（2026-11-09 已批）：A1 会损失位图细节，因此 **L2 diff 的基线就是进包的 800/q85 版**（与产物同源，逐张 sha256 见 manifest），1200 版仅作参考。早先那句「必须在 1200 采样后的基线上比」**作废**——按它比会把降采样差异判成迁移错误。
 
 **决策 B：贴地态下的竖向指针（`pointer.png`）怎么办？**
 原版指针是独立 DOM `<img>`，带 `pitchAlignment:"map"`，**由 MapLibre 帮它做地面透视**；我方是原生 `ImageView` 覆盖层，**做不到贴地倾斜**。三个选项：
 - B1：贴地态**隐藏**原生指针，只保留地面盘面（最接近「原版贴地视觉」：盘面躺在地上，指针不在）。
 - B2：保留指针但**不倾斜**（贴地时指针仍正立悬浮，与盘面错位，观感割裂）。
 - B3：把指针也画进 canvas（改变原版「指针不在盘面 canvas 内」的事实）。
-> 我倾向 **B1**，并在台账记「贴地态指针隐藏」为已知差；但这是用户可见差异，**请你裁**。
+> **已批 B1**（2026-11-09）：贴地态隐藏原生竖向指针，只留地面盘面；台账按「**贴地态指针隐藏**」记一条已知可见差异。B2（保留但不倾斜）与 B3（画进 canvas）不采用。
 
 ---
 
@@ -177,4 +180,4 @@ this.map.unproject([screen.width/2, screen.height/2])
 | **合计** | | **5.0 人日**（中心符号归原生层后回到原估） |
 
 - 开工 `2026-11-08 14:45` / 收工 `15:12` / 返工 0 轮（本文为方案，未动代码）。
-- 待批项：**§7 决策 A（我建议 A1 + L2 基线同步降采样）**、**§7 决策 B（我建议 B1）**。
+- 决策状态：**A1 已批**（800/q85，5 张合计 1,200,656 B；L2 基线用进包 800 版）、**B1 已批**（贴地态隐藏指针）。**无遗留待定项**。

@@ -112,3 +112,116 @@ configurations.configureEach {
     exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
     exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
 }
+
+/* ---- 罗盘盘面数据导出：assets/compass/rings.json（唯一真相源 = CompassData.java）----
+ * 为什么在构建期生成：CompassData.java 里 14 条 RingDef 共约 1400 个标签，
+ * 手抄第二份必然漂移；JS（map.html 的 drawCompass）只许读这份 JSON。
+ * 数据链：app/mechanics.json →（gen-mechanics）→ CompassData.java →（本任务）→ rings.json。
+ * 生成物会随源码一起提交（供 docs 里按 blob:/sha256: 引用）；构建时若与源码不一致会被覆盖。
+ * 标签里含零宽字符（如 "‌震"），解析一律按 [^"]* 原样取出，不做 trim/去不可见字符。
+ */
+def compassDataJava = file('src/main/java/com/luopan/fengshui/CompassData.java')
+def ringsJsonFile = file('src/main/assets/compass/rings.json')
+
+def lcParseStringArray = { String src, String name ->
+    def re = java.util.regex.Pattern.compile(
+        '(?s)String\\[\\]\\s+' + java.util.regex.Pattern.quote(name) + '\\s*=\\s*\\{(.*?)\\}')
+    def m = re.matcher(src)
+    if (!m.find()) throw new GradleException("rings-export: array ${name} not found in CompassData.java")
+    def out = []
+    def im = java.util.regex.Pattern.compile('"([^"]*)"').matcher(m.group(1))
+    while (im.find()) out << im.group(1)
+    if (out.isEmpty()) throw new GradleException("rings-export: array ${name} is empty")
+    return out
+}
+
+tasks.register('exportCompassRings') {
+    group = 'lc'
+    description = '从 CompassData.java 导出 assets/compass/rings.json（JS 不许手抄第二份）'
+    inputs.file(compassDataJava)
+    outputs.file(ringsJsonFile)
+    doLast {
+        def src = compassDataJava.getText('UTF-8')
+
+        def arrays = [
+            MOUNTAINS : lcParseStringArray(src, 'MOUNTAINS'),
+            WUXING    : lcParseStringArray(src, 'WUXING'),
+            YINYANG   : lcParseStringArray(src, 'YINYANG'),
+            HOUTIAN   : lcParseStringArray(src, 'HOUTIAN'),
+            XIANTIAN  : lcParseStringArray(src, 'XIANTIAN'),
+            JIAZI     : lcParseStringArray(src, 'JIAZI'),
+            NAYIN     : lcParseStringArray(src, 'NAYIN'),
+            COMPASS_TYPES: lcParseStringArray(src, 'COMPASS_TYPES'),
+            READ_TYPES   : lcParseStringArray(src, 'READ_TYPES')
+        ]
+
+        // new RingDef("TYPE_1", "先天八卦_卦位", 45f, 22.5f, new String[]{...})
+        def ringRe = java.util.regex.Pattern.compile(
+            '(?s)new\\s+RingDef\\(\\s*"([^"]*)"\\s*,\\s*"([^"]*)"\\s*,\\s*(-?[0-9.]+)f\\s*,\\s*(-?[0-9.]+)f\\s*,\\s*new\\s+String\\[\\]\\s*\\{(.*?)\\}\\s*\\)')
+        def rings = []
+        def rm = ringRe.matcher(src)
+        while (rm.find()) {
+            def labels = []
+            def lm = java.util.regex.Pattern.compile('"([^"]*)"').matcher(rm.group(5))
+            while (lm.find()) labels << lm.group(1)
+            rings << [
+                id: rm.group(1),
+                text: rm.group(2),
+                interval: rm.group(3) as double,
+                offset: rm.group(4) as double,
+                labels: labels
+            ]
+        }
+        if (rings.isEmpty()) throw new GradleException('rings-export: no RingDef parsed from CompassData.java')
+
+        // 步进常量（RING 用到的 5 个 + 其余盘面标量）
+        def scalars = [:]
+        ['HEXAGRAM64_DEG','MOUNTAIN_STEP','MOUNTAIN_HALF','EARTH_OFFSET','HUMAN_OFFSET',
+         'HEAVEN_OFFSET','FENJIN_STEP','DRAGON72_STEP','DRAGON60_STEP','DRAGON60_OFFSET',
+         'BAGUA_STEP','ZHENG_XIANG_DEG'].each { n ->
+            def sm = java.util.regex.Pattern.compile(
+                '(?s)static\\s+final\\s+float\\s+' + java.util.regex.Pattern.quote(n) + '\\s*=\\s*(-?[0-9.]+)f\\s*;').matcher(src)
+            if (!sm.find()) throw new GradleException("rings-export: scalar ${n} not found in CompassData.java")
+            scalars[n] = sm.group(1) as double
+        }
+
+        def sha = java.security.MessageDigest.getInstance('SHA-256')
+        sha.update(compassDataJava.bytes)
+        def sourceSha = sha.digest().collect { String.format('%02x', it) }.join('')
+
+        def payload = [
+            schema: 'lc.compass.rings/1',
+            generated_by: ':app:exportCompassRings',
+            source: 'app/android/app/src/main/java/com/luopan/fengshui/CompassData.java',
+            source_sha256: sourceSha,
+            note: '标签含零宽字符（U+200C）时原样保留，替换即偏离原版盘面',
+            arrays: arrays,
+            scalars: scalars,
+            rings: rings
+        ]
+        def text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(payload)) + '\n'
+        /* JsonOutput 默认把非 ASCII 转成 \uXXXX：语义不变但人眼没法核对（审核验要直接看标签）。
+         * 这里只把 >= U+0080 的转义还原成原字符（含 U+200C 零宽字符），控制字符仍保持转义。
+         * 注意用 replaceAll 的回调式重载，避免 String.replace 把 $ 当分组引用。 */
+        text = text.replaceAll(/\\u([0-9a-fA-F]{4})/) { all, hex ->
+            int cp = Integer.parseInt(hex, 16)
+            return cp >= 0x80 ? new String(Character.toChars(cp)) : all
+        }
+
+        def cur = ringsJsonFile.isFile() ? ringsJsonFile.getText('UTF-8') : null
+        if (cur != text) {
+            ringsJsonFile.parentFile.mkdirs()
+            ringsJsonFile.setText(text, 'UTF-8')
+        }
+
+        def outSha = java.security.MessageDigest.getInstance('SHA-256')
+        outSha.update(ringsJsonFile.bytes)
+        logger.lifecycle('RINGS-EXPORT: rings=' + rings.size() + ' arrays=' + arrays.size() +
+            ' scalars=' + scalars.size() + ' bytes=' + ringsJsonFile.length() +
+            ' sha256=' + outSha.digest().collect { String.format('%02x', it) }.join('') +
+            ' source_sha256=' + sourceSha)
+    }
+}
+
+// 所有构建都先把 rings.json 与源码对齐（assets 合并前）
+tasks.matching { it.name == 'preBuild' }.configureEach { dependsOn 'exportCompassRings' }

@@ -458,3 +458,59 @@ MC7 2D 取高程 elev=53.8（DEM 未就绪时为 null）
 - PC 复核（服务端 key + `okhttp/4.12`）：geocoder `HTTP 200 status=0 province_code=156370000`；
   v2/search 山 260203/山东 `HTTP 200 infocode=1000 count=117`；湖 260205/湖南 `count=36`；
   WMTS 瓦片 `HTTP 200 image/jpg 12,033 B`。
+
+## 13. B 轮离线瓦片缓存：口径、诊断钩子与三症状根因（2026-11-09）
+
+### 13.1 键与启用态
+
+- 键格式：`<layer>/<z>/<x>/<y>@<keyVersion>`（`tileKeyOf`），写入与读取**同一函数**，键里带版本号。
+- 启用态：`TILE_OFF.enabledSources`（sourceId → true），**默认空 = 全关**；显式 `setTileCacheSource(sid,true)`
+  才启用，并持久化到 `localStorage['lc.tileoff.sources.v1']`（页面重载/回前台不丢）。
+- 关着的时候离线恢复路径 `tileOfflineRecover()` 在 `tileSourceEnabled()` 处直接返回并计 miss，
+  **不会去 IndexedDB 查**——这是「离线回到已缓存层级 hit=0」的直接原因。
+
+### 13.2 计数口径（别再拿 put 和 items 直接比）
+
+| 字段 | 含义 | 作用域 |
+|---|---|---|
+| `put` | 本会话写成功次数（含同一键覆盖） | 会话累计 |
+| `putNew` / `putOverwrite` | 其中「新键」与「覆盖已有键」的拆分 | 会话累计 |
+| `items` / `bytes` | 全库行数/字节数**快照**，取数时刻见 `itemsAt` | 全库 |
+| `hit` | 从缓存取到字节的次数 | 会话累计 |
+| `miss` | **唯一键**未命中数（同一键重绘多次只算一次） | 会话累计 |
+| `missAttempts` | 未命中**调用次数**（含同一键被重绘多次） | 会话累计 |
+
+- `items` 只在 `put` / 淘汰 / `setTileCacheSource` / 启动后 800 ms（启用时）刷新，不是实时值；
+  重载后 `put=0` 而库里有行是正常现象，`put - putOverwrite = 本次新增行数 ≤ items`。
+
+### 13.3 只读诊断钩子（不改计数、不触发淘汰）
+
+```js
+__LC3D.cacheKeys(3)     // → [{key,size,ts,stale}] 库里前 n 条（默认 10，上限 1000）
+__LC3D.cacheExpect()    // → {checked,hit,miss,rate,missKeys[]} 当前视野逐条查缓存（3D 下 checked=0）
+__LC3D.cacheExpect(['ter/10/843/388@v1'])   // 也可传显式键表
+```
+
+`cacheExpect` **不受源开关影响**——它回答「库里有没有」，不是「今天要不要用」。
+`getState().tileOffline` 已包含 `missAttempts / putNew / putOverwrite / itemsAt / sourcesPersisted`。
+
+### 13.4 三症状根因与复现（tools/map/offline-cache-repro.html）
+
+复现台不依赖外网：`python tools/map/fake-tiles.py 8811` 起本地假瓦片（任何 `/tile/...` 都返回 256×256 PNG + CORS）。
+
+| 症状 | 根因 | 复现证据 |
+|---|---|---|
+| 离线回已缓存层级 `hit=0` | 启用态原先只在内存且无原生调用方，重载即全关；关着时恢复路径不查库 | D 相（离线+关源）：`hit=0 miss=30(attempts=30)`；B 相（重载+持久化启用）：`hit=30 miss=0` |
+| `miss` 30→70→1110 膨胀 | `fillLayer` 每次 render 用 `innerHTML` 重建全部 `<img>`（平移/缩放/跟随都触发），miss 按实例累加 | B2 相：连续 3 次重绘 `miss=36` 不变、`missAttempts 36→108` |
+| `put=20` 与 `items=40` 不自洽 | 两者口径不同（会话写次数 vs 全库快照），`items` 还会停在旧值 | A 相 `put=30(new=30) items=30`；B 相重载后 `put=0` 而库仍 30 行 |
+
+键对照（写入 3 条 vs 读取 3 条，实测同前缀可回环）：
+
+```
+A 写入：cta/10/842/386@v1 | cta/10/842/387@v1 | cta/10/842/388@v1
+A 回环：三条均 ->hit（tileOfflineGet 立即命中）
+B 读取：cacheExpect() checked=30 hit=30 rate=1
+```
+
+结论：**不是键不匹配**（同一 `tileKeyOf`、回环 3/3 命中），是启用态丢失 + 计数口径问题；
+修复=启用态持久化 + miss 唯一键计 + put 新写/覆盖拆分 + 只读钩子。

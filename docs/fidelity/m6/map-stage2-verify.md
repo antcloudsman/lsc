@@ -1,6 +1,9 @@
 # M6 Stage 2 · 地图侧修复与真机验证（第 2 / 6 / 8 条）
 
-> 归属：LC地图。代码 `feature/地图-m6-fix` = `e605df3`（base develop `0f1bd56`）。
+> 归属：LC地图。代码 `feature/地图-m6-fix` = `e605df3`（base develop `0879355`）。
+> 基线说明：此处原记 `0f1bd56`，该对象在仓库不可解析（`git cat-file -t 0f1bd56` → `Not a valid object name`）；
+> 已按 `e605df3` 的父提交回填为可解析的 `0879355`（`Merge 地图-m6-anchors`，develop 祖先）。
+> 本文件其余提交号 `e605df3` / `2cb77ff` 均可解析；`7b5aa6e9` 是 **APK 字节指纹前缀、非提交号**（见 §1.1）。
 > 纪律：判据写内容锚点；本文件的「文件:行」只用于定位。
 
 ## 1. 构建与装机指纹
@@ -17,7 +20,7 @@ device base.apk 8,593,165 B / 46b2ad10…（与构建产物逐字节一致）
 ```
 
 ### 1.1 上一轮「typeof resetCompass === undefined」的根因（已查清，非缓存、非加载路径）
-- 我 01:55:57 装的是自己的包；**客户端 01:57:29 又装了一次**，其 `base.apk` sha `7b5aa6e9…`、`assets/map.html` 内 `resetCompass` 次数 = 0。
+- 我 01:55:57 装的是自己的包；**客户端 01:57:29 又装了一次**，其 `base.apk` sha 前缀 `7b5aa6e9…`（**APK 字节指纹前缀，非提交号**，`git cat-file -t` 不可解析）、`assets/map.html` 内 `resetCompass` 次数 = 0。
 - 因此我 01:58–02:03 的测试全部跑在**别人的构建**上；`typeof resetCompass` 必然是 undefined，`input swipe` 四方向也全部「零位移」。
 - 现流程固定为：**装机 → 核 `pm path` 的 size/sha 与本地 APK 一致 → 再测**。本轮已按此复核（见 §1）。
 

@@ -881,9 +881,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         bottom.addView(compassToolBar);
 
         attrView = new TextView(this);
-        // R2-032：按源分源显示，用户可见文案里不留内部替换说明，也不编造官方审图号；
-        // 页面就绪后 syncAttributionBar() 会用 getAttribution() 的真实来源覆盖这句。
-        attrView.setText("数据来自天地图地形 审图号： 待核对");
+        // R2-032（M7 B 轮）：初始文案即终值，不再先写占位等 JS 覆盖——
+        // 冷启到页面 JS 初始化完成之间、页面加载失败/被打断时，占位词都会常驻上屏。
+        // 审图号只在有真号时才由 map.html 追加子句（判据变更经总监批准）。
+        attrView.setText("数据来源：天地图 www.tianditu.gov.cn");
         attrView.setTextColor(Color.rgb(150, 130, 100));
         attrView.setTextSize(9f);
         attrView.setPadding(dp(10), dp(1), dp(10), dp(1));

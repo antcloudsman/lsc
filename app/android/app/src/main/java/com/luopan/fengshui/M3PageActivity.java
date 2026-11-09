@@ -987,6 +987,26 @@ public class M3PageActivity extends Activity {
                 android.widget.FrameLayout.LayoutParams lp2 =
                         (android.widget.FrameLayout.LayoutParams) ch.getLayoutParams();
                 lp2.topMargin = Math.max(0, ((Integer) tag) - off);
+                // M6 第 4 条遗留缺陷：关于我们底部两行在原版 dump 里只差 7px（2489 / 2496），
+                // 而 v1.6.1 字高 >7px，按节点 y 摆放会叠字——fig-29 实拍「v1.6.1」压在
+                // 「渝ICP备20003923号-12A」上。这是**页面实现**问题（不是截图渲染）。
+                // 修法：备案号上沿 ≥ v1.6.1 上沿 + v1.6.1 实测字高 + 4；其它四行不动。
+                if (((Integer) tag) == 2496) {
+                    for (int j = 0; j < stage.getChildCount(); j++) {
+                        View above = stage.getChildAt(j);
+                        if (above.getTag() instanceof Integer && ((Integer) above.getTag()) == 2489) {
+                            int v161Top = Math.max(0, 2489 - off);
+                            int need = v161Top + above.getMeasuredHeight() + 4;
+                            if (lp2.topMargin < need) {
+                                android.util.Log.d("LCM3", "about overlap fix: beian top "
+                                        + lp2.topMargin + " -> " + need
+                                        + " (v161H=" + above.getMeasuredHeight() + ")");
+                                lp2.topMargin = need;
+                            }
+                            break;
+                        }
+                    }
+                }
                 ch.setLayoutParams(lp2);
             }
         });

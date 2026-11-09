@@ -49,9 +49,13 @@
 前置  setGroundRenderer(1) → setGround(true) → 过 G1.0 稳定闸
 判据  getGroundQuad() 返回长度 4 的数组，且每个元素 {x,y} 为有限数
       getGroundDebug(): renderer='canvas'、ground=true、hasQuad=true、diag='drawn'
-      canvasBacking = 546（=273 CSS × dpr2）、radiusMeters > 0
+      canvasBacking = 2 × vw × dpr（vw=364、dpr=2 ⇒ 1456；**不是 546**）、radiusMeters > 0
 等待  diag='loading:rings' 是**异步等待态，不是失败**：最多等 5s（每 500ms 重读一次），
       期间不判红；5s 后仍是 loading:rings 才判 FAIL 并记录
+      **（11-09 订正，`fail:rings` 修法落地后生效）**：正常路径 `compass-rings.js` 是同步注入，
+      首帧即 `drawn`，所以 `loading:rings` 持续不走只有一种解释——盘面数据加载失败。
+      此时修法应已把它报成 `diag='fail:rings'`、`reason='loader-missing'` ⇒ **直接判 FAIL，不再等 5 秒**。
+      「等 5s」只在修法未落地期间保留，落地后作废，避免留下一条永不触发的检查。
 反例  diag 为 'skip:renderer=overlay' / 'skip:ground=off' / 'fail:*' 一律 FAIL，
       并原样记录 diag 字符串（它是区分「没接线」和「画了但错」的唯一依据）
 口径  所有读数一律以 getState() / getGroundDebug() **主动拉取**的值为准；
@@ -101,10 +105,14 @@
 
 ## 3. G2 盘面与 800 基线的像素阈值
 
-### 3.1 取样口径
+### 3.1 取样口径（数值按 2026-11-09 真机实测订正）
 ```
-canvas 渲染区 = canvasBacking × canvasBacking = 546 × 546 backing px
-基线         = assets/compass/dial_full_N.webp（800×800）先降采样到 546×546 再比
+（订正）画布尺寸 = canvasBacking = 2 × vw × dpr。实测 vw=364、dpr=2 ⇒ **1456**。
+       早先写的「546」是「盘面占画布 0.375」的推算值，**不是画布尺寸**，用它会取错区域。
+（订正）盘面在画布内的实测直径 = **dial 549 backing px**（设备日志：`LCGROUND draw … tex=1456px dial=549`）。
+       判据写法：画布取 canvasBacking×canvasBacking（实测 1456），盘面取**居中 549×549** 子区，
+       与 800 基线降采样到 549×549 比；两者都必须用**实测值**，不许写死常量。
+基线         = assets/compass/dial_full_N.webp（800×800）降采样到与「盘面实测直径」一致再比
               —— 两边同口径，避免把「分辨率先天不同」判成「迁移错误」
 降采样算法   **必须双线性（bilinear）**，与贴地纹理上传的 `gl.TEXTURE_MIN_FILTER/MAG_FILTER = gl.LINEAR`
              一致（`map.html:3070-3071`）。用 Lanczos / nearest / area 都不行：
@@ -141,7 +149,10 @@ canvas 渲染区 = canvasBacking × canvasBacking = 546 × 546 backing px
 ## 4. G3 B1：贴地态指针隐藏
 
 **实现可能用 `setVisibility(GONE)`、也可能 alpha=0 或移出屏幕，所以用「差集为主、dump 取严」。**
-实现方已确认按 `View.GONE` 做（不用 alpha=0、不移出屏幕），因此 dump 与差集两条**都该成立**；仍按取严判，防以后改成 alpha 方案时判据悄悄失效。
+**（11-09 订正）`dump` 在本 App 不可用**：WebView 持续重绘，`uiautomator dump` 反复报
+`ERROR: could not get idle state`（M7 与 M8 共五次），`--compressed` 同样失败。
+因此 G3/G5 里凡写「dump 里节点回来/消失」的，一律改为**截图掩膜**判；dump 仅作补充证据。
+实现方已确认按 `View.GONE` 做（不用 alpha=0、不移出屏幕），掩膜差分本就足够。
 
 ```
 预备  机位锁死：同 lat/lng/zoom/bearing/pitch、同 dialAlpha、同 base，只切 groundRenderer
@@ -149,7 +160,7 @@ canvas 渲染区 = canvasBacking × canvasBacking = 546 × 546 backing px
 取样  A = overlay 态截图；B = canvas 态截图
 判据① 指针专属像素：在 A 中定位竖针所在列区间（针是竖向细长图元，取 A 与「A 的盘面-only 帧」差集得针掩膜）
       针掩膜像素在 B 中的命中数 = 0
-判据② （若 dump 能 idle）贴地态 dump 中不得出现指针节点；出现即 FAIL
+判据② 贴地态**截图掩膜**中不得出现指针专属像素；`dump` 仅在其可用时作补充（本 App 实测不可用）
 二者取严：任一 FAIL 即 FAIL
 反例  若 B 中针掩膜命中 > 0 ⇒ 指针没隐藏（B1 未实现）
       若 A 中针掩膜为空 ⇒ 取样错（指针本就没显示），该次取样作废重做，不许当 PASS
@@ -160,6 +171,10 @@ canvas 渲染区 = canvasBacking × canvasBacking = 546 × 546 backing px
 ---
 
 ## 5. G4 十字经线不变（回归保护）
+
+**前置（11-09 真机实测新增）：必须在罗盘态测。** `crosshairView.setVisibility(View.GONE)` 在
+`MainActivity:684` 初始化即隐藏，地图态下截图里**取样不到任何红色像素**（实测 x=610..619 / y=1346..1354
+全为地图底色 `(211,214,202)`）。不切罗盘态就测，会得到「十字不见了」的假红。
 
 ```
 对象  原生 CompassCrosshairView（`paint.setColor(Color.RED)` @:44、`FILL_AND_STROKE` @:58、
@@ -186,12 +201,17 @@ WebGL 挂掉时必须回退显示原生盘面；否则用户按「贴地」等�
 反证  把该分支临时去掉 ⇒ 下面 G5.2 必须变红（否则说明这条根本没被执行到）
 ```
 
-### G5.2 真机：失败态下原生盘面仍可见（**可构造**）
+### G5.2 真机：失败态下原生盘面仍可见（**只在罗盘态成立**）
 ```
-构造  __LC3D.__forceGroundFail('glinit' | 'upload' | 'rings')   ← 页面侧提供的失败注入，可复位
+前置（11-09 真机实测订正，必守）：必须在**罗盘态**（compassMode=true）测。
+      回退对象是原生 CompassView，可见条件 `MainActivity:1028 show = compassMode && !compassHidden && !groundDrapeActive()`。
+      地图态（compassMode=false）本就不显示原生盘面 —— 对照组实测：贴地关 + overlay 档 + pitch60，
+      截图里同样没有原生盘面。因此 G5① 在地图态**无对象可回退**，判「不适用（需罗盘态）」，
+      **不记 PASS、也不记 FAIL**。
+构造  __LC3D.__forceGroundFail('glinit' | 'upload' | 'rings')   ← 页面侧失败注入，可复位
       再 setGroundRenderer(1) → setGround(true)
 判据  三件必须同时成立（缺一件即 FAIL）：
-      ① 原生盘面可见：dump 里 compass 节点回来；截图盘面掩膜计数 > 0
+      ① 罗盘态下原生盘面可见：**截图盘面掩膜计数 > 0**（`dump` 在本 App 不可用，见下方说明）
       ② 页面读数不撒谎：getState().groundRenderer 仍 = 'canvas'（用户意图不被改写）、
          groundCanvasOk = false、groundDiag = 'fail:glinit'（与注入值一致）
       ③ 原生侧读数与 ② **逐字相同**（不许多一个字、不许少一个字）
@@ -200,6 +220,17 @@ WebGL 挂掉时必须回退显示原生盘面；否则用户按「贴地」等�
       复位后立刻读会读到旧的 `fail:*`。正确做法：复位 → 连读两次（间隔 ≥1 帧，
       或轮询到 diag 变化，上限 3s）→ 取稳定值再判。复位的判据不含「复位瞬间的状态」
 说明  ② 防「静默」（失败了却还说自己好），③ 防「两边各说各话」（原生化成一句人话就丢了原因）
+
+### G5.5 地图态失败必须有可见提示（**改实现，不是改判据**）
+```
+背景  地图态（compassMode=false）在罗盘态开贴地后再切过来是**用户可达路径**；
+      canvas 失败时屏幕上既没有贴地盘面也没有原生盘面 ⇒ 盘面凭空消失，用户看不出发生了什么。
+判据  地图态 + 注入 glinit ⇒ 屏幕上必须出现一条可见提示（可复用 offlineBar，已有 safeArea 避让，不新造浮层），
+      文案须能读出「贴地不可用/已回退」语义；截图 + 文本 content 双证。
+反证  去掉该分支 ⇒ 本项 FAIL（屏幕回到「什么都没有」）
+实测  2026-11-09 在 50fff01 上：注入后 screen 上无任何提示（见 reports/M8/ground-1b75480/g5-injected.png），
+      本项当时为 **FAIL**，已由总监判定为「改实现」，实现补完后重验。
+```
 ```
 
 ### G5.2b 取不到失败态时的退路（仅在 __forceGroundFail 未实现时）
@@ -224,7 +255,11 @@ WebGL 挂掉时必须回退显示原生盘面；否则用户按「贴地」等�
       fail-safe 默认值：还没收到任何页面状态之前，原生盘面保持可见
 已知缺口（实现方自报，判据据此放宽到「可接受」而不是判红）：
       `loading:rings` 是等待态、**不触发 groundstate 事件**；只靠事件驱动的原生侧会停在旧 diag。
-      因此允许原生保留 700ms 定时回读作为补充手段；判据只看**拉取值**，不看事件次数
+      因此允许原生保留 700ms 定时回读作为补充手段；判据只看**拉取值**，不看事件次数。
+      **按后果分两半写（11-09 订正）**：
+      · 加载成功时：它是瞬时等待态 ⇒ 不算缺陷，700ms 回读可接受；
+      · 加载失败时：它变成「静默失败」（显示成还在加载）⇒ **判 FAIL**；
+        修法落地后应报 `diag='fail:rings'`、`reason='loader-missing'`，这一半才可判。
 反证  把 sticky 逻辑改坏（让 diag 可被覆盖成空）⇒ 本判据必须 FAIL
 含义  G5 判的不是「有没有回退」，而是「退得对不对、说得出为什么退」；只说「回退正常」不算过
 ```
@@ -276,7 +311,7 @@ JS "__LC3D.setGroundRenderer(1)"; adb -s $d exec-out screencap -p > B-canvas.png
 
 ## 9. 判定与签名
 
-| 项 | 判 | 证据（每项三件：读数 + 截图/png + dump 或 JS 原文） |
+| 项 | 判 | 证据（每项三件：读数 + 截图/png + JS 原文；**dump 仅在其可用时作补充**） |
 |---|---|---|
 | G1 四角投影 |  | `getGroundDebug()` / `getGroundQuad()` 原文 ×3 档 + 截图 |
 | G2 像素阈值 |  | diff 图 + 数值表（两档 dialAlpha） |

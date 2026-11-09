@@ -36,7 +36,7 @@ lc_m3_avatar_img=[20,376][140,496]
 
 ### 0.3 原版主题色（截图像素统计，非肉眼）
 
-脚本 `checks/m6/color-sample.py`，对每张 PNG 取全图众数（背景）与最亮像素（文字）：
+脚本 `tests/e2e/color-sample.py`（原 `checks/m6/color-sample.py`，已迁入仓库可跟踪位置），对每张 PNG 取全图众数（背景）与最亮像素（文字）：
 
 | 页 | 原版背景众数 | 占比 | 其它主要色 |
 |---|---|---|---|
@@ -238,4 +238,4 @@ canvas.drawLine(cx - r, cy, cx + r, cy, paint);
 | `docs/fidelity/M3-pages.md §1.1-1.4` | 四页行为与可点项结论 |
 | `app/android/.../M3PageActivity.java` | 我方四页实现锚点（行号见表） |
 | `app/android/.../CompassView.java` | 十字线实现 `:423-436` |
-| `checks/m6/color-sample.py` | 色值统计脚本（本表 §0.3 输出） |
+| `tests/e2e/color-sample.py` | 色值统计脚本（本表 §0.3 输出；`python tests/e2e/color-sample.py` 在仓库根直接复跑） |

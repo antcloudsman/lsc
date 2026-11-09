@@ -2,7 +2,8 @@
 
 - 作者：LC产品｜初版 2026-11-09｜本版 **2026-11-10**｜版本：**v1.5**
 - 当前基线：`develop` = **`1bb650c`**（`Merge commit '2eb18be' into develop`，`fig-32` 真展开态入册后的收官树）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**；`help-center.md` `blob:6a3ebdd988178d52fd0b1d7355f92228ac0833fb` = `index.html` 头部 `@` 串（逐字符相同）
-- 上一基线：`d60a61d`（`app` 树 `0c5da8e`，贴地交付树；`fig-32` 尚未入册、`lc-help` 28 张）。M8 真机读数（G1/G2/G3/G4/G5、banner、KML）在 `d60a61d` 与 `1bb650c` 上 **`app` 树不同**（`b203750` 仅含帮助中心资源变更），**`map.html`/`MainActivity`/`KmlIo` 未变**，故真机读数继续有效——引用时标「`d60a61d` 树」
+- 上一基线：`d60a61d`（`app` 树 `0c5da8e`，贴地交付树；`fig-32` 尚未入册、`lc-help` 28 张）。**`1bb650c` 与 `d60a61d` 的 `app` 树不同**（`0c5da8e` → `b203750`），但差异**只有两项、都在帮助中心静态资源**：`assets/lc-help/fig-32.webp`（新增 109,944 B）与 `assets/lc-help/index.html`（+4/−2）；`map.html` / `MainActivity` / `KmlIo` / 全部 Java **零改动**（`git diff --name-only d60a61d 1bb650c -- app` 只这两行）。
+  - **台账禁令**：不得写「门禁包与真机读数是同一棵 `app` 树」——树确实变了；应写「**渲染相关零改动，差异仅在帮助中心静态资源，故贴地/十字经线真机读数继续有效**」。M8 真机读数引用时标「`d60a61d` 树」。
 - 门禁状态：`1bb650c` 上的四道门禁 + 七门 smoke 由 @LC测试 重跑中（`lc-help` 28→29、尺寸规则 6→7，上一轮 `73886ed` 的结果**不适用于 29 图**）；本文引用门禁结论时以 `gates\exit-codes.txt` 原始输出为准
 - 历史基线（M7 定版）：`dc21f08`（`app` 树 `d1a186d`）；`953fb8b`（审核验签字点）与 `3ffe142` 均为其祖先、`app` 树同为 `d1a186d`。凡引 M7 树读数处标「M7 树」，**不得当 M8 读数**
 - 判据来源：`docs/fidelity/m6-close-summary.md` §1、`docs/fidelity/m7/symbols-stage1.md`、`docs/fidelity/m8/ground-drape-acceptance.md`、`docs/fidelity/m7/ground-drape-migration.md`、`docs/qa/help-figures-audit.md`
@@ -208,6 +209,7 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v1.11 | 2026-11-10 | 补**台账禁令**：`1bb650c` 与 `d60a61d` 的 `app` 树不同（`0c5da8e`→`b203750`），差异只有 `fig-32.webp`（新增 109,944 B）与 `index.html`（+4/−2）两项、均在 `lc-help`；不得写「门禁包与真机读数是同一棵 `app` 树」，只能写「渲染相关零改动、差异仅在帮助中心静态资源」；`map.html`/`MainActivity`/`KmlIo`/Java 零改动（`git diff --name-only d60a61d 1bb650c -- app` 只这两行） |
 | v1.10 | 2026-11-10 | `fig-32` 真展开态入册后的收官版：基线升 **`1bb650c`**（`app` `b203750`、`help-center.md` `blob:6a3ebdd9…` = `index.html` 头部）；第 5 条 **28→29 张**、引用↔文件 **29=29**、`fig-32` 由 CONFIRMED-MISSING 转为已采（含 dump 两节点）；§2.5 覆盖口径改为 **22 默认 + 6 裁切 + 1 显式整屏 = 29，规则 7 条命中 7 个文件**，并记「入表才算专门验过」与其反证（`1228x2699` → FAIL）；门禁改为「`1bb650c` 上由测试重跑中，以 `gates\exit-codes.txt` 为准」（上一轮 `73886ed` 结果不适用 29 图） |
 | v1.9 | 2026-11-10 | §2.5 补**尺寸检查覆盖口径**（28 张 = 22 整屏按默认 + 6 裁切按表；`fig-32` 先入册再加表，顺序不能反）与**工具边界**（规则指向不存在文件时静默通过，「先加表后补图」会得到空转规则；关账不许写「29 张全部经尺寸检查」）；据 @LC审成文 实测记录，工具修复归 @LC测试 |
 | v1.8 | 2026-11-10 | 账户页标签按总监裁定统一为 **`BLOCKED 0 / 待复跑 1`**（证据已采到 ⇒ BLOCKED 不成立；五判据未复跑 ⇒ 那是「活没干完」而非「干不了」）；「解除以审核验复跑为准」降为**备注**，不当标签；§3 标题、计数栏、遗留第 1 条三处同步，避免与关账摘要并存两种读法 |

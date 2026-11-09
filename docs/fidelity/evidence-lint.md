@@ -157,6 +157,26 @@ python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc
 
 > 落地顺序：**先裁图、再开这个参数**。图没裁就带上逐图表，门禁必红——这是设计如此，不是误报。
 
+### 2.8 只跑生成物溯源时不再顺带扫全库（`--root` 缺省语义，2026-11-09）
+
+问题形态：`--root` 有默认值 `docs/fidelity`，所以「只想核 `index.html` 是不是最新」时若不带 `--root`，工具会**顺手把整个证据库也判一遍**，把「生成物没问题」报成「全库 fail=2」。同一件事两种跑法两个结论，最容易在交接时打架（2026-11-09 客户端遇到）。
+
+现在的语义：
+
+- 给了 `--generated-html` / `--source` 且**没给** `--root` → 只跑生成物溯源，打印 `ROOT: SKIP evidence scan (…)`，`scanned xml=0 png=0`；
+- 显式给了 `--root` → 照旧扫那个目录（两种都想要就明确写 `--root`）；
+- 只给 `--root` → 照旧只扫证据库。
+
+```bash
+# 只核生成物：不扫全库
+python tools/fidelity/evidence-lint.py --generated-html app/android/app/src/main/assets/lc-help/index.html \
+  --source docs/product/help-center.md
+# ROOT: SKIP evidence scan … / scanned xml=0 png=0 / 只出 generated 那一条结论
+
+# 两样都要：明确写 --root
+python tools/fidelity/evidence-lint.py --root docs/fidelity --generated-html … --source …
+```
+
 ## 3 用法
 
 > **路径基准（2026-11-08，技术总监要求）**：工具内一切相对路径（默认 root、默认豁免清单、`--eol`/`--magic` 的文件、豁免条目里的 `path`）**一律以「脚本所在仓库根」为基准**，不依赖 cwd。

@@ -498,7 +498,7 @@ def expected_size_for(
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Content validity lint for fidelity evidence (.xml/.png)")
-    ap.add_argument("--root", default="docs/fidelity", help="evidence root (default: <repo>/docs/fidelity, resolved against the script location)")
+    ap.add_argument("--root", default=None, help="evidence root (default: <repo>/docs/fidelity, resolved against the script location; SKIPPED when only --generated-html is given)")
     ap.add_argument("--strict", action="store_true", help="treat warnings as failures")
     ap.add_argument("--mono-ratio", type=float, default=0.995, help="monochrome threshold (default 0.995)")
     ap.add_argument("--min-png-side", type=int, default=600, help="only lint png with min(w,h) >= this (default 600)")
@@ -515,10 +515,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--source", help="source markdown for --generated-html (e.g. docs/product/help-center.md)")
     args = ap.parse_args(argv)
 
+    root_explicit = args.root is not None
+    if not root_explicit:
+        args.root = "docs/fidelity"
     args.root = resolve(args.root)
     if not os.path.isdir(args.root):
         print(f"ERROR: not a directory: {args.root}", file=sys.stderr)
         return 2
+
+    # 只跑生成物溯源时不要顺手扫整个证据库：
+    # 不传 --root 就跑 --generated-html，会连 docs/fidelity 一起判，把“生成物没问题”报成“全库 fail”，
+    # 两种跑法混在一起最容易发生「你那个 PASS 是限定了 root 的」这类争议（2026-11-09 客户端遇到）。
+    scan_evidence = root_explicit or not (args.generated_html or args.source)
+    if not scan_evidence:
+        print("ROOT: SKIP evidence scan (only --generated-html/--source given; pass --root to lint evidence too)")
 
     expect = None
     if args.expect_size:
@@ -571,7 +581,7 @@ def main(argv: list[str] | None = None) -> int:
     findings: list[dict] = []
     counts = {"xml": 0, "png": 0, "other": 0}
     skip = {s.strip() for s in args.skip_dirs.split(",") if s.strip()}
-    for path in walk(args.root, skip):
+    for path in (walk(args.root, skip) if scan_evidence else []):
         ext = os.path.splitext(path)[1].lower()
         try:
             if ext in XML_EXTS:
@@ -594,7 +604,10 @@ def main(argv: list[str] | None = None) -> int:
 
     allowed_map = {os.path.normcase(os.path.abspath(resolve(e["path"]))): e for e in allow}
 
-    dup_findings, dup_stats = check_duplicate_images(args.root, skip)
+    if scan_evidence:
+        dup_findings, dup_stats = check_duplicate_images(args.root, skip)
+    else:
+        dup_findings, dup_stats = [], {"files": 0, "unique": 0, "duplicated": 0, "redundant": 0}
     findings.extend(dup_findings)
 
     if args.generated_html or args.source:

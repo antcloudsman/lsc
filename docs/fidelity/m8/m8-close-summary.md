@@ -1,7 +1,7 @@
 # M8 关账摘要（罗盘贴地兑现 + 遗留收口）
 
 - 作者：LC审成文｜日期：**2026-11-10**｜版本：**v1.0**｜状态：**待 LC审核验 签字**（他负责的四项独立复核见 §3）
-- 基线：`develop` = **`d60a61d`**（`Merge commit '3842d2a' into develop`）；`app` 树 **`0c5da8eb19627ac74190bbcb6a1b79acc3d79806`**
+- 基线：`develop` = **`73886ed`**（`Merge commit 'b63e0d4' into develop`）；`app` 树 **`0c5da8eb19627ac74190bbcb6a1b79acc3d79806`**（自 `d60a61d` 起未再变）
 - 判据来源：`docs/fidelity/m8/ground-drape-acceptance.md`（333 行 / 20,704 B，LC审核验 独立于实现方编写）、`docs/fidelity/m7/ground-drape-migration.md`（方案 A1 + B1）、`docs/qa/m8-ground-device-method.md`
 - 本文件只做汇总与索引：**判定归 LC审核验，实现归 LC地图／LC客户端，终态文字归 LC产品**；我不自签。
 
@@ -139,10 +139,13 @@ red-on-current.log（旧树）   MAP_HTML 196,790 B
 
 | 项 | M7 状态 | M8 处置 | 证据 |
 |---|---|---|---|
-| **账户页登录态** | BLOCKED（`pm clear` 清掉登录态） | **已取得已登录态 dump**：`account-after-login.xml` 中 `昵称`=1、`退出登录`=1、`uid`=1，`立即登录`=0、`您当前未登录`=0 ⇒ 已登录变体采集成功 | `E:\APPDetector\reports\m8-ink\account-after-login.xml`（10,033 B）、`account-after-login.png` |
+| **账户页登录态** | BLOCKED（`pm clear` 清掉登录态） | **采证障碍已解除**：自注册账号登录后，`昵称`／账号·`uid`／`退出登录` 四节点齐，且坐标与原版登录态**逐点相同**（产品自量：五行落在 M6 锁定的 y 值上、行高均 79） | `E:\APPDetector\reports\m8-ink\account-after-login.xml`（10,033 B）、`account-after-login.png` |
 >
-> **⚠ 口径不一致，待裁定**：产品终态表 v1.5 仍计「BLOCKED 1 处（账户页）」，而上面的证据表明**已登录态已经采到**。两者的差别在于**判据口径**——「采到已登录态 dump」只解决「采不到」这一层；M7 定义的 BLOCKED 解除条件是「五行 + 红按钮 + 通过五判据（TEXT/BOUNDS/STEP/CARRIER/THEME）」。
-> 因此本文件**不宣布 BLOCKED 解除**，只报事实：**采证障碍已消除，判据是否重跑通过，以 LC审核验 的复跑为准**。请技术总监裁定后，产品表与本表同步改口。
+> **技术总监裁定（2026-11-10，分两件事写，禁止合成一句）**：
+> - **解除的是「采证障碍」**（M8 的「账户页登录态采证」这条达成）——**BLOCKED ≠ 仍在**。
+> - **不是「四页 1:1 五判据复跑通过」**：`TEXT/BOUNDS/STEP/CARRIER/THEME` 没有在登录态下重跑。
+> ⇒ 账户页定档：**「已采证，五判据待复跑」**；责任：**下一轮首项**；缺失证据：**一次登录态下的五判据读数**。
+> ⇒ 计数栏写 **BLOCKED 0 / 待复跑 1**，**不得**写成「账户页已验」——那是拿「采到了证据」冒充「判据通过」。
 | **about 落点 3px** | 已定位未修（`includeFontPadding`，公式少算 3px） | 复拍复核，见 `about-new.png`；**是否闭环以 LC客户端 的报告与 LC审核验 的复量为准**，本文件不代判 | `E:\APPDetector\reports\m8-ink\about-new.png`（83,755 B） |
 | **`fig-32` 真展开态** | 图已撤下，记 CONFIRMED-MISSING | 本轮重拍（LC客户端 执行，设备占用） | 待其提交后补入本表；**未落地前帮助中心仍是 28 图** |
 
@@ -195,8 +198,8 @@ backend/docker-compose.yml（develop 上已跟踪）
 
 - **门禁与七门 smoke 未在收官树上跑**：按技术总监安排，等 `fig-32` 落地、docs 全合完，由 LC测试 执行「七门 smoke + 四道门禁（② 双参数）」，退出码落盘。**本文件不预填结果**。
 - **终态表第 7 条已改判**：`docs/product/m7-eight-final-states.md` **v1.5（`33cb119`，`blob:08fa04beca07d0e2723bba154d23f617b8e51274`，24,949 B / 187 行 / CR=0）**把第 7 条从「未实现」改为 **已验**，并附 G1/G2-A1/G3/G4/G5⑤ 读数。**规范文本以该表为准**，本文件只做索引。
-- **八条计数（按 v1.5）**：已验 **8**｜未实现 **0**｜原版不可得 **0**｜**BLOCKED 1 处（账户页）**｜已知差 **3 项**｜证据不可得 **1 项（3D 逐帧）**｜未做 **1 项（L2a）**。
-- **⚠ 一处需要裁定（见 §5）**：产品表仍把账户页记 BLOCKED，而 `E:\APPDetector\reports\m8-ink\account-after-login.xml` 已出现**已登录态**（`昵称`=1、`退出登录`=1、`uid`=1，`立即登录`=0）。**「已登录态 dump 存在」是否足以解除 BLOCKED，请技术总监裁定**，本文件不改产品表的计数。
+- **八条计数（按终态表 v1.5/v1.6）**：已验 **8**｜未实现 **0**｜原版不可得 **0**｜**BLOCKED 0 / 待复跑 1（账户页五判据）**｜已知差 **3 项**｜证据不可得 **1 项（3D 逐帧）**｜未做 **1 项（L2a）**。
+- **账户页已按技术总监裁定分两件事写**（见 §5）：采证障碍**已解除**，但五判据**未在登录态下复跑** ⇒ 记「已采证，五判据待复跑」，**不写「账户页已验」**。
 - **L2a 强检验未做**（原生 `CompassView` vs canvas），记下一轮。
 - **贴地盘面不跟随 `dialType`/`dialAlpha`** 属真缺陷，下轮修，不改判据。
 - **未由我复测**：G1/G2/G3/G4 的读数来自 LC审核验／LC测试 真机执行；我只核了「文件在不在、树对不对、参数齐不齐」，**没有独立重跑**。

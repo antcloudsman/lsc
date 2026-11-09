@@ -142,9 +142,12 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 
 ### 4.5 贴地盘面不跟随 `dialType` / `dialAlpha` 切换（**真缺陷，下轮**）
 
-- **事实**：切换盘面类型或透明度时，贴地 canvas 上那张纹理不跟着变（读数为 `dialType:0`、`dialAlpha:1` 固定）。
+- **事实**：切换盘面类型或透明度时，贴地 canvas 上那张纹理不跟着变（读数 `dialType:0`、`dialAlpha:1` 固定）。
 - **定性**：**真缺陷**，不是设计差——用户改了盘面却看到地面盘面不变。
-- **处置**：**下轮修**（贴地纹理需在 `dialType`/`dialAlpha` 变化时重建/重传），本轮不改 `map.html`（会让 M8 刚跑完的门禁与真机读数作废）。
+- **根因（@LC地图 已定位）**：页面里 `compassDialType` / `compassDialAlpha` **只有读方、没有写方**——`map.html` 三处 `typeof` 守卫只读它们，`MainActivity` 零引用；原生「切换/透明度」只改原生 `CompassView`，贴地画布走不到这条路，所以永远画 `dial_full_0` + alpha 1。
+- **下轮接口（已定，避免再讨论）**：页面新增唯一写入口 `setCompassDial(type, alpha)`（钳位 `type∈[0,4]`、`alpha∈[0,1]`，**必须 `groundTexDirty = true` 并在 canvas 档重画**）；原生侧在 `setDialType` / `setDialAlpha` 各加一行 `js("setCompassDial(type,alpha)")`。
+- **两个必须防的假通过**：① 只加函数、没有真正的赋值方（`typeof` 守卫出来的变量永远不会被赋值）；② 不置 `groundTexDirty` —— `groundRedraw` 里是 `if (groundImgDial !== dialType)` 才换图，不置脏就不会重上传纹理。
+- **本轮不动 `map.html`**：改了会让 M8 刚跑完的门禁与真机读数作废。
 - **当前证据载体**：`reports/M8-g2-final/g2-final-1456.txt`（`dialType:0`、`dialAlpha:1` 即该缺陷的读数现场）。
 
 ---
@@ -179,6 +182,7 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v1.6 | 2026-11-10 | §4.5 补齐**根因与下轮接口**（`compassDialType/Alpha` 只有读方无写方；`setCompassDial(type,alpha)` + `groundTexDirty` 重画；两处防假通过），使该条从「下轮修」变成可执行；未动 `app` 树 |
 | v1.5 | 2026-11-10 | **第 7 条贴地改判「已验」**（用户可见行为达成）：补 G1 四角投影 `r(0)=1.0/r(30)=0.6499/r(60)=0.4625`、平地 vs 珠峰 **0.039px**、G2-A1 **0.00%**（1456 空间比、`translate(453.5,453.5)`、默认 quality）、G3 B1 `GONE`、G4 **611..616/1347..1352**、G5⑤ **760/722** 两态；**明确 A2 0% 只是自洽**（同一 `drawOutlineRings` 比自己）、**L2a 未做**、58.73% 已作废；新增 §4.4（B1 指针隐藏，已批准设计差）与 §4.5（`dialType`/`dialAlpha` 不跟随，真缺陷下轮）；计数 已验 **8** / 未实现 **0**；基线升 **`d60a61d`**（`app` `0c5da8e`） |
 | v1.4 | 2026-11-09 | 基线按终验意见收紧：`3ffe142` → 最终树 **`dc21f08`**（`084edc9` 已合入）；补「中间态」说明（`953fb8b`/`3ffe142` 都是祖先、`app` 树同为 `d1a186d`；本表 v1.3 的 merge-base 是 `872d77a`，复现按 `dc21f08` 取树）；补「`docs/product` 不进 `docs/fidelity` 扫描集 ⇒ `other` 恒 147、docs-only 提交不改门禁结论」 |
 | v1.3 | 2026-11-09 | 基线升到最终树 **`3ffe142`**（`app` 树仍 `d1a186d`，其上仅文档改动）；补门禁状态行（`GATE1..4_EXIT=0`、`overall : PASS`/`SMOKE: PASS`、③`other=147` 只认 `fail=0`/`allowed=3`）与 `MainActivity`/`KmlIo` 两个未变 blob；**遗留第 8 条把旧树 `24/24` 换成最终树实测 `hit=60 / shown=60 / miss=0 / net=60 / netOk=0 / online=false`**，旧数标时点 |

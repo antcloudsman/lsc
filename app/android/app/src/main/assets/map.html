@@ -198,7 +198,7 @@ var TILE_OFF = {
   keyVersion: 'v1',                /* 键含 version：换编码/换源格式时可整体失效，不用清库 */
   prefsKey: 'lc.tileoff.sources.v1',/* 启用态持久化键（localStorage）：默认没有 = 全部关闭 */
   db: null, opening: null, busy: false,
-  stats: { net: 0, put: 0, putNew: 0, putOverwrite: 0, hit: 0, miss: 0, missAttempts: 0, missOffline: 0, missNetFail: 0, missUnsupported: 0, missNoKey: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' },
+  stats: { net: 0, put: 0, putNew: 0, putOverwrite: 0, hit: 0, miss: 0, missAttempts: 0, missKeyedAttempts: 0, missOffline: 0, missNetFail: 0, missUnsupported: 0, missNoKey: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' },
   written: {},                    /* 本会话已写过的 key：区分 putNew（首次写）与 putOverwrite（覆盖） */
   hitKeys: {}, missKeys: {}, distinctHit: 0, distinctMiss: 0,
   diag: { called: 0, disabled: 0, noKey: 0, fromCache: 0, fetchErr: 0, putOk: 0, renderGen: 0, missLogged: 0 }
@@ -503,6 +503,7 @@ function tileOfflineRecover(img, layer, src) {
 
 function tileOfflineMiss(layer, key, src) {
   TILE_OFF.stats.missAttempts++;
+  TILE_OFF.stats.missKeyedAttempts++;
   if (key && TILE_OFF.missKeys[key]) { if (src === 'net') TILE_OFF.stats.missNetFail++; else TILE_OFF.stats.missOffline++; return; }
   TILE_OFF.stats.miss++;
   if (src === 'net') TILE_OFF.stats.missNetFail++;
@@ -597,6 +598,7 @@ function getTileCacheInfo() {
     hitRateDistinct: LCTileCachePolicy.hitRate(TILE_OFF.distinctHit, TILE_OFF.distinctMiss),
     distinctHit: TILE_OFF.distinctHit, distinctMiss: TILE_OFF.distinctMiss,
     missOffline: TILE_OFF.stats.missOffline, missNetFail: TILE_OFF.stats.missNetFail,
+    missAttemptsTotal: TILE_OFF.stats.missAttempts, missKeyedAttempts: TILE_OFF.stats.missKeyedAttempts,
     missUnsupported: TILE_OFF.stats.missUnsupported, missNoKey: TILE_OFF.stats.missNoKey,
     missPerGen: (TILE_OFF.renderGen > 0) ? Math.round(TILE_OFF.stats.miss / TILE_OFF.renderGen * 10) / 10 : null,
     online: (navigator.onLine !== false), lastErr: TILE_OFF.stats.lastErr

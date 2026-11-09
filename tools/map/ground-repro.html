@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>LC 贴地复现台（M8 第二阶段）</title>
+<style>
+  body { margin:0; font:13px/1.5 system-ui, sans-serif; background:#14110d; color:#e8dcc8; }
+  #bar { padding:8px 10px; background:#1e1913; border-bottom:1px solid #3a2f22; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  button { background:#2c2318; color:#e8dcc8; border:1px solid #4a3a26; border-radius:6px; padding:5px 10px; cursor:pointer; }
+  button:hover { background:#3a2f22; }
+  #frame { width:100%; height:62vh; border:0; background:#000; }
+  #out { padding:8px 10px; font-family:ui-monospace, Consolas, monospace; font-size:12px; white-space:pre-wrap; }
+  .k { color:#9ab; } .ok { color:#7c7; } .bad { color:#f77; }
+  #warn { padding:6px 10px; background:#3a1f1f; color:#fbb; display:none; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <strong>贴地复现台</strong>
+  <button onclick="act('贴地开')">贴地开 setGround(1)</button>
+  <button onclick="act('贴地关')">贴地关 setGround(0)</button>
+  <button onclick="act('槽位 canvas')">档位 canvas</button>
+  <button onclick="act('槽位 overlay')">档位 overlay</button>
+  <button onclick="act('注入 glinit')">注入 fail:glinit</button>
+  <button onclick="act('注入 upload')">注入 fail:upload</button>
+  <button onclick="act('注入 rings')">注入 fail:rings</button>
+  <button onclick="act('复位注入')">复位注入</button>
+  <button onclick="act('读状态')">读状态</button>
+</div>
+<div id="warn"></div>
+<iframe id="frame" src="../../app/android/app/src/main/assets/map.html"></iframe>
+<div id="out">等待 map.html 加载…</div>
+
+<script>
+/* 用途：不占真机，复现「贴地态」的状态机：档位切换 / diag 生命周期 / 失败注入 / 上报事件。
+ * 打开方式（必须走 http，file:// 下浏览器不允许父页访问 iframe 内容，和 app 里必须用
+ * WebViewAssetLoader 是同一个原因）：
+ *     cd <repo> && python -m http.server 8765
+ *     浏览器开 http://127.0.0.1:8765/tools/map/ground-repro.html
+ * 离线限制（先写清，免得把环境缺陷当实现缺陷）：
+ *   - 瓦片底图与 DEM 需要网络；离线下地图是黑的，但贴地盘面走本地 assets，仍可观察。
+ *   - 若浏览器对 file:// 图片禁止 canvas 读回，texImage2D 会抛 SecurityError ⇒ 复现台会显示
+ *     fail:upload；这是环境导致，与 app 内（AssetLoader https 虚拟域）不同，判据里要区分。
+ */
+var out = document.getElementById('out');
+var frame = document.getElementById('frame');
+
+function box() {
+  try { return frame.contentWindow; } catch (e) { return null; }
+}
+function jsv() {
+  var w = box();
+  if (!w) return null;
+  return (w.__LC3D && typeof w.__LC3D.getGroundDebug === 'function') ? w : null;
+}
+function log(s, cls) {
+  var line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = s;
+  out.appendChild(line);
+}
+function readState() {
+  var w = jsv();
+  if (!w) { return { error: 'NO_LC3D（map.html 未加载或跨源被挡）' }; }
+  var s = w.getState ? w.getState() : null;
+  var d = w.__LC3D.getGroundDebug();
+  return {
+    renderer: s && s.groundRenderer, ground: s && s.ground,
+    canvasOk: s && s.groundCanvasOk, diag: s && s.groundDiag,
+    debug: { diag: d.diag, canvasOk: d.canvasOk, failInject: d.failInject, hasQuad: d.hasQuad,
+             canvasBacking: d.canvasBacking, texDirty: d.texDirty, gateHit: d.gateHit }
+  };
+}
+function act(name) {
+  var w = jsv();
+  if (!w) { log('[' + name + '] 失败：NO_LC3D（先确认用 http 打开、map.html 已加载）', 'bad'); return; }
+  var r;
+  try {
+    if (name === '贴地开') r = w.setGround(1);
+    else if (name === '贴地关') r = w.setGround(0);
+    else if (name === '槽位 canvas') r = w.setGroundRenderer('canvas');
+    else if (name === '槽位 overlay') r = w.setGroundRenderer('overlay');
+    else if (name === '注入 glinit') r = w.__LC3D.__forceGroundFail('glinit');
+    else if (name === '注入 upload') r = w.__LC3D.__forceGroundFail('upload');
+    else if (name === '注入 rings') r = w.__LC3D.__forceGroundFail('rings');
+    else if (name === '复位注入') r = w.__LC3D.__forceGroundFail(null);
+  } catch (e) { log('[' + name + '] 抛异常：' + (e && e.message), 'bad'); return; }
+  setTimeout(function () {
+    var st = readState();
+    var d = st.debug || {};
+    var okText = (st.canvasOk === true) ? 'canvasOk=true' : 'canvasOk=false';
+    log('[' + name + '] ret=' + JSON.stringify(r) + '  renderer=' + st.renderer + '  ground=' + st.ground +
+        '  ' + okText + '  diag=' + st.diag + '  | debug: failInject=' + d.failInject +
+        ' hasQuad=' + d.hasQuad + ' backing=' + d.canvasBacking + ' texDirty=' + d.texDirty +
+        ' gateHit=' + d.gateHit, st.canvasOk === true ? 'ok' : (String(st.diag).indexOf('fail') === 0 ? 'bad' : ''));
+  }, 120);
+}
+frame.addEventListener('load', function () {
+  log('map.html 已加载，开始复现', 'ok');
+  setTimeout(function () {
+    if (!jsv()) {
+      var w = document.getElementById('warn');
+      w.style.display = 'block';
+      w.textContent = '拿不到 __LC3D：多半是用 file:// 打开的。请用 python -m http.server 起本地服务后从 http:// 打开本页。';
+      return;
+    }
+    act('读状态');
+  }, 800);
+});
+</script>
+</body>
+</html>

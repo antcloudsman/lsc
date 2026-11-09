@@ -105,5 +105,31 @@ ok("800 − bannerBottom(32) = 760（元素底边）", 800 - P.bannerBottom(32) 
 ok("未下发 ⇒ 按 0，bottom=8", P.bannerBottom(undefined) === 8 && P.bannerBottom(null) === 8);
 ok("非法值 ⇒ 按 0，bottom=8", P.bannerBottom("abc") === 8 && P.bannerBottom(-5) === 8);
 
+/* case 10：时序无关性（静态断言，读 map.html 源码）
+ * 总监 11-09 定的判据：「通过了要能说出为什么通过」——上次 bottom=760 是
+ * 「banner 先显示、setSafeArea 后到」撞对的，换冷启顺序就成 792。
+ * 这里把「与时序无关」变成可执行断言：两条写入路径都不许有 display 门槛。 */
+var fs = require("fs");
+var mapSrc = fs.readFileSync(path.join(__dirname,
+  "..", "..", "app", "android", "app", "src", "main", "assets", "map.html"), "utf8");
+function fnBody(src, name) {
+  var s = src.indexOf("function " + name + "(");
+  if (s < 0) return "";
+  return src.slice(s, s + 3000);
+}
+/* 断言必须只看代码，注释里提到旧写法不算命中（第一版就栽在这：
+ * 注释里写着 display==='block' 被正则当成了代码） */
+function stripComments(s) {
+  return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+}
+var safeBody = stripComments(fnBody(mapSrc, "setSafeArea"));
+var bannerBody = stripComments(fnBody(mapSrc, "tileOfflineBanner"));
+ok("setSafeArea 代码里不再出现 display 判断（无门槛）",
+  safeBody.length > 0 && !/display/.test(safeBody));
+ok("setSafeArea 会写 bottom（不论可见与否）", /el\.style\.bottom\s*=/.test(safeBody));
+ok("tileOfflineBanner 里 bottom 写在 display='block' 之前",
+  bannerBody.indexOf("el.style.bottom") > 0 &&
+  bannerBody.indexOf("el.style.bottom") < bannerBody.indexOf("el.style.display = 'block'"));
+
 console.log("\nRESULT: " + (fails === 0 ? "PASS" : "FAIL") + " fails=" + fails);
 process.exit(fails === 0 ? 0 : 1);

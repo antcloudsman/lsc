@@ -1,11 +1,17 @@
 # M6 第 4 条：四页 1:1 复验（原版 m3 dump vs 实际 dump）
-# 用法：pwsh -NoProfile -File tests\e2e\verify-m6-pages.ps1 [-Device L2E0222531014833] [-OutDir <dir>] [-Pages account,complaint,about,contact]
-# 判据：匹配到的文本节点 bounds 四边 Δ≤2px；缺失文本 = 失败；步进（--step）作为参考值输出
+# 判据（F-01/F-02 修复后）——三条判据各自出 PASS/FAIL，不再只用 compare_page 的单一 VERDICT：
+#   TEXT    文本缺失（白名单外）            BOUNDS  匹配节点 bounds 四边 Δ≤2px
+#   STEP    匹配节点 y 步进中位数 = 期望±2   THEME   底色众数 / 纯白占比 / 字色占比
+#   CARRIER contact 必须是 dialog 弹层；其余必须是 page（android:id/content 或全屏）
+# 用法：pwsh -NoProfile -File tests\e2e\verify-m6-pages.ps1 [-Device L2E0222531014833] [-OutDir <dir>] `
+#         [-Pages account,complaint,about,contact] [-ActDir <dir>]
+#   -ActDir 提供 act-<page>.xml / act-<page>.png 时跳过设备（离线复核判据用）
 [CmdletBinding()]
 param(
     [string]$Device = 'L2E0222531014833',
     [string]$OutDir = '',
-    [string[]]$Pages = @('account', 'complaint', 'about', 'contact')
+    [string[]]$Pages = @('account', 'complaint', 'about', 'contact'),
+    [string]$ActDir = ''
 )
 $pkg = 'com.luopan.fengshui'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -41,42 +47,56 @@ function GoBack {
     Adb2 @('shell', 'input', 'keyevent', '4') | Out-Null
     Start-Sleep -Milliseconds 700
 }
-$refs = @{
-    account   = 'docs/fidelity/m3/account-setting.xml'
-    complaint = 'docs/fidelity/m3/complaint.xml'
-    about     = 'docs/fidelity/m3/about.xml'
-    contact   = 'docs/fidelity/m3/contact.xml'
-}
+
+$refFile = @{ account = 'account-setting'; complaint = 'complaint'; about = 'about'; contact = 'contact' }
 $items = @{ account = 'lc_drawer_item_1'; complaint = 'lc_drawer_item_2'; about = 'lc_drawer_item_3'; contact = 'lc_drawer_item_4' }
-$titles = @{ account = '账户设置'; complaint = '投诉反馈'; about = '关于我们'; contact = '联系我们' }
+
+# 每页判据参数（来源：client-four-pages-diff §0.3/§1.2、verify-four-pages-client §3）
+# ignore  = 产品口径「M4 自建/非原版、不按 1:1 判」的文本（只影响缺失判定）
+# region  = 步进取样的 act 侧 y 区间（行高节奏与文本无关）
+$cfg = @{
+    account   = @{ ignore = '昵称,沧海桑田,头像,绑定手机,去绑定,绑定微信,注销账户,账户ID,340992,退出登录'
+                   step = 163; region = '300:2000'; carrier = 'page'; bg = 'F0F3F7'; text = '23272B'; white = $null }
+    complaint = @{ ignore = ''; step = 180; region = '300:700'; carrier = 'page'; bg = 'F0F3F7'; text = '23272B'; white = $null }
+    about     = @{ ignore = ''; step = 95;  region = '950:1200'; carrier = 'page'; bg = 'F0F3F7'; text = '23272B'; white = $null }
+    contact   = @{ ignore = ''; step = $null; region = ''; carrier = 'dialog'; bg = '101215'; text = $null; white = 5 }
+}
 
 foreach ($pg in $Pages) {
-    MainPage
-    if (-not (TapId 'lc_menu_button')) { Log "[$pg] 打不开抽屉"; $script:fails++; continue }
-    Start-Sleep -Milliseconds 900
-    if (-not (TapId $items[$pg])) { Log ("[$pg] 找不到条目 " + $items[$pg]); $script:fails++; GoBack; continue }
-    Start-Sleep -Milliseconds 1500
-    $xml = UiDump
-    Set-Content -LiteralPath (Join-Path $OutDir ("act-$pg.xml")) -Value $xml -Encoding UTF8
-    & adb -s $Device exec-out screencap -p > (Join-Path $OutDir ("act-$pg.png"))
-    @('account-setting', 'complaint', 'about', 'contact') | Out-Null
-    # 回主界面（Activity/Dialog 都按两次返回兜底）
-    GoBack; GoBack
-    $ref = Join-Path $root ("docs\fidelity\m3\" + @{account='account-setting';complaint='complaint';about='about';contact='contact'}[$pg] + '.xml')
-    $out = & python (Join-Path $root 'tests\lib\compare_page.py') $ref (Join-Path $OutDir ("act-$pg.xml")) --step 2>&1
+    if (-not $ActDir) {
+        MainPage
+        if (-not (TapId 'lc_menu_button')) { Log "[$pg] 打不开抽屉"; $script:fails++; continue }
+        Start-Sleep -Milliseconds 900
+        if (-not (TapId $items[$pg])) { Log ("[$pg] 找不到条目 " + $items[$pg]); $script:fails++; GoBack; continue }
+        Start-Sleep -Milliseconds 1500
+        $xml = UiDump
+        Set-Content -LiteralPath (Join-Path $OutDir ("act-$pg.xml")) -Value $xml -Encoding UTF8
+        & adb -s $Device exec-out screencap -p > (Join-Path $OutDir ("act-$pg.png"))
+        GoBack; GoBack
+    }
+    $actXml = if ($ActDir) { Join-Path $ActDir ("act-$pg.xml") } else { Join-Path $OutDir ("act-$pg.xml") }
+    $actPng = if ($ActDir) { Join-Path $ActDir ("act-$pg.png") } else { Join-Path $OutDir ("act-$pg.png") }
+    $ref = Join-Path $root ("docs\fidelity\m3\" + $refFile[$pg] + '.xml')
+
+    $judgeArgs = @((Join-Path $root 'tests\lib\judge_page.py'), '--ref', $ref, '--act-xml', $actXml, '--act-png', $actPng,
+        '--step-tol', '2', '--carrier', $cfg[$pg].carrier, '--theme-bg', $cfg[$pg].bg)
+    if ($cfg[$pg].ignore) { $judgeArgs += @('--ignore-text', $cfg[$pg].ignore) }
+    if ($null -ne $cfg[$pg].step) { $judgeArgs += @('--step', "$($cfg[$pg].step)") }
+    if ($cfg[$pg].region) { $judgeArgs += @('--step-region', $cfg[$pg].region) }
+    if ($cfg[$pg].text) { $judgeArgs += @('--theme-text', $cfg[$pg].text) }
+    if ($null -ne $cfg[$pg].white) { $judgeArgs += @('--theme-white-min', "$($cfg[$pg].white)") }
+    $out = & python @judgeArgs 2>&1
     $txt = ($out | ForEach-Object { "$_" }) -join "`n"
     Add-Content -LiteralPath (Join-Path $OutDir 'compare.log') -Value ("== $pg ==`n" + $txt) -Encoding UTF8
-    if ($pg -eq 'contact') {
-        $blue = (& python (Join-Path $root 'tests\lib\blue_button.py') (Join-Path $OutDir 'act-contact.png') 168 1127 1059 1694 2>&1 | ForEach-Object { "$_" }) -join "`n"
-        Add-Content -LiteralPath (Join-Path $OutDir 'compare.log') -Value ("contact蓝填充: " + $blue) -Encoding UTF8
-        Log ("[contact] " + $blue)
+
+    $verdicts = @{}
+    foreach ($k in 'TEXT', 'BOUNDS', 'STEP', 'THEME', 'CARRIER', 'VERDICT') {
+        $mv = [regex]::Match($txt, "(?m)^$k=(PASS|FAIL|NA)")
+        $verdicts[$k] = if ($mv.Success) { $mv.Groups[1].Value } else { 'ERROR' }
     }
-    $verdict = if ($txt -match 'VERDICT=PASS') { 'PASS' } else { 'FAIL' }
-    if ($verdict -eq 'FAIL') { $script:fails++ }
-    $maxd = [regex]::Match($txt, 'max_bounds_delta=(\d+)').Groups[1].Value
-    $miss = [regex]::Match($txt, 'missing=(\d+)').Groups[1].Value
-    $step = [regex]::Match($txt, 'step_y_median=([\d\.]+)').Groups[1].Value
-    Log ("[$pg] " + $verdict + " max_delta=" + $maxd + "px missing=" + $miss + " step_y=" + $step)
+    Log ("[$pg] " + (($verdicts.Keys | ForEach-Object { $_ + '=' + $verdicts[$_] }) -join ' '))
+    if ($verdicts['VERDICT'] -ne 'PASS') { $script:fails++ }
 }
 Log ("fails=" + $script:fails + " out=" + $OutDir)
 if ($script:fails -eq 0) { exit 0 } else { exit 1 }
+

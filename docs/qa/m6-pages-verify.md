@@ -8,8 +8,10 @@ pwsh -NoProfile -File tests\e2e\verify-m6-pages.ps1 -Device L2E0222531014833
 ```
 
 - 逐页：`am start MainActivity` → 点 ≡ 打开抽屉 → 按 `lc_drawer_item_N` 进入 → `uiautomator dump --compressed` + `screencap` → 返回 → 比对。
-- 比对 `checks\compare_page.py`：按文本多重集配对，逐节点算 bounds 四边 Δ；**`missing>0` 或 `max_bounds_delta>2` 即 FAIL**；`--step` 输出相邻 y 步进中位数。
-- 色值 `checks\color_palette.py`：截图调色板 top-N 对照（**辅助项**，圆角/色值只能靠像素）。
+- 比对 `tests\lib\judge_page.py`（2026-11-09 起，F-01/F-02）：文档三条判据（载体/主题/步进）拆成五条可判项、各自出 PASS/FAIL——`TEXT`（缺失，白名单外）/`BOUNDS`（四边 Δ≤2px）/`STEP`（act 侧 y 步进中位数，account 163、complaint 180、about 95，±2）/`THEME`（底色众数、纯白占比、字色占比）/`CARRIER`（contact 必须 dialog，其余 page）；`VERDICT` 为五者全 PASS。任一 FAIL → 脚本 exit 1。
+- `--ignore-text` 白名单：产品口径「M4 自建/非原版、不按 1:1 判」的文本（账户设置 6 行及其值、退出登录）已列在 `verify-m6-pages.ps1` 的 `$cfg`，只影响缺失判定，不影响 STEP/THEME。
+- 复用底层比对：`python tests\lib\compare_page.py <ref.xml> <act.xml> [--step] [--ignore-text a,b]`（输出 `missing`/`max_bounds_delta`/`VERDICT`，兼容旧用法）。
+- 色值 `tests\lib\color_palette.py`：截图调色板 top-N 对照；底色/白/字占比已进 `THEME` 判据，调色板只作辅助。
 - **几何唯一来源 = dump 的 bounds**；像素拟合只作辅助（583×111 vs 157 的教训：拟合值不得进判据）。
 
 ## 参照文件

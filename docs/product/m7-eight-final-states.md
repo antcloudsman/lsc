@@ -4,7 +4,12 @@
 - 当前基线（**最终冻结点**）：`develop` = **`d260b78`**（`Merge commit 'c3796c0' into develop`，空转规则检查合入后的收官树）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**；`help-center.md` `blob:6a3ebdd988178d52fd0b1d7355f92228ac0833fb` = `index.html` 头部 `@` 串（逐字符相同）；`lc-help` webp **29** 张
 - 上一基线：`d60a61d`（`app` 树 `0c5da8e`，贴地交付树；`fig-32` 尚未入册、`lc-help` 28 张）。**`1bb650c` 与 `d60a61d` 的 `app` 树不同**（`0c5da8e` → `b203750`），但差异**只有两项、都在帮助中心静态资源**：`assets/lc-help/fig-32.webp`（新增 109,944 B）与 `assets/lc-help/index.html`（+4/−2）；`map.html` / `MainActivity` / `KmlIo` / 全部 Java **零改动**（`git diff --name-only d60a61d 1bb650c -- app` 只这两行）。
   - **台账禁令**：不得写「门禁包与真机读数是同一棵 `app` 树」——树确实变了；应写「**渲染相关零改动，差异仅在帮助中心静态资源，故贴地/十字经线真机读数继续有效**」。M8 真机读数引用时标「`d60a61d` 树」。
-- 门禁状态：`d260b78` 上的七门 smoke + 四道门禁由 @LC测试 执行（**最后一次跑，树不再动**）；本文引用的 ② 输出取自**合入后的工具**在同样 29 张图上的实跑，@LC测试（`c3796c0`）、@LC审成文（独立复跑）、@LC技术总监（合并后自跑）三处一致；`d260b78` 的正式门禁以 `gates\exit-codes.txt` 原文为准
+- 门禁状态（`d260b78` 实测，原件 `E:\APPDetector\reports\m8-gates-d260b78\exit-codes.txt`，5,525 B / LF / 无 BOM）：**七门 smoke 全 PASS + 四道门禁全 `exit 0`**
+  - 证据头七项：顶点 `d260b788…`｜`app` 树 `b203750`｜APK **12,470,938 B**｜`sha256:123e75f1965fd2c0dcc1a73b0251403c2fd5081f28745dc66d31f636433c2ea3`｜图 **29**｜规则 **7**｜覆盖 **22+6+1**、命中 **7/7**
+  - 七门：`copy / secret / desktop / numeric（85 tests, 0 fail）/ mech-src / android / ground` 全 PASS；`desktop` `cargo_exit=0`、png 1100×780（266,376 B）、`mechanics_values=19 estimated=0`；`ground` `M8-GROUND PASS` + `NEGATIVES PASS`（N0–N5 按预期红/绿）
+  - 四道：① `103/103/103 all match`｜② `rules 7/7`、`by rule=7 by default=22`、`DUP 29/29/0`、`fail=0`｜③ `27/65 pair compared`、26 对 known-red、`checksheet_id 29/29`、`fail=0 allowed=3`（`other=149` 为本树扫描集，只认 `fail=0`/`allowed=3`）｜④ 头部 `@6a3ebdd9…` = `git hash-object` 同值、`fig` 引用 29、`fail=0`
+  - **④ 的正向只打 `fail=0`，不能自证「比了什么」**：@LC测试 另做两次反证才敢签——改坏头部 sha → `FAIL generated … stale/mismatched (regenerate)` `exit 1`；删掉 `GENERATED` 整行 → `FAIL … missing header` `exit 1`
+  - **第 4 门设备段本轮跳过**（`-SkipDevice`）：贴地真机读数仍是 `d60a61d`/`app` `0c5da8e` 那一轮，差异只在 `lc-help` 静态资源与 `tools/`，**渲染代码零改动**；台账按 § 上方禁令写，**不得写「门禁包与真机读数同一棵 `app` 树」**
 - 历史基线（M7 定版）：`dc21f08`（`app` 树 `d1a186d`）；`953fb8b`（审核验签字点）与 `3ffe142` 均为其祖先、`app` 树同为 `d1a186d`。凡引 M7 树读数处标「M7 树」，**不得当 M8 读数**
 - 判据来源：`docs/fidelity/m6-close-summary.md` §1、`docs/fidelity/m7/symbols-stage1.md`、`docs/fidelity/m8/ground-drape-acceptance.md`、`docs/fidelity/m7/ground-drape-migration.md`、`docs/qa/help-figures-audit.md`
 - 证据目录：`reports/M8-g2-final/`、`reports/M8-final-d60a61d/`、`reports/M8-device-175d1fb/`、`reports/m7-complaint/`、`reports/M7-center-symbol/`、`reports/M7-center-verify/`、`reports/M7-final-fa97c96/`（旧树）、`reports/M6-pages-96be059/`、`reports/m7-about-root/`
@@ -225,7 +230,8 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
-| v1.14 | 2026-11-10 | 冻结点定为 **`d260b78`**（`app` 树 `b203750`，空转规则检查已合）；§2.5 把「规则命中 7/7、无空转条目」**写成硬判据**并引用门禁原文（`SIZE-MAP-HIT` 7 行、`SIZE-MAP-COVERAGE rules 7/7 matched; files by rule=7 by default=22`、`DUP 29/29/0`、`fail=0 exit=0`），补该检查的反证（`fig-99` → `FAIL size-rule (idle rule)` exit 1）；「工具边界」段改为**已修留档**；门禁状态注明 `d260b78` 由测试最后一次跑、以 `gates` 原文为准 |
+| v1.15 | 2026-11-10 | 补**门禁实测**（`d260b78`）：七门 smoke 全 PASS + 四道 `exit 0`，原件 `reports\m8-gates-d260b78\exit-codes.txt`；写齐证据头七项（顶点／`app` 树 `b203750`／APK `12,470,938 B`／`sha256:123e75f1…`／图 29／规则 7／覆盖 `22+6+1`、命中 `7/7`）；记录 ④ 的两次反证（改头部 sha、删 GENERATED 行均 `exit 1`）与**第 4 门设备段本轮跳过**（真机读数仍为 `d60a61d`/`0c5da8e`，禁写「同一棵 app 树」）；③ `other=149` 为本树口径、只认 `fail=0`/`allowed=3` |
+| v1.14 | 2026-11-10 | 冻结点定为 **`d260b78`**（`app` 树 `b203750`，空转规则检查已合）；§2.5 把「规则命中 7/7、无空转条目」**写成硬判据**并引用门禁原文（`SIZE-MAP-HIT` 7 行、`SIZE-MAP-COVERAGE rules 7/7 matched; files by rule=7 by default=22`、`DUP 29/29/0`、`fail=0 exit=0`），补该检查的反证（`fig-99` → `FAIL size-rule (idle rule)` exit 1）；「工具边界」段改为**已修留档** |
 | v1.13 | 2026-11-10 | 覆盖写法全组统一为 **`22+6+1`**（不再混用「22 整屏 + 6 裁切 + fig-32 显式入表」变体，便于 grep 核对）；§2.5 接入 @LC测试 `c3796c0` 的**空转规则检查**（规则命中 0 文件 → `FAIL size-rule (idle rule)`；只给表 → `WARN size-default`；两参数都不给 → `SIZE: SKIP` 不再静默 exit 0），并预写门禁三行原文 |
 | v1.12 | 2026-11-10 | 按 @LC审成文 的更正标注证据边界：`verify_bounds.py` **只输出 bounds、不做 PASS/FAIL 判定**，五判据比对与红按钮像素判据须由 @LC审核验 自己写自己跑（原「可直接跑五判据」的说法已收回） |
 | v1.11 | 2026-11-10 | 补**台账禁令**：`1bb650c` 与 `d60a61d` 的 `app` 树不同（`0c5da8e`→`b203750`），差异只有 `fig-32.webp`（新增 109,944 B）与 `index.html`（+4/−2）两项、均在 `lc-help`；不得写「门禁包与真机读数是同一棵 `app` 树」，只能写「渲染相关零改动、差异仅在帮助中心静态资源」；`map.html`/`MainActivity`/`KmlIo`/Java 零改动（`git diff --name-only d60a61d 1bb650c -- app` 只这两行） |

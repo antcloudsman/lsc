@@ -68,3 +68,34 @@ contact   载体一致 ✓、蓝填充 583×111 ✓、步进 149 ✓
 ```
 
 **Δ 表按三类判**：共有节点按 Δ≤2 判；原版独有行记 DI；我方独有行只判几何样式。红按钮/窗口三项已按像素判 PASS，其余留待第 7 笔（文字 wrap_content、投诉「我的」位置、about 垂直分布、contact 去 `×`）。
+
+## `8f1194b`（第二十一笔）复测：**BLOCKED，设备不在线**
+
+```
+分支    feature/client-m6-four-pages = 8f1194b3e4da（21 笔）
+构建    pwsh -NoProfile -File scripts\build-android.ps1 -SkipDevice → BUILD SUCCESSFUL in 30s / [PASS] assembleDebug OK, 8399 KB
+APK     sha256 353e39be4ad4ff80…（8,600,393 B，mtime 11-08 09:36:10）
+装机    pwsh -File tools\device\install-debug.ps1 → M6_INSTALL_RECORD FAIL exit=0 taps=0 market=ok sha=353e39be4ad4
+adb     adb devices → List of devices attached（空）；Get-PnpDevice 无 ADB/Android/HUAWEI 设备
+```
+
+→ **本机 USB 上没有 L2E0222531014833，`8f1194b` 的四页 Δ 表尚未产生任何有效数据**。
+09:39 那次 `checks\m6-pages-20261108-093917` 的 account/complaint 数字**不得引用**：装机 `taps=0`（无设备）后脚本仍继续 dump，`step_y=2387`、`找不到条目 lc_drawer_item_3`、`打不开抽屉` 都是设备不在场的产物。
+
+**静态核对（只看各笔 diff，不看合并后现状）——第 7/8 笔待验的五项在 `8f1194b` 里都有代码**：
+
+| 项 | 落点 | 静态证据 |
+|---|---|---|
+| 标题 `wrap_content` + 居中 | `66da868` | `M3PageActivity:138` 标题栏 `FrameLayout`；`:162-165` 标题 `WRAP_CONTENT` 居中 |
+| 投诉行文本 `wrap_content` | `66da868` | `:803/:838` 行内 `LinearLayout` + `WRAP_CONTENT` 标签 |
+| 「我的」右上 | `bbe7cc4` | `:187-188` `FrameLayout.LayoutParams(157,157)` 右侧 |
+| contact 去 `×` 文本 | `bbe7cc4` | `M3PageActivity` 8+/7− |
+| `退出登录` 拆容器+文字 | `8d85733` | `:270-287` `bar2` + `blp2`，文字 `WRAP_CONTENT`，`bottomMargin=64` |
+| about 绝对定位 | `8d85733` | `:921-988` `stage` `FrameLayout` 按 dump 绝对 y 落位 |
+
+静态只能证明「代码在」，**不能代替 Δ 表**：标题是否真落在 216 宽、about 各块 y 是否落到 995/1090/2331/2489/2496、`退出登录` 文字是否 183 宽，都必须设备 dump 才认。
+设备回来后一条命令即可续跑：
+
+```powershell
+pwsh -NoProfile -File tests\e2e\verify-m6-pages.ps1 -Device L2E0222531014833
+```

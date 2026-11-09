@@ -1,9 +1,10 @@
 # M7 · 用户报的 8 条 · 终态表
 
-- 作者：LC产品｜日期：**2026-11-09**｜版本：**v1.3**
-- 唯一基线：`develop` = **`3ffe142`**（`Merge commit 'f14d504' into develop`；`b47fcdb` 之上只有文档改动，`app` 树**不变**）；`app` 树 **`d1a186d29ac563226622d6bc053011e6f9370a8c`**；`map.html` `blob:126060b4fd83b6d015b9427b460008ed2c0b6158`（未动）；`help-center.md` `blob:2eaddc47738ed745178b0e1644e9e662467d76ca`（未动）；`MainActivity` `blob:cda01f27ff`、`KmlIo` `blob:b6215e7b36`（未动，故 B 轮真机读数在最终树上继续有效）
-- 门禁状态：`3ffe142` 净树四道门禁 **`GATE1..4_EXIT=0`**（② 带 `--expect-size 1228x2700` + `--expect-size-map` 两参数；③ `other=147` 为入库后扫描集，只认 `fail=0`/`allowed=3`）；六门 smoke **`overall : PASS` / `SMOKE: PASS`**（`smoke.log` 内无 `SMOKE_EXIT` 串，退出码另存 `gates\exit-codes.txt`）
-- 旧树说明：`fa97c96`（`app` 树 `0fa8a2dc`）上的门禁与烟测结果**已被 `3ffe142` 取代**；本文凡引旧树处均标「旧树」
+- 作者：LC产品｜日期：**2026-11-09**｜版本：**v1.4**
+- 唯一基线：`develop` = **`dc21f08`**（`Merge commit '084edc9' into develop`，即本表 v1.3 合入后的最终树）；`app` 树 **`d1a186d29ac563226622d6bc053011e6f9370a8c`**；`map.html` `blob:126060b4fd83b6d015b9427b460008ed2c0b6158`（未动）；`help-center.md` `blob:2eaddc47738ed745178b0e1644e9e662467d76ca`（未动）；`MainActivity` `blob:cda01f27ff`、`KmlIo` `blob:b6215e7b36`（未动，故 B 轮真机读数在最终树上继续有效）
+- 中间态说明：`953fb8b`（审核验签字点）与 `3ffe142` 均为 `dc21f08` 的祖先，**三棵树 `app` 树同为 `d1a186d`**；本表 v1.3 自己的 merge-base 是 `872d77a`（不是 `3ffe142`），所以复现时按 `dc21f08` 取树、按 `app` 树 `d1a186d` 核数据
+- 门禁状态：`953fb8b`/`3ffe142` 净树上四道门禁 **`GATE1..4_EXIT=0`**（② 带 `--expect-size 1228x2700` + `--expect-size-map` 两参数；③ `other=147`，只认 `fail=0`/`allowed=3`）；六门 smoke **`overall : PASS` / `SMOKE: PASS`**（`smoke.log` 内无 `SMOKE_EXIT` 串，退出码另存 `gates\exit-codes.txt`）。`docs/product/` 不在 `--root docs/fidelity` 扫描集，故本表后续 docs-only 提交**不改变 `other=147` 与四道门禁结论**
+- 旧树说明：`fa97c96`（`app` 树 `0fa8a2dc`）上的门禁与烟测结果**已被取代**；本文凡引旧树处均标「旧树」
 - 判据来源：`docs/fidelity/m6-close-summary.md` §1、`docs/fidelity/m7/symbols-stage1.md`、`docs/fidelity/m7/stage1-acceptance-plan.md`、`docs/product/m7-b-round-spec.md` v1.9、`docs/qa/help-figures-audit.md`
 - 证据目录：`reports/m7-complaint/`、`reports/M7-final-fa97c96/`（旧树）、`reports/M7-center-symbol/`、`reports/M7-center-verify/`、`reports/M7-orig-ground/`、`reports/M7-ground-287dc7a/`、`reports/M6-pages-96be059/`、`reports/m7-about-root/`
 - 本文只做**终态定性与出处索引**；实测数字的最终签名归 @LC审核验，判定归技术总监
@@ -168,6 +169,7 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v1.4 | 2026-11-09 | 基线按终验意见收紧：`3ffe142` → 最终树 **`dc21f08`**（`084edc9` 已合入）；补「中间态」说明（`953fb8b`/`3ffe142` 都是祖先、`app` 树同为 `d1a186d`；本表 v1.3 的 merge-base 是 `872d77a`，复现按 `dc21f08` 取树）；补「`docs/product` 不进 `docs/fidelity` 扫描集 ⇒ `other` 恒 147、docs-only 提交不改门禁结论」 |
 | v1.3 | 2026-11-09 | 基线升到最终树 **`3ffe142`**（`app` 树仍 `d1a186d`，其上仅文档改动）；补门禁状态行（`GATE1..4_EXIT=0`、`overall : PASS`/`SMOKE: PASS`、③`other=147` 只认 `fail=0`/`allowed=3`）与 `MainActivity`/`KmlIo` 两个未变 blob；**遗留第 8 条把旧树 `24/24` 换成最终树实测 `hit=60 / shown=60 / miss=0 / net=60 / netOk=0 / online=false`**，旧数标时点 |
 | v1.2 | 2026-11-09 | 投诉行台账**绝对数加阈值**：阈值 150 口径 `368..412 h45` vs 原版 `368..411 h44`、间距 `180`=原版；客户端同法 `367..413 h47`/`181`，差 1px 来自阈值，**判据只认相对量**（顶差 0、间距相等、不叠字）。回应 @LC审核验 终验的第 1px 复现问题；未动 app 树 |
 | v1.1 | 2026-11-09 | 基线换 **`b47fcdb`**（`app` 树 `d1a186d`；`fa97c96` 的门禁/烟测结果作废并标注旧树）；**投诉行改判已闭环**——`68 vs 79` 是 Compose 语义框 vs View 布局框（比较对象选错），字高实测差 1px，`6acf66d` 按墨迹下移 4px 后顶差 0、间距 181 一致；已知偏差 3→1（仅 about 3px），3D 逐帧单列「证据不可得」；§2.4 记教训、§4.1 改「已闭环」、遗留 10→9 条 |

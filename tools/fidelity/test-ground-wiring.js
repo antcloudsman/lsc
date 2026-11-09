@@ -142,6 +142,70 @@ function behaviourChecks(src) {
   return ls;
 }
 
+/* ---------- C. 盘面数据加载失败的可观测性（真跑加载器，不是读字面量） ---------- */
+/* 为什么要有这一段：`loading:rings` 与 `fail:rings` 在屏幕上都不画盘面、都回退原生盘面，
+ * 差别只在「原因说不说得出来」。只做静态断言证明不了「加载真失败时会不会说谎」，
+ * 所以把 compassDataLoad 抽出来，用桩 fetch 真跑三种情形。 */
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+function loaderSandbox(src, search, inlineRings, fetchImpl) {
+  var loadSrc = fnSource(src, "compassDataLoad");
+  if (!loadSrc) return null;
+  var body = [
+    'var window = { location: { search: search } };',
+    'if (extra) window.__LC_COMPASS_RINGS = extra;',
+    'var COMPASS_RINGS = null, compassRingsFailed = false, groundDiag = "idle", calls = [];',
+    'var fetch = fetchImpl;',
+    'var console = { log: function () { } };',
+    'function groundStateSet(ok, diag, reason) { calls.push([ok, diag, reason]); if (diag) groundDiag = diag; return diag; }',
+    loadSrc,
+    'return { load: compassDataLoad, snap: function () {',
+    '  return { failed: compassRingsFailed, diag: groundDiag, calls: calls.slice(), rings: COMPASS_RINGS }; } };'
+  ].join("\n");
+  return (new Function("search", "extra", "fetchImpl", body))(search, inlineRings, fetchImpl);
+}
+
+async function loaderChecks(src) {
+  var ls = [];
+  var rejecting = function () { return Promise.reject(new Error("no-such-file")); };
+
+  /* C1 加载彻底失败（两条路都没拿到）：必须变成 fail:rings，不许停在 loading:rings */
+  var sb1 = loaderSandbox(src, "", null, rejecting);
+  if (!sb1) return [["compassDataLoad 可抽取执行", false, "函数没找到"]];
+  var cb1 = 0;
+  sb1.load(function () { cb1++; });
+  await sleep(30);
+  var s1 = sb1.snap();
+  ls.push(["加载彻底失败 ⇒ diag=fail:rings（不是 loading:rings）", s1.diag === "fail:rings", s1.diag]);
+  ls.push(["失败原因可读 ⇒ reason=loader-missing",
+    s1.calls.length > 0 && s1.calls[s1.calls.length - 1][2] === "loader-missing",
+    JSON.stringify(s1.calls)]);
+  ls.push(["失败时回调被触发（旧写法永不触发）", cb1 === 1, "cb=" + cb1]);
+  ls.push(["失败标记 compassRingsFailed=true（draw 直接进 fail 分支）", s1.failed === true]);
+
+  /* C2 ?nofrings=1：立即失败、且一次 fetch 都不发（复现台专用开关） */
+  var fetched = 0;
+  var counting = function () { fetched++; return Promise.reject(new Error("should-not-run")); };
+  var sb2 = loaderSandbox(src, "?nofrings=1", null, counting);
+  sb2.load(function () { });
+  await sleep(10);
+  var s2 = sb2.snap();
+  ls.push(["?nofrings=1 ⇒ 直接 fail:rings", s2.diag === "fail:rings", s2.diag]);
+  ls.push(["?nofrings=1 ⇒ 不发起任何 fetch", fetched === 0, "fetch=" + fetched]);
+
+  /* C3 正常路径（inline 脚本已注入盘面数据）⇒ 不受开关影响，diag 不动 */
+  var sb3 = loaderSandbox(src, "", { rings: [{ id: "TYPE_1" }] }, rejecting);
+  var got3 = null;
+  sb3.load(function (r) { got3 = r; });
+  await sleep(10);
+  var s3 = sb3.snap();
+  ls.push(["正常路径 ⇒ 取到盘面数据", s3.rings !== null && got3 !== null]);
+  ls.push(["正常路径 ⇒ diag 不被改写（开关没污染）", s3.diag === "idle", s3.diag]);
+  ls.push(["正常路径 ⇒ 不置失败标记", s3.failed === false]);
+
+  return ls;
+}
+
 /* ---------- 反证：故意改坏，断言必须变红 ---------- */
 var MUTATIONS = [
   ["删掉产品切档那行（回到 11-08 的死代码）",
@@ -167,29 +231,42 @@ var MUTATIONS = [
     "注入失败写在真实失败分支之前"],
   ["getState 丢掉三个新字段（原生读不到）",
     function (s) { return s.replace("groundCanvasOk: groundCanvasOk, groundDiag: groundDiag,", ""); },
-    "getState() 暴露 groundRenderer / groundCanvasOk / groundDiag"]
+    "getState() 暴露 groundRenderer / groundCanvasOk / groundDiag"],
+  ["终端失败不报 fail:rings（退回「永远 loading」）",
+    function (s) { return s.replace("groundStateSet(false, 'fail:rings', 'loader-missing');\n      if (typeof cb", "if (typeof cb"); },
+    "加载彻底失败 ⇒ diag=fail:rings"],
+  ["?nofrings=1 开关失效（复现台造不出加载失败）",
+    function (s) { return s.replace("return /(?:^|[?&])nofrings=1(?:&|$)/.test(", "return /(?:^|[?&])nevermatch=1(?:&|$)/.test("); },
+    "?nofrings=1 ⇒ 不发起任何 fetch"]
 ];
 
-if (process.argv.indexOf("--selftest") >= 0) {
+async function runSelftest() {
   console.log("=== 反证：每条断言故意改坏一次，必须变红 ===");
   var bad = 0;
-  MUTATIONS.forEach(function (m) {
+  for (var i = 0; i < MUTATIONS.length; i++) {
+    var m = MUTATIONS[i];
     var mutated = m[1](SRC);
-    if (mutated === SRC) { console.log("[FAIL] 变异没生效（找不到目标）: " + m[0]); bad++; return; }
-    var ls = staticChecks(mutated).concat(behaviourChecks(mutated));
-    /* 断言名可能带括号补充，用前缀匹配，避免改名就把反证变成空跑 */
-  var target = ls.filter(function (x) { return x[0].indexOf(m[2]) === 0; })[0];
+    if (mutated === SRC) { console.log("[FAIL] 变异没生效（找不到目标）: " + m[0]); bad++; continue; }
+    var ls = staticChecks(mutated).concat(behaviourChecks(mutated)).concat(await loaderChecks(mutated));
+    var target = ls.filter(function (x) { return x[0].indexOf(m[2]) === 0; })[0];
     var red = target && target[1] === false;
     if (!red) bad++;
     console.log((red ? "[PASS] " : "[FAIL] ") + "变异后「" + m[2] + "」变红  ← " + m[0]);
-  });
+  }
   console.log("\nSELFTEST: " + (bad === 0 ? "PASS" : "FAIL") + " bad=" + bad);
   process.exit(bad === 0 ? 0 : 1);
 }
 
-console.log("=== A. 静态断言（map.html 源码）===");
-staticChecks(SRC).forEach(function (x) { ok(x[0], x[1], x[2]); });
-console.log("=== B. diag 状态机行为（抽函数在 Node 里跑）===");
-behaviourChecks(SRC).forEach(function (x) { ok(x[0], x[1], x[2]); });
-console.log("\nRESULT: " + (fails === 0 ? "PASS" : "FAIL") + " fails=" + fails);
-process.exit(fails === 0 ? 0 : 1);
+async function runAll() {
+  console.log("=== A. 静态断言（map.html 源码）===");
+  staticChecks(SRC).forEach(function (x) { ok(x[0], x[1], x[2]); });
+  console.log("=== B. diag 状态机行为（抽函数在 Node 里跑）===");
+  behaviourChecks(SRC).forEach(function (x) { ok(x[0], x[1], x[2]); });
+  console.log("=== C. 盘面数据加载失败的可观测性（桩 fetch 真跑）===");
+  (await loaderChecks(SRC)).forEach(function (x) { ok(x[0], x[1], x[2]); });
+  console.log("\nRESULT: " + (fails === 0 ? "PASS" : "FAIL") + " fails=" + fails);
+  process.exit(fails === 0 ? 0 : 1);
+}
+
+if (process.argv.indexOf("--selftest") >= 0) runSelftest();
+else runAll();

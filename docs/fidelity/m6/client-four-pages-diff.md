@@ -211,7 +211,7 @@ canvas.drawLine(cx - r, cy, cx + r, cy, paint);
 
 1. **我方四页真机 dump 未取**（设备串行给第 2 条测量让路）。§2 的「我方」是代码推算，仅 §0.2 一处实测锚点校验。Stage 2 开工第一步补 4 份 dump 回填精确 bounds。
 2. **原版 `投诉反馈` 二级表单**未在本表展开（`m3/complaint-form.xml` 已有全量 bounds，可直接复用）。
-3. ~~联系我们 Dialog 的尺寸~~ —— **已量（`checks/m6/contact-dialog-measure.py`，纯像素扫描，无设备）**：
+3. ~~联系我们 Dialog 的尺寸~~ —— **已量（`tests/e2e/contact-dialog-measure.py`，原 `checks/m6` 已迁入仓库；纯像素扫描，无设备）**：
 
    | 项 | 量测值（px） | 换算（density 3.375） |
    |---|---|---|

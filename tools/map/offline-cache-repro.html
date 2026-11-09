@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>B 轮离线瓦片缓存 · 复现/修复对照</title></head>
+<body>
+<!--
+  离线瓦片缓存三症状的复现台（不需要外网，用 tools/map/fake-tiles.py 的本地假瓦片）：
+    A 在线 + 启用源 → 渲染 → put/items、3 条写入 key、键回环、只读钩子
+    B 重载（同 origin）+ 离线 + **不再调用 setTileCacheSource** → 启用态应持久化 → 命中已缓存层级
+    B2 平移到未缓存区域并反复重绘 → miss 按唯一键、missAttempts 才增长（重绘风暴不再放大 miss）
+    C 只读钩子 __LC3D.cacheKeys(3) / cacheExpect() 输出
+
+  用法：
+    python tools/map/fake-tiles.py 8811
+    Chrome 打开 http://127.0.0.1:8811/tools/map/offline-cache-repro.html（真机/无头都行，headless 需真时间）
+-->
+<iframe id="f" width="420" height="820" style="border:0"></iframe>
+<script>
+var MAP = '../../app/android/app/src/main/assets/map.html?tk=fake';
+var R = [];
+function log(name, info) { R.push(name + ' ' + info); console.log('OC ' + name + ' ' + info); }
+function iframe() { return document.getElementById('f'); }
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function patchTileUrl(w) {
+  w.tileUrl = function (layer, z, x, y) { return location.origin + '/tile/' + layer + '/' + z + '/' + x + '/' + y + '.png'; };
+}
+/* 模拟「网络真的不通」：指向一个关着的端口，让 <img> 立刻 error */
+function patchTileUrlDead(w) {
+  w.tileUrl = function (layer, z, x, y) { return 'http://127.0.0.1:1/tile/' + layer + '/' + z + '/' + x + '/' + y + '.png'; };
+}
+function resetStats(w) {
+  w.TILE_OFF.stats = { net: 0, put: 0, hit: 0, miss: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, lastErr: '',
+    missAttempts: 0, putNew: 0, putOverwrite: 0, itemsAt: 0 };
+  w.tileDiag = { net: 0, netOk: 0, ok: 0, hit: 0, err: 0, lastErr: '', lastErrUrl: '' };
+}
+function info(w) {
+  var t = w.getState().tileOffline || {};
+  var d = w.tileDiag || {};
+  return {
+    put: t.put, putNew: t.putNew, putOverwrite: t.putOverwrite, items: t.items,
+    hit: t.hit, miss: t.miss, missAttempts: t.missAttempts, net: t.net,
+    sources: (t.sources || []).join('+'), persisted: t.sourcesPersisted,
+    diagNet: d.net, diagOk: d.ok, diagErr: d.err, lastErr: t.lastErr
+  };
+}
+function infoStr(x) {
+  return 'put=' + x.put + '(new=' + x.putNew + ',over=' + x.putOverwrite + ') items=' + x.items +
+    ' hit=' + x.hit + ' miss=' + x.miss + '(attempts=' + x.missAttempts + ')' +
+    ' net=' + x.net + ' src=[' + x.sources + '] persisted=' + x.persisted +
+    ' tileDiag=' + x.diagNet + '/' + x.diagOk + '/' + x.diagErr + (x.lastErr ? ' lastErr=' + x.lastErr : '');
+}
+function loadMap(n) {
+  return new Promise(function (resolve) {
+    var f = iframe();
+    f.onload = function () { resolve(f.contentWindow); };
+    f.src = MAP + '&r=' + n + '#lat=39.9&lng=116.4&z=10';
+  });
+}
+function clearAll() {
+  return new Promise(function (resolve) {
+    try { localStorage.removeItem('lc.tileoff.sources.v1'); } catch (e) { }
+    var req = indexedDB.deleteDatabase('lc-tile-offline-v1');
+    req.onsuccess = req.onerror = req.onblocked = function () { resolve(); };
+    setTimeout(resolve, 800);
+  });
+}
+
+(async function () {
+  try {
+    await clearAll();
+
+    /* ---------------- A：在线 + 启用源 → 写入 ---------------- */
+    var w = await loadMap(1);
+    await wait(1200);
+    patchTileUrl(w);
+    w.setTileCacheSource('ter', true);
+    w.setTileCacheSource('cta', true);
+    resetStats(w);
+    w.setView(39.9, 116.4, 10);
+    await wait(2500);
+    var a = info(w);
+    log('A-online', infoStr(a));
+    var keysA = await w.cacheKeys(3);
+    for (var i = 0; i < keysA.length; i++) log('A-writeKey' + (i + 1), keysA[i].key + ' size=' + keysA[i].size);
+    var expA = await w.cacheExpect();
+    log('A-expect', 'checked=' + expA.checked + ' hit=' + expA.hit + ' miss=' + expA.miss + ' rate=' + expA.rate);
+
+    /* ---------------- B：重载 + 离线 + 不重新启用 ---------------- */
+    w = await loadMap(2);
+    await wait(1500);
+    Object.defineProperty(w.navigator, 'onLine', { get: function () { return false; }, configurable: true });
+    patchTileUrl(w);
+    resetStats(w);
+    w.setView(39.9, 116.4, 10);          /* 已缓存层级 */
+    await wait(2500);
+    var b = info(w);
+    log('B-reload-offline', infoStr(b));
+    log('B-banner', (w.document.getElementById('offlineBar') || {}).textContent || '(none)');
+
+    /* B2：平移到未缓存区域，并反复重绘（验证 miss 只按唯一键增长） */
+    resetStats(w);
+    w.setView(40.6, 117.4, 10);
+    await wait(1500);
+    var m1 = info(w);
+    w.setView(40.601, 117.401, 10);
+    await wait(800);
+    w.setView(40.602, 117.402, 10);
+    await wait(800);
+    var m2 = info(w);
+    log('B2-uncached-1st', infoStr(m1));
+    log('B2-uncached-after3', infoStr(m2));
+
+    /* ---------------- C：只读钩子 ---------------- */
+    w.setView(39.9, 116.4, 10);
+    await wait(1200);
+    var keysC = await w.cacheKeys(3);
+    for (var j = 0; j < keysC.length; j++) log('C-storeKey' + (j + 1), keysC[j].key + ' size=' + keysC[j].size);
+    var expC = await w.cacheExpect();
+    log('C-expect', 'checked=' + expC.checked + ' hit=' + expC.hit + ' miss=' + expC.miss + ' rate=' + expC.rate +
+      ' missKeys=' + (expC.missKeys || []).slice(0, 3).join(','));
+
+    /* ---------------- D：离线 + 关掉源（旧行为的等价态）→ hit 恒 0 ----------------
+     * 这就是缺陷报告里「离线回到已缓存层级 hit=0」的成因：源开关关着时，
+     * tileOfflineRecover 在 tileSourceEnabled() 处就返回，**根本不会去 IDB 查**。 */
+    w.setTileCacheSource('ter', false);
+    w.setTileCacheSource('cta', false);
+    patchTileUrlDead(w);
+    resetStats(w);
+    w.setView(39.9, 116.4, 10);
+    await wait(2000);
+    var d1 = info(w);
+    w.setView(39.905, 116.405, 10);
+    await wait(1000);
+    var d2 = info(w);
+    log('D-offline-disabled-1st', infoStr(d1));
+    log('D-offline-disabled-after2nd', infoStr(d2));
+
+    console.log('OC-RESULT ' + R.join(' || '));
+  } catch (e) {
+    console.log('OCERR ' + (e && e.stack || e));
+  }
+})();
+</script>
+</body>
+</html>

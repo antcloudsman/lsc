@@ -41,7 +41,8 @@
     text-shadow:0 1px 2px #000,0 0 3px #000; white-space:nowrap; pointer-events:none; z-index:9; }
   #fsExit { position:fixed; right:10px; bottom:70px; z-index:30; display:none; padding:9px 14px;
     background:#201a14e6; color:#dcbe82; border:1px solid #5a4a30; border-radius:8px; font-size:14px; }
-  #srcInfo { position:absolute; right:10px; bottom:8px; z-index:9; color:#968268; font-size:11px;
+  #srcInfo.mini { font-size:10px; opacity:0.85; }
+#srcInfo { position:absolute; right:10px; bottom:8px; z-index:9; color:#968268; font-size:11px;
     background:#201a14cc; padding:2px 6px; border-radius:5px; pointer-events:none; }
   #hint, #hud, #heading-label, #srcInfo { pointer-events:none; }
   /* R2-027：按原版像素还原（orig/map-layer-sheet.png 逐像素实测）
@@ -110,7 +111,7 @@
 </div>
 <div id="hud"></div>
 <button id="fsExit" onclick="toggleFullScreen()">退出全屏</button>
-<div id="srcInfo">数据来自天地图地形 审图号： 待核对</div>
+<div id="srcInfo">数据来源：天地图 www.tianditu.gov.cn</div>
 <div id="srcPanel"><div class="box">
   <div id="srcBox"></div>
 </div></div>
@@ -195,13 +196,147 @@ var TILE_OFF = {
   ttlMs: 7 * 24 * 3600 * 1000,     /* TTL 7 天：过期不自动删（离线可用性优先），命中时标 stale 并计数 */
   enabledSources: {},              /* sourceId -> true；默认空 = 全部关闭 */
   keyVersion: 'v1',                /* 键含 version：换编码/换源格式时可整体失效，不用清库 */
+  prefsKey: 'lc.tileoff.sources.v1',/* 启用态持久化键（localStorage）：默认没有 = 全部关闭 */
   db: null, opening: null, busy: false,
-  stats: { net: 0, put: 0, hit: 0, miss: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' },
-  diag: { called: 0, disabled: 0, noKey: 0, fromCache: 0, fetchErr: 0, putOk: 0 }
+  stats: { net: 0, put: 0, putNew: 0, putOverwrite: 0, hit: 0, miss: 0, missAttempts: 0, missOffline: 0, missNetFail: 0, missUnsupported: 0, missNoKey: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' },
+  written: {},                    /* 本会话已写过的 key：区分 putNew（首次写）与 putOverwrite（覆盖） */
+  hitKeys: {}, missKeys: {}, distinctHit: 0, distinctMiss: 0,
+  diag: { called: 0, disabled: 0, noKey: 0, fromCache: 0, fetchErr: 0, putOk: 0, renderGen: 0, missLogged: 0 }
 };
 
 function tileSourceEnabled(sid) { return !!(TILE_OFF.enabledSources[sid]); }
+
+/* 启用态持久化（e25fa1e 的修复，合并保留）：localStorage 里没有键 = 全部关闭（默认态不受影响）。
+ * 之前只存在内存里，页面一 reload 就回到全关，离线分支直接不成立——这正是"库里有 40 项却 hit=0"的候选根因之一。 */
+(function restoreTileSources() {
+  try {
+    var raw = localStorage.getItem(TILE_OFF.prefsKey);
+    if (!raw) return;
+    var arr = JSON.parse(raw) || [];
+    for (var i = 0; i < arr.length; i++) { if (arr[i]) TILE_OFF.enabledSources[String(arr[i])] = true; }
+    if (Object.keys(TILE_OFF.enabledSources).length) setTimeout(function () { tileOfflineUsage(); }, 800);
+  } catch (e) { }
+})();
 function tileKeyOf(sid, z, x, y) { return sid + '/' + z + '/' + x + '/' + y + '@' + TILE_OFF.keyVersion; }
+
+/* 只读排查（总监 11-09 批）：记录写入/读取时的 key 样本，用来指出差异在哪一段（version/z/x-y 顺序/来源）。
+ * 不改变任何加载行为。 */
+var lastFillMeta = null;             /* 底图当前视野的瓦片范围（render() 每次更新） */
+function tileKeyNote(kind, key) {
+  var d = TILE_OFF.diag;
+  if (kind === 'read') {
+    d.lastReadKey = key;
+    if (!d.readKeys) d.readKeys = [];
+    if (d.readKeys.length < 3 && d.readKeys.indexOf(key) < 0) d.readKeys.push(key);
+  } else {
+    d.lastWriteKey = key;
+    if (!d.writeKeys) d.writeKeys = [];
+    if (d.writeKeys.length < 3 && d.writeKeys.indexOf(key) < 0) d.writeKeys.push(key);
+  }
+}
+
+/* 全部 key（最多 800 条），仅供 miss 诊断算"最接近的 3 个" */
+function tileOfflineAllKeys(cb) {
+  tileOfflineOpen().then(function (db) {
+    return new Promise(function (resolve) {
+      var out = [];
+      var tx = db.transaction(TILE_OFF.store, 'readonly');
+      var rq = tx.objectStore(TILE_OFF.store).openCursor();
+      rq.onsuccess = function (ev) {
+        var c = ev.target.result;
+        if (!c || out.length >= 800) { resolve(out); return; }
+        out.push(c.value.key);
+        c.continue();
+      };
+      rq.onerror = function () { resolve(out); };
+    });
+  }).then(cb).catch(function () { cb([]); });
+}
+
+/* miss 诊断（总监 11-09 批）：把"查不到的 key"与"库里最接近的 3 个 key"一起打出来。
+ * 一行日志即可分辨差异在前缀（sid/version）还是坐标（z/x/y）。限流：前 5 条 + 每 50 条一条。 */
+function tileOfflineMissDiag(key) {
+  var d = TILE_OFF.diag;
+  d.missLogged++;
+  if (d.missLogged > 5 && d.missLogged % 50 !== 0) return;
+  tileOfflineAllKeys(function (all) {
+    var scored = all.map(function (k) {
+      var i = 0, n = Math.min(k.length, key.length);
+      while (i < n && k.charAt(i) === key.charAt(i)) i++;
+      return { k: k, p: i };
+    }).sort(function (a, b) { return b.p - a.p; }).slice(0, 3);
+    console.log('LCTILEOFF miss key=' + key + ' gen=' + (d.renderGen || 0) +
+      ' totalKeys=' + all.length + ' near=' + JSON.stringify(scored));
+  });
+}
+
+/* __LC3D.cacheKeys(n)：库里前 n 个 key（只读） */
+function cacheKeys(n) {
+  n = Math.max(1, Math.min(500, Number(n) || 20));
+  return tileOfflineOpen().then(function (db) {
+    return new Promise(function (resolve) {
+      var out = [];
+      var tx = db.transaction(TILE_OFF.store, 'readonly');
+      var rq = tx.objectStore(TILE_OFF.store).openCursor();
+      rq.onsuccess = function (ev) {
+        var c = ev.target.result;
+        if (!c || out.length >= n) { resolve(out); return; }
+        out.push(c.value.key);
+        c.continue();
+      };
+      rq.onerror = function () { resolve(out); };
+    });
+  }).catch(function () { return []; });
+}
+
+/* 视野覆盖瓦片：对应原版 `transform.coveringTiles({tileSize:256, minzoom:0, maxzoom:18, roundZoom:false})`
+ * 的等价实现（size=256、zoom 不取整、按屏宽高求 x0..x1 / y0..y1，跨日期线取模）。
+ * scheme：原版 `scheme==='tms'` 时 y = 2^z-1-y；我方现有源（天地图 WMTS / Esri）都按 y 向下，故默认 'xyz'。
+ * 关键点：它与 fillLayer 用的是同一套边界与同一套 y，因此 cacheExpect 的"应有 key"天然等于写入时的 key。 */
+function tileSchemeOf(layer) { return 'xyz'; }
+function coveringTiles(layer, z, w, h) {
+  var n = Math.pow(2, z);
+  var c = lonLatToTile(center.lng, center.lat, z);
+  var tx = c.x * 256 - w / 2, ty = c.y * 256 - h / 2;
+  var x0 = Math.floor(tx / 256), x1 = Math.ceil((tx + w) / 256);
+  var y0 = Math.floor(ty / 256), y1 = Math.ceil((ty + h) / 256);
+  var scheme = tileSchemeOf(layer), tiles = [];
+  for (var y = y0; y <= y1; y++) {
+    if (y < 0 || y >= n) continue;
+    for (var x = x0; x <= x1; x++) {
+      tiles.push({ z: z, x: ((x % n) + n) % n, y: (scheme === 'tms') ? (n - 1 - y) : y });
+    }
+  }
+  return { z: z, scheme: scheme, x0: x0, x1: x1, y0: y0, y1: y1, tiles: tiles };
+}
+
+/* __LC3D.cacheExpect()：当前视野「应有的 key」数量 + 其中在库里的数量（只读）。
+ * 两数一对照就能分开：key 不一致（expected>0、present=0）还是根本没写入（两边都 0）。 */
+function cacheExpect() {
+  var m = lastFillMeta;
+  var z = m ? m.zoom : zoom, lay = m ? m.layer : base;
+  var cov = coveringTiles(lay, z, mapEl.clientWidth || 1, mapEl.clientHeight || 1);
+  var keys = cov.tiles.map(function (t) { return tileKeyOf(lay, t.z, t.x, t.y); });
+  return tileOfflineOpen().then(function (db) {
+    return new Promise(function (resolve) {
+      var want = {}, present = 0, i;
+      for (i = 0; i < keys.length; i++) want[keys[i]] = 1;
+      var tx = db.transaction(TILE_OFF.store, 'readonly');
+      var rq = tx.objectStore(TILE_OFF.store).openCursor();
+      rq.onsuccess = function (ev) {
+        var c = ev.target.result;
+        if (!c) {
+          resolve({ layer: lay, zoom: z, scheme: cov.scheme, expected: keys.length, present: present,
+                    expectedSample: keys.slice(0, 3) });
+          return;
+        }
+        if (want[c.value.key]) present++;
+        c.continue();
+      };
+      rq.onerror = function () { resolve({ layer: lay, zoom: z, expected: keys.length, present: 0 }); };
+    });
+  }).catch(function () { return { layer: lay, zoom: z, expected: keys.length, present: 0, error: 'idb' }; });
+}
 
 function tileOfflineOpen() {
   if (TILE_OFF.db) return Promise.resolve(TILE_OFF.db);
@@ -254,6 +389,8 @@ function tileOfflinePut(key, blob) {
   }).then(function (okv) {
     if (okv) {
       TILE_OFF.stats.put++;
+      if (TILE_OFF.written[key]) TILE_OFF.stats.putOverwrite++;
+      else { TILE_OFF.written[key] = true; TILE_OFF.stats.putNew++; }
       tileOfflineEnforce();
       tileOfflineUsage();
     }
@@ -341,10 +478,12 @@ function tileOfflineStore(img, layer) {
 }
 
 /* 网络失败 → 试离线缓存；命中就把 img.src 换成 blob URL（同一 <img>，不改布局） */
-function tileOfflineRecover(img, layer) {
-  if (!tileSourceEnabled(layer)) { tileOfflineMiss(layer); return; }
+function tileOfflineRecover(img, layer, src) {
+  /* 源未启用（默认态）：这是「没打算缓存」，不是「缓存未命中」，不许进 miss 主口径
+   * （产品 v1.7 §4 计数口径 + 审核验 11-09：否则默认态拖一次地图就把 miss 拉大）。 */
+  if (!tileSourceEnabled(layer)) { TILE_OFF.stats.missUnsupported++; return; }
   var key = img && img.getAttribute && img.getAttribute('data-tkey');
-  if (!key) { tileOfflineMiss(layer); return; }
+  if (!key) { TILE_OFF.stats.missNoKey++; return; }
   tileOfflineGet(key).then(function (rec) {
     if (rec && rec.blob) {
       try { img.src = URL.createObjectURL(rec.blob); } catch (e) { }
@@ -353,16 +492,23 @@ function tileOfflineRecover(img, layer) {
       if (rec.stale) { TILE_OFF.stats.stale++; }
       img.style.display = '';
       TILE_OFF.stats.hit++;
+      if (key && !TILE_OFF.hitKeys[key]) { TILE_OFF.hitKeys[key] = 1; TILE_OFF.distinctHit++; }
       tileOfflineBanner();
       console.log('LCTILEOFF hit ' + key);
     } else {
-      tileOfflineMiss(layer);
+      tileOfflineMiss(layer, key, src);
     }
-  }).catch(function () { tileOfflineMiss(layer); });
+  }).catch(function () { TILE_OFF.stats.missNoKey++; });
 }
 
-function tileOfflineMiss(layer) {
+function tileOfflineMiss(layer, key, src) {
+  TILE_OFF.stats.missAttempts++;
+  if (key && TILE_OFF.missKeys[key]) { if (src === 'net') TILE_OFF.stats.missNetFail++; else TILE_OFF.stats.missOffline++; return; }
   TILE_OFF.stats.miss++;
+  if (src === 'net') TILE_OFF.stats.missNetFail++;
+  else TILE_OFF.stats.missOffline++;
+  if (key && !TILE_OFF.missKeys[key]) { TILE_OFF.missKeys[key] = 1; TILE_OFF.distinctMiss++; }
+  if (key) { try { tileOfflineMissDiag(key); } catch (e) { } }
   tileOfflineBanner();
 }
 
@@ -382,8 +528,18 @@ function tileOfflineBanner() {
   }
   var anyEnabled = Object.keys(TILE_OFF.enabledSources).length > 0;
   var offline = (navigator.onLine === false);
-  var show = TILE_OFF.stats.miss > 0 && (offline || !anyEnabled || TILE_OFF.stats.hit > 0);
-  if (!show) { el.style.display = 'none'; return; }
+  /* 两个互斥分支（总监 11-09 定，不许拼成一句）：
+   *   ① 有缺块 = 没数据 → 「当前区域未缓存，联网后可查看」
+   *   ② 无缺块但有过期命中 = 有数据但可能旧 → 「已缓存，但数据可能已过期（缓存超 7 天）」
+   * 几何与底部避让完全复用，不重新量。 */
+  var staleOnly = (TILE_OFF.stats.miss === 0 && TILE_OFF.stats.stale > 0);
+  var showMiss = TILE_OFF.stats.miss > 0 && (offline || !anyEnabled || TILE_OFF.stats.hit > 0);
+  if (!showMiss && !staleOnly) { el.style.display = 'none'; return; }
+  if (staleOnly) {
+    el.textContent = '已缓存，但数据可能已过期（缓存超 7 天）';
+    el.style.display = 'block';
+    return;
+  }
   el.textContent = '当前区域未缓存，联网后可查看' +
     '（已命中 ' + TILE_OFF.stats.hit + ' 块 / 缺 ' + TILE_OFF.stats.miss + ' 块' +
     (anyEnabled ? '' : '；离线缓存未启用') + '）';
@@ -395,6 +551,11 @@ function setTileCacheSource(sid, on) {
   if (!sid) return null;
   if (on) TILE_OFF.enabledSources[sid] = true;
   else delete TILE_OFF.enabledSources[sid];
+  try {
+    var arr = Object.keys(TILE_OFF.enabledSources);
+    if (arr.length) localStorage.setItem(TILE_OFF.prefsKey, JSON.stringify(arr));
+    else localStorage.removeItem(TILE_OFF.prefsKey);
+  } catch (e) { }
   tileOfflineUsage();
   return TILE_OFF.enabledSources;
 }
@@ -419,11 +580,18 @@ function getTileCacheInfo() {
     cacheBytes: TILE_OFF.stats.bytes,
     bytesMB: Math.round(TILE_OFF.stats.bytes / 1048576 * 10) / 10,
     net: tileDiag.net, netOk: tileDiag.netOk, shown: TILE_OFF.stats.shown,
-    put: TILE_OFF.stats.put, hit: TILE_OFF.stats.hit, storeDiag: TILE_OFF.diag,
+    put: TILE_OFF.stats.put, putNew: TILE_OFF.stats.putNew, putOverwrite: TILE_OFF.stats.putOverwrite,
+    hit: TILE_OFF.stats.hit, missAttempts: TILE_OFF.stats.missAttempts, storeDiag: TILE_OFF.diag,
     miss: TILE_OFF.stats.miss,
+    sourcesPersisted: (function () { try { return !!localStorage.getItem(TILE_OFF.prefsKey); } catch (e) { return false; } })(),
     evicted: TILE_OFF.stats.evicted, evictions: TILE_OFF.stats.evicted, stale: TILE_OFF.stats.stale,
     offlineAttempts: TILE_OFF.stats.hit + TILE_OFF.stats.miss, safeAreaBottom: safeArea.bottom,
     hitRate: LCTileCachePolicy.hitRate(TILE_OFF.stats.hit, TILE_OFF.stats.miss),
+    hitRateDistinct: LCTileCachePolicy.hitRate(TILE_OFF.distinctHit, TILE_OFF.distinctMiss),
+    distinctHit: TILE_OFF.distinctHit, distinctMiss: TILE_OFF.distinctMiss,
+    missOffline: TILE_OFF.stats.missOffline, missNetFail: TILE_OFF.stats.missNetFail,
+    missUnsupported: TILE_OFF.stats.missUnsupported, missNoKey: TILE_OFF.stats.missNoKey,
+    missPerGen: (TILE_OFF.renderGen > 0) ? Math.round(TILE_OFF.stats.miss / TILE_OFF.renderGen * 10) / 10 : null,
     online: (navigator.onLine !== false), lastErr: TILE_OFF.stats.lastErr
   };
 }
@@ -543,6 +711,9 @@ function render() {
   var x0 = Math.floor(tx / 256), x1 = Math.ceil((tx + w) / 256);
   var y0 = Math.floor(ty / 256), y1 = Math.ceil((ty + h) / 256);
 
+  /* 只读快照（B 轮排查用）：底图当前视野的瓦片范围，cacheExpect() 据此算「应有 key」 */
+  TILE_OFF.renderGen = (TILE_OFF.renderGen || 0) + 1;
+  lastFillMeta = { layer: base, zoom: zoom, x0: x0, x1: x1, y0: y0, y1: y1, n: n, gen: TILE_OFF.renderGen };
   fillLayer(baseLayer, base, x0, x1, y0, y1, tx, ty, n);
   fillLayer(annoLayer, anno, x0, x1, y0, y1, tx, ty, n);
   updateOverlay(null);
@@ -570,6 +741,7 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           'src="' + cached + '">';
       } else if (navigator.onLine === false && tileSourceEnabled(layer)) {
+        tileKeyNote('read', tileKeyOf(layer, zoom, xx, yy));
         /* 离线 + 该源启用：**不发网络请求**，直接用占位图等离线缓存回填。
          * 之前只靠 onerror 兜底，但 WebView 自带的 HTTP 缓存离线时仍能命中，
          * img 根本不会 error ⇒ 我们的缓存层永远不被调用（实测 hit=0、netOk 仍在涨）。 */
@@ -579,6 +751,7 @@ function fillLayer(layerEl, layer, x0, x1, y0, y1, tx, ty, n) {
           'onload="__tileOfflineLoad(this,\'' + layer + '\')">';
       } else {
         tileDiag.net++;                   /* 真正发出去的瓦片请求数（审核验口径：req 只记网络请求） */
+        tileKeyNote('write', tileKeyOf(layer, zoom, xx, yy));
         html += '<img class="tile" style="left:' + left + 'px;top:' + top + 'px;width:256px;height:256px" ' +
           'data-tkey="' + tileKeyOf(layer, zoom, xx, yy) + '" ' +
           (tileCacheOn ? 'crossorigin="anonymous" ' : '') +
@@ -608,7 +781,7 @@ function __tileOfflineLoad(img, layer) {
   if (!img) return;
   if (img.getAttribute('data-offline') !== '1') return;
   img.removeAttribute('data-offline');
-  try { tileOfflineRecover(img, layer); } catch (e) { }
+  try { tileOfflineRecover(img, layer, 'offline'); } catch (e) { }
 }
 function __tileFailed(img, url, layer) {
   try { if (img) img.style.display = 'none'; } catch (e) { }
@@ -619,7 +792,7 @@ function __tileFailed(img, url, layer) {
     console.log('LCTILE fail n=' + tileDiag.err + ' layer=' + layer + ' url=' + tileDiag.lastErrUrl);
   }
   /* B 轮：网络失败先查离线缓存，命中就用已存字节顶上；未命中才计入降级统计 */
-  try { tileOfflineRecover(img, layer); } catch (e) { }
+  try { tileOfflineRecover(img, layer, 'net'); } catch (e) { }
 }
 function __tileLoaded(img, url, layer) {
   tileDiag.ok++;
@@ -1851,7 +2024,11 @@ function toggleFullScreen() {
   fullScreen = !fullScreen;
   document.getElementById("controls").style.display = (fullScreen || uiMode !== "full") ? "none" : "";
   document.getElementById("hint").style.display = (fullScreen || uiMode !== "full") ? "none" : "";
-  document.getElementById("srcInfo").style.display = (fullScreen || uiMode !== "full") ? "none" : "";
+  /* 总监裁定：全屏也必须显示来源（版权声明要求「应注明来源」，没有「非全屏才注明」的例外；
+   * 离线态更容易被当成自有数据）。全屏改为缩略样式，不隐藏。 */
+  var _si = document.getElementById("srcInfo");
+  _si.style.display = (uiMode !== "full") ? "none" : "";
+  _si.className = fullScreen ? "mini" : "";
   document.getElementById("fsExit").style.display = (fullScreen && uiMode === "full") ? "block" : "none";
   try {
     var fr = document.getElementById("fsExit").getBoundingClientRect();
@@ -1886,7 +2063,7 @@ var MAP_SOURCES = [
    * 上一次的「天地图地形」，画面明明是 Esri/Maxar 影像、右下角角注与客户端截图角注却写天地图。
    * hidden=面板跳过；review 写「不适用」——境外服务没有国内审图号，绝不照抄原版审图号。 */
   { name: "Esri 历史影像", layer: "wayback", review: "不适用", hidden: true,
-    text: "数据来自 Esri Wayback（World Imagery 历史影像）· 影像 © Esri / Maxar / Earthstar Geographics · 审图号：不适用" }
+    text: "数据来自 Esri Wayback（World Imagery 历史影像）· 影像 © Esri / Maxar / Earthstar Geographics" }
 ];
 var srcIndex = 6;
 
@@ -1903,7 +2080,9 @@ function openSources() {
     var s = MAP_SOURCES[i];
     if (s.hidden) continue;                 /* 来源表里的隐藏项（wayback）不进面板 */
     var cls = (s.layer === null) ? "srcCard off" : ((i === srcIndex) ? "srcCard on" : "srcCard");
-    var tip = (s.layer === null) ? s.note : ("审图号 " + s.review);
+    /* 产品 v1.6 §4.1②③：占位词「待核对 / 未确认 / 不适用」任何可达路径都不得上屏。
+   * 源面板 tip 也是可达路径（点「底图源」就能看到），所以这里同样按真实值判断。 */
+  var tip = (s.layer === null) ? s.note : (lvIsRealReview(s.review) ? ("审图号 " + s.review) : ("数据来源：" + s.name));
     var thumb = s.thumb
       ? '<img class="srcThumb" src="' + s.thumb + '" alt="">'
       : '<span class="srcNoThumb">无缩略图</span>';
@@ -1947,13 +2126,24 @@ function selectSource(i) {
   closeSources();
 }
 
+/* 占位词判定（产品 v1.6 口径）：这几个词是「未取证」的代码标记，不许出现在任何用户可见路径。 */
+function lvIsRealReview(rv) {
+  return !!rv && rv !== '待核对' && rv !== '未确认' && rv !== '不适用';
+}
+
 function attributionText(s) {
   s = s || { name: "天地图地形", review: "待核对" };
   if (s.text) return s.text;   /* 自带完整文案的来源（wayback：境外影像，无审图号）不套天地图模板 */
   /* R2-032：按源分源显示。原版角注把「世纪空间 + 其审图号」绑在一起（具体号见 docs/fidelity 复核判词，
    * 不入发行面：copy 门禁禁原版审图号）；我方图源换成天地图后，来源名按当前源给，
    * 审图号用各源自己的状态（待核对 / 需授权），不把内部替换说明写进用户可见角注，也不编造官方审图号。 */
-  return "数据来自" + s.name + " 审图号： " + (s.review || "待核对");
+  /* 产品 2026-11-09 取证结论：审图号 5 条路径 0 命中（官网首页+4 chunk、about bundle、JS API v4.0、
+   * 瓦片端点 418、4 组检索）⇒ 未取得。按总监裁定：拿不到就整段删掉「审图号：…」子句，
+   * 且「待核对」「未确认」绝不上屏（代码默认值不能是占位词）。 */
+  var txt = "数据来源：天地图 www.tianditu.gov.cn";
+  var rv = s.review || "";
+  if (lvIsRealReview(rv)) txt += " 审图号：" + rv;
+  return txt;
 }
 
 /* K-01：角注由地图提供数据、原生底部栏负责呈现；不得照抄原版审图号（与底图服务商绑定）。
@@ -1965,7 +2155,7 @@ function getAttribution() {
   var wb = (s.layer === "wayback");
   return {
     source: s.name,
-    review: s.review || "未确认",
+    review: lvIsRealReview(s.review) ? s.review : "",
     original: wb ? null : "世纪空间",
     equivalent: !wb,
     text: attributionText(s)
@@ -3919,6 +4109,9 @@ window.__LC3D = {
   setGroundRenderer: setGroundRenderer,
   setGroundBaseline: setGroundBaseline,
   setSafeArea: setSafeArea,
+  cacheKeys: cacheKeys,
+  cacheExpect: cacheExpect,
+  coveringTiles: function () { return coveringTiles(base, zoom, mapEl.clientWidth || 1, mapEl.clientHeight || 1); },
   tileCache: getTileCacheInfo,
   tileCacheSource: setTileCacheSource,
   tileCacheClear: tileCacheClear,
@@ -4152,7 +4345,7 @@ function runAT() {
   ok("TD-014", !thrown && markCount() === 0, "no-bridge/no-marker");
   var api = ["setHeading", "setSitFace", "setBase", "setMode", "toggle3D", "setPitch", "resetCompass",
     "rotateBearing", "setView", "zoomIn", "zoomOut", "locate", "clearMarkers",
-    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getGroundQuad", "setGroundRenderer", "setGroundBaseline", "setSafeArea", "setTileCacheSource", "tileCacheClear", "getTileCacheInfo", "getAttribution", "setRoadNet",
+    "getState", "getFps", "setUiMode", "lc_setUiMode", "setChromeVisible", "getGroundQuad", "setGroundRenderer", "setGroundBaseline", "setSafeArea", "cacheKeys", "cacheExpect", "coveringTiles", "setTileCacheSource", "tileCacheClear", "getTileCacheInfo", "getAttribution", "setRoadNet",
     "setGround", "setSitNorth", "setNeedle",
     "setRidge", "setOverlay", "clearOverlay", "elevAt",
     "setWayback", "setWaybackRelease", "enableTileCache",

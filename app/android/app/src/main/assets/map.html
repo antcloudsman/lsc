@@ -2323,8 +2323,15 @@ function toggleContour() {
 function setGround(on) {
   on = !!on;
   if (groundMode === on) { updateHud(); return groundMode; }   /* 幂等：同值不重复压/抬机位 */
+  /* 产品路径切档（M8 第二阶段，总监 11-09 派单）：进贴地即走 canvas 档，退出回 overlay。
+   * 11-08 之前只有调试钩子 setGroundRenderer() 能切，产品按钮走不到 ⇒ 贴地画布整段是死代码。 */
   if (on && groundRenderer === 'canvas') { try { groundTexDirty = true; groundRedraw(); } catch (e) {} }
   groundMode = on;
+  groundRenderer = on ? 'canvas' : 'overlay';
+  if (on) groundTexDirty = true;
+  /* diag 生命周期（客户端 11-09 定稿）：重试开始 pending → 失败 fail:<原因> → 成功 drawn；
+   * 粘滞 = 不许被空串覆盖，但允许被「成功」改写，否则一次失败会永久粘着、判据读到旧状态。 */
+  groundStateSet(false, on ? 'pending' : 'skip:ground=off');
   var btn = document.getElementById("btn_ground");
   if (btn) btn.className = groundMode ? "active" : "";
   if (groundMode) {
@@ -3084,22 +3091,50 @@ function groundInitGL() {
  * 因此 Q4 判据只接受两种结果：屏幕夹角 **90°**（bit1）或 **0°**（bit2/4）；出现 ±45° 即转了两遍或抵消一半。 */
 /* 在 render3D 末尾调用：用同一张 VP 与同一个相机目标高度画一块平面 */
 var groundDiag = 'idle';          /* 贴地绘制路径最后一次停在哪儿（只读诊断用） */
+var groundCanvasOk = false;       /* 贴地画布是否真的画成功（仅 diag='drawn' 时为 true） */
+var groundFailInject = null;      /* 调试注入 'glinit'|'upload'|'rings'：给 G5/N6 造失败态，产品默认 null */
+var groundStateKey = '';          /* 上次上报的 (ok|diag|reason)，去重防逐帧刷桥 */
+/* 贴地状态唯一写入口：更新三字段 + 状态变化时向原生发一次 groundstate 事件。
+ * 逐帧调用安全（同状态不重复 emit）；失败原因**只会被成功或新的失败改写，不会被清空**。 */
+function groundStateSet(ok, diag, reason) {
+  ok = !!ok;
+  reason = reason || '';
+  groundCanvasOk = ok;
+  /* 粘滞（客户端 11-09 定稿）：空串/undefined 不许把已知失败原因清掉——
+   * 允许被「新的失败」或「成功 drawn」改写，但不允许被「没话说」擦掉，
+   * 否则一次真实失败会被下一次空调用变成静默。 */
+  if (diag) groundDiag = String(diag);
+  var key = (ok ? '1' : '0') + '|' + groundDiag + '|' + reason;
+  if (key !== groundStateKey) {
+    groundStateKey = key;
+    emit({
+      type: 'groundstate', ok: ok, diag: diag, reason: reason,
+      renderer: groundRenderer, ground: !!groundMode
+    });
+  }
+  return diag;
+}
 function drawGroundCompass(vp, target) {
-  if (groundRenderer !== 'canvas') { groundDiag = 'skip:renderer=' + groundRenderer; return; }
-  if (!groundMode) { groundDiag = 'skip:ground=off'; return; }
+  if (groundRenderer !== 'canvas') { return groundStateSet(false, 'skip:renderer=' + groundRenderer); }
+  if (!groundMode) { return groundStateSet(false, 'skip:ground=off'); }
   /* 调试基线（总监 11-08 定，Q3 透明度用）：只让本函数提前返回，相机/D/pitch/贴地状态全部不动，
    * 于是同机位两张图（baseline=1 无盘面、baseline=0 有盘面）背景完全一致，
    * alpha 可由 (有盘面像素 − 无盘面像素) / (纹理像素 − 无盘面像素) 反解。
    * 不碰产品行为：默认 0，仅显式 setGroundBaseline(1) 时生效。 */
-  if (groundBaseline) { groundDiag = 'baseline:on'; return; }
+  if (groundBaseline) { return groundStateSet(false, 'baseline:on'); }
   /* 原版门控（逆向 a12c694，@41208 逐字）：75 > |lat| && zoom >= 6 && _isGround 才绘制；
    * 超出范围 canvas 不重绘。照抄，避免"我们在极区/低缩放也画、原版不画"的行为差异。 */
-  if (Math.abs(center.lat) >= 75 || zoom < 6) { groundDiag = 'skip:gate lat=' + center.lat.toFixed(2) + ' zoom=' + zoom; return; }
-  if (!groundInitGL()) { groundDiag = 'fail:glInit'; return; }
-  if (!COMPASS_RINGS) { groundDiag = 'loading:rings'; compassDataLoad(function () { groundTexDirty = true; }); return; }
+  if (Math.abs(center.lat) >= 75 || zoom < 6) { return groundStateSet(false, 'skip:gate lat=' + center.lat.toFixed(2) + ' zoom=' + zoom); }
+  /* 失败注入（审核验 G5/N6，11-09）：让失败态可构造，判据不必为造失败改包；产品默认不注入。
+   * diag 用全小写做判据串（'fail:glinit'），细节放 reason，避免判据比大小写。 */
+  if (groundFailInject === 'glinit') { return groundStateSet(false, 'fail:glinit', 'injected'); }
+  if (!groundInitGL()) { return groundStateSet(false, 'fail:glinit'); }
+  if (groundFailInject === 'rings') { return groundStateSet(false, 'fail:rings', 'injected'); }
+  if (!COMPASS_RINGS) { groundDiag = 'loading:rings'; compassDataLoad(function () { groundTexDirty = true; }); return groundDiag; }
   var sz = groundEnsureCanvas();
+  if (groundFailInject === 'upload') { return groundStateSet(false, 'fail:upload', 'injected'); }
   if (groundTexDirty) {
-    if (!groundRedraw()) { groundDiag = 'fail:redraw'; return; }
+    if (!groundRedraw()) { return groundStateSet(false, 'fail:redraw'); }
     gl.bindTexture(gl.TEXTURE_2D, groundTex);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     /* file:// 源下盘面图会污染 2D 画布，这里 texImage2D 会抛 SecurityError；
@@ -3108,9 +3143,8 @@ function drawGroundCompass(vp, target) {
     try {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, groundCanvas);
     } catch (e) {
-      groundDiag = 'fail:upload ' + ((e && e.name) || 'error');
       console.log('LCGROUND ERROR upload ' + ((e && e.name) || '') + ' ' + ((e && e.message) || e));
-      return;
+      return groundStateSet(false, 'fail:upload', (e && e.name) || 'error');
     }
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     groundTexDirty = false;
@@ -3156,7 +3190,7 @@ function drawGroundCompass(vp, target) {
     cssW: glCanvas.clientWidth || 0, cssH: glCanvas.clientHeight || 0,
     texCss: sz.css, texDpr: sz.dpr
   };
-  groundDiag = 'drawn';
+  groundStateSet(true, 'drawn');
   console.log('LCGROUND draw side=' + (2 * r) + 'm tex=' + sz.px + 'px dial=' + Math.round(sz.px * GROUND_DIAL_FRAC) +
     ' vw=' + groundViewportWidth() + ' screenW=' + ((window.screen && window.screen.width) || 0) + ' canvasCss=' + sz.css + ' dpr=' + sz.dpr);
 }
@@ -4061,6 +4095,7 @@ function getState() {
     sitMode: sitMode, sitNorth: sitMode !== 0,
     contour: contourOn, ground: groundMode, needle: needleOn,
     groundRenderer: groundRenderer,
+    groundCanvasOk: groundCanvasOk, groundDiag: groundDiag,
     base: base, drape: drape, roadNet: roadNet,
     ridge: ridgeOn, overlay: ovPoints.length, overlayKind: ovKind, last3dError: last3dError, last3dWarn: last3dWarn,
     wayback: wbOn, waybackRelease: wbRelease,
@@ -4118,6 +4153,8 @@ window.__LC3D = {
       canvasBacking: groundCanvasSize().px,
       radiusMeters: groundRadiusMeters(),
       diag: groundDiag,
+      canvasOk: groundCanvasOk,
+      failInject: groundFailInject,
       texDirty: groundTexDirty,
       hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),
       hasRings: !!COMPASS_RINGS,
@@ -4126,6 +4163,16 @@ window.__LC3D = {
   },
   setGroundRenderer: setGroundRenderer,
   setGroundBaseline: setGroundBaseline,
+  /* 失败注入（审核验 G5/N6，11-09）：'glinit'|'upload'|'rings' 造失败态，null/false 复位。
+   * 只影响贴地绘制通道的判定，不碰相机/贴地状态/产品按钮；复位后下一帧走真实路径。 */
+  __forceGroundFail: function (kind) {
+    var k = (kind === null || kind === undefined || kind === false) ? null : String(kind).replace(/["'\s]/g, '').toLowerCase();
+    if (k !== null && k !== 'glinit' && k !== 'upload' && k !== 'rings') k = null;
+    groundFailInject = k;
+    groundTexDirty = true;
+    if (groundMode && groundRenderer === 'canvas') { try { groundRedraw(); } catch (e) { } }
+    return groundFailInject;
+  },
   setSafeArea: setSafeArea,
   cacheKeys: cacheKeys,
   cacheExpect: cacheExpect,

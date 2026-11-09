@@ -52,6 +52,10 @@
       canvasBacking = 2 × vw × dpr（vw=364、dpr=2 ⇒ 1456；**不是 546**）、radiusMeters > 0
 等待  diag='loading:rings' 是**异步等待态，不是失败**：最多等 5s（每 500ms 重读一次），
       期间不判红；5s 后仍是 loading:rings 才判 FAIL 并记录
+      **（11-09 订正，`fail:rings` 修法落地后生效）**：正常路径 `compass-rings.js` 是同步注入，
+      首帧即 `drawn`，所以 `loading:rings` 持续不走只有一种解释——盘面数据加载失败。
+      此时修法应已把它报成 `diag='fail:rings'`、`reason='loader-missing'` ⇒ **直接判 FAIL，不再等 5 秒**。
+      「等 5s」只在修法未落地期间保留，落地后作废，避免留下一条永不触发的检查。
 反例  diag 为 'skip:renderer=overlay' / 'skip:ground=off' / 'fail:*' 一律 FAIL，
       并原样记录 diag 字符串（它是区分「没接线」和「画了但错」的唯一依据）
 口径  所有读数一律以 getState() / getGroundDebug() **主动拉取**的值为准；
@@ -145,7 +149,10 @@
 ## 4. G3 B1：贴地态指针隐藏
 
 **实现可能用 `setVisibility(GONE)`、也可能 alpha=0 或移出屏幕，所以用「差集为主、dump 取严」。**
-实现方已确认按 `View.GONE` 做（不用 alpha=0、不移出屏幕），因此 dump 与差集两条**都该成立**；仍按取严判，防以后改成 alpha 方案时判据悄悄失效。
+**（11-09 订正）`dump` 在本 App 不可用**：WebView 持续重绘，`uiautomator dump` 反复报
+`ERROR: could not get idle state`（M7 与 M8 共五次），`--compressed` 同样失败。
+因此 G3/G5 里凡写「dump 里节点回来/消失」的，一律改为**截图掩膜**判；dump 仅作补充证据。
+实现方已确认按 `View.GONE` 做（不用 alpha=0、不移出屏幕），掩膜差分本就足够。
 
 ```
 预备  机位锁死：同 lat/lng/zoom/bearing/pitch、同 dialAlpha、同 base，只切 groundRenderer
@@ -153,7 +160,7 @@
 取样  A = overlay 态截图；B = canvas 态截图
 判据① 指针专属像素：在 A 中定位竖针所在列区间（针是竖向细长图元，取 A 与「A 的盘面-only 帧」差集得针掩膜）
       针掩膜像素在 B 中的命中数 = 0
-判据② （若 dump 能 idle）贴地态 dump 中不得出现指针节点；出现即 FAIL
+判据② 贴地态**截图掩膜**中不得出现指针专属像素；`dump` 仅在其可用时作补充（本 App 实测不可用）
 二者取严：任一 FAIL 即 FAIL
 反例  若 B 中针掩膜命中 > 0 ⇒ 指针没隐藏（B1 未实现）
       若 A 中针掩膜为空 ⇒ 取样错（指针本就没显示），该次取样作废重做，不许当 PASS
@@ -204,7 +211,7 @@ WebGL 挂掉时必须回退显示原生盘面；否则用户按「贴地」等�
 构造  __LC3D.__forceGroundFail('glinit' | 'upload' | 'rings')   ← 页面侧失败注入，可复位
       再 setGroundRenderer(1) → setGround(true)
 判据  三件必须同时成立（缺一件即 FAIL）：
-      ① 罗盘态下原生盘面可见：dump 里 compass 节点回来；截图盘面掩膜计数 > 0
+      ① 罗盘态下原生盘面可见：**截图盘面掩膜计数 > 0**（`dump` 在本 App 不可用，见下方说明）
       ② 页面读数不撒谎：getState().groundRenderer 仍 = 'canvas'（用户意图不被改写）、
          groundCanvasOk = false、groundDiag = 'fail:glinit'（与注入值一致）
       ③ 原生侧读数与 ② **逐字相同**（不许多一个字、不许少一个字）
@@ -248,7 +255,11 @@ WebGL 挂掉时必须回退显示原生盘面；否则用户按「贴地」等�
       fail-safe 默认值：还没收到任何页面状态之前，原生盘面保持可见
 已知缺口（实现方自报，判据据此放宽到「可接受」而不是判红）：
       `loading:rings` 是等待态、**不触发 groundstate 事件**；只靠事件驱动的原生侧会停在旧 diag。
-      因此允许原生保留 700ms 定时回读作为补充手段；判据只看**拉取值**，不看事件次数
+      因此允许原生保留 700ms 定时回读作为补充手段；判据只看**拉取值**，不看事件次数。
+      **按后果分两半写（11-09 订正）**：
+      · 加载成功时：它是瞬时等待态 ⇒ 不算缺陷，700ms 回读可接受；
+      · 加载失败时：它变成「静默失败」（显示成还在加载）⇒ **判 FAIL**；
+        修法落地后应报 `diag='fail:rings'`、`reason='loader-missing'`，这一半才可判。
 反证  把 sticky 逻辑改坏（让 diag 可被覆盖成空）⇒ 本判据必须 FAIL
 含义  G5 判的不是「有没有回退」，而是「退得对不对、说得出为什么退」；只说「回退正常」不算过
 ```
@@ -300,7 +311,7 @@ JS "__LC3D.setGroundRenderer(1)"; adb -s $d exec-out screencap -p > B-canvas.png
 
 ## 9. 判定与签名
 
-| 项 | 判 | 证据（每项三件：读数 + 截图/png + dump 或 JS 原文） |
+| 项 | 判 | 证据（每项三件：读数 + 截图/png + JS 原文；**dump 仅在其可用时作补充**） |
 |---|---|---|
 | G1 四角投影 |  | `getGroundDebug()` / `getGroundQuad()` 原文 ×3 档 + 截图 |
 | G2 像素阈值 |  | diff 图 + 数值表（两档 dialAlpha） |

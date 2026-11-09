@@ -198,7 +198,7 @@ var TILE_OFF = {
   keyVersion: 'v1',                /* 键含 version：换编码/换源格式时可整体失效，不用清库 */
   prefsKey: 'lc.tileoff.sources.v1',/* 启用态持久化键（localStorage）：默认没有 = 全部关闭 */
   db: null, opening: null, busy: false,
-  stats: { net: 0, put: 0, putNew: 0, putOverwrite: 0, hit: 0, miss: 0, missAttempts: 0, missKeyedAttempts: 0, missOffline: 0, missNetFail: 0, missUnsupported: 0, missNoKey: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, lastErr: '' },
+  stats: { net: 0, put: 0, putNew: 0, putOverwrite: 0, hit: 0, miss: 0, missAttempts: 0, missKeyedAttempts: 0, missOffline: 0, missNetFail: 0, missUnsupported: 0, missNoKey: 0, stale: 0, shown: 0, evicted: 0, bytes: 0, items: 0, itemsAt: 0, lastErr: '' },
   written: {},                    /* 本会话已写过的 key：区分 putNew（首次写）与 putOverwrite（覆盖） */
   hitKeys: {}, missKeys: {}, distinctHit: 0, distinctMiss: 0,
   diag: { called: 0, disabled: 0, noKey: 0, fromCache: 0, fetchErr: 0, putOk: 0, renderGen: 0, missLogged: 0 }
@@ -450,7 +450,10 @@ function tileOfflineUsage() {
         if (c) { items++; bytes += (c.value.size || 0); c.continue(); }
         else {
           TILE_OFF.stats.items = items; TILE_OFF.stats.bytes = bytes;
-          resolve({ items: items, bytes: bytes });
+          /* items/bytes 是**快照**不是实时值：记下取数时刻，读的人才知道这是哪一刻的库容。
+           * 与 put（本会话写成功次数）不是同一口径，两者本来就可以不相等。 */
+          TILE_OFF.stats.itemsAt = Date.now();
+          resolve({ items: items, bytes: bytes, at: TILE_OFF.stats.itemsAt });
         }
       };
       rq.onerror = function () { resolve({ items: 0, bytes: 0 }); };
@@ -578,6 +581,7 @@ function getTileCacheInfo() {
     capMB: Math.round(TILE_OFF.capBytes / 1048576 * 10) / 10,
     ttlDays: Math.round(TILE_OFF.ttlMs / 86400000),
     items: TILE_OFF.stats.items, bytes: TILE_OFF.stats.bytes,
+    itemsAt: TILE_OFF.stats.itemsAt,   /* items 快照的取数时刻（0=本次会话还没刷新过） */
     cacheBytes: TILE_OFF.stats.bytes,
     bytesMB: Math.round(TILE_OFF.stats.bytes / 1048576 * 10) / 10,
     net: tileDiag.net, netOk: tileDiag.netOk, shown: TILE_OFF.stats.shown,

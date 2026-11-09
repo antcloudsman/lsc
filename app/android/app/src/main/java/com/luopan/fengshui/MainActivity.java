@@ -125,7 +125,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     // 这几个开关原来是「点一下 toggle」语义、原生不记值，重载后 JS 回默认，再点就反向。
     // 重放的前提是原生知道当前值，所以每个 toggle 入口都要同步写下这里的字段。
     private boolean contourOn = false;   // 等高线
-    private boolean groundOn = false;    // 贴地
+    private boolean groundOn = false;    // 贴地（原生镜像，仅作未收到页面状态时的兜底）
+    /* M8 第二阶段：贴地态页面状态。三个字段都**原样存**，不在本机改写——
+     * 判据 G5.3 要求「原生侧读数与页面逐字相同」，重写成人话就会判红。
+     * null = 还没收到页面状态（fail-safe：此时原生盘面保持可见）。 */
+    private Boolean groundFromPage = null;          // getState().ground
+    private Boolean groundCanvasOkFromPage = null;  // getState().groundCanvasOk
+    private String groundDiagFromPage = null;       // getState().groundDiag
     private boolean ridgeOn = false;     // 山脊（setRidge 已有幂等 set）
     private String baseMode = "vec";     // 底图源 vec/img（setBase 已有幂等 set）
     /** 坐向三态镜像：0=关 / 1=坐南朝北 / 2=坐北朝南。
@@ -428,8 +434,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             line = line.replace("\\\"", "\"").replace("\\\\", "\\");
                             if (line.startsWith("{") && line.endsWith("}")) {
                                 // is3D 取原生镜像：它与网页 mode 不一致时，正是「镜像漂移」的证据
+                                // M8：贴地三件读数（原生持久字段原样拼出，G5.3 要求与页面逐字一致）
                                 line = line.substring(0, line.length() - 1)
-                                        + ",\"is3D\":" + is3D + ",\"jsFail\":" + jsFailCount + "}";
+                                        + ",\"is3D\":" + is3D + ",\"jsFail\":" + jsFailCount
+                                        + ",\"groundDrape\":" + groundDrapeActive()
+                                        + ",\"pageGround\":" + groundFromPage
+                                        + ",\"pageCanvasOk\":" + groundCanvasOkFromPage
+                                        + ",\"pageDiag\":" + (groundDiagFromPage == null
+                                                ? "null" : org.json.JSONObject.quote(groundDiagFromPage))
+                                        + "}";
                             }
                             android.util.Log.d("LCDEBUG", "state " + line);
                         });
@@ -987,6 +1000,91 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
+     * M8 第二阶段：贴地态是否真的由 canvas 接管了盘面。
+     *
+     * <p>只认页面 {@code getState()} 的三个字段，**不用**原生 {@code groundOn} 镜像——
+     * 镜像是本机 toggle 出来的，与页面真实状态差一拍时会把「已回退」判成「贴地成功」。
+     *
+     * <p>canvasOk 为 null（还没收到页面状态、或页面没实现该字段）时按**不可用**处理：
+     * 宁可显示原生盘面，也不能静默变成「用户按了贴地却什么都没发生」。
+     */
+    private boolean groundDrapeActive() {
+        Boolean grounds = (groundFromPage != null) ? groundFromPage : groundOn;
+        if (grounds == null || !grounds) return false;
+        return Boolean.TRUE.equals(groundCanvasOkFromPage);
+    }
+
+    /**
+     * M8 第二阶段：按贴地态重算原生贴地层显隐。
+     *
+     * <p>B1（总监 2026-11-09 批）：贴地成功态隐藏原生盘面与竖向指针，只留页面 canvas 绘制的地面盘面；
+     * 该差异记为「贴地态指针隐藏」已知可见差异。
+     *
+     * <p>回退（{@code groundCanvasOk=false} / 未收到状态）：原生盘面与指针按常规罗盘态显示，
+     * 这就是「canvas 挂了要能看出来」的落地——失败不许静默。
+     */
+    private void applyGroundVisuals() {
+        if (compassView != null) {
+            boolean show = compassMode && !compassHidden && !groundDrapeActive();
+            compassView.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
+        refreshPointerVisibility();
+        android.util.Log.d("LCGROUND", "apply visuals groundDrape=" + groundDrapeActive()
+                + " pageGround=" + groundFromPage
+                + " pageCanvasOk=" + groundCanvasOkFromPage
+                + " pageDiag=" + groundDiagFromPage);
+    }
+
+    /**
+     * M8 第二阶段：从页面回读贴地态（结构照抄 {@link #sync3DStateFromPage()}）。
+     *
+     * <p>为什么要这个而不复用 {@code case "state"}：那条通道只 {@code Log.d}，
+     * 一个原生字段都不写——能读到 ≠ 生效。
+     *
+     * <p>失败原因（{@code groundDiag}）原样保存，不在本机改写成可读话术：
+     * 判据要求原生读数与页面逐字一致。
+     */
+    private void syncGroundStateFromPage() {
+        if (compassMapView == null) return;
+        compassMapView.postDelayed(() -> {
+            try {
+                compassMapView.evaluateJavascript(
+                        "(function(){if(typeof getState!=='function')return 'null';var s=getState();"
+                        + "return JSON.stringify({ground:s.ground,groundCanvasOk:s.groundCanvasOk,"
+                        + "groundDiag:s.groundDiag});})()",
+                        value -> {
+                            if (value == null || value.length() == 0 || "null".equals(value)) return;
+                            String line = value;
+                            if (line.length() >= 2 && line.startsWith("\"") && line.endsWith("\"")) {
+                                line = line.substring(1, line.length() - 1);
+                            }
+                            line = line.replace("\\\"", "\"").replace("\\\\", "\\");
+                            try {
+                                org.json.JSONObject o = new org.json.JSONObject(line);
+                                if (o.has("ground") && !o.isNull("ground")) {
+                                    groundFromPage = o.optBoolean("ground", groundOn);
+                                }
+                                // 页面未实现该字段时保持 null（= 按不可用处理），不伪造 true
+                                groundCanvasOkFromPage = o.has("groundCanvasOk") && !o.isNull("groundCanvasOk")
+                                        ? Boolean.valueOf(o.optBoolean("groundCanvasOk", false))
+                                        : null;
+                                String d = o.optString("groundDiag", "");
+                                groundDiagFromPage = (d == null || d.isEmpty()) ? null : d;
+                                android.util.Log.d("LCGROUND", "page state ground=" + groundFromPage
+                                        + " canvasOk=" + groundCanvasOkFromPage + " diag=" + groundDiagFromPage);
+                            } catch (Throwable t) {
+                                android.util.Log.w("LCGROUND", "parse page ground state failed: " + line, t);
+                                return;
+                            }
+                            applyGroundVisuals();
+                        });
+            } catch (Throwable t) {
+                android.util.Log.w("LCGROUND", "sync ground state failed: " + t.getClass().getSimpleName());
+            }
+        }, 700);
+    }
+
+    /**
      * 参考内容帧高度。原版 dump（`evidence/original-apk/orig-main.xml`）与本文具的 dump 根节点都是
      * `[0,0][1228,2578]`：1228×2700 物理屏的下方 122px 是导航栏，不在应用窗口内，所以原版那组
      * 「y=474 / 754 / 1412 … 2342」本身就是内容帧坐标。比例分母因此取 2578 而非 2700：
@@ -1072,7 +1170,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (pointerView == null) return;
         boolean visible = compassMode && !compassHidden
                 && compassMapMode != MAP_MODE_MAP
-                && pointerOn;   // L3：单真源——指针开关只有 pointerOn，CompassView 不再留副本
+                && pointerOn   // L3：单真源——指针开关只有 pointerOn，CompassView 不再留副本
+                && !groundDrapeActive();   // M8 B1：贴地成功态隐藏竖向指针（已知可见差异）
         pointerView.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
@@ -2001,6 +2100,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 js("toggleGround()");
                 // 贴地会强制进 3D（原版同一个 ground 位），状态一样要回读
                 sync3DStateFromPage();
+                // M8：回读贴地态（页面 ground / groundCanvasOk / groundDiag），决定原生盘面显隐
+                syncGroundStateFromPage();
                 break;
             case "定位": js("locate()"); break;
             case "3D":
@@ -2094,7 +2195,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (hideButton != null) hideButton.setText("隐藏");
         }
         if (!on) hidePoiPanel();
-        if (compassView != null) compassView.setVisibility(on ? View.VISIBLE : View.GONE);
+        // M8：贴地成功态由贴地盘面替代原生盘面（canvas 不可用时回退显示，见 groundDrapeActive）
+        if (compassView != null) compassView.setVisibility(
+                (on && !groundDrapeActive()) ? View.VISIBLE : View.GONE);
         // M6 第 1 条：十字经线只在罗盘态显示（原版 marker 只在罗盘浮层存在）
         if (crosshairView != null) crosshairView.setVisibility(on ? View.VISIBLE : View.GONE);
         // M7 第 3 条：屏心符号在罗盘态也显示（原版 compass-main-01 中心像素 #FF5163），
@@ -2235,7 +2338,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /** 隐藏态：盘面/指针/左右工具列/底栏全部消失；读数条与坐标由 readingView 常驻保留。 */
     private void applyCompassHiddenVisuals() {
-        boolean showCompass = compassMode && !compassHidden;
+        boolean showCompass = compassMode && !compassHidden && !groundDrapeActive();   // M8 贴地态
         if (compassView != null) compassView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         // M6 第 1 条：隐藏态（R2-006）连十字一起隐——原版「隐藏」隐的是整个罗盘浮层
         if (crosshairView != null) crosshairView.setVisibility(showCompass ? View.VISIBLE : View.GONE);
@@ -4411,6 +4514,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     view.evaluateJavascript("try{setRidge(" + ridgeOn + ")}catch(e){}", null);
                     view.evaluateJavascript("try{setContour(" + contourOn + ")}catch(e){}", null);
                     view.evaluateJavascript("(typeof setGround==='function')&&setGround(" + groundOn + ")", null);
+                    // M8：重放后回读一次贴地态，避免重载后原生盘面显隐停在旧值
+                    syncGroundStateFromPage();
                     view.evaluateJavascript("(typeof setSitNorth==='function')&&setSitNorth(" + sitMode + ")", null);
                     view.evaluateJavascript("(typeof setNeedle==='function')&&setNeedle(" + pointerOn + ")", null);
                     // M6 第 8 条：3D 状态同样按原生重放（页面级 `var mode` 一重载就回 2d，

@@ -79,7 +79,10 @@
     var anyEnabled = !!(opts && opts.anyEnabled);
     var offline = !!(opts && opts.offline);
     var ttlMs = Number(opts && opts.ttlMs) || 0;
-    var staleDays = Math.max(1, Math.round(ttlMs / 86400000) || 7);
+    /* 天数必须跟着 ttl 走：审核验 11-09 实测 ttlMs=1 时文案仍写「7 天」——
+     * 旧写法 Math.round(1/86400000) || 7 被 0 触发回退，短于 12 小时的 ttl 一律显示 7 天，
+     * 等于「回退值盖掉真实值」。回退只在 ttlMs<=0（未配置）时才该生效。 */
+    var staleDays = ttlMs > 0 ? Math.max(1, Math.round(ttlMs / 86400000)) : 7;
 
     /* 未启用缓存时每个视野都有缺块，必须提示；启用后只在离线或已命中过时才提示，
      * 免得在线浏览时把「正在联网加载」误报成降级。 */
@@ -99,5 +102,16 @@
     return { show: false, text: '' };
   }
 
-  return { decide: decide, hitRate: hitRate, bannerText: bannerText };
+  /* bannerBottom(safeAreaBottom) -> CSS bottom 像素值
+   * banner 贴底，避让原生底部栏：bottom = 8（页面留白）+ 原生下发的高度。
+   * 抽出来是为了让「未下发按 0」这条规则能被单测钉住，而不是散在 cssText 里。
+   * 注意：它算的是 CSS bottom，不是元素底边坐标（800 − bottom 才是底边 y）。
+   */
+  function bannerBottom(safeAreaBottom) {
+    var b = Number(safeAreaBottom);
+    if (!isFinite(b) || b < 0) b = 0;
+    return 8 + b;
+  }
+
+  return { decide: decide, hitRate: hitRate, bannerText: bannerText, bannerBottom: bannerBottom };
 });

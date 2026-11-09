@@ -524,8 +524,10 @@ function tileOfflineBanner() {
     el.id = 'offlineBar';
     /* 底部避让由原生下发（总监 11-08 定：知道尺寸的一方传下来，页面不写死偏移——
      * 写死 30/44px 会在换机型、改栏高、改字号时立刻再坏一次，且难查）。
-     * 见 setSafeArea()：客户端 onPageFinished 后调用，未下发时按 0 处理。 */
-    el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:' + (8 + (safeArea.bottom || 0)) + 'px;z-index:60;' +
+     * 见 setSafeArea()：客户端 onPageFinished 后调用，未下发时按 0 处理。
+     * 注意：这里只是「创建时」的初值，真正的避让在每次显示前重算（见下），
+     * 否则冷启时序（setSafeArea 先于 banner 出现）会把 bottom 冻在 8px。 */
+    el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:' + LCTileCachePolicy.bannerBottom(safeArea.bottom) + 'px;z-index:60;' +
       'background:rgba(24,20,16,0.86);color:#f0e6d2;font:12px/1.4 sans-serif;' +
       'padding:6px 10px;border-radius:6px;display:none;pointer-events:none';
     document.body.appendChild(el);
@@ -535,12 +537,16 @@ function tileOfflineBanner() {
   /* 文案由策略模块出（LCTileCachePolicy.bannerText），这里只负责上屏：
    * 三条分支（缺块 / 过期 / 两者并存）在 Node 单测里覆盖，不必上机才知道走没走到。
    * 11-09 总监裁定：stale 不许与 miss 互斥。旧写法 staleOnly=(miss===0 && stale>0)
-   * 在真实视野里几乎永不成立（实测 stale=200 / miss=20 却只出缺块文案），等于死代码。
-   * 几何与底部避让不动：banner 是 bottom 锚定，文案变长只向上长高。 */
+   * 在真实视野里几乎永不成立（实测 stale=200 / miss=20 却只出缺块文案），等于死代码。 */
   var banner = LCTileCachePolicy.bannerText(
     { hit: TILE_OFF.stats.hit, miss: TILE_OFF.stats.miss, stale: TILE_OFF.stats.stale },
     { anyEnabled: anyEnabled, offline: offline, ttlMs: TILE_OFF.ttlMs });
   if (!banner.show) { el.style.display = 'none'; return; }
+  /* 每次显示前重算避让（审核验 11-09 实测回归）：banner 是 bottom 锚定，
+   * 文案变长只向上长高，所以这里不会改动几何判据 bottom=760 的语义。
+   * 旧写法只在「创建时」和「setSafeArea 且 banner 已可见时」设置，
+   * 冷启时序下 setSafeArea 先到、banner 后显示 ⇒ bottom 停在 8px，实测 792≠760。 */
+  el.style.bottom = LCTileCachePolicy.bannerBottom(safeArea.bottom) + 'px';
   el.textContent = banner.text;
   el.style.display = 'block';
 }

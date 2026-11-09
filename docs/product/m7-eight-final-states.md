@@ -1,12 +1,10 @@
-# M7 · 用户报的 8 条 · 终态表
+# 用户报的 8 条 · 终态表（M7 定版 → M8 贴地兑现后更新）
 
-- 作者：LC产品｜日期：**2026-11-09**｜版本：**v1.4**
-- 唯一基线：`develop` = **`dc21f08`**（`Merge commit '084edc9' into develop`，即本表 v1.3 合入后的最终树）；`app` 树 **`d1a186d29ac563226622d6bc053011e6f9370a8c`**；`map.html` `blob:126060b4fd83b6d015b9427b460008ed2c0b6158`（未动）；`help-center.md` `blob:2eaddc47738ed745178b0e1644e9e662467d76ca`（未动）；`MainActivity` `blob:cda01f27ff`、`KmlIo` `blob:b6215e7b36`（未动，故 B 轮真机读数在最终树上继续有效）
-- 中间态说明：`953fb8b`（审核验签字点）与 `3ffe142` 均为 `dc21f08` 的祖先，**三棵树 `app` 树同为 `d1a186d`**；本表 v1.3 自己的 merge-base 是 `872d77a`（不是 `3ffe142`），所以复现时按 `dc21f08` 取树、按 `app` 树 `d1a186d` 核数据
-- 门禁状态：`953fb8b`/`3ffe142` 净树上四道门禁 **`GATE1..4_EXIT=0`**（② 带 `--expect-size 1228x2700` + `--expect-size-map` 两参数；③ `other=147`，只认 `fail=0`/`allowed=3`）；六门 smoke **`overall : PASS` / `SMOKE: PASS`**（`smoke.log` 内无 `SMOKE_EXIT` 串，退出码另存 `gates\exit-codes.txt`）。`docs/product/` 不在 `--root docs/fidelity` 扫描集，故本表后续 docs-only 提交**不改变 `other=147` 与四道门禁结论**
-- 旧树说明：`fa97c96`（`app` 树 `0fa8a2dc`）上的门禁与烟测结果**已被取代**；本文凡引旧树处均标「旧树」
-- 判据来源：`docs/fidelity/m6-close-summary.md` §1、`docs/fidelity/m7/symbols-stage1.md`、`docs/fidelity/m7/stage1-acceptance-plan.md`、`docs/product/m7-b-round-spec.md` v1.9、`docs/qa/help-figures-audit.md`
-- 证据目录：`reports/m7-complaint/`、`reports/M7-final-fa97c96/`（旧树）、`reports/M7-center-symbol/`、`reports/M7-center-verify/`、`reports/M7-orig-ground/`、`reports/M7-ground-287dc7a/`、`reports/M6-pages-96be059/`、`reports/m7-about-root/`
+- 作者：LC产品｜初版 2026-11-09｜本版 **2026-11-10**｜版本：**v1.5**
+- 当前基线：`develop` = **`d60a61d`**（`Merge commit '3842d2a' into develop`，M8 收官树）；`app` 树 **`0c5da8eb19627ac74190bbcb6a1b79acc3d79806`**
+- 历史基线（M7 定版）：`dc21f08`（`app` 树 `d1a186d`）；`953fb8b`（审核验签字点）与 `3ffe142` 均为其祖先、`app` 树同为 `d1a186d`。凡引 M7 树读数处标「M7 树」，**不得当 M8 读数**
+- 判据来源：`docs/fidelity/m6-close-summary.md` §1、`docs/fidelity/m7/symbols-stage1.md`、`docs/fidelity/m8/ground-drape-acceptance.md`、`docs/fidelity/m7/ground-drape-migration.md`、`docs/qa/help-figures-audit.md`
+- 证据目录：`reports/M8-g2-final/`、`reports/M8-final-d60a61d/`、`reports/M8-device-175d1fb/`、`reports/m7-complaint/`、`reports/M7-center-symbol/`、`reports/M7-center-verify/`、`reports/M7-final-fa97c96/`（旧树）、`reports/M6-pages-96be059/`、`reports/m7-about-root/`
 - 本文只做**终态定性与出处索引**；实测数字的最终签名归 @LC审核验，判定归技术总监
 
 ---
@@ -15,12 +13,12 @@
 
 | 状态 | 含义 | 允许的附注 |
 |---|---|---|
-| **已验** | 判据能在最终树 `3ffe142`（`app` `d1a186d`）上复现，且有独立复验记录 | 可附「已知偏差」，但**不得**写成完全 1:1 |
+| **已验** | 判据能在当前最终树 `d60a61d`（`app` `0c5da8e`）上复现，且有独立复验记录 | 可附「已知差/已知偏差」，但**不得**写成完全 1:1 |
 | **未实现 + 原因** | 用户可见行为未达判据；原因写到代码行 | 必须写清「差在哪、为什么不在这轮修」 |
 | **原版不可得 + 检索证据** | 原版该行为/素材检索面内无证据 | 必须附检索范围与命令，且**不许自画替代** |
 | **BLOCKED** | 仅账户页一处；**原因 / 缺什么证据 / 下轮复测方式**三要素必须齐 | 不与其他状态混写 |
 
-**计数**：已验 **7**（第 1/2/3/4/5/6/8 条）｜未实现 + 原因 **1**（第 7 条贴地）｜原版不可得 **0**｜BLOCKED **1 处**（第 4 条内账户页）｜已知偏差 **1 项**（about 落点 3px）｜证据不可得 **1 项**（3D 逐帧动画）。
+**计数（M8 收官）**：已验 **8**（第 1/2/3/4/5/6/7/8 条）｜未实现 + 原因 **0**｜原版不可得 **0**｜BLOCKED **1 处**（第 4 条内账户页）｜已知差 **3 项**（about 落点 3px／贴地态指针隐藏 B1／贴地盘面不跟随 `dialType`·`dialAlpha`）｜证据不可得 **1 项**（3D 逐帧动画）｜未做 **1 项**（L2a 原生 `CompassView` vs canvas 强检验）。
 
 > 与 `docs/fidelity/m7-close-summary.md` §3 的差异（**必须知道，否则会按旧口径读**）：该摘要按「`map.html` 内 `009DFF`/`FF5163`/`centerCross` 零命中」判第 3 条「实现未落」，并把第 4 条列为未实现。它 grep 的只是**页面层**；第 3 条的两个符号在 **原生层**（`MapCenterSymbolView.java` / `LocationPointerView.java`，`MainActivity.java:679/688` 挂载），且已有审核验 PASS 记录（见 §1 第 3 条）。第 4 条的账户页在摘要里已单列 BLOCKED，本文按「四页主体已验 + 账户页 BLOCKED」分写，不合并成一句；投诉行的 `68 vs 79` 已由墨迹实测推翻（见 §2.4），**不参与判定**。
 
@@ -36,7 +34,7 @@
 | 4 | **四页**（账户/投诉/关于/联系）1:1 排版 | **已验**（三页几何 + 投诉行墨迹对齐）**＋ 账户页 BLOCKED** | 六项终值（旧树 `96be059`）：三页标题 **Δ0**、返回 **y115 Δ0**、投诉 **352/532 Δ−1**、账户首行文字顶 **339 Δ0**、末行 **991 Δ0**、「我的」`[1056,115][1213,265]` 且墨迹中心 **1133 vs 1132.5（Δ0.5）**；裁切三行已修（`8f1194b`）。M7 复测（`7382126`）：S1 四过；about Δ45 由 `df6130a` 按墨迹对位修后判 PASS；contact 压暗由 `905cca7` 修。**投诉行（`6acf66d`）**：**墨迹顶与原版逐值相等（差 0）、两行间距与原版相等（180 = 180）、不叠字**（阈值 150 口径，@LC审核验 独立复量 `368..412 h45` vs 原版 `368..411 h44`；客户端同法得 `367..413 h47`、间距 `181`，**差 1px 来自阈值，相对结论完全一致**）；`68 vs 79` 是 **Compose 语义框 vs View 布局框**的不可比量，**不参与判定** | `m6-close-summary.md:18`；`6acf66d`（`M3PageActivity` +6 行，行内上下内距 24/24→32/24）；证据 `reports/m7-complaint/`（`complaint-after.png`、`complaint.xml`、`drawer4.png`）、`reports/M7-verify-final/VERIFY-SIGN.md`；原版 `docs/fidelity/m3/complaint.xml` |
 | 5 | **带插图的帮助中心** | **已验** | 可达（主界面→抽屉→帮助中心→`M3WebActivity`）＋**离线可读**（飞行模式冷启动完整渲染，`fig-31-offline.png`）＋**13 节目录**（MD 唯一源生成）＋**28 张**真机插图（`fig-32` 已撤，记 CONFIRMED-MISSING 未入册）＋四判据 `exit=0`＋引用↔文件 **28=28**（双向差集空）＋图注复核 **17 正确 / 6 未裁切（已裁） / 6 错**；`fig-26` 明文账号已打码；`index.html` 头部 `@2eaddc47…` 与 MD `blob:2eaddc47…` **逐字符相同** | `m6-close-summary.md:19`（29=29 为撤图前时点口径，现 28=28）；`docs/qa/help-figures-audit.md`；四判据 `reports/M7-final-fa97c96/gates/` |
 | 6 | **指南针按钮语义**＝偏转后地图回正北（非切显隐） | **已验** | `3d\|45\|106.7221\|12` → `2d\|0\|106.7221\|12\|0`：bearing 归零、**center/zoom 不变** | 逆向 `2597222`：复位=`I0(g)`→`g.I()`（动作型）＋JS `map.resetNorth`；`m6-close-summary.md:20` |
-| 7 | 罗盘**贴地**效果 | **未实现 + 原因** | 见 §2.7：按钮按下只做「切 3D + pitch 60°」，盘面仍是原生 `CompassView` 屏幕空间正圆；贴地 canvas 通道写好但 `groundRenderer` 默认 `overlay`，产品路径未接线 | `map.html:2323-2339`（`setGround`）、`:2917`（默认 `'overlay'`）、`:2355-2369`（仅调试钩子可切）、`:2345-2348`（注释自述未接线）；原版口径 `symbols-stage1.md` §6.4；方案 `docs/fidelity/m7/ground-drape-migration.md`（5.0 人日，决策 A1/B1 待裁）；证据 `reports/M7-orig-ground/o2-ground.png`（原版）、`reports/M7-ground-287dc7a/canvas-on.png`（我方 canvas 档） |
+| 7 | 罗盘**贴地**效果 | **已验**（M8 交付；4 项判据 + 2 项已知差 + 1 项未做） | **G1 四角投影**：`r(0)=1.0`、`r(30)=0.6499`、`r(60)=0.4625`（单调收紧、60° 近边明显更宽 ⇒ 透视真的发生）；平地 vs 珠峰四角差 **0.039 px**（不跟 DEM 起伏）；`pitch=0` 框宽 **728.0 CSS ±2**（`sideCss=728.0164`）、盘心 **(182,400)**、`bearing 0→90` 宽高互换。**G2-A1 位图区 0.00%**（`n=5638`、`meanDE=0`；基线在 **1456 空间**用同一 `translate(453.5,453.5)` + 同一 `drawImage(…,549,549)` + 默认 quality 复刻）；**G3 B1**：贴地态原生盘面 `GONE`；**G4** 十字经线 **611..616 / 1347..1352** 未变；**G5⑤** 地图态/罗盘态失败提示两态均可见（`bottom` **760 / 722**）；**G2 对照**：`dx=±1px` 立刻 **44.58% / 47.11%**，恒等 0%（错一点就红） | 判据表 `docs/fidelity/m8/ground-drape-acceptance.md`（§2 G1.4、§3 G2、§4 G3、§5 G4、§6 G5）；方案 `docs/fidelity/m7/ground-drape-migration.md`（A1+B1+800 基线）；读数 `reports/M8-g2-final/g2-final-1456.txt`、`reports/M8-final-d60a61d/`（`banner-map.txt`/`banner-compass.txt`/`compass-ground-on.txt`）、`reports/M8-device-175d1fb/`；旧比对 `reports/M8-final-d60a61d/g2-final.txt`（58.73% 已判「比对方式错」作废） |
 | 8 | 右侧 **3D 按钮**功能 | **已验**（T1/T2/T3；逐帧动画证据不可得，见 §2.8） | T1 重载保持 3D **PASS**／T2 冷启回 2D **PASS**／T3 同进程退出重进回 2D **PASS**（pid 26524 不变）；`putBoolean/getBoolean("is3d")` **0 命中**（不落 prefs）；`dem-missing` 实测「不回落、保留上一块 patch」、与成功态 `mean_abs_diff=0.00` | `m6-close-summary.md:22`；T1/T2 `882015c` |
 
 ---
@@ -86,20 +84,18 @@
 
 `I0(g)` 调 `g.I()`，`I()` 的 12 项里没有任何一项是 bearing/pitch/zoom/center —— 它是**一次性动作**。实测 `3d|45|106.7221|12 → 2d|0|106.7221|12|0`：只把 bearing 归零，中心和缩放一点没动。用户报的「按钮语义应为回正北」按此成立。
 
-### 2.7 第 7 条：贴地为什么判「未实现」，尽管 canvas 通道已经写好
+### 2.7 第 7 条：贴地已验，但「验到了什么」必须分清
 
-```
-map.html:2323-2339  setGround(on)：只做「切 3D + setPitch(60)」，不碰盘面绘制
-map.html:2917       var groundRenderer = 'overlay';   ← 默认档＝现网行为（原生屏幕空间正圆）
-map.html:2355-2369  setGroundRenderer('canvas')       ← 只有调试钩子能切
-map.html:2345-2348  注释自述：「产品『贴地』按钮只走 toggleGround()，没有任何路径把
-                     groundRenderer 切到 canvas ⇒ 贴地画布的绘制通道整段是死代码」
-```
+**判据参数（签字用，缺一不可；这是可复现性的关键）**：**在 1456 空间比，不在 549 裁切空间比**——等效条件 = `translate(453.5,453.5)` + `drawImage(img,0,0,549,549)` + 默认 `imageSmoothingQuality`（实测两侧均 `low`）。基线只许用进包的 **800/q85** 五张（合计 `1,200,656 B`），1200 版仅作参考。
 
-- **原版口径**（`symbols-stage1.md` §6.4）：贴地是 `canvas` source + 四角 `coordinates` 的 `compass_ground` raster 图层，且有**范围门控**——`|lat| < 75° 且 zoom ≥ 6 且 ground 开启` 才画，超范围不重绘。
-- **我方现状**：canvas 档在调试钩子下已过「六项 + Q8」（`04a93eb`）、跑过 Q7/Q5/Q0-4/回滚（`ac4a528`），但**默认档不切、产品路径不接** ⇒ 用户按「贴地」看到的仍是屏幕空间正圆。
-- **为什么不在这轮接线**：切默认档会改 `map.html`，让最终树 `3ffe142` 刚跑完的四道门禁与六门 smoke 全部作废；且方案里 **决策 A（盘面素材 800/q85 降采样）与决策 B（贴地态指针显隐，建议 B1）尚未裁**。迁移方案 5.0 人日（`ground-drape-migration.md` §8）。
-- **结论**：按「用户可见行为未达」判**未实现**，不写「已实现但有开关」。
+- **G2-A1 0.00% 是有效证据**：它证明的是**位图落点、缩放、尺寸都对**（同一 `drawImage`、同一 `translate`、同一 quality 复刻基线）。
+- **G2-A2 的 0.00% 只能算「自洽」，不能算「画得像」**：环叠区基线用的是树内**同一个 `drawOutlineRings`**——等于同一函数比自己，必然 0%。它只能证明「这段代码确定性地画出了它自己」。
+- **L2a 强检验本轮未做**：方案 §5 L2a 的原意是「**原生 `CompassView` 渲染 vs canvas**」，这一项留在下一轮。**不写成已验证。**
+- **58.73% 那条旧结论已作废**，原因记在方法文档：在 549 裁切空间比时 `off=(1456−549)/2=453.5` 是**半像素**，裁剪原点只能取 453/454，0.5px 位移被算成「画得不像」。这是本阶段第六次「**比较对象/方式选错**」。
+
+**结论**：用户可见行为达成（按钮按下盘面按四角投影铺在地面，不再是屏幕空间正圆），判 **已验**；但**不写「与原版 1:1」**，也不写「已证明贴地和原版盘面长得一样」。
+
+**两条已知差、一项未做（必须同时记档）**：见 §4.4（B1 指针隐藏）、§4.5（`dialType`/`dialAlpha` 不跟随，真缺陷、下轮）、L2a（未做）。
 
 ### 2.8 第 8 条：T3 那半条为什么不是「未实现」
 
@@ -138,6 +134,19 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 - **定性**：**证据不可得**（设备无 `screenrecord`），与 `A-09 动效录屏` 同一口径。
 - **处置结论**：不写成「没有动画」，也不写成「未实现」；关账表按「逐帧证据不可得」留档，设备具备录屏能力时补一次。
 
+### 4.4 贴地态指针隐藏（B1，**已批准的设计差**）
+
+- **事实**：贴地态隐藏那根竖向原生指针，只保留地面盘面。
+- **依据**：原版指针是独立 DOM `<img>`、`pitchAlignment:"map"`，由 MapLibre 做地面透视；我方是原生 `ImageView` 覆盖层，**做不到贴地倾斜**。B2（悬浮不倾斜）会与盘面错位、B3（画进 canvas）会改变「指针不在盘面 canvas 内」的原版事实 ⇒ 技术总监裁定 **B1**。
+- **记账**：作为「**贴地态指针隐藏**」已知可见差异记档，**不修**（不是缺陷，是已批准取舍）。
+
+### 4.5 贴地盘面不跟随 `dialType` / `dialAlpha` 切换（**真缺陷，下轮**）
+
+- **事实**：切换盘面类型或透明度时，贴地 canvas 上那张纹理不跟着变（读数为 `dialType:0`、`dialAlpha:1` 固定）。
+- **定性**：**真缺陷**，不是设计差——用户改了盘面却看到地面盘面不变。
+- **处置**：**下轮修**（贴地纹理需在 `dialType`/`dialAlpha` 变化时重建/重传），本轮不改 `map.html`（会让 M8 刚跑完的门禁与真机读数作废）。
+- **当前证据载体**：`reports/M8-g2-final/g2-final-1456.txt`（`dialType:0`、`dialAlpha:1` 即该缺陷的读数现场）。
+
 ---
 
 ## 5. 遗留清单（具名，进关账表）
@@ -145,13 +154,14 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 | # | 项 | 状态 | 责任 / 下轮动作 |
 |---|---|---|---|
 | 1 | 账户页已登录态 | **BLOCKED**（三要素见 §3） | @LC审核验 下轮按「先登录后采集」复测 |
-| 2 | about 落点 −3px | **已知偏差**（§4.2） | @LC客户端 下轮改 `getLayout().getLineBaseline(0)` |
-| 3 | 罗盘贴地 | **未实现**（§2.7） | 待技术总监裁决策 A/B 后按 5.0 人日开工 |
-| 4 | `fig-32` 展开态插图 | **未入册**（CONFIRMED-MISSING，图号保留不复用） | 拍到真展开态后同名重新入册 |
-| 5 | `fig-26` 打码版 | 已打码，可交付 | 有设备时建议用专用测试号重拍替代 |
-| 6 | 天地图审图号 | **未取得**（官网 5 条路径 0 命中；瓦片端点 418） | 角注只写「数据来源：天地图 www.tianditu.gov.cn」；**R2-032 形态判据变更待总监裁决** |
-| 7 | 天地图 API 控制台条款 | **未查证**（DNS 不解析 / CloudWAF 418） | 台账写「未查证」，**不写「条款允许」也不写「禁止」** |
-| 8 | 离线瓦片缓存 | **新增能力**；最终树断电实测 **`hit=60`、`shown=60`、`miss=0`、`net=60`、`netOk=0`、`online=false`**（`b47fcdb`/`app` `d1a186d`；`shown==hit`、离线冻结的是 `netOk` 不是 `net`） | **关账表不得写「与原版 1:1」**——原版无此能力；旧树 `96be059` 的 `24/24` 已标时点、不得当最终树数 |
+| 2 | about 落点 −3px | **已知差**（§4.2） | @LC客户端 下轮改 `getLayout().getLineBaseline(0)` |
+| 3 | 贴地盘面不跟随 `dialType`/`dialAlpha` | **真缺陷**（§4.5） | @LC地图 下轮修纹理重建/重传 |
+| 4 | L2a 强检验（原生 `CompassView` vs canvas） | **未做**（§2.7） | 下轮按方案 §5 L2a 补，**未做前不写「已证明一致」** |
+| 5 | `fig-32` 展开态插图 | **未入册**（CONFIRMED-MISSING，图号保留不复用） | 拍到真展开态后同名重新入册 |
+| 6 | `fig-26` 打码版 | 已打码，可交付 | 有设备时建议用专用测试号重拍替代 |
+| 7 | 天地图审图号 | **未取得**（官网 5 条路径 0 命中；瓦片端点 418） | 角注只写「数据来源：天地图 www.tianditu.gov.cn」；**R2-032 形态判据变更待总监裁决** |
+| 8 | 天地图 API 控制台条款 | **未查证**（DNS 不解析 / CloudWAF 418） | 台账写「未查证」，**不写「条款允许」也不写「禁止」** |
+| 9 | 离线瓦片缓存 | **新增能力**；M7 树实测 **`hit=60`、`shown=60`、`miss=0`、`net=60`、`netOk=0`、`online=false`**（`b47fcdb`/`app` `d1a186d`；`shown==hit`、离线冻结的是 `netOk` 不是 `net`） | **关账表不得写「与原版 1:1」**——原版无此能力；旧树 `96be059` 的 `24/24` 已标时点、不得当最终树数 |
 | 9 | `lc:created` 导入不入库 | 已知限制 | 导出无损、导入侧变导入时刻；改插入签名属 M4 边界，单独立项 |
 
 ---
@@ -169,6 +179,7 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v1.5 | 2026-11-10 | **第 7 条贴地改判「已验」**（用户可见行为达成）：补 G1 四角投影 `r(0)=1.0/r(30)=0.6499/r(60)=0.4625`、平地 vs 珠峰 **0.039px**、G2-A1 **0.00%**（1456 空间比、`translate(453.5,453.5)`、默认 quality）、G3 B1 `GONE`、G4 **611..616/1347..1352**、G5⑤ **760/722** 两态；**明确 A2 0% 只是自洽**（同一 `drawOutlineRings` 比自己）、**L2a 未做**、58.73% 已作废；新增 §4.4（B1 指针隐藏，已批准设计差）与 §4.5（`dialType`/`dialAlpha` 不跟随，真缺陷下轮）；计数 已验 **8** / 未实现 **0**；基线升 **`d60a61d`**（`app` `0c5da8e`） |
 | v1.4 | 2026-11-09 | 基线按终验意见收紧：`3ffe142` → 最终树 **`dc21f08`**（`084edc9` 已合入）；补「中间态」说明（`953fb8b`/`3ffe142` 都是祖先、`app` 树同为 `d1a186d`；本表 v1.3 的 merge-base 是 `872d77a`，复现按 `dc21f08` 取树）；补「`docs/product` 不进 `docs/fidelity` 扫描集 ⇒ `other` 恒 147、docs-only 提交不改门禁结论」 |
 | v1.3 | 2026-11-09 | 基线升到最终树 **`3ffe142`**（`app` 树仍 `d1a186d`，其上仅文档改动）；补门禁状态行（`GATE1..4_EXIT=0`、`overall : PASS`/`SMOKE: PASS`、③`other=147` 只认 `fail=0`/`allowed=3`）与 `MainActivity`/`KmlIo` 两个未变 blob；**遗留第 8 条把旧树 `24/24` 换成最终树实测 `hit=60 / shown=60 / miss=0 / net=60 / netOk=0 / online=false`**，旧数标时点 |
 | v1.2 | 2026-11-09 | 投诉行台账**绝对数加阈值**：阈值 150 口径 `368..412 h45` vs 原版 `368..411 h44`、间距 `180`=原版；客户端同法 `367..413 h47`/`181`，差 1px 来自阈值，**判据只认相对量**（顶差 0、间距相等、不叠字）。回应 @LC审核验 终验的第 1px 复现问题；未动 app 树 |

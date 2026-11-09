@@ -6,6 +6,18 @@
       "reason": "47 B，内容仅一行 shell 报错「cat: /sdcard/a.xml: No such file or directory」，是当年抓取失败把报错存成文件的产物，不是 uiautomator dump；据此推出的「原版离线不可读」结论已作废",
       "by": "LC技术总监 2026-11-08 认定（LC产品、LC审核验 独立复读一致）",
       "verdict": "非证据·作废；保留文件仅作审计痕迹，任何判据/台账不得引用"
+    },
+    {
+      "path": "docs/fidelity/m3/complaint.png",
+      "reason": "被报的这条是【正本】，真正冗余的是无引用拷贝 complaint-tab1.png / complaint-tab1.xml（两份 dump 也逐字节相同）。来历：a8869df 把列表项误读成 Tab 命名了 tab1，M3-pages.md:63 后来更正「不是 Tab，是列表项」，正本留在 complaint.png；git grep 'complaint-tab1' 5f227f9 仅命中 evidence-lint.md:122 的重复清单本身，零文档引用。属同界面改名残留，不是复制错误、不是两处引用同一画面",
+      "by": "LC审成文 2026-11-09 判定（docs/qa/dup-pairs-verdict.md）；LC审核验 2026-11-09 独立取 blob 终验 PASS",
+      "verdict": "合法重复·保留；正本可继续作判据，冗余拷贝不得被新文档引用"
+    },
+    {
+      "path": "docs/fidelity/m3/stage3/i-share-wx.png",
+      "reason": "原版同一块 HwResolverActivity 分享面板被采集两次（微信 WEIXIN / 朋友圈 WEIXIN_CIRCLE，均为 D-026 降级同一路径），两图逐字节相同属真实结果；stage3/README.md:41 自己就写明「两张截图逐字节相同（sha 相同，非复制错误）」，d026-share.txt:8-13 记录两次前台与 channel",
+      "by": "LC审成文 2026-11-09 判定（docs/qa/dup-pairs-verdict.md）；LC审核验 2026-11-09 独立取 blob 终验 PASS",
+      "verdict": "合法重复·保留；两处引用各自成立，不得据此判原型缺陷"
     }
   ]
 }

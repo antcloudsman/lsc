@@ -115,14 +115,17 @@ python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc
 
 三个数的口径：`files`=图片数、`unique`=唯一内容数、`duplicated`=落进重复组的文件数、`redundant`=删掉后可减少的文件数（=duplicated − 重复组数）。
 
-**已知待处置（2026-11-09 首次开启时的既有存量，不在本轮改图范围）**：
+**已知待处置（2026-11-09 首次开启时的既有存量）**：
 
-| 目录 | 重复对 |
-|---|---|
-| `docs/fidelity/m3/` | `complaint.png` = `complaint-tab1.png` |
-| `docs/fidelity/m3/stage3/` | `i-share-wx.png` = `i-share-circle.png` |
+| 目录 | 重复对 | 结论（2026-11-09） |
+|---|---|---|
+| `docs/fidelity/m3/` | `complaint.png` = `complaint-tab1.png` | **合法重复·具名例外**：被报的是正本，真正冗余的是零引用的 `complaint-tab1.*`（改名残留） |
+| `docs/fidelity/m3/stage3/` | `i-share-wx.png` = `i-share-circle.png` | **合法重复·具名例外**：原版同一 `HwResolverActivity` 面板采集两次（微信/朋友圈同一降级路径） |
 
-这两对可能是「原版两次截图本来就一样」，属**真实且合法**的证据；要么走 §3.1 具名例外（带 `reason`/`by`/`verdict`），要么重拍成可区分的画面，**不许直接关掉这条检查**。
+两对都经 `docs/qa/dup-pairs-verdict.md` 判定、LC审核验 独立取 blob 终验 PASS，已登记进 `tools/fidelity/evidence-lint-allow.json`。
+登记后 `--root docs/fidelity` → `fail=0 allowed=3 exit=0`（stderr 不再出现这两条 `FAIL dup`）。
+
+> **工具输出补充**：`dup` 只报「同组里非 kept 的那些」，而 kept 是按字典序取的第一个，所以被报的**可能是正本**（`-` < `.`，`complaint-tab1.png` 反而被当 kept）。为此每条 dup 现在都带 `group`（整组文件名）与 `kept` 字段，控制台行尾也会打出 `[group: …; kept=…]`——写例外 reason 时据此说明「被报的是正本」，别读成「把被引用的证据豁免掉了」。
 
 ### 2.7 逐图声明尺寸（`--expect-size-map`，2026-11-09）
 

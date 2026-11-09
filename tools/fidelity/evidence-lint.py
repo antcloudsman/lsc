@@ -468,6 +468,8 @@ def check_duplicate_images(root: str, skip_dirs: set[str]) -> tuple[list[dict], 
                         "level": "fail",
                         "kind": "dup",
                         "path": dup,
+                        "kept": ordered[0],
+                        "group": [os.path.basename(p) for p in ordered],
                         "reason": (
                             f"identical bytes to {os.path.basename(ordered[0])} "
                             f"(sha256 {digest[:12]}), group={len(ordered)}"
@@ -641,6 +643,9 @@ def main(argv: list[str] | None = None) -> int:
     for f in fails + warns:
         label = "FAIL" if f["level"] == "fail" else "WARN"
         extra = f.get("first_line") or f.get("reason")
+        if f.get("group"):
+            # 把整组成员打出来：只报「非 kept 的那些」时，读者容易误以为被报的就是多余的那个
+            extra = f"{extra} [group: {', '.join(f['group'])}; kept={os.path.basename(f.get('kept') or '')}]"
         print(f"{label} {f['kind']} {f['path']}: {extra}")
 
     print(

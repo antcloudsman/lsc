@@ -987,29 +987,59 @@ public class M3PageActivity extends Activity {
                 android.widget.FrameLayout.LayoutParams lp2 =
                         (android.widget.FrameLayout.LayoutParams) ch.getLayoutParams();
                 lp2.topMargin = Math.max(0, ((Integer) tag) - off);
-                // M6 第 4 条遗留缺陷：关于我们底部两行在原版 dump 里只差 7px（2489 / 2496），
-                // 而 v1.6.1 字高 >7px，按节点 y 摆放会叠字——fig-29 实拍「v1.6.1」压在
-                // 「渝ICP备20003923号-12A」上。这是**页面实现**问题（不是截图渲染）。
-                // 修法：备案号上沿 ≥ v1.6.1 上沿 + v1.6.1 实测字高 + 4；其它四行不动。
-                if (((Integer) tag) == 2496) {
-                    for (int j = 0; j < stage.getChildCount(); j++) {
-                        View above = stage.getChildAt(j);
-                        if (above.getTag() instanceof Integer && ((Integer) above.getTag()) == 2489) {
-                            int v161Top = Math.max(0, 2489 - off);
-                            int need = v161Top + above.getMeasuredHeight() + 4;
-                            if (lp2.topMargin < need) {
-                                android.util.Log.d("LCM3", "about overlap fix: beian top "
-                                        + lp2.topMargin + " -> " + need
-                                        + " (v161H=" + above.getMeasuredHeight() + ")");
-                                lp2.topMargin = need;
-                            }
-                            break;
-                        }
+                // M6 第 4 条 + M7 B（2026-11-09 总监裁定）：底部两行改按**墨迹**对位。
+                //
+                // 依据（复核 `docs/fidelity/m3/about.xml` 与 `about.png`）：
+                //   原版这一页是 `androidx.compose.ui.platform.ComposeView`，语义节点 bounds
+                //   与视觉文本框不是一回事——`v1.6.1` 节点 [567,2489][662,2496] 只有 7px 高，
+                //   而图上墨迹是 y2495..2519 共 25px；备案号节点 [303,2496][926,2578] 高 82px，
+                //   墨迹却只在 y2557..2587，节点上半段 61px 全空。
+                //   拿失真框当判据比出「下边 Δ45」，那个 45 是假的；按墨迹比真实差是
+                //   v1.6.1 低 6px、备案号高 9px、两行间隙 38 vs 21。
+                //
+                // 所以这两行的落点不再用 dump 的节点 y（2489/2496），也不再用 getMeasuredHeight()
+                // （那是布局框，含行距，会把备案号过推 45px），直接对齐**截图实测墨迹顶**：
+                //   v1.6.1 墨迹顶 2495、备案号墨迹顶 2557（about.png 全宽逐行非背景段量得）。
+                // 其余三行（995/1090/2331）维持节点 y 不动。
+                int tagY = (Integer) tag;
+                if (tagY == 2489 || tagY == 2496) {
+                    int inkTarget = (tagY == 2489) ? 2495 : 2557;
+                    int inkOff = inkTopOffset((TextView) ch);
+                    int want = Math.max(0, inkTarget - off - inkOff);
+                    if (want != lp2.topMargin) {
+                        android.util.Log.d("LCM3", "about ink-align: tag=" + tagY
+                                + " top " + lp2.topMargin + " -> " + want
+                                + " (inkTarget=" + inkTarget + " inkOff=" + inkOff + ")");
                     }
+                    lp2.topMargin = want;
                 }
                 ch.setLayoutParams(lp2);
             }
         });
+    }
+
+    /**
+     * 墨迹顶相对控件顶的像素偏移（M7 B，2026-11-09）。
+     *
+     * <p>「墨迹」= 字形实际覆盖的行段，不是控件布局框，也不是 Compose 语义节点框。
+     * 关于我们底部两行要按截图上量到的墨迹顶对位，就必须知道文字画在控件内的哪一行：
+     * 控件是 {@code Gravity.CENTER} 垂直居中，所以
+     * <pre>baseline = (控件高 − 文本块高) / 2 − ascent</pre>
+     * 再由 {@link android.graphics.Paint#getTextBounds} 取字形相对 baseline 的上沿，相加即墨迹顶。
+     *
+     * <p>为什么不用 {@code getMeasuredHeight()}：那是布局框（含行距/内边距），
+     * 拿它当字高会把下一行过推——旧实现对备案号推出的 45px 就是这么来的。
+     */
+    private int inkTopOffset(TextView tv) {
+        android.graphics.Paint paint = tv.getPaint();
+        android.graphics.Paint.FontMetricsInt fm = paint.getFontMetricsInt();
+        int block = fm.descent - fm.ascent;                     // 文本块高（含行距）
+        int baseline = (tv.getMeasuredHeight() - block) / 2 - fm.ascent;
+        android.graphics.Rect r = new android.graphics.Rect();
+        CharSequence cs = tv.getText();
+        String s = cs == null ? "" : cs.toString();
+        paint.getTextBounds(s, 0, s.length(), r);               // 字形 bbox（相对 baseline）
+        return baseline + r.top;
     }
 
     /**

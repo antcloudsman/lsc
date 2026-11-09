@@ -3154,6 +3154,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             return;
         }
+        if ("groundstate".equals(type)) {
+            // M8 第二阶段：页面贴地状态推送（地图 ca5fa99 实现）。
+            // diag 是「本次」值，页面 groundDiag 是粘滞值——收到空串时保留已知原因，
+            // 否则一次 pending/idle 调用就会把 fail:glinit 擦成静默（N7 那条反证守的就是这里）。
+            groundFromPage = Boolean.valueOf(o.optBoolean("ground", false));
+            groundCanvasOkFromPage = o.has("ok")
+                    ? Boolean.valueOf(o.optBoolean("ok", false)) : null;
+            String d = o.optString("diag", "");
+            if (d != null && !d.isEmpty()) groundDiagFromPage = d;
+            applyGroundVisuals();
+            android.util.Log.d("LCGROUND", "event ground=" + groundFromPage
+                    + " ok=" + groundCanvasOkFromPage + " diag=" + groundDiagFromPage
+                    + " reason=" + o.optString("reason", "")
+                    + " renderer=" + o.optString("renderer", ""));
+            return;
+        }
         if ("src-panel".equals(type)) {
             boolean open = o.optBoolean("open", false);
             if (placeView != null) {

@@ -62,5 +62,42 @@
     return h / (h + m);
   }
 
-  return { decide: decide, hitRate: hitRate };
+  /* bannerText(stats, opts) -> { show, text }
+   * stats: { hit, miss, stale }（hit / stale 是实例计，miss 是唯一键计；文案只并列，不改写口径）
+   * opts:  { anyEnabled, offline, ttlMs }
+   * 规则（总监 11-09 定：stale 不许与 miss 互斥）：
+   *   miss>0 且该显示      → 缺块文案；stale>0 时在同一对括号内追加「其中 Z 块数据可能已过期」
+   *   miss===0 且 stale>0  → 单出过期文案（不带未缓存措辞）
+   *   其余                 → 不显示
+   * 「已命中 X 块 / 缺 Y 块」必须原样保留：验收要拿文本和 hit/miss 计数器交叉核对，
+   * 改成自然语言描述就没法对账了。
+   */
+  function bannerText(stats, opts) {
+    var hit = Math.max(0, Number(stats && stats.hit) || 0);
+    var miss = Math.max(0, Number(stats && stats.miss) || 0);
+    var stale = Math.max(0, Number(stats && stats.stale) || 0);
+    var anyEnabled = !!(opts && opts.anyEnabled);
+    var offline = !!(opts && opts.offline);
+    var ttlMs = Number(opts && opts.ttlMs) || 0;
+    var staleDays = Math.max(1, Math.round(ttlMs / 86400000) || 7);
+
+    /* 未启用缓存时每个视野都有缺块，必须提示；启用后只在离线或已命中过时才提示，
+     * 免得在线浏览时把「正在联网加载」误报成降级。 */
+    var showMiss = miss > 0 && (offline || !anyEnabled || hit > 0);
+    if (showMiss) {
+      return {
+        show: true,
+        text: '当前区域未缓存，联网后可查看' +
+          '（已命中 ' + hit + ' 块 / 缺 ' + miss + ' 块' +
+          (anyEnabled ? '' : '；离线缓存未启用') +
+          (stale > 0 ? '；其中 ' + stale + ' 块数据可能已过期' : '') + '）'
+      };
+    }
+    if (stale > 0) {
+      return { show: true, text: '已缓存，但数据可能已过期（缓存超 ' + staleDays + ' 天）' };
+    }
+    return { show: false, text: '' };
+  }
+
+  return { decide: decide, hitRate: hitRate, bannerText: bannerText };
 });

@@ -585,7 +585,14 @@ function getTileCacheInfo() {
     miss: TILE_OFF.stats.miss,
     sourcesPersisted: (function () { try { return !!localStorage.getItem(TILE_OFF.prefsKey); } catch (e) { return false; } })(),
     evicted: TILE_OFF.stats.evicted, evictions: TILE_OFF.stats.evicted, stale: TILE_OFF.stats.stale,
-    offlineAttempts: TILE_OFF.stats.hit + TILE_OFF.stats.miss, safeAreaBottom: safeArea.bottom,
+    /* offlineAttempts 已按审核验 11-09 删除：hit 是实例计、miss 是唯一键计，相加既不是尝试数也不是瓦片数，
+     * 留着一定会被人拿来互咬。要尝试数看 missAttempts（已在四条入口全部 +1）。 */
+    safeAreaBottom: safeArea.bottom,
+    /* 两个率单位不同、不可交叉校验（产品 v1.7 + 审核验 11-09）：
+     *   hitRate         = 实例 hit ÷（实例 hit + 唯一键 miss）—— 吞吐视角，仅供参考
+     *   hitRateDistinct = 唯一键命中 ÷（唯一键命中 + 唯一键未命中）—— 覆盖率视角
+     * 验收判据只用 hit / miss / missAttempts / missNoKey / missUnsupported / netOk 各看各的。 */
+    hitRateNote: 'instance-based; not comparable with hitRateDistinct',
     hitRate: LCTileCachePolicy.hitRate(TILE_OFF.stats.hit, TILE_OFF.stats.miss),
     hitRateDistinct: LCTileCachePolicy.hitRate(TILE_OFF.distinctHit, TILE_OFF.distinctMiss),
     distinctHit: TILE_OFF.distinctHit, distinctMiss: TILE_OFF.distinctMiss,

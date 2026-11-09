@@ -1025,26 +1025,33 @@ public class M3PageActivity extends Activity {
     }
 
     /**
-     * 墨迹顶相对控件顶的像素偏移（M7 B，2026-11-09）。
+     * 墨迹顶相对控件顶的像素偏移（M8，2026-11-09 改法）。
      *
      * <p>「墨迹」= 字形实际覆盖的行段，不是控件布局框，也不是 Compose 语义节点框。
-     * 关于我们底部两行要按截图上量到的墨迹顶对位，就必须知道文字画在控件内的哪一行：
-     * 控件是 {@code Gravity.CENTER} 垂直居中，所以
-     * <pre>baseline = (控件高 − 文本块高) / 2 − ascent</pre>
-     * 再由 {@link android.graphics.Paint#getTextBounds} 取字形相对 baseline 的上沿，相加即墨迹顶。
      *
-     * <p>为什么不用 {@code getMeasuredHeight()}：那是布局框（含行距/内边距），
-     * 拿它当字高会把下一行过推——旧实现对备案号推出的 45px 就是这么来的。
+     * <p>上一版是自算居中：<pre>baseline = (控件高 − 文本块高) / 2 − ascent</pre>
+     * 那等于把 TextView 的垂直居中重实现一遍。真机实测偏小 3px——
+     * inkOff 算出 10/5、实际 13/8，两行同差，是系统性的；
+     * 漏掉的第一项是 {@code setIncludeFontPadding(true)}（Android 默认），
+     * 它在文本块上加一段附加量、把 baseline 往下推。后面还可能有别的项。
+     *
+     * <p>本版不再自己推，直接向布局要真实 baseline：
+     * <pre>baseline = getExtendedPaddingTop() + getLayout().getLineBaseline(0)</pre>
+     * 再由 {@link android.graphics.Paint#getTextBounds} 取字形相对 baseline 的上沿。
+     * 调用点必须在布局完成之后（这里是 {@code stage.post} 内），否则 {@code getLayout()} 为空。
      */
     private int inkTopOffset(TextView tv) {
-        android.graphics.Paint paint = tv.getPaint();
-        android.graphics.Paint.FontMetricsInt fm = paint.getFontMetricsInt();
-        int block = fm.descent - fm.ascent;                     // 文本块高（含行距）
-        int baseline = (tv.getMeasuredHeight() - block) / 2 - fm.ascent;
+        android.text.Layout layout = tv.getLayout();
+        if (layout == null || layout.getLineCount() == 0) return 0;
+        // 用 getExtendedPaddingTop() 而不是 getTotalPaddingTop()：
+        // 这里 tv.setGravity(Gravity.CENTER)，Layout 会被垂直居中，
+        // "Layout 顶相对控件顶"的偏移 = compoundPaddingTop + verticalOffset，正是前者给出的；
+        // 后者不含 gravity 居中那一段，会少算 2~3px（与上一版漏 includeFontPadding 同类）。
+        int baseline = tv.getExtendedPaddingTop() + layout.getLineBaseline(0);
         android.graphics.Rect r = new android.graphics.Rect();
         CharSequence cs = tv.getText();
         String s = cs == null ? "" : cs.toString();
-        paint.getTextBounds(s, 0, s.length(), r);               // 字形 bbox（相对 baseline）
+        tv.getPaint().getTextBounds(s, 0, s.length(), r);        // 字形 bbox（相对 baseline）
         return baseline + r.top;
     }
 

@@ -1045,6 +1045,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * 判据要求原生读数与页面逐字一致。
      */
     private void syncGroundStateFromPage() {
+        syncGroundStateFromPage(700);   // 页面重载后的首读留一点余量
+    }
+
+    /** @param delayMs 0 = 立即拉（收到 groundstate 事件后用，事件只当触发信号） */
+    private void syncGroundStateFromPage(int delayMs) {
         if (compassMapView == null) return;
         compassMapView.postDelayed(() -> {
             try {
@@ -1068,8 +1073,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                 groundCanvasOkFromPage = o.has("groundCanvasOk") && !o.isNull("groundCanvasOk")
                                         ? Boolean.valueOf(o.optBoolean("groundCanvasOk", false))
                                         : null;
+                                // 空串不许把已知失败原因擦成 null（N7 守的就是这里）
                                 String d = o.optString("groundDiag", "");
-                                groundDiagFromPage = (d == null || d.isEmpty()) ? null : d;
+                                if (d != null && !d.isEmpty()) groundDiagFromPage = d;
                                 android.util.Log.d("LCGROUND", "page state ground=" + groundFromPage
                                         + " canvasOk=" + groundCanvasOkFromPage + " diag=" + groundDiagFromPage);
                             } catch (Throwable t) {
@@ -1081,7 +1087,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             } catch (Throwable t) {
                 android.util.Log.w("LCGROUND", "sync ground state failed: " + t.getClass().getSimpleName());
             }
-        }, 700);
+        }, delayMs);
     }
 
     /**
@@ -3156,18 +3162,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         if ("groundstate".equals(type)) {
             // M8 第二阶段：页面贴地状态推送（地图 ca5fa99 实现）。
-            // diag 是「本次」值，页面 groundDiag 是粘滞值——收到空串时保留已知原因，
-            // 否则一次 pending/idle 调用就会把 fail:glinit 擦成静默（N7 那条反证守的就是这里）。
-            groundFromPage = Boolean.valueOf(o.optBoolean("ground", false));
-            groundCanvasOkFromPage = o.has("ok")
-                    ? Boolean.valueOf(o.optBoolean("ok", false)) : null;
-            String d = o.optString("diag", "");
-            if (d != null && !d.isEmpty()) groundDiagFromPage = d;
-            applyGroundVisuals();
-            android.util.Log.d("LCGROUND", "event ground=" + groundFromPage
-                    + " ok=" + groundCanvasOkFromPage + " diag=" + groundDiagFromPage
+            // 事件只当**触发信号**，值以 getState() 拉回为准：
+            // 事件丢了/乱了/桥重连了，UI 都会在下一拍自动对齐（地图 11-09 建议③）。
+            // reason / renderer 只打日志，不参与判定（diag 才是判据串，全小写）。
+            android.util.Log.d("LCGROUND", "event ground=" + o.optBoolean("ground", false)
+                    + " ok=" + o.optBoolean("ok", false)
+                    + " diag=" + o.optString("diag", "")
                     + " reason=" + o.optString("reason", "")
-                    + " renderer=" + o.optString("renderer", ""));
+                    + " renderer=" + o.optString("renderer", "")
+                    + " -> pull getState()");
+            syncGroundStateFromPage(0);
             return;
         }
         if ("src-panel".equals(type)) {

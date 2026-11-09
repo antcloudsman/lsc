@@ -213,7 +213,19 @@ backend/docker-compose.yml（develop 上已跟踪）
 
 ## 8. 未覆盖 / 待补
 
-- **门禁（最终冻结点 `d260b78`）**：七门 smoke 由 LC测试 执行、退出码入 `gates\exit-codes.txt`（本节不代其签字）；**四道门禁我在 `d260b78` 干净树（`git status --porcelain` = 0 行）上本人复跑，四道 exit 全 0**：
+- **门禁是五道，不是四道（技术总监 2026-11-10 纠正）**。原文：任务定义里 ③ = `evidence-lint --root docs/fidelity`；而 LC测试 首版记录里 `GATE3_CMD` 写的是 `fidelity.py report --root docs/fidelity`——**两套检查，都 exit 0，但验的不是同一件事**（前者扫 144 个文件查重复与 allowlist，后者比 27/65 对图并校验 checksheet_id）。按定义 ③ 在首版记录里**没跑过**，故 `fidelity.py report` 单列为 **③b**，不顶替 ③：
+
+```
+① assets.py verify                          ⑤ 之外的第一道
+② evidence-lint --root …/lc-help（双参数）
+③ evidence-lint --root docs/fidelity        ← 任务定义里的那道
+③b fidelity.py report --root docs/fidelity  ← 额外那道，单独编号，不顶替 ③
+④ help sha（--generated-html + --source）
+```
+
+- **七门 smoke（LC测试，`d260b78`，`pwsh -NoProfile -File scripts\smoke.ps1 -SkipDevice`，exit 0）**：`copy / secret / desktop / numeric（85 tests，0 fail）/ mech-src / android / ground` 全 PASS；`desktop`：`cargo_exit=0`、png `1100×780` / 266,376 B、`mechanics_values=19`、`estimated=0`；`android`：`assembleDebug BUILD SUCCESSFUL in 43s`；`ground`：`M8-GROUND PASS`、`NEGATIVES PASS（N0–N5）`。
+- **门禁包（门禁副产物，非关账基线）**：`12,470,938 B` / `sha256:123e75f1965fd2c0dcc1a73b0251403c2fd5081f28745dc66d31f636433c2ea3`；原件 `E:\APPDetector\reports\m8-gates-d260b78\exit-codes.txt`（5,525 B、LF、无 BOM）。
+- **四道门禁我在 `d260b78` 干净树（`git status --porcelain` = 0 行）上本人复跑，exit 全 0**：
 
 ```
 ① python tools/fidelity/assets.py verify
@@ -227,11 +239,15 @@ backend/docker-compose.yml（develop 上已跟踪）
 ③ python tools/fidelity/evidence-lint.py --root docs/fidelity
    DUP: files=138 unique=136 duplicated=4 redundant=2
    EVIDENCE-LINT: scanned xml=155 png=138 other=149 fail=0 warn=0 allowed=3    exit=0
+③b python tools/fidelity/fidelity.py report --root docs/fidelity   （LC测试 记录）
+   27/65 pair compared，26 对登记 known-red 未比较，checksheet_id 29/29        exit=0
 ④ python tools/fidelity/evidence-lint.py --generated-html …/lc-help/index.html --source docs/product/help-center.md
    ROOT: SKIP evidence scan
    EVIDENCE-LINT: scanned xml=0 png=0 other=0 fail=0 warn=0 allowed=0          exit=0
    头部 @ 6a3ebdd988178d52fd0b1d7355f92228ac0833fb == md blob 6a3ebdd9…
 ```
+
+- **④ 的正向输出只有 `fail=0`，不能自证它比了什么** —— LC测试 补了两次反证才敢判绿：改坏头部 sha → `FAIL generated … stale/mismatched (regenerate)` `exit 1`；删掉 `GENERATED` 整行 → `FAIL … missing header` `exit 1`。**且第一次反证是假绿**（替换模式漏了 `@` 后的空格，文件根本没被改到），加 `CHANGED=True` 断言后才变红——这与「参数给了没执行」「规则指向不存在的文件」同族，已记入 `exit-codes.txt` 第三节。
 
 - **「覆盖」现在能数出来，不再是一句「全过」**：`rules 7/7 matched` + `files by rule=7` + `by default=22` ⇒ **29 = 22 + 6 + 1**，其中 `fig-32` 走显式表条目。
 - **空转检查已有反证（我本人跑）**：把规则指向不存在的 `fig-99.*` → `SIZE-MAP-MISS … <- (0 files)` + `FAIL size-rule … declared-but-never-compared (idle rule)`，`exit=1`。⇒ 「无空转条目」这条现在有判据撑着。

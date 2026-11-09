@@ -1,6 +1,6 @@
 # M6 Stage 1 · 逆向取证（第 1/3/6/7 条）
 
-> 原版对照基线 **1.6.1**；DEX 证据取自 `.inspect/unpack/mem_smali`（Frida 内存 dump，方法体真实），Web 证据取自 `decoded/assets/webapp/js/index.946c1624e0.bundle.js`（1.6.1 解包树）。
+> 原版对照基线 **1.6.1**；DEX 证据取自 `output\.inspect\unpack\mem_smali`（Frida 内存 dump，方法体真实），Web 证据取自 `output\.inspect\unpack\decoded\assets\webapp\js\index.946c1624e0.bundle.js`（1.6.1 解包树）。
 > 本文件只写「有出处」的结论；拿不到的写「未取证」。
 > 开工 01:02 / 本批落盘见文末。
 
@@ -252,7 +252,7 @@ CSS（@201361）：
 在 `index.946c1624e0.bundle.js` 内检索 `userLocation / locationMarker / myLocation / locate / geolocate / setPosition / location_point / gps` **全部 0 命中**；唯一 `circle-*` 命中是绘制工具的顶点样式（`{"circle-radius":3,"circle-color":"#fff",...}`），与定位无关。
 
 ⇒ 「当前位置符号」**不在原版地图 web 层绘制**。可能由原生覆盖层或另一张 drawable 承担，本轮**未定位到**。
-⇒ 已排除的检索面：`decoded/res` 全量文件名（`ic_loc* / ic_my* / ic_position* / ic_center* / ic_current* / ic_gps*` 仅命中 `ic_center_cross`、`ic_gps_signal_1..3`、`svg_topic_center_cross`，均为信号强度/十字素材，**未证明**是当前位置符号）。
+⇒ 已排除的检索面：`output\.inspect\unpack\decoded\res` 全量文件名（`ic_loc* / ic_my* / ic_position* / ic_center* / ic_current* / ic_gps*` 仅命中 `ic_center_cross`、`ic_gps_signal_1..3`、`svg_topic_center_cross`，均为信号强度/十字素材，**未证明**是当前位置符号）。
 **结论：未取证。** 下一步可查原生覆盖层（`MainActivity` 的定位回调 → 是否有 overlay View）。**在拿到之前不许自画。**
 
 ---

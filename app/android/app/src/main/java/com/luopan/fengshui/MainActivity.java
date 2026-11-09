@@ -1840,6 +1840,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * 页面侧消费约定：`setSafeArea({bottom: N})`，N 为 CSS px；页面把 banner 的 bottom 设为 N + 8。
      * 页面没有这个函数时静默跳过（守卫），不影响老页面。
      */
+    /**
+     * M8：工具条显隐变化后重新下发 safeArea。
+     *
+     * <p>为什么不能直接调 {@link #pushSafeArea()}：刚 setVisibility 完 getHeight() 还是旧值
+     * （GONE 时是 0），量出来会把工具条那段算丢——实测罗盘态 safeArea 卡在 32 就是这个原因
+     * （LC测试 2026-11-09 23:49 包，工具条 2416..2544 已可见但页面仍是 32）。
+     * 等一帧布局完成再量。
+     */
+    private void pushSafeAreaSoon() {
+        final android.view.View anchor = bottomPanel != null ? bottomPanel
+                : (compassToolBar != null ? compassToolBar : trustRow);
+        if (anchor == null) return;
+        anchor.postDelayed(this::pushSafeArea, 80);
+    }
+
     private void pushSafeArea() {
         if (compassMapView == null) return;
         /* M8 第三阶段（总监 2026-11-09 最终裁定）：**只补工具条**，不量整条带。
@@ -2234,6 +2249,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(on ? View.VISIBLE : View.GONE);
         if (compassToolBar != null) compassToolBar.setVisibility(on ? View.VISIBLE : View.GONE);
+        // M8：工具条显隐变了，safeArea 必须跟着重下发（否则罗盘态的底部条带仍按 32 避让）
+        pushSafeAreaSoon();
         if (hideButton != null) hideButton.setVisibility(on ? View.VISIBLE : View.GONE);
         if (topBackButton != null) topBackButton.setVisibility(on ? View.VISIBLE : View.GONE);
         if (topLayerButton != null) topLayerButton.setVisibility(on ? View.VISIBLE : View.GONE);
@@ -2376,6 +2393,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (leftCompassColumn != null) leftCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (rightCompassColumn != null) rightCompassColumn.setVisibility(showCompass ? View.VISIBLE : View.GONE);
         if (compassToolBar != null) compassToolBar.setVisibility(showCompass ? View.VISIBLE : View.GONE);
+        // M8：隐藏态同样会改变底栏高度，重下发
+        pushSafeAreaSoon();
         if (hideButton != null) hideButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
         if (topBackButton != null) topBackButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);
         if (topLayerButton != null) topLayerButton.setVisibility(compassMode ? View.VISIBLE : View.GONE);

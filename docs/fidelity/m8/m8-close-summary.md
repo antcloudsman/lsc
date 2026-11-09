@@ -1,7 +1,10 @@
 # M8 关账摘要（罗盘贴地兑现 + 遗留收口）
 
 - 作者：LC审成文｜日期：**2026-11-10**｜版本：**v1.0**｜状态：**待 LC审核验 签字**（他负责的四项独立复核见 §3）
-- 基线：`develop` = **`73886ed`**（`Merge commit 'b63e0d4' into develop`）；`app` 树 **`0c5da8eb19627ac74190bbcb6a1b79acc3d79806`**（自 `d60a61d` 起未再变）
+- 基线：`develop` = **`1bb650c`**（`fig-32` 入册后的最终顶点）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**
+- **⚠ `app` 树在 `fig-32` 入册时变了一次，必须标清**：`0c5da8e`（M8 全部真机读数所在树）→ **`b203750e`**，差异**只有两项**——
+  `android/app/src/main/assets/lc-help/fig-32.webp`（新增 109,944 B）与 `.../lc-help/index.html`（+4/−2）。
+  **`map.html`、`MainActivity`、`KmlIo`、全部 Java 零改动** ⇒ 贴地渲染与十字经线的真机读数在 `b203750e` 上继续成立；但台账**不得**写「门禁包与真机读数是同一棵 `app` 树」，正确写法是「**渲染相关零改动；差异仅在帮助中心静态资源**」。
 - 判据来源：`docs/fidelity/m8/ground-drape-acceptance.md`（333 行 / 20,704 B，LC审核验 独立于实现方编写）、`docs/fidelity/m7/ground-drape-migration.md`（方案 A1 + B1）、`docs/qa/m8-ground-device-method.md`
 - 本文件只做汇总与索引：**判定归 LC审核验，实现归 LC地图／LC客户端，终态文字归 LC产品**；我不自签。
 
@@ -11,10 +14,13 @@
 
 | 项 | 值 | 复查命令 |
 |---|---|---|
-| develop tip | `d60a61d` | `git log -1 --format='%h %s' d60a61d` |
-| app 子树 | `0c5da8eb19627ac74190bbcb6a1b79acc3d79806` | `git rev-parse d60a61d:app` |
-| `map.html` blob | `26d17e9ebf90299a95abfffc632c03f24d74081e` | `git rev-parse d60a61d:app/android/app/src/main/assets/map.html` |
-| `help-center.md` blob | `2eaddc47738ed745178b0e1644e9e662467d76ca`（与 M7 收官同） | `git rev-parse d60a61d:docs/product/help-center.md` |
+| develop tip | **`1bb650c`**（`fig-32` 入册后最终顶点） | `git log -1 --format='%h %s' 1bb650c` |
+| app 子树 | **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**（真机读数所在树为 `0c5da8e`，差异仅 §基线说明两项） | `git rev-parse 1bb650c:app` |
+| `map.html` blob | `26d17e9ebf90299a95abfffc632c03f24d74081e`（`0c5da8e` 与 `b203750e` 相同） | `git rev-parse 1bb650c:app/android/app/src/main/assets/map.html` |
+| `help-center.md` blob | **`6a3ebdd988178d52fd0b1d7355f92228ac0833fb`** | `git rev-parse 1bb650c:docs/product/help-center.md` |
+| `index.html` 头部 `@` | **`6a3ebdd988178d52fd0b1d7355f92228ac0833fb`**（逐字符相同）；`index.html` blob `bf2142868b811184dfc4ff591fff63f9ddff546c` | `git show 1bb650c:…/lc-help/index.html \| head -1` |
+| `lc-help` webp 数 | **29**（`fig-32` 入册，109,944 B） | `git ls-tree -r --name-only 1bb650c -- …/lc-help \| grep -c '\.webp$'` |
+| 尺寸规则数 | **7**（6 裁切 + `fig-32` 显式整屏） | `git show 1bb650c:tools/fidelity/evidence-size-map.json \| grep -c 'lc-help/fig-'` |
 | 真机验收包 | `12,360,834 B` / `sha256:b306ce3d1876fa073512e3bf8da9e7dc6311bc40200cc8a19928cccd70bfa3d9` | `E:\APPDetector\reports\M8-final-d60a61d\app-debug.apk` |
 | 装机设备 | `L2E0222531014833` 单台串行，用后已释放（`LEASE: none`、anim 1/1/1、airplane=0） | 群内 `LEASE_RELEASED` 回执 |
 
@@ -147,7 +153,18 @@ red-on-current.log（旧树）   MAP_HTML 196,790 B
 > ⇒ 账户页定档：**「已采证，五判据待复跑」**；责任：**下一轮首项**；缺失证据：**一次登录态下的五判据读数**。
 > ⇒ 计数栏写 **BLOCKED 0 / 待复跑 1**，**不得**写成「账户页已验」——那是拿「采到了证据」冒充「判据通过」。
 | **about 落点 3px** | 已定位未修（`includeFontPadding`，公式少算 3px） | 复拍复核，见 `about-new.png`；**是否闭环以 LC客户端 的报告与 LC审核验 的复量为准**，本文件不代判 | `E:\APPDetector\reports\m8-ink\about-new.png`（83,755 B） |
-| **`fig-32` 真展开态** | 图已撤下，记 CONFIRMED-MISSING | 本轮重拍（LC客户端 执行，设备占用） | 待其提交后补入本表；**未落地前帮助中心仍是 28 图** |
+| **`fig-32` 真展开态** | 图已撤下，记 CONFIRMED-MISSING | **已采到并走完五步**（LC客户端，分支 `feature/客户端-fig32-real` = `2eb18be`，基于 `73886ed`）：①「读盘」按**代码布局值** `(106,2114)` 进入罗盘读盘弹层；②点「地盘正针二十四山」行体 `(506,1706)`；③dump 证明**七行里正好这一行**展开——`地盘正针二十四山 [54,1670][751,1743]` + `向：子山　坐：午山 [751,1675][1174,1738]`，其余六行仍是「点击查看 ›」 | 落树后 `lc-help` **28→29**、`index.html` 重生成（`@6a3ebdd9`）、尺寸规则 **6→7**；采集件 `fig-32.webp` 1228×2700 / 109,944 B / `sha256:32F93E87…` |
+
+> **帮助中心覆盖口径（不写「29 张全过」，写「29 张全部受检，分类 22+6+1」）**：落树后 29 张 = **22 张按默认 `--expect-size 1228x2700`** + **6 张裁切按 `evidence-size-map.json`** + **1 张 `fig-32`（整屏，但显式入表）**；尺寸规则 **7 条 = 6 裁切 + 1 显式整屏**，覆盖 **29/29**。
+> `fig-32` 走的是**显式表条目**（`"…/lc-help/fig-32.*": "1228x2700"`，实测在 `2eb18be` 的 `tools/fidelity/evidence-size-map.json` 第 8 行），**不是默认值**——这正是「入表才算专门验过」的意义。
+> **工具边界（我实测，待 LC测试 补检查）**：尺寸规则**指向不存在的文件时，既不比也不报**（无 WARN / 无 FAIL / 无 unused-rule 输出）。复现：
+> ```
+> {"…/lc-help/fig-32.*": "1228x2700"}  +  --expect-size-map <该表>
+> → 输出中 fig-32 零提及
+> 对照：{"…/lc-help/fig-08.*": "999x999"} → FAIL png fig-08.webp: declared 999x999, actual 1228x2700
+> ```
+> ⇒ 「先加表条目、后补图」的顺序下，该条目是空转；**只有图入册之后再加条目才有判据意义**。工具补「规则命中 0 文件 → WARN/FAIL」之后，本表才能加一句更硬的 **「规则命中数 7/7，无空转条目」**——到那时「29 张全部受检」才是数得出来的，而不是一句话。这条与 `--expect-size` 空转同类：**声明与实际对象没对上，检查就静默通过**。
+> **顺带更正我自己的旧判断**：M7 时我写过「尺寸表留着 `fig-32` 会报『声明了但文件不存在』」——实测**不会报**，那句作废。
 
 > 账户页那条是 M7 done-when 的硬项，现已从 BLOCKED 转为有实测证据；但**「已登录态 dump 存在」≠「四页 Δ 判据全过」**，逐条判据仍归 LC审核验。
 
@@ -196,7 +213,7 @@ backend/docker-compose.yml（develop 上已跟踪）
 
 ## 8. 未覆盖 / 待补
 
-- **门禁与七门 smoke 未在收官树上跑**：按技术总监安排，等 `fig-32` 落地、docs 全合完，由 LC测试 执行「七门 smoke + 四道门禁（② 双参数）」，退出码落盘。**本文件不预填结果**。
+- **门禁与七门 smoke 在 `1bb650c` 上由 LC测试 执行（本节留槽，不预填结果）**：命令 = 七门 smoke + 四道门禁，其中 ② 必须带双参数 `--expect-size 1228x2700 --expect-size-map tools/fidelity/evidence-size-map.json`，按 **29 张 + 7 条规则**判；证据头须含：顶点 sha、`app` 树、APK 字节+`sha256:`、图数 29、规则数 7、覆盖情况（22 默认 + 6 裁切 + 1 显式）、以及**规则命中数 7/7**（待工具补「命中 0 文件即 WARN/FAIL」后可写）。**输出未到之前本文件不写任何门禁结论。**
 - **终态表第 7 条已改判**：`docs/product/m7-eight-final-states.md` **v1.5（`33cb119`，`blob:08fa04beca07d0e2723bba154d23f617b8e51274`，24,949 B / 187 行 / CR=0）**把第 7 条从「未实现」改为 **已验**，并附 G1/G2-A1/G3/G4/G5⑤ 读数。**规范文本以该表为准**，本文件只做索引。
 - **八条计数（按终态表 v1.5/v1.6）**：已验 **8**｜未实现 **0**｜原版不可得 **0**｜**BLOCKED 0 / 待复跑 1（账户页五判据）**｜已知差 **3 项**｜证据不可得 **1 项（3D 逐帧）**｜未做 **1 项（L2a）**。
 - **账户页已按技术总监裁定分两件事写**（见 §5）：采证障碍**已解除**，但五判据**未在登录态下复跑** ⇒ 记「已采证，五判据待复跑」，**不写「账户页已验」**。

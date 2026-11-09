@@ -185,7 +185,11 @@ function setSafeArea(o) {
     if (isFinite(v) && v >= 0) safeArea[k] = v;
   });
   var el = document.getElementById('offlineBar');
-  if (el && el.style.display === 'block') { el.style.bottom = (8 + safeArea.bottom) + 'px'; }
+  /* 不论 banner 当前是否可见都写值（总监 11-09 定）：可见时立即生效；
+   * 不可见时先把值落到元素上，下次显示前 tileOfflineBanner() 还会再算一次——两道保险，
+   * 使 bottom 不再依赖「setSafeArea 与 banner 出现的先后」。旧写法带 display==='block'
+   * 条件，冷启时 setSafeArea 先到就被挡掉，banner 之后用创建时的 0，实测 792≠760。 */
+  if (el) { el.style.bottom = LCTileCachePolicy.bannerBottom(safeArea.bottom) + 'px'; }
   return { top: safeArea.top, bottom: safeArea.bottom, left: safeArea.left, right: safeArea.right };
 }
 

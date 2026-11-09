@@ -1,8 +1,9 @@
 # M7 关账摘要（补欠账 → 清质量债 → 竞品 P0）
 
-- 作者：LC审成文｜日期：**2026-11-09**｜状态：**v1.0 待 LC审核验 逐条签名**
-- 唯一基线：`develop` = **`fa97c96`**（`Merge commit '8aa69d1' into develop`）；`app` 树 **`0fa8a2dc41a96b517a83d3cc7bfe3965870782a0`**
-- 优先规则：本文件所有数**以 `fa97c96` 实测为准**；凡引自旧树的数，逐条标注「树 `xxxxxxx`」。旧数一律不当冻结基线。
+- 作者：LC审成文｜日期：**2026-11-09**｜版本：**v1.1**（v1.0 挂 `fa97c96`，已由本版取代）｜状态：**待 LC审核验 逐条签名**
+- 唯一基线：`develop` = **`b47fcdb`**（`Merge commit '32c69d8' into develop`）；`app` 树 **`d1a186d29ac563226622d6bc053011e6f9370a8c`**
+- 优先规则：本文件所有数**以 `b47fcdb` 实测为准**；凡引自旧树的数，逐条标注「树 `xxxxxxx`」。旧数一律不当冻结基线。
+- **树变更说明**：`fa97c96` → `b47fcdb` 只因两笔合并（`6acf66d` complaint 墨迹下移 4px、`32c69d8` 终态表），`app` 树由 `0fa8a2dc` 变为 `d1a186d`。**`map.html` blob 两棵树完全相同（`126060b4`）**，`MainActivity`/`KmlIo` 亦未变动。
 - 上游：用户 2026-11-08 报的 8 项人工实测缺陷 + 竞品 P0 两项（KML 导入导出、离线瓦片缓存）
 - 判据来源：`docs/fidelity/m6-close-summary.md` §1、`docs/product/m7-b-round-spec.md`（v1.9）、`docs/fidelity/m7/symbols-stage1.md`、`docs/qa/help-figures-audit.md`
 - 本文件只做汇总与索引，**不改写任何条目的技术判定**；判定归技术总监，实测签名归 LC审核验。
@@ -13,14 +14,16 @@
 
 | 项 | 值 | 复查命令 |
 |---|---|---|
-| develop tip | `fa97c96` | `git log -1 --format='%h %s' fa97c96` |
-| app 子树 | `0fa8a2dc41a96b517a83d3cc7bfe3965870782a0` | `git rev-parse fa97c96:app` |
-| `map.html` blob | `126060b4fd83b6d015b9427b460008ed2c0b6158` | `git rev-parse fa97c96:app/android/app/src/main/assets/map.html` |
-| `help-center.md` blob | `2eaddc47738ed745178b0e1644e9e662467d76ca` | `git rev-parse fa97c96:docs/product/help-center.md` |
+| develop tip | `b47fcdb` | `git log -1 --format='%h %s' b47fcdb` |
+| app 子树 | `d1a186d29ac563226622d6bc053011e6f9370a8c` | `git rev-parse b47fcdb:app` |
+| `map.html` blob | `126060b4fd83b6d015b9427b460008ed2c0b6158`（与 `fa97c96` 同） | `git rev-parse b47fcdb:app/android/app/src/main/assets/map.html` |
+| `help-center.md` blob | `2eaddc47738ed745178b0e1644e9e662467d76ca` | `git rev-parse b47fcdb:docs/product/help-center.md` |
 | `index.html` 头部 `@` | `2eaddc47738ed745178b0e1644e9e662467d76ca` | 与上一行**逐字符相同** |
-| `lc-help` webp 数 | **28**（`fig-32` 已撤下） | `git ls-tree -r --name-only fa97c96 -- app/android/app/src/main/assets/lc-help \| grep -c '\.webp$'` |
+| `lc-help` webp 数 | **28**（`fig-32` 已撤下） | `git ls-tree -r --name-only b47fcdb -- app/android/app/src/main/assets/lc-help \| grep -c '\.webp$'` |
 | `index.html` 内 `fig-32` | **0** | 同上 grep `fig-32` |
-| 最终 APK | **`12,349,187 B`** / `sha256:841311ef88e5357e54672f1e99c4b9eaaa7f9ff7d9eacd5e0e6cf7b30bceff1e` | 见 §7 一致性校验第 3 条 |
+| 门禁包（`b47fcdb`） | **待 LC测试 产出**（关账基线以它为准） | 见 §4 |
+| 旧树包（`fa97c96`，**已取代**） | `12,349,187 B` / `sha256:841311ef88e5357e54672f1e99c4b9eaaa7f9ff7d9eacd5e0e6cf7b30bceff1e` | 仅供参考，不作基线 |
+| 客户端自测包（`b47fcdb` + `6acf66d`，**仅记录**） | `12,349,219 B` / `sha256:36C03214502C23FA6E41F832705C566F5CC4ADE1547E8A2E1F143EAFCA35A546` | 非门禁产物 |
 
 ---
 
@@ -36,9 +39,14 @@
 | 当前位置符号 | **原版有**（定位成功后出现；原「原版不可得」结论在同文件 §2.4 已作废） | 素材精确色匹配，连通域判据 **= 2**（圆 + 圈外独立小三角，不是水滴） |
 
 - 素材 `assets/webapp/assets/imgs/cross.png` 虽形状一致但**不可直接复用**：颜色 `#6488FC` vs 实测 `#009DFF`、尺寸 52×52 vs 114×114（需 2.19×），且主图 bundle 对 `cross.png` 引用 **0 次**。
-- **实现侧现状（我自己的取数）**：`fa97c96` 的 `map.html` 里 `009DFF`、`FF5163`、`centerCross`、`center-cross` 命中均为 **0**；`userLocation`/`locationMarker`/`geolocate` 命中均为 **0**。⇒ 两个符号**取证完成、实现未落**（另见 §3 第 3 条的终态归属，以 LC产品 终态表为准）。
+- **实现侧现状（已更正，见 §5.0 更正记录）**：两个符号**在原生层已实现**，不是页面层。
+  - `app/android/app/src/main/java/com/luopan/fengshui/MapCenterSymbolView.java`（79 行）：`:47 linePaint.setColor(Color.rgb(0, 157, 255)); // #009DFF`、`:50 dotPaint.setColor(Color.rgb(255, 81, 99)); // #FF5163`，类头注释 `:14-15` 量值 13×13 / 圆心 (614,1350) / 蓝线 ≈57×7，与 §2.1 取证值一致。
+  - `app/android/app/src/main/java/com/luopan/fengshui/LocationPointerView.java`（134 行）。
+  - `MainActivity.java:35/37` 声明、`:679 centerSymbolView = new MapCenterSymbolView(this);`、`:688 locPointerView = new LocationPointerView(this);` 挂载。
+  - 复验记录：`23c9fc9` 屏心符号 PASS、`1656e31` 定位点复验 PASS（引自 LC产品 终态表，本文件未复跑真机）。
+  - **我的原判错在哪**：v1.0 只检索 `map.html`（页面层）就下「实现未落」结论，`009DFF`/`FF5163` 在 **Java 层**而非 web 层。这是「检索面不全当成了不存在」，与 goal 里「无证据不实现」同类的反向错误——**无证据也不等于不存在**，必须把检索范围写出来。
 
-**第 7 条贴地**：`map.html` 里 `drape` 共 12 处，逐行核对全部是 **3D 地形贴面层**（`:663/1735/1813/1983/3551/3562/3565/4014/4029/4064` 等，语义为「3D 贴面纹理」），**没有一处是罗盘盘面贴地**。⇒ 与 `m6-close-summary.md:21` 一致：按钮与文案已 1:1，**效果未落地**。迁移方案（A 路线）见 `docs/fidelity/m7/ground-drape-migration.md`。
+**第 7 条贴地**：`b47fcdb` 的 `map.html`（blob `126060b4`，与 `fa97c96` 同）里 `drape` 共 12 处，逐行核对全部是 **3D 地形贴面层**（`:663/1735/1813/1983/3551/3562/3565/4014/4029/4064` 等，语义为「3D 贴面纹理」），**没有一处是罗盘盘面贴地**。⇒ 与 `m6-close-summary.md:21` 一致：按钮与文案已 1:1，**效果未落地**。迁移方案（A 路线）见 `docs/fidelity/m7/ground-drape-migration.md`；终态表 §2.7 另给出四条代码依据（`setGround` 只切 3D + pitch 60°、`groundRenderer` 默认 `'overlay'`、canvas 档只能经调试钩子切、无产品按钮路径）。
 
 ### 2.2 C 轮 · 清质量债
 
@@ -60,7 +68,7 @@
 | ② 降级提示 | **PASS（三态）** | 未缓存文案、过期文案、二者并存文案由 `LCTileCachePolicy` 纯函数给出并有三态单测 | 树 `fa97c96`（政策层） |
 | ② banner 底边避让 | **PASS** | `rect bottom=760.0000` = `innerHeight 800 − safeAreaBottom 32 − 8` | 树 **`96be059`**；`fa97c96` 另有 `8aa69d1` 时序修复 ⚠ 见 §7 第 1 条 |
 | ③ 天地图离线缓存条款 | **两段式**：门户《服务条款》《版权声明》**已查证·未涉及**（缓存/离线/下载各 0 命中）；API 控制台**未查证**（DNS 不解析） | **不写「条款允许」**，见 `docs/fidelity/m7/tdt-offline-terms.md`、`docs/fidelity/m7/offline-cache-orig.md` | `fa97c96` |
-| ④ 四道门禁 | **PASS** | 见 §4 | `fa97c96` |
+| ④ 四道门禁 | **PASS** | 见 §4 | **`b47fcdb`** |
 
 ---
 
@@ -72,21 +80,22 @@
 |---|---|---|---|
 | 1 | 罗盘贯穿屏幕的红色十字经线 | `m6-close-summary.md:15`（已验；原版 CSS `2px`/`#FF0000`，逆向 `2597222`） | — |
 | 2 | 拖动方向与手指同向 | `m6-close-summary.md:16`（已验；2a 8/8、2b 三档角误差 0°、负向对照 10/10 FAIL 证明判据能抓缺陷） | — |
-| 3 | 当前位置 / 屏幕中心两个符号 | `docs/fidelity/m7/symbols-stage1.md` §一、§2.4（**均为原版有**，已量化） | `map.html` 无 `009DFF`/`FF5163`/`centerCross`；实现未落 |
-| 4 | 四页 1:1 排版 | `m6-close-summary.md:18`（已验：三页标题 Δ0、返回 y115 Δ0、投诉 352/532 Δ−1 等） | 账户页见 §5 遗留 1（BLOCKED）；关于/联系见 `M7-b/about-fa97c96/`、`contact-fa97c96/` |
+| 3 | 当前位置 / 屏幕中心两个符号 | `docs/fidelity/m7/symbols-stage1.md` §一、§2.4（**均为原版有**，已量化）+ `docs/product/m7-eight-final-states.md`（`32c69d8`）判 **已验** | 原生层 `MapCenterSymbolView.java:47/50`（`#009DFF`/`#FF5163`）、`LocationPointerView.java`、`MainActivity.java:679/688` 挂载 |
+| 4 | 四页 1:1 排版 | `m6-close-summary.md:18` + 终态表（`32c69d8`）；投诉行按**墨迹**判：顶 367/367 差 0、两行间距 181 = 原版 181、不叠字 | 账户页见 §5 遗留 1（BLOCKED）；关于/联系见 `M7-b/about-fa97c96/`、`contact-fa97c96/`；投诉见 `reports/m7-complaint/` |
 | 5 | 带插图的帮助中心 | `m6-close-summary.md:19` + `docs/qa/help-figures-audit.md`（17 正确 / 6 未裁切 / 6 错；`fig-32` CONFIRMED-MISSING） | 28 图、引用↔文件双向差集为空、`fig-32` 0 处 |
 | 6 | 指南针按钮 = 地图立即回正北 | `m6-close-summary.md:20`（已验；`3d\|45\|106.7221\|12` → `2d\|0\|106.7221\|12\|0`） | — |
 | 7 | 罗盘贴地效果 | `m6-close-summary.md:21`（**未实现**：按钮文案 1:1，缺四角算法） | `drape` 12 处全为 3D 贴面，非盘面贴地 |
 | 8 | 右侧 3D 按钮功能 | `m6-close-summary.md:22`（已验 T1/T2；T3「无过渡动画」证据不可得——设备无 `screenrecord`） | — |
 
-**计数（按终态三分类）**：已验 **5**（第 1/2/6/8 + 第 5 条按撤图后状态计）；未实现 + 原因 **3**（第 3 条「取证完成、实现未落」、第 7 条「缺四角算法」、第 4 条含账户页 BLOCKED 一项）；原版不可得 **0**（第 3 条原「不可得」结论已被 §2.4 实测推翻）。
-**⚠ 第 3/4 条的最终分类以 LC产品 终态表为准**——第 4 条若按「四页」整体判，账户页 BLOCKED 会把它从「已验」拉成「BLOCKED」，两种切法计数不同，此处两说并列，不代产品拍板。
+**计数（按终态三分类，以 `docs/product/m7-eight-final-states.md` @ `32c69d8` 为准）**：**已验 7**（第 1/2/3/4/5/6/8）｜**未实现 + 原因 1**（第 7 条贴地：缺四角算法，方案 5.0 人日，决策 A1/B1 待裁）｜**原版不可得 0**｜**BLOCKED 1 处**（第 4 条内账户页，三要素见 §5 遗留 1）｜**已知偏差 2 项**（about 底部两行整体低 3px；第 8 条 T3「无过渡动画」证据不可得）。
+
+> 投诉行的「节点高 68 vs 79」**已从偏差清单移除**：那是 Compose 语义框与 View 布局框的不可比量，不是字高差（按墨迹实测字高差 1px）。终态表 L20 计数行与 L33 第 4 条已按此改口。
 
 ---
 
 ## 4. 门禁与 SMOKE（原始输出 + 参数行）
 
-四条命令均在 **`fa97c96` 干净树**（`git status --porcelain` 输出 0 行）上复跑，我本人执行，输出与 `reports/M7-final-fa97c96/gates/` 存档一致。
+四条命令均在 **`b47fcdb` 干净树**（`git status --porcelain` 输出 **0 行**）上复跑，我本人执行；官方存档目录为 `reports/M7-final-fa97c96/gates/`（旧树 `fa97c96`）与 LC测试 在 `b47fcdb` 上的重跑（待贴）。**四条在 `b47fcdb` 上与我复跑一致，exit 全 0。**
 
 ```
 $ git -C wt/lc-close-audit status --porcelain | Measure-Object -Line   →  0
@@ -111,6 +120,7 @@ $ git -C wt/lc-close-audit status --porcelain | Measure-Object -Line   →  0
    DUP: files=138 unique=136 duplicated=4 redundant=2
    EVIDENCE-LINT: scanned xml=155 png=138 other=146 fail=0 warn=0 allowed=3
    exit=0
+   注：`other=146` 是**本文档尚未入库**时的数；含本文件时 `other=147`（我实测），两者 fail 均 0。
 
 ④ python tools/fidelity/evidence-lint.py \
      --generated-html app/android/app/src/main/assets/lc-help/index.html \
@@ -121,7 +131,7 @@ $ git -C wt/lc-close-audit status --porcelain | Measure-Object -Line   →  0
    头部 @ 2eaddc47738ed745178b0e1644e9e662467d76ca  ==  md_blob 2eaddc47…（逐字符相同）
 ```
 
-**SMOKE 六门（`smoke-20261109-212940`，树 `fa97c96`）**
+**SMOKE 六门（`smoke-20261109-212940`，树 `fa97c96` —— 因 `app` 树已由 `d1a186d` 取代，**本组结果作废，以 LC测试 在 `b47fcdb` 的重跑为准**）**
 
 ```
 copy=PASS  secret=PASS  desktop=PASS  numeric=PASS  mech_src=PASS  android=PASS
@@ -135,7 +145,17 @@ android: build only（device skipped）→ app-debug.apk 12,349,187 B
 
 ---
 
-## 5. 遗留（四条，逐条写清）
+## 5.0 更正记录（我自己的判错，必须留档）
+
+| 项 | v1.0 的错误说法 | 事实 | 根因 |
+|---|---|---|---|
+| 第 3 条「两个符号」 | 「两个符号**取证完成、实现未落**」，依据是 `map.html` 里 `009DFF`/`FF5163`/`centerCross` 命中 0 | 两个符号**已在原生层实现**：`MapCenterSymbolView.java:47/50`、`LocationPointerView.java`、`MainActivity.java:679/688` 挂载；复验 `23c9fc9`、`1656e31` 均 PASS | **只检索了页面层（`map.html`）就当成全仓不存在**。检索面没写清，结论就不可信 |
+
+**教训（与我一直在用的那条同源）**：报「没有」必须附**检索范围**；范围外的层（Java / DEX / 资源 XML / res）没搜过，就只能写「未在 X 层检索到」，不能写「不存在」。这与 goal 里「检索零命中才写原版不可得，且必须附检索范围与命令」是同一条规矩的另一面。
+
+---
+
+## 5. 遗留（逐条写清）
 
 ### 遗留 1 · 账户页 BLOCKED（三要素齐）
 
@@ -178,6 +198,19 @@ android: build only（device skipped）→ app-debug.apk 12,349,187 B
 
 ---
 
+## 5.5 已处置项（**不列为遗留**）
+
+### complaint 一级两行墨迹对齐（`6acf66d`，`b47fcdb` 内含）
+
+- **比较对象纠正**：`68 vs 79` 是 Compose 语义框（原版该页根节点为 `ComposeView`）与 View 布局框的不可比量，**不是字高**。按墨迹实测字高差 **1px**（46/45 vs 47/46）。按 79 调 padding 只会把框撑大、字形不变。
+- **实际偏差在墨迹位置**：改前我方 363/544，原版 367/548，整体高 4px。
+- **修法**：仅改行内上下内距 `24/24 → 32/24`，行高与步进（pitch 180）不动，居中后下移 4px。
+- **真机读数**（`L2E0222531014833`，`2026-11-09 21:36:54`）：问题反馈墨迹 `367..413` vs 原版 `367..412`（**顶差 0**）、订单投诉 `548..593` vs 原版 `548..592`（**顶差 0**）、两行间距 **181 = 181**、无叠字、crash buffer 空无 FATAL。
+- **笔的边界**：只动 `M3PageActivity.java`（`diff 6+/0−`），保持原混合行尾（CR 954 / LF 1144，未整篇改写）；**`map.html` 零改动**。
+- 证据：`E:\APPDetector\reports\m7-complaint\`（`complaint-after.png`、`complaint.xml`、`after.png`、`after.xml`、入口路径图）。
+
+---
+
 ## 6. 证据索引
 
 | 目录 | 内容 | 备注 |
@@ -188,44 +221,48 @@ android: build only（device skipped）→ app-debug.apk 12,349,187 B
 | `docs/fidelity/m7/` | `symbols-stage1.md`（两个符号取证）、`ground-drape-migration.md`（贴地迁移方案）、`offline-cache-orig.md`、`tdt-offline-terms.md`、`screens/`（13 张取证图） | 树 `fa97c96` |
 | `docs/qa/help-figures-audit.md` | 29 条图注↔画面核对表（17/6/6，`fig-32` CONFIRMED-MISSING） | 本轮由图核对产出 |
 | `docs/qa/dup-pairs-verdict.md` | `docs/fidelity` 两对重复图逐对判定（均走具名例外） | 已由 LC审核验 终验 PASS |
+| `docs/product/m7-eight-final-states.md` | **八条终态表**（LC产品，`32c69d8`，`blob:35793216e32f5eae427daaf3b7b53cb63a8f8813`，18,146 B / 161 行 / CR=0）；三个禁用终态词计数均为 **0** | **终态判定的规范文本**，本文件 §3 只做索引 |
+| `E:\APPDetector\reports\m7-complaint\` | complaint 墨迹对齐证据（`complaint-after.png`、`complaint.xml`、`after.png/xml`、`main.png`、`drawer*.png`） | 客户端实机，`b47fcdb` 内含 |
 
 ---
 
-## 7. 一致性校验：**三处必须先解决，否则不得签字**
+## 7. 一致性校验：**三处待裁决（不签字的前置）**
 
-### 第 1 条 · ② 的 `hit=24 / shown=24 / banner 760.0000` **不是 `fa97c96` 的实测数**
+### 第 1 条 · ② 的 `hit=24 / shown=24 / banner 760.0000` 取自树 `96be059`，**不是最终树**
 
 ```
-证据文件只存在于 M7-b/REPORT.md 与其 offline-96be059/ 目录，该 REPORT 首行自述：
-  「develop 顶点：96be059（app 树 b273a63c）」
+证据只存在于 wt\lcs-verify-stage4\reports\M7-b\REPORT.md 与其 offline-96be059/ 目录，
+该 REPORT 首行自述：「develop 顶点：96be059（app 树 b273a63c）」
 
-实测三棵树的 map.html 各不相同：
-  96be059  map.html = 29c76f51283fbd9cecfc2263cf86e0c88b576140
+实测四棵树的 map.html：
+  96be059  map.html = 29c76f51283fbd9cecfc2263cf86e0c88b576140   ← ②三个数的来源
   4c1c406  map.html = 08516700a932c66a8d55a74aeb70336fd0c87d52
   fa97c96  map.html = 126060b4fd83b6d015b9427b460008ed2c0b6158
+  b47fcdb  map.html = 126060b4fd83b6d015b9427b460008ed2c0b6158   ← 与 fa97c96 相同
 ```
 
-⇒ 这三个数取自 `96be059`，而 `map.html` 在 `fa97c96` 上是**另一个 blob**（`8aa69d1` 还改了 `setSafeArea` 时序）。**按 goal「以 `fa97c96` 实测为准」这条，② 的断网可看与 banner 避让必须在最终树上补测**，否则关账表等于拿旧树的数当终态。
-**请 LC审核验 在 `fa97c96` 上补一次断网上机读数**（`hit`/`shown`/`netOk`/`banner.bottom`），或由总监裁定「`map.html` 差异不影响该判据」并写明理由。
+⇒ 好消息：`b47fcdb` 与 `fa97c96` 的 `map.html` **是同一个 blob**，所以「合并后 map.html 又变了」这件事没有发生。坏消息：**② 的三个数仍来自 `96be059`**，那个 blob 与最终树不同，且 `8aa69d1` 在最终树上改过 `setSafeArea` 时序（正是 banner 避让相关）。
+**请 LC审核验 在 `b47fcdb` 上补一次断网上机读数**（`hit`/`shown`/`netOk`/`banner.bottom`），或由总监裁定「`96be059` → `b47fcdb` 的 `map.html` 差异不影响该判据」并写明理由。
 
 ### 第 2 条 · `reports\M7-b\` 路径不存在
 
 任务书写的证据目录 `reports\M7-b\` 在本机**不存在**；实际位置是 `E:\APPDetector\wt\lcs-verify-stage4\reports\M7-b\`（62 个文件）。关账表引用证据路径必须写**实际可打开**的那条，否则以后没人能复算。
 
-### 第 3 条 · 包体字节数两个值不一致，且都称「终树」
+### 第 3 条 · 包体字节数出现三个值，必须只留一个作基线
 
 ```
-reports/M7-final-fa97c96/smoke-…/android/app-debug.apk  实测 12,349,187 B
-  sha256 = 841311ef88e5357e54672f1e99c4b9eaaa7f9ff7d9eacd5e0e6cf7b30bceff1e
-LC测试 报 12,349,187 B；技术总监 报 12,349,203 B（差 16 B）
+fa97c96 门禁包（已作废）      12,349,187 B  sha256:841311ef88e5357e54672f1e99c4b9eaaa7f9ff7d9eacd5e0e6cf7b30bceff1e
+fa97c96 总监报的另一值       12,349,203 B  （无对应日志/sha，差 16 B）
+b47fcdb 客户端自测包          12,349,219 B  sha256:36C03214502C23FA6E41F832705C566F5CC4ADE1547E8A2E1F143EAFCA35A546
+b47fcdb 门禁包               待 LC测试 产出
 ```
-⇒ 差 16 字节说明是**两次不同构建**（很可能一次 clean、一次增量）。按总监自己定的规矩「冻结点包 sha + 字节数为唯一基线」，应当只保留一个值。**本文件采用证据文件实测的 `12,349,187 B`**，请总监确认或给出 `12,349,203 B` 那次的构建日志/sha，二者取一。
+⇒ `app` 树 `0fa8a2dc` → `d1a186d` 之后，**前两个数都已作废**。关账基线只能是 **`b47fcdb` 门禁包那一个 sha + 字节数**，并在表里标明构建方式（clean / 增量）。本文件 §1 暂留「待产出」，不预填。
 
 ### 附 · 第 4 条（工具侧，不影响判定）：② 的「参数行」在原始输出里没有
 
 ```
 gate2-lchelp.txt 全文只有 4 行，不含命令行；
-我实测对照（同一棵 fa97c96 干净树）：
+我实测对照（`b47fcdb` 干净树，`status --porcelain` = 0 行）：
   带 --expect-size 1228x2700 + --expect-size-map  →  SIZE-MAP 6 rules / fail=0 / exit=0
   只带 --expect-size-map（不带 --expect-size）      →  SIZE-MAP 6 rules / fail=0 / exit=0   ← 输出完全相同
   两个尺寸参数都不带                                →  fail=0 / exit=0（完全不做尺寸比较）  ← 同上
@@ -233,19 +270,25 @@ gate2-lchelp.txt 全文只有 4 行，不含命令行；
 ```
 ⇒ 「② 带了两个参数」这件事，**从存档输出本身无法证明**（三种跑法输出一致）；能证明的是**负向对照能让它变红**，即参数有效。建议 LC测试 在门禁输出里固定回显命令行（或 `SIZE-MAP` 行写明 `fallback=1228x2700`），否则下次又会重演「参数给了没执行」那类假绿。
 
+### 附 5 · 本文档自身会改变 ③ 的计数
+
+`docs/fidelity` 目录下多一个 `.md`，③ 的 `other` 计数就会从 **146 → 147**（我实测：含本文件时 `other=147`，两者 `fail` 均为 0）。**这不是异常**，但 LC审核验 复核时若按旧的 `other=146` 卡，会误判。请以「`fail=0`、`allowed=3`」为判据，`other` 只作参照。
+
 ---
 
 ## 8. 未覆盖范围
 
-- **未做**：`fa97c96` 上的真机读数（KML 往返除外）——设备不在我手上，`hit/shown/netOk/banner` 一律未由我实测，仅引用他人证据并标注树。
+- **未做**：`b47fcdb` 上的真机读数（KML 往返除外）——设备不在我手上，`hit/shown/netOk/banner` 一律未由我实测，仅引用他人证据并标注树（见 §7 第 1 条）。
 - **未做**：账户页登录态复验（无测试账号、无设备）。
-- **未改**：`help-center.md`、`docs/review/`、`docs/qa/baseline-android/` 一律未触碰；本文件为新增文件。
-- **未核**：B 轮缓存七个数在 `fa97c96` 的构造性恒等式实测（`missAttemptsTotal = missKeyedAttempts + missNoKey + missUnsupported`）——代码层由 LC地图/LC审核验 静态核过，**真机交叉验未做**。
+- **未改**：`help-center.md`、`docs/review/`、`docs/qa/baseline-android/` 一律未触碰；本文件为新增文件（`git diff --name-only b47fcdb..HEAD` 只有它自己）。
+- **未核**：B 轮缓存七个数在 `b47fcdb` 的构造性恒等式实测（`missAttemptsTotal = missKeyedAttempts + missNoKey + missUnsupported`）——代码层由 LC地图/LC审核验 静态核过，**真机交叉验未做**。
 - **未核**：第 8 条 T3「无过渡动画」——设备无 `screenrecord`，与 `A-09 动效录屏` 同口径，记「证据不可得」，**不写成未实现**。
+- **未签**：本文件所有判定均由 LC产品 终态表给出、技术总监裁定，**我不自签**，逐条签名归 LC审核验。
 
 ---
 
 ## 9. 时间戳
 
-- 开工 **21:34** / 收工 **21:5x**（Asia/Shanghai）｜返工轮次 **0**
+- v1.0 开工 **21:34** / 收工 **21:56**（树 `fa97c96`）；v1.1 修订 **21:52–22:0x**（树 `b47fcdb`）｜返工轮次 **1**（因 `app` 树由 `0fa8a2dc` → `d1a186d` 而全量重挂）
 - 本文件不含二进制、不含构建产物；所有 hash 均以 `blob:` / `sha256:` 前缀标注。
+- 禁词自检：本文档**没有**用那三个被禁止的终态词给任何一条定状态；个别出现是「审图号占位词规则」的引用，不是终态标签。

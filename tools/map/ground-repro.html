@@ -26,6 +26,8 @@
   <button onclick="act('注入 rings')">注入 fail:rings</button>
   <button onclick="act('复位注入')">复位注入</button>
   <button onclick="act('读状态')">读状态</button>
+  <button onclick="reloadWith(true)">模拟盘面加载失败 ?nofrings=1</button>
+  <button onclick="reloadWith(false)">恢复正常加载</button>
 </div>
 <div id="warn"></div>
 <iframe id="frame" src="../../app/android/app/src/main/assets/map.html"></iframe>
@@ -107,6 +109,15 @@ frame.addEventListener('load', function () {
     act('读状态');
   }, 800);
 });
+
+/* 盘面数据加载失败的可观测性（总监 11-09 批的 ?nofrings=1）：
+ * 期望 —— 传参数：diag=fail:rings、reason=loader-missing（不再是 loading:rings 永等）；
+ *          不传参数：diag=drawn，证明开关没有污染正常路径。 */
+function reloadWith(noRings) {
+  out.innerHTML = '';
+  log(noRings ? '重载：?nofrings=1（故意让盘面数据加载失败）' : '重载：正常路径（不带参数）', 'k');
+  frame.src = '../../app/android/app/src/main/assets/map.html' + (noRings ? '?nofrings=1' : '');
+}
 </script>
 </body>
 </html>

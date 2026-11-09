@@ -538,6 +538,15 @@ function tileOfflineBanner() {
   }
   var anyEnabled = Object.keys(TILE_OFF.enabledSources).length > 0;
   var offline = (navigator.onLine === false);
+  /* 贴地失败提示优先（总监 11-09 裁决 G5⑤）：地图态贴地失败时**没有原生盘面可回退**
+   * （原生盘面只在罗盘态显示），屏幕会变成「盘面凭空消失」，用户看不出发生了什么。
+   * 复用本条的 safeArea 避让与几何，不新造浮层；文案只陈述事实，不编造操作指引。 */
+  if (groundMode && !groundCanvasOk && /^fail:/.test(groundDiag || '')) {
+    el.style.bottom = LCTileCachePolicy.bannerBottom(safeArea.bottom) + 'px';
+    el.textContent = '贴地盘面未能绘制（' + groundDiag + '）';
+    el.style.display = 'block';
+    return;
+  }
   /* 文案由策略模块出（LCTileCachePolicy.bannerText），这里只负责上屏：
    * 三条分支（缺块 / 过期 / 两者并存）在 Node 单测里覆盖，不必上机才知道走没走到。
    * 11-09 总监裁定：stale 不许与 miss 互斥。旧写法 staleOnly=(miss===0 && stale>0)
@@ -2683,8 +2692,23 @@ var COMPASS_RINGS = null;          /* compass-rings.json（由 tools/fidelity/ge
 var COMPASS_REF = 922;             /* 原生盘面参考视口（设备 px） */
 var COMPASS_GOLD = '#dcbe82';      /* rgb(220,190,130) */
 
+var compassRingsFailed = false;        /* 盘面数据**加载彻底失败**（区别于「还在加载」） */
 function compassDataLoad(cb) {
   if (COMPASS_RINGS) { cb(COMPASS_RINGS); return; }
+  /* 复现台专用开关（总监 11-09 批准，三条约束）：?nofrings=1 时故意让加载失败，
+   * 用来验「加载失败会不会被说成还在加载」。默认不生效；产品 UI 与原生调用都不带这个参数。 */
+  var forceNoRings = (function () {
+    try {
+      return /(?:^|[?&])nofrings=1(?:&|$)/.test(String((window.location && window.location.search) || ''));
+    } catch (e) { return false; }
+  })();
+  if (forceNoRings) {
+    compassRingsFailed = true;
+    console.log('LCGROUND ERROR rings-json force-missing (?nofrings=1, repro only)');
+    groundStateSet(false, 'fail:rings', 'loader-missing');
+    if (typeof cb === 'function') { try { cb(null); } catch (e) { } }
+    return;
+  }
   /* 首选：生成器随包输出的 JS（<script src="map/compass-rings.js"> 已在上方加载）。
    * 原因（审核验 11-08 实测）：页面源 file:///android_asset/ 下，Chromium 的 Fetch API 与 XHR
    * 都直接拒绝 —— "URL scheme 'file' is not supported"，与路径无关。script 标签不受此限制。 */
@@ -2698,7 +2722,16 @@ function compassDataLoad(cb) {
   var paths = ['map/compass-rings.json', 'compass-rings.json'];
   var i = 0;
   function next() {
-    if (i >= paths.length) { console.log('LCGROUND ERROR rings-json missing: ' + paths.join(',')); return; }
+    if (i >= paths.length) {
+      /* 终端失败：两条路都没拿到盘面数据 ⇒ 这是「加载失败」，不是「还在加载」。
+       * 旧写法只打一行日志就 return，回调永不触发 ⇒ diag 永远停在 loading:rings、
+       * 不发事件、原生 fail-safe 虽正确但原因不可见（总监 11-09：安全 ≠ 可诊断）。 */
+      compassRingsFailed = true;
+      console.log('LCGROUND ERROR rings-json missing: ' + paths.join(','));
+      groundStateSet(false, 'fail:rings', 'loader-missing');
+      if (typeof cb === 'function') { try { cb(null); } catch (e) { } }
+      return;
+    }
     var p = paths[i++];
     fetch(p).then(function (r) {
       if (!r.ok) throw new Error('http ' + r.status);
@@ -3111,6 +3144,9 @@ function groundStateSet(ok, diag, reason) {
       type: 'groundstate', ok: ok, diag: diag, reason: reason,
       renderer: groundRenderer, ground: !!groundMode
     });
+    /* 状态变化时刷新降级提示条（地图态贴地失败要能看见，见 tileOfflineBanner 的首个分支）。
+     * 只在变化时刷，逐帧调用不会碰 DOM。 */
+    try { tileOfflineBanner(); } catch (e) { }
   }
   return diag;
 }
@@ -3130,7 +3166,10 @@ function drawGroundCompass(vp, target) {
   if (groundFailInject === 'glinit') { return groundStateSet(false, 'fail:glinit', 'injected'); }
   if (!groundInitGL()) { return groundStateSet(false, 'fail:glinit'); }
   if (groundFailInject === 'rings') { return groundStateSet(false, 'fail:rings', 'injected'); }
-  if (!COMPASS_RINGS) { groundDiag = 'loading:rings'; compassDataLoad(function () { groundTexDirty = true; }); return groundDiag; }
+  if (!COMPASS_RINGS) {
+    if (compassRingsFailed) { return groundStateSet(false, 'fail:rings', 'loader-missing'); }
+    groundDiag = 'loading:rings'; compassDataLoad(function () { groundTexDirty = true; }); return groundDiag;
+  }
   var sz = groundEnsureCanvas();
   if (groundFailInject === 'upload') { return groundStateSet(false, 'fail:upload', 'injected'); }
   if (groundTexDirty) {

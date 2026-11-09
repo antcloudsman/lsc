@@ -392,6 +392,235 @@ MapWebApiKt.setPointerVisible(controller, show)
 ⇒ **我方把「顶部红三角」当成 `showPointer` 的唯一可见效果，是载体搞错了**：红三角属于十字线（第 1 条），指针开关应当控 `pointer.png` 那张竖向指针图。
 ⇒ 所以「删掉红三角 → 指针开关变空操作」这个担心，正确解法**不是**留着红三角，而是**把指针开关改成控竖向指针图**（原版载体）。删红三角与接指针图应同批做。
 
+## 7.5 `getCoordinates()` 四角到底怎么算（A 路线第 4 步前置，已取证）
+
+逐字（`index.946c1624e0.bundle.js` @41153，赋值式 `p(this,"getCoordinates", …)`）：
+
+```js
+p(this, "getCoordinates", () => {
+    let e = this.map
+        .unproject([window.screen.width / 2, window.screen.height / 2])
+        .toBounds(Math.floor(window.screen.width / this.map.transform.pixelsPerMeter));
+    return [ e.getNorthWest().toArray(), e.getNorthEast().toArray(),
+             e.getSouthEast().toArray(), e.getSouthWest().toArray() ];
+});
+```
+
+拆开：
+
+1. **中心点** = `map.unproject([screen.width/2, screen.height/2])` —— **屏幕中心**映射回经纬度（`window.screen.width/height`，物理屏幕 CSS 尺寸，不是 `innerWidth`）。
+2. **半径（米）** = `Math.floor(window.screen.width / map.transform.pixelsPerMeter)`
+   - `pixelsPerMeter` 是 MapLibre 内部量（当前 zoom + 纬度下的「每米多少像素」），除完把**像素换成米**。
+   - ⇒ 半径 = **屏幕宽度换算成的米数**（不是一个固定米数，**随缩放变**）。
+3. **bounds** = 中心 `.toBounds(该米数)` —— 以中心为准的正方形；**`toBounds` 的参数是「半边长」**，所以 **边长 = 2 × 该米数**（`radius` 语义见 §7.5.4，已用原版 `mapbox-gl.js` 定死）。
+4. 输出顺序 **[NW, NE, SE, SW]**（左上→右上→右下→左下），正是 MapLibre `canvas`/`image` source 要求的 `coordinates` 顺序。
+
+### 7.5.1 结论（回答审地图的「未取证」）
+
+- **不是「屏幕四角 `unproject`」**（那会得到梯形，随 pitch 变形且四角不等距）；
+- **是「屏幕中心 `unproject` + 半径 = 屏宽换算米数的正方形」**（轴对齐、正方形、随 zoom 缩放）；
+- 效果：**地面边长 = 2 × 屏宽米数 ⇒ 屏幕上约两个屏宽见方**（本机 728 CSS px），盘面实物尺寸随缩放变化、屏幕视觉大小基本恒定。这与「罗盘浮层不该随地图缩放变大变小」的直觉一致。
+- 依赖 MapLibre 内部 API `map.transform.pixelsPerMeter`；我方若用 MapLibre 同版本可直接照抄，**若版本不同该字段可能不可用，需等价换算**（`pixelsPerMeter` 可由 `transform.worldSize / (2π·R·cos(lat)) · 512` 一类关系推出，属实现细节，我方落地时核对一次）。
+
+### 7.5.2 给 A 路线第 4 步的验收口径
+
+`coordinates` 的正确性用两条可判的量验：
+1. **贴地四边形边长（铺回屏幕的 CSS px 当量）== 2 × `floor(screen.width / pixelsPerMeter)` 对应屏幕像素 == canvas 元素 CSS 宽**（本机 728）。三者不等，说明 `radius` 的半边长语义用错了一倍；
+2. **pitch 0→60° 时该边长对应关系基本不变**（轴对齐正方形在透视下仍是四边形，但边长对应稳定）。若得到梯形 / 四角不等距，说明误用了「屏幕四角 `unproject`」。
+
+### 7.5.3 单位口径：`window.screen.width` 是 **CSS px**，不是设备 px（直接影响画布尺寸与贴图大小）
+
+原版 webapp `index.html` 的 viewport 逐字：
+
+```html
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+```
+
+`width=device-width` + `initial-scale=1` ⇒ CSS 视口宽 = 设备宽 ÷ dpr。Android WebView 里 `window.screen.width` 返回的是**CSS px**。
+
+本机（1228×2700，density 3.375）：
+
+| 量 | 按 CSS px 口径（**正确**） | 若误把 1228 当 CSS px（**错误**） |
+| --- | --- | --- |
+| `window.screen.width` | **364**（1228/3.375） | 1228 |
+| `size = floor(2 × screen.width)` | **728** CSS px | 2456 |
+| `dpr = min(floor(devicePixelRatio), 2)` | `floor(3.375)=3 → min(3,2)=` **2** | 同 2 |
+| canvas backing = `size × dpr` | **1456 × 1456** px，约 **8.5 MB**（4 B/px） | 4912 × 4912，约 96 MB |
+| canvas CSS 显示尺寸 | **728 px**（= 2 × 屏宽） | 2456 px |
+| 地面贴图边长（`radius` 见 §7.5 / §7.5.4） | 半径 `floor(364 / pixelsPerMeter)` 米 ⇒ **边长 = 2 × 364 = 728 CSS px 当量** | 同样按 364 算半径 |
+
+⇒ **修正一处待办数值**：`docs/fidelity/m6/map-canvas-migration.md` 里按「`screen.width=1228` ⇒ canvas 2456×2456、24.1 MB」推算的那组数**偏大**。按 CSS px 口径应为 **728 CSS px / backing 1456 / 约 8.5 MB**。
+（2456 是「把 `size` 当设备 px」得出的，不是原版值；原版 `size` 是 CSS px。）
+
+⇒ **贴地范围口径（最终，已按 §7.5.4 的半边长语义改正）**：
+- 半径 = **屏宽那一截像素 ÷ pixelsPerMeter**（米），不是盘面半径；
+- **地面贴图边长 = 2 × 屏宽 = 728 CSS px 当量**；对比盘面直径 922 设备 px = 273 CSS px，约 **2.67 倍**；
+- 它**既不等于**「屏幕四角 unproject」得到的视野四边形（那个随 pitch 变形且形状不对），**也不等于**盘面半径换算（那只有约 272 CSS px 当量，偏小 2.7 倍）；
+- **也不等于「一个屏宽」**——那是漏掉 §7.5.4 那个 ×2 的错值（364），面积会小 4 倍。
+
+### 7.5.4 `toBounds(radius)` 的 radius 是**半边长**（修订 §7.5 的措辞）
+
+原版自带 `decoded/assets/webapp/lib/mapbox-gl.js` @155844 逐字（`LngLat.prototype.toBounds`）：
+
+```js
+toBounds() {
+    var r, i = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0,   // bearing
+        a = 360 * (arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 0) / 0x2637f09,
+        n = a / Math.cos(Math.PI / 180 * this.lat),
+        s = [{dx:-n, dy:-a}, {dx:n, dy:-a}, {dx:n, dy:a}, {dx:-n, dy:a}],
+        ...
+}
+```
+
+- `0x2637f09` = **40075017** = 地球周长（米）⇒ `a = 360·radius/40075017` 度 ≈ `radius/111319.5` 度 ≈ **radius 米**（纬度向）。
+- 四角 = 中心 **±** `n`（经度）/ **±** `a`（纬度）—— **是加减，不是乘**。
+
+⇒ **`radius` 是半边长**。地面四边形 **边长 = 2 × radius = 2 × 屏宽米数**。
+⇒ **§7.5 第 3 条已按本条改正**（现文为「`toBounds` 参数是半边长，边长 = 2×该米数」），§7.5.3 表格同步改为 728 / 2×。此处保留判定出处：原始版把 `radius` 当整边长的写法**是错的**，错值会让贴地面积小 4 倍。
+
+### 7.5.5 一个自洽性验证（这条能证明整套口径对）
+
+本机（CSS px 口径，见 §7.5.3）：
+
+| 量 | 值 |
+| --- | --- |
+| `window.screen.width` | 364 CSS px |
+| 地面半径 = `floor(364 / pixelsPerMeter)` 米 | 364 CSS px 当量 |
+| 地面**边长** = 2 × 364 | **728 CSS px 当量** |
+| 原版 canvas `size = floor(2 × screen.width)` | **728 CSS px** |
+| canvas CSS 显示尺寸 = `size` | **728 CSS px** |
+
+⇒ **地面边长（728 CSS px 当量）== canvas CSS 尺寸（728 CSS px）⇒ 画布与地面足迹 1:1，纹理不需要缩放。**
+这不是巧合：`size = 2 × screen.width` 正是因为足迹边长是 `2 × 屏宽`；若漏掉 §7.5.4 那个 ×2，画布会被拉伸一倍（或压缩一半）。
+
+**给实现方的两条判据**（比逐像素更容易先跑）：
+1. `canvas 元素 CSS 宽 == 2 × floor(screen.width / pixelsPerMeter) 对应到屏幕的像素数`（即 728 CSS px）—— 不等就说明半径/边长用错了一倍；
+2. 盘面绘制框屏宽 ÷ 728 ≈ 0.375（盘面 273 CSS px / 728）—— 偏离说明 canvas 内绘制尺度不对。
+
+## 6.9 `q()` / `p()` 是什么（第 3 条指针三态的前置，已定）
+
+> **本节曾出过一版错误结论并已改正**：上一版称「两个 setter 全 DEX 没有调用方 ⇒ `q()/p()` 恒定 ⇒ 指针恒隐藏」。错因是**检索时把 `ui/controller/g.smali` 整个文件排除了**，而调用方恰好就在这个文件里（`b()` @1309/1315、`o0()` @1959、`r0()` @2238）。下面是改正后的结论。
+
+### 6.9.1 字段与初始值（已证）
+
+| getter | 字段 | setter | **构造器初始值** | 证据 |
+| --- | --- | --- | --- | --- |
+| `q()` | `f` | `Z(Z)` @1204 | **TRUE** | `g.smali:245` `sget-object v3, Ljava/lang/Boolean;->TRUE` → `:248` `mutableStateOf` → `:254` `iput ... ->f:` |
+| `p()` | `g` | `Y(Z)` @1185 | **FALSE** | `g.smali:197` `sget-object v0, Ljava/lang/Boolean;->FALSE` → `:257` `mutableStateOf(v0)` → `:263` `iput ... ->g:` |
+
+### 6.9.2 谁会改它们：三个方法（全部已证）
+
+| 方法 | 行为 | 埋点 | 证据 |
+| --- | --- | --- | --- |
+| `g.r0()` | **切换「地图模式」**：`Z(!q())` | `compass_mode_switch` / `mode` = **`地图模式`** | `g.smali:2212`，`Z(...)` @2238 |
+| `g.o0()` | **切换「实景模式」**：`Y(!p())` | `compass_mode_switch` / `mode` = **`实景模式`**（`p()` 真时）/`地图模式`（假时） | `g.smali:1933`，`Y(...)` @1959 |
+| `g.b()` | **归位到「地图模式」**：若 `!p() && q()` 直接返回；否则 `Y(false)` + `Z(true)` | `compass_mode_switch` / `mode` = **`地图模式`** | `g.smali:1280`，`Y` @1309 / `Z` @1315 |
+
+⇒ **`q()` = 地图模式开关，`p()` = 实景模式开关**——P1-33-C 原来的映射（地图 `g.q()`、实景 `g.p()`）**是对的**，本轮不作废。
+
+### 6.9.3 三种状态下的取值（总监要的那几个值）
+
+| 状态 | `q()` | `p()` |
+| --- | --- | --- |
+| 启动默认（构造器） | **true** | **false** |
+| **地图模式**（`b()` 归位后 / `r0()` 打开地图） | **true** | **false** |
+| **实景模式**（`o0()` 打开实景） | 保持用户上次（`o0` 只翻 `p()`） | **true** |
+| 地图模式关闭（`r0()` 再点一次） | **false** | 不变 |
+
+### 6.9.4 指针显隐条件（按改正后的取值重算）
+
+```kotlin
+show = if (g.q() && !g.p()) false else viewModel.M0()
+```
+
+- **地图模式开、实景关**（`q=true, p=false`，即启动默认/纯地图）→ 条件成立 ⇒ **`pointer` 强制隐藏**；
+- **地图模式关**（`q=false`）→ 条件不成立 ⇒ `pointer` 取 `M0()`（用户「指针开关」说了算）；
+- **实景模式开**（`p=true`）→ 条件不成立 ⇒ 同上取 `M0()`。
+
+⇒ **语义自洽**：`pointer.png` 是罗盘盘面上的指针，**纯地图模式下不该出现**；只有在「非地图模式」（罗盘叠加态）或「实景态」下才由用户的「指针开关」控制。
+⇒ 因此客户端先前担心的「套上去永久隐藏」**不成立**——它只在纯地图模式隐藏，这正是原版设计。
+
+### 6.9.5 给实现方的口径
+
+1. 我方「地图」开关必须与 `q()` 同义：**「地图模式 / 罗盘模式」切换**，不是「底图显隐」。若我方那颗开关语义是底图显隐，**不能直接映射**，需先对齐语义（这条要写进台账）。
+2. 指针显隐照抄：`show = !(mapMode && !arMode) ? userPointerSwitch : false`。
+3. `pointer` 载体是竖向 `pointer.png`（23×94 CSS），不是红三角（红三角属十字线，见 §1.2）。
+
+## 6.10 旁证：`q()`/`p()` 在其它两处的用法与「模式开关」解释一致
+
+| 位置 | 代码 | 与「q=地图模式、p=实景模式」是否自洽 |
+| --- | --- | --- |
+| `CompassToolsKt;->E0(...)` @:318（截屏） | `if (p()) 走相机截图（vm.z3）; else if (!q()) 走 layer 截图; else 走 WebView 截图` | **自洽**：p 真→拍相机；p 假 & q 真（地图态）→ 截 WebView；p 假 & q 假→截 Compose 层 |
+| `CompassToolsKt.smali` @:4670-4696（设点/取坐标） | `if (!p() && !q()) heading += 180` | **自洽**：只有「既无底图也非相机」时才做 180° 翻转；正常地图态不翻 |
+
+⇒ 两处旁证与 §6.9.2 的恒定值一致，未见与「用户开关」相符的行为。
+
+## 8. 第 8 条 3D 按钮「点了应该发生什么」（已取证，含 VIP 门槛）
+
+### 8.1 点击链路（全部已证）
+
+```
+CompassToolsKt;->T0(vm, activity)                    ui/tools/CompassToolsKt.smali:1245
+  ├ TAHelper.track("compass_ck", "name", "3D")        :1255-:1261
+  └ vm.D3(context, null)                              :1270（synthetic，默认参 → 见下）
+       └ MainViewModel.C3(context, flag = null)        viewmodel/MainViewModel.smali:3885
+```
+
+### 8.2 `C3(context, flag: Boolean?)` 逐段（已证，`MainViewModel.smali:3885-4056`）
+
+```kotlin
+fun C3(context, flag: Boolean? = null) {
+    // ① VIP 门槛：不是 3D 态 + 不是 VIP + open3dTimes > 0  → 跳 VIP 页，直接 return
+    if (!is3D() && !AccountManager.getCurrentAccount().isVip() && AppConfig.getOpen3dTimes() > 0) {
+        OpenVipActivity.a(context, "3D")          // 埋点/参数串是 "3D"
+        return                                     // ← 不进入 3D
+    }
+    // ② 目标态：无参时取反
+    val target = flag ?: !is3D()
+    y2(target)                                     // 写 3D 状态位
+    // ③ 通知 Web 层
+    MapWebApiKt.switch3D(controller, is3D(), false)   // JSON: {open: Bool, anim: false}
+    // ④ 收尾
+    if (is3D()) AppConfig.setOpen3dTimes(AppConfig.getOpen3dTimes() + 1)   // 免费次数 +1
+    else        controllerOrNull?.c()                                       // 退出 3D 的收尾
+}
+```
+
+关键三条：
+
+| 事实 | 值 | 出处 |
+| --- | --- | --- |
+| **3D 是 VIP 门槛功能** | 非 VIP 且 `open3dTimes > 0` → 跳 `OpenVipActivity`，**不进入 3D** | `MainViewModel.smali:3903-3951` |
+| **首次免费** | `getOpen3dTimes() == 0` 时放行（`if-lez` 跳过 VIP 分支）；每次成功进入 **+1** | `:3939` / `:4024-4036` |
+| JS 桥参数 | `switch3D(controller, open=is3D(), anim=false)` → `{open, anim}` | `map/MapWebApiKt.smali` `switch3D(...,ZZ)` |
+
+### 8.3 对我方的三条结论
+
+1. **我方现在没有 VIP 门槛与试用计数**。原版「非 VIP 且已用掉免费次数 → 点 3D 只弹 VIP 页」这条行为，我方完全没有；所以用户按 3D 一定会进 3D，与原版不一致。**若要 1:1，需要补：`is3D` 状态位、`open3dTimes` 计数（原版落 `AppConfig`，即 MMKV）、以及 VIP 判定与跳转。**
+   但**我方没有 VIP 体系**（M2 已把 VIP 相关记 DI），故这条要么跟着 VIP 一起进 DI，要么明确「我方无 VIP 门槛，3D 恒可用」并登记为**有意差异**。**两条都不许默认**。
+2. **`compass_ck`/`name="3D"` 这个埋点名确认了**：原版把 3D 按钮归在罗盘工具组（与「罗盘复位/罗盘锁定/贴地/等高线/截屏/读盘」同一事件），所以**它是罗盘工具区的一颗按钮，不是地图控件**。
+3. **`anim=false`**：原版切 3D 时**不做过渡动画**（第二个参数固定 false）。我方若加了动画，是与原版不同的**新增行为**。
+
+### 8.5 状态存放位置（回答「3D 状态是否跨重载持久」）
+
+| 状态 | 载体 | 是否持久 | 证据 |
+| --- | --- | --- | --- |
+| **当前是否 3D**（`is3D`） | **`MainViewModel` 的 Compose `MutableState`（内存）** | **不持久**（进程死即丢；Activity 重建/网页重载**不丢**） | `m1()` @8624 读字段 `s`；`y2(Z)` @12840 写字段 `s`，`MutableState.setValue` |
+| **免费试用次数**（`open3dTimes`） | **MMKV**，id `AppConfig`，key `open3dTimes` | **持久**（跨进程） | `AppConfig.getOpen3dTimes()` @2379：`getMmkv().decodeInt("open3dTimes", 0)`；MMKV id `AppConfig` @`mmkvWithID` |
+
+⇒ **结论：原版的「是否 3D」存在原生 ViewModel 里，不在网页变量里。**
+所以：
+1. **网页重载不会让原版丢 3D 状态**（状态根本不在网页侧）；
+2. **进程被杀会丢**（回到默认 2D）；
+3. 我方把 `mode` 放在 `map.html:187 var mode = "2d"` —— **载体与原版不同**，这才是「WebView 一重载就静默回 2D」的根因，不是缺重放逻辑。
+
+⇒ **给实现方的口径**：3D 状态应由原生持有（ViewModel 等价物），网页侧 `mode` 只作为投影；`onPageFinished` 时把原生 `is3D` 下发（与 `roadNet` 同法）。**不要指望网页变量承载状态**——它一重载就归零。
+
+### 8.6 未取证
+
+- `switch3D` 在 JS 侧的具体动作（`setMode("3d")` 的等价物、是否强制 `zoom>=9`、是否切贴面）——原版 `webapp` 里对应的 handler 名未定位到（我方 `toggle3D` 是自拟名）。
+- `controller.c()`（退出 3D 的收尾）具体做什么，未读。
+
 # 未取证清单（逐条给原因）
 
 | 项 | 状态 | 原因 |

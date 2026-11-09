@@ -2,6 +2,7 @@
  "long_edge": 800,
  "quality": 85,
  "format": "webp",
+ "path_base": "app/android/app/src/main",
  "source_dir": "app/android/app/src/main/res/drawable-nodpi",
  "target_dir": "app/android/app/src/main/assets/compass",
  "total_source_bytes": 3105148,

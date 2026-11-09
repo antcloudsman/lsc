@@ -481,9 +481,9 @@ function tileOfflineStore(img, layer) {
 function tileOfflineRecover(img, layer, src) {
   /* 源未启用（默认态）：这是「没打算缓存」，不是「缓存未命中」，不许进 miss 主口径
    * （产品 v1.7 §4 计数口径 + 审核验 11-09：否则默认态拖一次地图就把 miss 拉大）。 */
-  if (!tileSourceEnabled(layer)) { TILE_OFF.stats.missUnsupported++; return; }
+  if (!tileSourceEnabled(layer)) { TILE_OFF.stats.missAttempts++; TILE_OFF.stats.missUnsupported++; return; }
   var key = img && img.getAttribute && img.getAttribute('data-tkey');
-  if (!key) { TILE_OFF.stats.missNoKey++; return; }
+  if (!key) { TILE_OFF.stats.missAttempts++; TILE_OFF.stats.missNoKey++; return; }
   tileOfflineGet(key).then(function (rec) {
     if (rec && rec.blob) {
       try { img.src = URL.createObjectURL(rec.blob); } catch (e) { }
@@ -498,7 +498,7 @@ function tileOfflineRecover(img, layer, src) {
     } else {
       tileOfflineMiss(layer, key, src);
     }
-  }).catch(function () { TILE_OFF.stats.missNoKey++; });
+  }).catch(function () { TILE_OFF.stats.missAttempts++; TILE_OFF.stats.missNoKey++; });
 }
 
 function tileOfflineMiss(layer, key, src) {

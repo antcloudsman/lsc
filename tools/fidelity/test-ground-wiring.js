@@ -104,6 +104,16 @@ function staticChecks(src) {
     !!gb && !/createElement/.test(gb[0]) && /el\.textContent/.test(gb[0]) && /el\.style\.bottom/.test(gb[0])]);
   ls.push(["状态变化时刷新提示条（否则失败不出现在屏幕上）",
     /tileOfflineBanner\(\)/.test(stripComments(fnSource(src, "groundStateSet")))]);
+  /* G2 锁基线（审核验 11-09）：判据必须知道画布实际渲染的是哪套盘面、什么透明度 */
+  /* getGroundDebug 是对象字面量里的匿名函数，fnSource 抓不到；改在全文里按对象字段形态匹配 */
+  var gd = stripComments(src);
+  ls.push(["getGroundDebug 暴露 dialType / dialAlpha（G2 锁基线）",
+    /dialType:\s*\(typeof compassDialType/.test(gd) && /dialAlpha:\s*\(typeof compassDialAlpha/.test(gd)]);
+  ls.push(["__LC3D 用 getter 暴露 dialType / dialAlpha（只读、实时）",
+    /Object\.defineProperties\(window\.__LC3D[\s\S]*?dialType:[\s\S]*?get:/.test(src) &&
+    /Object\.defineProperties\(window\.__LC3D[\s\S]*?dialAlpha:[\s\S]*?get:/.test(src)]);
+  ls.push(["dial 字段没有 setter（只读，判据改不动它）",
+    !/Object\.defineProperties\(window\.__LC3D[\s\S]{0,600}?set:/.test(src)]);
   // 回退条件用页面 ground，不用原生镜像：页面侧只认 groundMode
   ls.push(["回退依据是页面状态（groundMode），不读原生 groundOn",
     !/groundOn/.test(setState) && !/groundOn/.test(stripComments(fnSource(src, "drawGroundCompass")))]);
@@ -245,7 +255,9 @@ var MUTATIONS = [
     "贴地失败有可见提示分支"],
   ["状态变化不再刷提示条（失败不上屏）",
     function (s) { return s.replace("    try { tileOfflineBanner(); } catch (e) { }\n", ""); },
-    "状态变化时刷新提示条"],  ["getState 丢掉三个新字段（原生读不到）",
+    "状态变化时刷新提示条"],  ["dial 字段不暴露（G2 锁不住基线）",
+    function (s) { return s.replace(/\s*dialType: \(typeof compassDialType === 'number'\) \? compassDialType : 0,\n/, "\n"); },
+    "getGroundDebug 暴露 dialType / dialAlpha"],  ["getState 丢掉三个新字段（原生读不到）",
     function (s) { return s.replace("groundCanvasOk: groundCanvasOk, groundDiag: groundDiag,", ""); },
     "getState() 暴露 groundRenderer / groundCanvasOk / groundDiag"],
   ["终端失败不报 fail:rings（退回「永远 loading」）",

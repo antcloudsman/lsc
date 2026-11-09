@@ -538,6 +538,15 @@ function tileOfflineBanner() {
   }
   var anyEnabled = Object.keys(TILE_OFF.enabledSources).length > 0;
   var offline = (navigator.onLine === false);
+  /* 贴地失败提示优先（总监 11-09 裁决 G5⑤）：地图态贴地失败时**没有原生盘面可回退**
+   * （原生盘面只在罗盘态显示），屏幕会变成「盘面凭空消失」，用户看不出发生了什么。
+   * 复用本条的 safeArea 避让与几何，不新造浮层；文案只陈述事实，不编造操作指引。 */
+  if (groundMode && !groundCanvasOk && /^fail:/.test(groundDiag || '')) {
+    el.style.bottom = LCTileCachePolicy.bannerBottom(safeArea.bottom) + 'px';
+    el.textContent = '贴地盘面未能绘制（' + groundDiag + '）';
+    el.style.display = 'block';
+    return;
+  }
   /* 文案由策略模块出（LCTileCachePolicy.bannerText），这里只负责上屏：
    * 三条分支（缺块 / 过期 / 两者并存）在 Node 单测里覆盖，不必上机才知道走没走到。
    * 11-09 总监裁定：stale 不许与 miss 互斥。旧写法 staleOnly=(miss===0 && stale>0)
@@ -3135,6 +3144,9 @@ function groundStateSet(ok, diag, reason) {
       type: 'groundstate', ok: ok, diag: diag, reason: reason,
       renderer: groundRenderer, ground: !!groundMode
     });
+    /* 状态变化时刷新降级提示条（地图态贴地失败要能看见，见 tileOfflineBanner 的首个分支）。
+     * 只在变化时刷，逐帧调用不会碰 DOM。 */
+    try { tileOfflineBanner(); } catch (e) { }
   }
   return diag;
 }

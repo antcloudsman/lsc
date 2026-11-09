@@ -93,6 +93,17 @@ function staticChecks(src) {
   ls.push(["getGroundDebug() 带上 canvasOk 与 failInject（判据可读）",
     /canvasOk:\s*groundCanvasOk/.test(src) && /failInject:\s*groundFailInject/.test(src)]);
 
+  /* G5⑤（总监 11-09 裁决）：地图态贴地失败没有原生盘面可回退，必须有可见提示，
+   * 且复用现有 offlineBar 而不是新造浮层。 */
+  var banner = stripComments(fnSource(src, "tileOfflineBanner"));
+  ls.push(["贴地失败有可见提示分支（地图态不静默）",
+    /贴地盘面未能绘制/.test(banner) && /groundCanvasOk/.test(banner) && /\/\^fail:/.test(banner)]);
+  /* 只判失败分支本身：分支里不许 createElement（那就是另造浮层了），必须写已有 el 的 textContent */
+  var gb = banner.match(/if \(groundMode && !groundCanvasOk[\s\S]*?\n  \}/);
+  ls.push(["提示复用 offlineBar（分支内不新造浮层）",
+    !!gb && !/createElement/.test(gb[0]) && /el\.textContent/.test(gb[0]) && /el\.style\.bottom/.test(gb[0])]);
+  ls.push(["状态变化时刷新提示条（否则失败不出现在屏幕上）",
+    /tileOfflineBanner\(\)/.test(stripComments(fnSource(src, "groundStateSet")))]);
   // 回退条件用页面 ground，不用原生镜像：页面侧只认 groundMode
   ls.push(["回退依据是页面状态（groundMode），不读原生 groundOn",
     !/groundOn/.test(setState) && !/groundOn/.test(stripComments(fnSource(src, "drawGroundCompass")))]);
@@ -229,7 +240,12 @@ var MUTATIONS = [
       return s.replace(inj, real).replace(real + "\n", real + "\n" + inj + "\n");
     },
     "注入失败写在真实失败分支之前"],
-  ["getState 丢掉三个新字段（原生读不到）",
+  ["删掉地图态贴地失败提示（盘面凭空消失）",
+    function (s) { return s.replace(/  if \(groundMode && !groundCanvasOk && \/\^fail:\/\.test\(groundDiag \|\| ''\)\) \{[\s\S]*?\n  \}\n/, ""); },
+    "贴地失败有可见提示分支"],
+  ["状态变化不再刷提示条（失败不上屏）",
+    function (s) { return s.replace("    try { tileOfflineBanner(); } catch (e) { }\n", ""); },
+    "状态变化时刷新提示条"],  ["getState 丢掉三个新字段（原生读不到）",
     function (s) { return s.replace("groundCanvasOk: groundCanvasOk, groundDiag: groundDiag,", ""); },
     "getState() 暴露 groundRenderer / groundCanvasOk / groundDiag"],
   ["终端失败不报 fail:rings（退回「永远 loading」）",

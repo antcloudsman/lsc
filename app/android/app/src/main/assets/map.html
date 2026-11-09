@@ -4194,6 +4194,12 @@ window.__LC3D = {
       diag: groundDiag,
       canvasOk: groundCanvasOk,
       failInject: groundFailInject,
+      /* G2 锁基线用（审核验 11-09）：贴地画布**实际**用的盘面类型与透明度。
+       * 注意口径：这是页面的渲染输入，不是原生 CompassView 的当前档位——
+       * 两个变量在页面里没有赋值方，恒为 0 / 1（见 tickGround 的 typeof 守卫）。
+       * 暴露真值而不是"应该是"，判据才不会被"原生按钮改了但页面没跟"误导。 */
+      dialType: (typeof compassDialType === 'number') ? compassDialType : 0,
+      dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
       texDirty: groundTexDirty,
       hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),
       hasRings: !!COMPASS_RINGS,
@@ -4238,6 +4244,20 @@ window.__LC3D = {
     try { return glCanvas.toDataURL("image/png"); } catch (e) { return ""; }
   }
 };
+
+/* 只读 getter（G2 锁基线，审核验 11-09）：给 __LC3D 补 dialType / dialAlpha 两个**实时**字段，
+ * 用 getter 而不是快照，判据每次读到的都是当前渲染输入；没有 setter，改不动。
+ * 见 getGroundDebug() 里同名字段的口径说明。 */
+Object.defineProperties(window.__LC3D, {
+  dialType: {
+    enumerable: true,
+    get: function () { return (typeof compassDialType === 'number') ? compassDialType : 0; }
+  },
+  dialAlpha: {
+    enumerable: true,
+    get: function () { return (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1; }
+  }
+});
 
 /* ---- LCAndroid 契约模拟桥（供客户端轮 C 后对拍；不影响真桥） ---- */
 window.__LCBridgeTest = (function () {

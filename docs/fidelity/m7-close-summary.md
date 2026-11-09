@@ -1,7 +1,7 @@
 # M7 关账摘要（补欠账 → 清质量债 → 竞品 P0）
 
-- 作者：LC审成文｜日期：**2026-11-09**｜版本：**v1.2**（v1.0 挂 `fa97c96`、v1.1 挂 `b47fcdb`，均已由本版取代）｜状态：**待 LC审核验 逐条签名**
-- 唯一基线：`develop` = **`3ffe142`**（`Merge commit 'f14d504' into develop`）；`app` 树 **`d1a186d29ac563226622d6bc053011e6f9370a8c`**
+- 作者：LC审成文｜日期：**2026-11-09**｜版本：**v1.4 终稿**（v1.0 `fa97c96`／v1.1 `b47fcdb`／v1.2 `3ffe142`／v1.3 `953fb8b`，均已由本版取代）｜状态：**M7 收官；LC审核验 已签终验**（签字文件 `E:\APPDetector\wt\lcs-verify-stage4\reports\M7-verify-final\VERIFY-SIGN.md`，覆盖前提见 §1.1）
+- 唯一基线：`develop` = **`dc21f08`**（`Merge commit '084edc9' into develop`，M7 收官顶点）；`app` 树 **`d1a186d29ac563226622d6bc053011e6f9370a8c`**（`fa97c96` 之后只有文档改动，`app` 树未再变）
 - 优先规则：本文件所有数**以最终树实测为准**；凡引自旧树的数，逐条标注「树 `xxxxxxx` + 时点」。旧数一律不当冻结基线。
 - **树变更说明**：`fa97c96` → `b47fcdb` 只因两笔合并（`6acf66d` complaint 墨迹下移 4px、`32c69d8` 终态表），`app` 树由 `0fa8a2dc` 变为 `d1a186d`。**`map.html` blob 两棵树完全相同（`126060b4`）**，`MainActivity`/`KmlIo` 亦未变动。
 - 上游：用户 2026-11-08 报的 8 项人工实测缺陷 + 竞品 P0 两项（KML 导入导出、离线瓦片缓存）
@@ -14,18 +14,29 @@
 
 | 项 | 值 | 复查命令 |
 |---|---|---|
-| develop tip | `3ffe142` | `git log -1 --format='%h %s' 3ffe142` |
-| app 子树 | `d1a186d29ac563226622d6bc053011e6f9370a8c`（`b47fcdb` / `3ffe142` 同） | `git rev-parse 3ffe142:app` |
-| `map.html` blob | `126060b4fd83b6d015b9427b460008ed2c0b6158`（与 `fa97c96`/`b47fcdb` 同） | `git rev-parse 3ffe142:app/android/app/src/main/assets/map.html` |
-| `MainActivity` blob | `cda01f27ff`（真机读数有效性前提） | `git rev-parse 3ffe142:app/android/app/src/main/java/com/luopan/fengshui/MainActivity.java` |
+| develop tip | **`dc21f08`**（M7 收官） | `git log -1 --format='%h %s' dc21f08` |
+| app 子树 | `d1a186d29ac563226622d6bc053011e6f9370a8c`（`b47fcdb` / `3ffe142` / `953fb8b` / `dc21f08` 四棵同） | `git rev-parse dc21f08:app` |
+| `map.html` blob | `126060b4fd83b6d015b9427b460008ed2c0b6158`（`fa97c96`→`dc21f08` 全同） | `git rev-parse dc21f08:app/android/app/src/main/assets/map.html` |
+| `MainActivity` blob | `cda01f27ff`（真机读数有效性前提） | `git rev-parse dc21f08:app/android/app/src/main/java/com/luopan/fengshui/MainActivity.java` |
 | `KmlIo` blob | `b6215e7b36`（同上） | 同上，路径换 `KmlIo.java` |
-| `help-center.md` blob | `2eaddc47738ed745178b0e1644e9e662467d76ca` | `git rev-parse 3ffe142:docs/product/help-center.md` |
+| `help-center.md` blob | `2eaddc47738ed745178b0e1644e9e662467d76ca` | `git rev-parse dc21f08:docs/product/help-center.md` |
 | `index.html` 头部 `@` | `2eaddc47738ed745178b0e1644e9e662467d76ca` | 与上一行**逐字符相同** |
-| `lc-help` webp 数 | **28**（`fig-32` 已撤下） | `git ls-tree -r --name-only 3ffe142 -- app/android/app/src/main/assets/lc-help \| grep -c '\.webp$'` |
+| `lc-help` webp 数 | **28**（`fig-32` 已撤下） | `git ls-tree -r --name-only dc21f08 -- app/android/app/src/main/assets/lc-help \| grep -c '\.webp$'` |
 | `index.html` 内 `fig-32` | **0** | 同上 grep `fig-32` |
 | **包体基线（唯一）** | **`b47fcdb` 干净构建 / `app` 树 `d1a186d` / `12,349,195 B` / `sha256:f7e362649af19f938d25132f8b2824321084f5dcaa5844be00569398401e89eb`** | 见 §4、§7 第 3 条 |
 | 同树重复构建（**仅说明波动**） | 同树三份为 `12,349,203` / `12,349,187` / `12,349,195 B`；**判据认 `blob:` 不认 sha** | — |
 | ~~`12,349,219 B`~~ | 客户端自测包，**已废弃**，不作基线 | — |
+
+### 1.1 LC审核验 签字的生效前提（两条，均已核）
+
+签字文件：`E:\APPDetector\wt\lcs-verify-stage4\reports\M7-verify-final\VERIFY-SIGN.md`（3,603 B、CR=0），签字基线 **`953fb8b`**。之后合入的 `084edc9`（产品终态表 v1.3）**继续有效**，前提是：
+
+| 前提 | 实测（`dc21f08`） | 结论 |
+|---|---|---|
+| `app` 树仍为 `d1a186d` | `git rev-parse dc21f08:app` → `d1a186d29ac563226622d6bc053011e6f9370a8c` | ✅ 成立 |
+| `docs/fidelity` 无新增文件 | `dc21f08` 下 `docs/fidelity` 共 **710** 个文件，与 `953fb8b` 同；`084edc9` 只动 `docs/product/` | ✅ 成立 |
+
+⇒ **不必重跑门禁、不必再开设备**；签字覆盖到 `dc21f08`。
 
 ---
 
@@ -97,7 +108,7 @@
 
 ## 4. 门禁与 SMOKE（原始输出 + 参数行）
 
-四条命令在 **最终树 `3ffe142`**（`app` 树 `d1a186d`，`git status --porcelain` 输出 **0 行**）上复跑，我本人执行；官方存档同时有两份：`E:\APPDetector\reports\M7-final-b47fcdb\gates\`（LC测试，`b47fcdb`，`app` 树同 `d1a186d`）与 `E:\APPDetector\reports\M7-final-fa97c96\gates\`（旧树，**已作废**）。**四条在 `b47fcdb` / `3ffe142` 上与我复跑一致，exit 全 0。**
+四条命令在 **最终树 `dc21f08`**（`app` 树 `d1a186d`，`git status --porcelain` 输出 **0 行**）上复跑，我本人执行；官方存档三份互证：`E:\APPDetector\reports\M7-final-b47fcdb\gates\`（LC测试）、`E:\APPDetector\reports\M7-freeze-953fb8b\gates\`（LC测试，含 `exit-codes.txt`）、`E:\APPDetector\wt\lcs-verify-stage4\reports\M7-verify-final\n-953fb8b\`（LC审核验 独立复跑）。**四道 exit 全 0。**
 
 ```
 $ git -C wt/lc-close3 status --porcelain   →  0 行
@@ -122,7 +133,8 @@ $ git -C wt/lc-close3 status --porcelain   →  0 行
    DUP: files=138 unique=136 duplicated=4 redundant=2
    EVIDENCE-LINT: scanned xml=155 png=138 other=147 fail=0 warn=0 allowed=3
    exit=0
-   注：`other=146` 是**本文档入库前**的数，入库后为 **147**（我实测）；两者 fail 均 0。
+   注：`other=146` 是**本文档入库前**的数；入库后为 **147**（我在 `3ffe142`、`953fb8b`、`dc21f08` 三次实测，均 147）；两者 fail 均 0。
+   **更正一处预期**：合产品终态表（`084edc9` v1.3 / `683facb` v1.4）**不会**把 147 变 148——该文件在 `docs/product/`，不在 `--root docs/fidelity` 的扫描范围内。我在 `dc21f08` 实测仍是 **147**。
    **判据只认 `fail=0` 与 `allowed=3`，`other` 只作参照**——否则会被目录里多一个 `.md` 判成异常。
 
 ④ python tools/fidelity/evidence-lint.py \
@@ -218,6 +230,14 @@ smoke.log 结尾两行：`overall  : PASS` / `SMOKE: PASS`
 
 ---
 
+## 5.6 设备租约操作规范（本轮踩过两次，进关账）
+
+- **`-Release` 只在带该参数的树上有效**：`E:\APPDetector\wt\lcs-verify-stage4` 这个 worktree 的装机脚本**没有** `-Release` 参数——传了先报 `APK_NOT_FOUND`；若同时带 `-Apk` 则会**直接装包**（想释放却装了机）。
+- **正确释放路径**二选一：① 在带 `-Release` 的树（如 `96be059`／`fa97c96` 那类）上跑；② 直接删 `device-lease.json`，但删之前必须确认没有他人正在使用该设备。
+- 本轮实测记录：一次 `release exit=2`（在无该参数的树上），换树后才得到 `LEASE: none`。**这条比任何一次误装都值得记**。
+
+---
+
 ## 6. 证据索引
 
 | 目录 | 内容 | 备注 |
@@ -284,7 +304,9 @@ gate2-lchelp.txt 全文只有 4 行，不含命令行；
 
 ### 附 5 · 本文档自身会改变 ③ 的计数
 
-`docs/fidelity` 目录下多一个 `.md`，③ 的 `other` 计数就会从 **146 → 147**（我实测：含本文件时 `other=147`，两者 `fail` 均为 0）。**这不是异常**，但 LC审核验 复核时若按旧的 `other=146` 卡，会误判。请以「`fail=0`、`allowed=3`」为判据，`other` 只作参照。
+`docs/fidelity` 目录下多一个 `.md`，③ 的 `other` 计数就会从 **146 → 147**（我在 `3ffe142`、`953fb8b`、`dc21f08` 三次实测均为 147，`fail` 均 0）。**这不是异常**，但 LC审核验 复核时若按旧的 `other=146` 卡，会误判。请以「`fail=0`、`allowed=3`」为判据，`other` 只作参照。
+
+反过来说：**`docs/product/` 下的文件不计入这个计数**——产品终态表 v1.3（`084edc9`）与 v1.4（`683facb`）合入后，`other` 仍是 147（我在 `dc21f08` 实测）。这条写在案，免得下次又按「加一个 md 就 +1」去卡。
 
 ---
 
@@ -292,7 +314,7 @@ gate2-lchelp.txt 全文只有 4 行，不含命令行；
 
 - **未做**：最终树上的真机读数一律**不是我测的**（KML 往返除外，那一项我自己复算过 `0.000e+00`）；`hit/shown/netOk/banner` 引自 LC审核验 在最终树上的实测，已标时点（见 §7 第 1 条）。
 - **未做**：账户页登录态复验（无测试账号、无设备）。
-- **未改**：`help-center.md`、`docs/review/`、`docs/qa/baseline-android/` 一律未触碰；本文件每次改动都只动它自己（`git diff --name-only 3ffe142..HEAD` 只列它）。
+- **未改**：`help-center.md`、`docs/review/`、`docs/qa/baseline-android/` 一律未触碰；本文件每次改动都只动它自己（`git diff --name-only dc21f08..HEAD` 只列它）。
 - **未核**：B 轮缓存七个数在最终树的构造性恒等式实测（`missAttemptsTotal = missKeyedAttempts + missNoKey + missUnsupported`）——代码层由 LC地图/LC审核验 静态核过，**真机交叉验未做**。
 - **未核**：第 8 条 T3「无过渡动画」——设备无 `screenrecord`，与 `A-09 动效录屏` 同口径，记「证据不可得」，**不写成未实现**。
 - **未签**：本文件所有判定均由 LC产品 终态表给出、技术总监裁定，**我不自签**，逐条签名归 LC审核验。
@@ -301,6 +323,6 @@ gate2-lchelp.txt 全文只有 4 行，不含命令行；
 
 ## 9. 时间戳
 
-- v1.0 开工 **21:34** / 收工 **21:56**（树 `fa97c96`）；v1.1 **21:52–22:0x**（树 `b47fcdb`）；v1.2 **22:0x**（树 `3ffe142`，`app` 树 `d1a186d`）｜返工轮次 **2**（①`app` 树 `0fa8a2dc`→`d1a186d` 全量重挂；②总监裁定后 ②/包体/`SMOKE` 措辞三处改写）
+- v1.0 开工 **21:34** / 收工 **21:56**（`fa97c96`）；v1.1 **21:52–22:0x**（`b47fcdb`）；v1.2 **22:0x**（`3ffe142`）；v1.3 **22:1x**（`953fb8b`）；**v1.4 终稿 22:1x（`dc21f08`）**｜`app` 树全程 `d1a186d`｜返工轮次 **4**（①`app` 树 `0fa8a2dc`→`d1a186d` 全量重挂；②总监裁定后 ②/包体/`SMOKE` 措辞三处改写；③核对 `other` 预期并按实测更正 147；④收官顶点 `953fb8b`→`dc21f08` 并补签字前提 §1.1）
 - 本文件不含二进制、不含构建产物；所有 hash 均以 `blob:` / `sha256:` 前缀标注。
 - 禁词自检：本文档**没有**用那三个被禁止的终态词给任何一条定状态；唯一一处出现是「审图号占位词规则」的**原话引用**（已加「规则原文」标注），不是终态标签。

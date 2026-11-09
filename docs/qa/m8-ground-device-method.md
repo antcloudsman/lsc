@@ -60,18 +60,52 @@ adb -s $d shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd js --es valu
 - `groundStateSet` 只在 `(ok|diag|reason)` 去重键**变化**时刷提示，重复注入同一失败不会重建；
 - 取证顺序应是：制造状态 → 等一帧 → **再读一次**（不要只读一次）→ 截图。
 
-## 3 读数两源：`getState()` 与 `getGroundDebug()` 必须同源
+## 3 「两源读数不一致」是假象：同一变量 + 跨次读取
 
-2026-11-09 实测到同一时刻两处不一致：
+2026-11-09 我先报过「`getState()` 与 `getGroundDebug()` 同一时刻不一致」，**这个结论是错的，已撤回**。
+
+### 3.1 代码事实：只有一个来源
 
 ```
-getState()          → groundCanvasOk=false, groundDiag='pending'
-getGroundDebug()    → canvasOk=true,        diag='drawn'
-原生 groundDrapeActive() 读的是前者 ⇒ 误判失败 ⇒ 罗盘态原生盘面没隐藏
+map.html:3127  var groundCanvasOk = false;          // 定义（唯一）
+map.html:3135  groundCanvasOk = ok;                 // 赋值（唯一一处）
+map.html:4137  getState()       → groundCanvasOk    // 读
+map.html:4195  getGroundDebug() → groundCanvasOk    // 读
+map.html:544   banner 分支      → groundCanvasOk    // 读
 ```
+**同一次 JS 求值内不可能出现两个值。** 我看到的 `false/pending` 与 `true/drawn` 是两条 adb 广播之间隔了一帧
+（`setGround` 先写 `pending/false`，下一帧 `drawGroundCompass` 写成 `drawn/true`）。两个数都对，只是不在同一时刻。
 
-判据侧要求（本轮已派单给实现方修）：**同一个事实只能有一个来源**。修复前，
-凡是「拿 `getState()` 判成败」的结论都要标注这个不确定性。
+### 3.2 判法：必须在同一次求值里一起读，并用 `seq` 区分
+
+地图侧为此加了 `groundSeq`（状态真变化时 +1）与 `groundChangedAt`，两个读函数都暴露：
+
+```js
+JSON.stringify({
+  s:{ok:getState().groundCanvasOk, diag:getState().groundDiag, seq:getState().groundSeq},
+  d:(function(){var g=__LC3D.getGroundDebug();return {ok:g.canvasOk, diag:g.diag, seq:g.seq};})()
+})
+```
+判读规则（**写进判据**）：
+```
+两边 seq 相同、ok/diag 不同  ⇒ 真 bug（同一状态两个说法）
+两边 seq 不同                ⇒ 只是跨次读取，不许判实现矛盾
+```
+**通用教训**：凡「两个读函数都返回同一事实」，判据要么在一次求值里取全部值，要么带版本号/序号；
+靠两次调用各自取一个值再比较，得到的差异没有意义。这与「取样间隔」导致的假红是同一族。
+
+### 3.3 顺带纠正一条我自己的误判
+
+我曾据一张截图断言「贴地成功时画面仍是正圆」。复核后**不成立**：
+
+| 截图 | 当帧状态 | 画面 |
+|---|---|---|
+| `compass-ground-on.png` | `diag=pending`、`canvasOk=false` | 屏幕空间正圆（原生 fail-safe，正确） |
+| `g5-compass-reset.png` | `diag=drawn`、`canvasOk=true` | **透视椭圆铺在地形上**（刻度环 + 二十四山 + 红色十字均正确） |
+
+**贴地图层是通的**；我那张「正圆」是回退帧。教训：截图必须与**同一时刻的读数**配对，
+不能拿 A 时刻的图配 B 时刻的读数——这次就是我拿 `pending` 的图去讲「成功态」。
+
 
 ## 4 复现一次的最小命令序列（全部无引号）
 
@@ -99,6 +133,8 @@ JS "JSON.stringify((function(){var s=getState();return {ok:s.groundCanvasOk,diag
 | 罗盘态注入后原生盘面可见（正圆 + 30.0°） | **可信** | 截图目视 + 状态读数一致 |
 | 罗盘态 `safeAreaBottom=32`（工具条可见） | **可信** | 纯数值，无引号参与 |
 | 罗盘态提示条被工具条压住 | **可信** | 截图目视（字叠字） |
-| 地图态 `bar=null` | **不可信** | 读取语句含单引号，受 §1.2 影响 |
-| 贴地成功时画面上仍是正圆 | **可信** | 截图目视；与「原生未隐藏」一致 |
-| G2 三区分治 | **未测** | 时间不足，且 canvas 是否上屏未定 |
+| 地图态 `bar=null` | **不可信** | 读取语句含单引号，受 §1.2 影响；且元素懒创建 |
+| 「贴地成功时仍是正圆」 | **已撤回** | 那是 `pending` 回退帧，见 §3.3 |
+| 「两源读数不一致」 | **已撤回** | 同一变量 + 跨次读取，见 §3 |
+| 贴地图层确实上屏（透视椭圆） | **可信** | `g5-compass-reset.png`，与 `drawn/true` 同帧 |
+| G2 三区分治 | **未测** | 时间不足；canvas 已确认上屏，下轮可测 |

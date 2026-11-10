@@ -549,6 +549,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             }
+            case "mode": {
+                // TEST HOOK（M9-B / L2a，总监 2026-11-10 派单）：确定性进/出罗盘态。
+                // 为什么需要：adb 只能点界面进罗盘，而 uiautomator dump 在本 App 常失败，
+                // 取图时拿不到「罗盘态」这个前提 ⇒ native 导出 viewR=-8 的残图。
+                String v = it.getStringExtra("value");
+                boolean want = "compass".equalsIgnoreCase(v == null ? "" : v.trim());
+                setCompassMode(want);
+                android.util.Log.d("LCCOMPASS", "uiMode=" + (want ? "compass" : "map")
+                        + " compassMode=" + compassMode + " compassHidden=" + compassHidden);
+                break;
+            }
             case "export-dial": {
                 // TEST HOOK（M9-B / L2a 前置）：原生单帧导出与贴地画布导出。
                 // 不用 screencap 的原因：它有背景合成、1228↔1456 插值、掩膜只能取 canvas
@@ -2662,10 +2673,33 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 try {
                     int vw = compassView.getWidth();
                     int vh = compassView.getHeight();
+                    // M9-B（测试 2026-11-10 提）：导出不该依赖当前 UI 状态。
+                    // 地图态下 compassView 是 GONE、未布局 ⇒ getWidth()=0 ⇒ viewR=-8，
+                    // 导出的是 279px 残图。这里临时 measure/layout 到创建时的同一尺寸，
+                    // **不 setVisibility、不 invalidate** ⇒ 屏幕零影响。
+                    if (vw <= 0 || vh <= 0) {
+                        int cs = Math.round(getResources().getDisplayMetrics().widthPixels
+                                * 0.7378f) + 16;   // 与 MainActivity 创建 CompassView 时同式
+                        compassView.measure(
+                                android.view.View.MeasureSpec.makeMeasureSpec(cs,
+                                        android.view.View.MeasureSpec.EXACTLY),
+                                android.view.View.MeasureSpec.makeMeasureSpec(cs,
+                                        android.view.View.MeasureSpec.EXACTLY));
+                        compassView.layout(0, 0, cs, cs);
+                        vw = compassView.getWidth();
+                        vh = compassView.getHeight();
+                        android.util.Log.d("LCDEBUG", "export-dial 临时布局 compassView="
+                                + vw + "x" + vh + "（原先未布局，屏幕不受影响）");
+                    }
                     float viewR = Math.min(vw, vh) / 2f - 8f;   // 与 onDraw 同口径
                     float dialPx = Math.round(px * 0.37725f);
                     float targetR = dialPx / 2f;
-                    float k = (viewR > 0f) ? (targetR / viewR) : 1f;
+                    if (viewR <= 0f) {
+                        android.util.Log.e("LCDEBUG", "export-dial fail native: viewR=" + viewR
+                                + " (compassView 仍无法布局)，不出图");
+                        return;
+                    }
+                    float k = targetR / viewR;
                     android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(
                             px, px, android.graphics.Bitmap.Config.ARGB_8888);
                     bmp.eraseColor(android.graphics.Color.TRANSPARENT);

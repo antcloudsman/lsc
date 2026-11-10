@@ -3022,6 +3022,50 @@ var GROUND_DIAL_FRAC = 0.37725;   /* 274.638 / 728 */
  * 否则 quad 实测 sideCss=2079.96 而期望 728（2079.96 × 0.35 = 727.99）。
  * 已知偏差（台账口径）：地面世界覆盖范围 = 原版的 0.35 倍，屏上尺寸 1:1；视差比原版略小。 */
 var GROUND_CAM_COMPRESS = 0.35;
+/* ---- 盘面切换 / 透明度：页面侧唯一写入口（M9 A） --------------------------------
+ * 背景：`compassDialType` / `compassDialAlpha` 此前全仓**只有 typeof 守卫读取、没有任何赋值方**，
+ * 于是贴地画布永远画 `dial_full_0` + alpha 1 —— 用户换了盘面/调了透明度，贴地不变（真缺陷）。
+ * 原生 `setDialType` / `setDialAlpha` 现在调这里；两个变量必须是**真赋值**，不能只加个空函数。
+ * 置脏是必需的：`groundRedraw` 只在 `groundImgDial !== dialType` 时换图，而**纹理上传**发生在
+ * `drawGroundCompass` 的 `if (groundTexDirty)` 分支里 —— 不置脏，画布换了图，GPU 上还是旧的。
+ * 这里**不直接调用 groundRedraw**：统一由下一帧的 dirty 分支「重画 + 上传」一条路完成，
+ * 于是「不置脏 ⇒ 画布不变、置脏 ⇒ 画布必变」这条反证才成立、可被单测和真机同时验证。
+ * ------------------------------------------------------------------------------ */
+var compassDialType = 0;          /* 0..4，对应 assets/compass/dial_full_<n>.webp */
+var compassDialAlpha = 1;         /* 0..1，画布合成与 GL uniform 共用同一个值 */
+function setCompassDial(type, alpha) {
+  var changed = false;
+  var t = Number(type);
+  if (isFinite(t)) {
+    t = Math.max(0, Math.min(4, Math.round(t)));
+    if (t !== compassDialType) { compassDialType = t; changed = true; }
+  }
+  var a = Number(alpha);
+  if (isFinite(a)) {
+    a = Math.max(0, Math.min(1, a));
+    if (a !== compassDialAlpha) { compassDialAlpha = a; changed = true; }
+  }
+  if (changed) groundTexDirty = true;   /* 只有真的变了才置脏：没变不白传一次纹理 */
+  return { type: compassDialType, alpha: compassDialAlpha, changed: changed, texDirty: groundTexDirty };
+}
+
+/* 只读：贴地画布内容的数值指纹（验收用，不改渲染）。
+ * 用途：证明「换盘面/改透明度后画布真的变了」，以及反证「不置脏时逐像素不变」。
+ * 采样步长 97 字节（1456² 画布约取 8.7 万个字节），只判"变没变"，不判"画得对不对"
+ * ——画得对不对由 A1 区与 L2a 那些判据管，两者不要混用。 */
+function groundCanvasSig() {
+  try {
+    if (!groundCanvas) return { w: 0, h: 0, sig: 0, err: 'no-canvas' };
+    var d = groundCanvas.getContext('2d').getImageData(0, 0, groundCanvas.width, groundCanvas.height).data;
+    var h = 2166136261;
+    for (var i = 0; i < d.length; i += 97) { h = ((h ^ d[i]) * 16777619) >>> 0; }
+    return {
+      w: groundCanvas.width, h: groundCanvas.height, sig: h,
+      dial: compassDialType, alpha: compassDialAlpha, texDirty: groundTexDirty
+    };
+  } catch (e) { return { w: 0, h: 0, sig: 0, err: (e && e.name) || 'error' }; }
+}
+
 function groundRedraw() {
   var sz = groundEnsureCanvas();
   var ctx = groundCanvas.getContext('2d');
@@ -4217,6 +4261,10 @@ window.__LC3D = {
     };
   },
   setGroundRenderer: setGroundRenderer,
+  /* M9 A：盘面切换/透明度跟随。原生 setDialType / setDialAlpha 调这个入口。 */
+  setCompassDial: setCompassDial,
+  /* 只读画布指纹：验收判「画布有没有真的变」，不判「画得对不对」 */
+  groundCanvasSig: groundCanvasSig,
   setGroundBaseline: setGroundBaseline,
   /* 失败注入（审核验 G5/N6，11-09）：'glinit'|'upload'|'rings' 造失败态，null/false 复位。
    * 只影响贴地绘制通道的判定，不碰相机/贴地状态/产品按钮；复位后下一帧走真实路径。 */

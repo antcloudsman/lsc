@@ -120,6 +120,19 @@ function staticChecks(src) {
     /groundSeq:\s*groundSeq/.test(stripComments(src)) && /seq:\s*groundSeq/.test(stripComments(src))]);
   ls.push(["状态变化才递增 seq（不是每次调用都加）",
     /if \(key !== groundStateKey\) \{[\s\S]{0,220}?groundSeq\+\+/.test(src)]);
+  /* M9 A：盘面切换/透明度跟随（原生 setDialType/setDialAlpha → 页面 setCompassDial） */
+  var setDial = stripComments(fnSource(src, "setCompassDial"));
+  ls.push(["compassDialType/Alpha 是真声明（不是 typeof 守卫出来的野变量）",
+    /var compassDialType = 0;/.test(src) && /var compassDialAlpha = 1;/.test(src)]);
+  ls.push(["setCompassDial 真赋值（不是只加个空函数）",
+    /compassDialType = t;/.test(setDial) && /compassDialAlpha = a;/.test(setDial)]);
+  ls.push(["setCompassDial 钳位 type∈[0,4] / alpha∈[0,1]",
+    /Math\.min\(4,/.test(setDial) && /Math\.min\(1,/.test(setDial) &&
+    /Math\.max\(0,/.test(setDial)]);
+  ls.push(["变化时置 groundTexDirty（不置脏则纹理不重传）",
+    /if \(changed\) groundTexDirty = true;/.test(setDial)]);
+  ls.push(["setCompassDial 与 groundCanvasSig 已导出（验收只走只读口）",
+    /setCompassDial: setCompassDial/.test(src) && /groundCanvasSig: groundCanvasSig/.test(src)]);
   // 回退条件用页面 ground，不用原生镜像：页面侧只认 groundMode
   ls.push(["回退依据是页面状态（groundMode），不读原生 groundOn",
     !/groundOn/.test(setState) && !/groundOn/.test(stripComments(fnSource(src, "drawGroundCompass")))]);
@@ -264,7 +277,15 @@ var MUTATIONS = [
     function (s) { return s.replace("    try { tileOfflineBanner(); } catch (e) { }\n", ""); },
     "状态变化时刷新提示条"],  ["seq 不再递增（跨次读取无法判新旧）",
     function (s) { return s.replace("    groundSeq++;\n", ""); },
-    "状态变化才递增 seq"],  ["dial 字段不暴露（G2 锁不住基线）",
+    "状态变化才递增 seq"],  ["不置 dirty（画布不会重画/重传）",
+    function (s) { return s.replace("  if (changed) groundTexDirty = true;   /* 只有真的变了才置脏：没变不白传一次纹理 */\n", ""); },
+    "有变化 ⇒ changed=true 且置脏"],
+  ["只加函数不赋值（typeof 野变量重演）",
+    function (s) { return s.replace(/if \(t !== compassDialType\) \{ compassDialType = t; changed = true; \}/, "if (t !== compassDialType) { changed = true; }"); },
+    "setCompassDial 真赋值"],
+  ["去掉钳位（type/alpha 越界）",
+    function (s) { return s.replace("Math.max(0, Math.min(4, Math.round(t)))", "Math.round(t)") ; },
+    "setCompassDial 钳位"],  ["dial 字段不暴露（G2 锁不住基线）",
     function (s) { return s.replace(/\s*dialType: \(typeof compassDialType === 'number'\) \? compassDialType : 0,\n/, "\n"); },
     "getGroundDebug 暴露 dialType / dialAlpha"],  ["getState 丢掉三个新字段（原生读不到）",
     function (s) { return s.replace("groundCanvasOk: groundCanvasOk, groundDiag: groundDiag,", ""); },
@@ -284,7 +305,7 @@ async function runSelftest() {
     var m = MUTATIONS[i];
     var mutated = m[1](SRC);
     if (mutated === SRC) { console.log("[FAIL] 变异没生效（找不到目标）: " + m[0]); bad++; continue; }
-    var ls = staticChecks(mutated).concat(behaviourChecks(mutated)).concat(await loaderChecks(mutated));
+    var ls = staticChecks(mutated).concat(behaviourChecks(mutated)).concat(dialChecks(mutated)).concat(await loaderChecks(mutated));
     var target = ls.filter(function (x) { return x[0].indexOf(m[2]) === 0; })[0];
     var red = target && target[1] === false;
     if (!red) bad++;
@@ -294,9 +315,42 @@ async function runSelftest() {
   process.exit(bad === 0 ? 0 : 1);
 }
 
+/* ---------- D. 盘面切换跟随的行为（抽函数真跑） ---------- */
+function dialChecks(src) {
+  var fn = fnSource(src, "setCompassDial");
+  if (!fn) return [["setCompassDial 可抽取执行", false, "函数没找到"]];
+  var body = [
+    "var compassDialType = 0, compassDialAlpha = 1, groundTexDirty = false;",
+    fn,
+    "return { set: setCompassDial, st: function () { return { t: compassDialType, a: compassDialAlpha, d: groundTexDirty }; },",
+    "         reset: function () { groundTexDirty = false; } };"
+  ].join("\n");
+  var h = (new Function(body))();
+  var ls = [];
+
+  var r1 = h.set(2, 0.4);
+  ls.push(["setCompassDial(2,0.4) ⇒ 读值= 2 / 0.4", h.st().t === 2 && h.st().a === 0.4,
+    JSON.stringify(h.st())]);
+  ls.push(["有变化 ⇒ changed=true 且置脏", r1.changed === true && h.st().d === true,
+    JSON.stringify(r1)]);
+
+  h.reset();
+  var r2 = h.set(2, 0.4);
+  ls.push(["重复设同值 ⇒ changed=false 且不置脏（不白传纹理）",
+    r2.changed === false && h.st().d === false, JSON.stringify(r2)]);
+
+  h.set(9, 5);
+  ls.push(["钳位上界：type=9/alpha=5 ⇒ 4 / 1", h.st().t === 4 && h.st().a === 1, JSON.stringify(h.st())]);
+  h.set(-3, -2);
+  ls.push(["钳位下界：type=-3/alpha=-2 ⇒ 0 / 0", h.st().t === 0 && h.st().a === 0, JSON.stringify(h.st())]);
+
+  return ls;
+}
 async function runAll() {
   console.log("=== A. 静态断言（map.html 源码）===");
   staticChecks(SRC).forEach(function (x) { ok(x[0], x[1], x[2]); });
+  console.log("=== D. 盘面切换跟随行为（抽函数在 Node 里跑）===");
+  dialChecks(SRC).forEach(function (x) { ok(x[0], x[1], x[2]); });
   console.log("=== B. diag 状态机行为（抽函数在 Node 里跑）===");
   behaviourChecks(SRC).forEach(function (x) { ok(x[0], x[1], x[2]); });
   console.log("=== C. 盘面数据加载失败的可观测性（桩 fetch 真跑）===");

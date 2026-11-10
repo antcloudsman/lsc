@@ -32,6 +32,7 @@ param(
     [string]$Apk = '',            # 本次装的包；给了就做「树内↔包内」四步链校验
     [string]$TreeRoot = '',       # 构建用的树；空则用当前工作树
     [string]$Src = 'webp800',     # A′ 同源：export-dial --es src webp800（两侧喂同一文件字节）
+    [switch]$CanvasOnly,   # 只出 canvas 侧（几何+掩膜+指纹），native 侧待 cmd mode 落地
     [switch]$WhatIf
 )
 
@@ -164,14 +165,25 @@ function Export([string]$side, [string]$dst) {
 }
 
 foreach ($side in 'canvas', 'native') {
+    if ($CanvasOnly -and $side -eq 'native') { continue }
     if (-not (Export $side (Join-Path $OutDir "run1-$side.png"))) {
         Write-Output "SKIP-A: $side 侧导出未落盘"; exit 10
     }
 }
 foreach ($side in 'canvas', 'native') {
+    if ($CanvasOnly -and $side -eq 'native') { continue }
     if (-not (Export $side (Join-Path $OutDir "run2-$side.png"))) {
         Write-Output "SKIP-A: $side 侧第二轮导出未落盘"; exit 10
     }
+}
+if ($CanvasOnly) {
+    # 只交 canvas 一半：几何 + alpha 形状 + 掩膜/指纹。native 侧待 cmd mode compass + 关贴地。
+    Write-Output '--- CANVAS-ONLY 半份（native 侧不判，等 cmd mode 落地后一次补跑）---'
+    & python $cmp --bbox --canvas (Join-Path $OutDir 'run1-canvas.png') --native (Join-Path $OutDir 'run1-canvas.png') `
+        --space $Space --expect-dial 549 --expect-center '728,728' 2>&1 | Where-Object { $_ -match 'BBOX canvas|ALPHA canvas|BBOX-CHECK' } | ForEach-Object { Write-Output "  $_" }
+    Write-Output ("CANVAS-FILES: " + (Join-Path $OutDir 'run1-canvas.png') + " / run2-canvas.png")
+    Write-Output 'M9-B-CANVAS-HALF: 几何与 alpha 结论见上；像素差判定需两侧，未出'
+    exit 20
 }
 
 $m2 = Meta

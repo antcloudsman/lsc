@@ -81,6 +81,19 @@ public class CompassView extends View {
     /** P0-2: full artwork dial (null = vector mode). */
     private android.graphics.Bitmap artwork;
 
+    /**
+     * M9-B（L2a 方法，debug-only）：只画位图盘面，跳过外环/内环/30° 刻度/度数文字。
+     *
+     * <p>为什么需要：L2a 要判的是「canvas 的位图绘制是否忠实」，而两侧各自都叠了
+     * 外环/内环/刻度/文字，整图逐像素比的实际是**两套叠加层实现**（地图 2026-11-10
+     * 实测 native 偏离纯位图 84%、canvas 44.96%，且模糊后 native 几乎不变 ⇒ 结构性差异）。
+     * 两侧同开 bare 之后比的才是位图本身，阈值才有意义。
+     *
+     * <p>**产品路径永不为 true**：只由 export-dial 临时置位、finally 还原；
+     * 不落 prefs、不改可见性、不 invalidate（屏幕一像素不变）。
+     */
+    private boolean artworkOnly = false;
+
     /** Load the original artwork for dial 0..4, downsampled to <= 1200 px. */
     public void setArtwork(int dial) {
         int[] res = {R.drawable.dial_full_0, R.drawable.dial_full_1, R.drawable.dial_full_2,
@@ -123,6 +136,21 @@ public class CompassView extends View {
     /** M9-B：当前位图引用（导出前保存、导出后换回）。 */
     public android.graphics.Bitmap currentArtwork() {
         return artwork;
+    }
+
+    /**
+     * M9-B：bare 模式开关（debug-only，L2a 甲方案）。
+     *
+     * <p>**故意不调用 invalidate()**：只影响下一次 {@code draw(Canvas)}，不改屏幕内容。
+     * 调用方必须 try/finally 还原，否则后续导出会持续只画位图。
+     */
+    public void setArtworkOnly(boolean on) {
+        this.artworkOnly = on;
+    }
+
+    /** M9-B：bare 模式当前状态（导出元数据用）。 */
+    public boolean isArtworkOnly() {
+        return artworkOnly;
     }
 
     public boolean hasArtwork() {
@@ -336,6 +364,14 @@ public class CompassView extends View {
         float cx = getWidth() / 2f;
         float cy = getHeight() / 2f;
         float r = Math.min(cx, cy) - 8f;
+
+        // M9-B（L2a 甲方案，总监 2026-11-10 批）：bare 只画位图。
+        // 与 canvas 侧 bare=1 同语义：不画外环/内环/30°刻度/度数文字/天支线/天池。
+        // 放在**所有绘制之前**——连最外那圈 r 描边也不画，否则 549 边界上必然差一圈。
+        if (artworkOnly && artwork != null) {
+            drawArtwork(canvas, cx, cy, r);
+            return;
+        }
 
         int gold = Color.rgb(220, 190, 130);
 

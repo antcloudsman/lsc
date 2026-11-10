@@ -566,8 +566,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // 三个混淆源，实测地板 3.33%，会把判据淹没。
                 String spec = it.getStringExtra("value");
                 if (spec == null || spec.isEmpty()) spec = "native:1456";
+                // M9-B（L2a 甲方案，总监 2026-11-10 批）：两侧同开 bare 才比纯位图。
+                // 接受 --es bare 1 / true 与 --ei bare 1 两种写法（测试脚本用 --es）。
+                String bareStr = it.getStringExtra("bare");
+                boolean wantBare = "1".equals(bareStr) || "true".equalsIgnoreCase(bareStr)
+                        || it.getBooleanExtra("bare", false);
                 exportDial(spec, it.getIntExtra("type", -1), it.getFloatExtra("alpha", -1f),
-                        it.getStringExtra("src"));
+                        it.getStringExtra("src"), wantBare);
                 break;
             }
             case "js": {
@@ -2642,7 +2647,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      *
      * <p>同档：给了 type/alpha 就先设原生并 pushCompassDial，两侧同一档才可比。
      */
-    private void exportDial(String spec, int wantType, float wantAlpha, String wantSrc) {
+    private void exportDial(String spec, int wantType, float wantAlpha, String wantSrc,
+                            boolean wantBare) {
         final String sp = (spec == null) ? "native:1456" : spec.trim();
         int colon = sp.indexOf(':');
         final String kind = (colon > 0) ? sp.substring(0, colon) : sp;
@@ -2765,6 +2771,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                 + " (compassView 仍无法布局)，不出图");
                         return;
                     }
+                    // M9-B：bare=1 只在有位图时有意义。artwork==null 时 onDraw 里的门禁
+                    // （artworkOnly && artwork != null）会静默跳过，导出图退化成「正常叠加渲染」
+                    // 却被标成 bare=1 —— 那正是「比错对象」，直接不出图。
+                    if (wantBare && !compassView.hasArtwork()) {
+                        android.util.Log.e("LCDEBUG", "export-dial skip-MODE native: bare=1 但"
+                                + " artwork==null（会退化成矢量线稿/叠加层），不出图");
+                        return;
+                    }
                     float k = targetR / viewR;
                     android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(
                             px, px, android.graphics.Bitmap.Config.ARGB_8888);
@@ -2794,14 +2808,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             return;
                         }
                     }
+                    // 记录**实际画进去的那个位图**的边长。swap 在 finally 里换回原图，
+                    // 之后读 artworkWidth() 拿到的是产品图 1024 —— 与 srcUsed=webp800
+                    // 自相矛盾，会被读成「素材没换进去」。必须先取。
+                    int drawnArtW = compassView.artworkWidth();
+                    // bare 只在 draw 这一帧生效，finally 必定还原；
+                    // prevBare 先读，避免调用方本来就置位时被覆盖成 false。
+                    boolean prevBare = compassView.isArtworkOnly();
+                    if (wantBare) compassView.setArtworkOnly(true);
                     try {
                         compassView.draw(c);
                     } finally {
+                        if (wantBare) compassView.setArtworkOnly(prevBare);
                         if (prevArt != null) compassView.swapArtworkForExport(prevArt);
                     }
                     // 漂移校验：本机算出的 dialPx 必须与页面渲染用的一致，否则不出数
                     checkDialPxAgainstPage(dialPx);
-                    java.io.File f = dialFile("dial-native.png");
+                    // bare 单独落文件：测试按文件名取图，混进 dial-native.png 会把
+                    // 「纯位图」当成「正常叠加图」引用。
+                    java.io.File f = dialFile(wantBare ? "dial-native-bare.png" : "dial-native.png");
                     try (java.io.FileOutputStream os = new java.io.FileOutputStream(f)) {
                         bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os);
                         os.flush();
@@ -2832,8 +2857,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     boolean art = compassView.hasArtwork();
                     int used = prefs.getInt("dial_index", 0);
                     float a = (wantAlpha >= 0f) ? wantAlpha : 1f;
-                    writeDialMeta("dial-native.txt", px, dialPx, viewR, k,
-                            used, a, art, true, alphaOk, inPct, outOpaquePct, srcUsed);
+                    writeDialMeta(wantBare ? "dial-native-bare.txt" : "dial-native.txt",
+                            px, dialPx, viewR, k,
+                            used, a, art, true, alphaOk, inPct, outOpaquePct, srcUsed, wantBare,
+                            drawnArtW);
                     if (!alphaOk) {
                         android.util.Log.e("LCDEBUG", "export-dial ERROR alphaShape=bad inside="
                                 + String.format(java.util.Locale.US, "%.2f", inPct)
@@ -2847,6 +2874,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             + " type=" + used + " alpha=" + String.format(java.util.Locale.US, "%.2f", a)
                             + " artwork=" + art + " faceKind=" + (art ? "bitmap" : "vector")
                             + " srcUsed=" + srcUsed
+                            + " bare=" + (wantBare ? 1 : 0)
                             + " alphaShape=" + (alphaOk ? "ok" : "bad")
                             + " bytes=" + f.length() + " path=" + f.getAbsolutePath());
                 } catch (Throwable ex) {
@@ -2948,7 +2976,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void writeDialMeta(String name, int px, float dialPx, float viewR, float k,
                                int type, float alpha, boolean artwork, boolean nativeSide,
                                boolean alphaOk, double inPct, double outOpaquePct,
-                               String srcUsed) {
+                               String srcUsed, boolean bare, int artWidth) {
         StringBuilder sb = new StringBuilder();
         sb.append("kind=").append(nativeSide ? "native" : "canvas").append('\n');
         sb.append("px=").append(px).append('\n');
@@ -2964,9 +2992,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sb.append("alphaShape=").append(alphaOk ? "ok" : "bad").append('\n');
         sb.append("insideOpaquePct=").append(String.format(java.util.Locale.US, "%.2f", inPct)).append('\n');
         sb.append("outsideOpaquePct=").append(String.format(java.util.Locale.US, "%.2f", outOpaquePct)).append('\n');
-        sb.append("artworkWidth=").append(compassView == null ? 0 : compassView.artworkWidth()).append('\n');
+        // 必须是「实际画进画布的那个位图」的边长（swap 后、还原前取），
+        // 不能用 compassView.artworkWidth()——那时已换回产品图 1024。
+        sb.append("artworkWidth=").append(artWidth).append('\n');
         // L2a 守卫要求两侧相同才出数（审地图 2026-11-10）
         sb.append("srcUsed=").append(srcUsed == null ? "png1024" : srcUsed).append('\n');
+        // 甲方案：bare=1 ＝ 只画位图（不画外环/内环/刻度/中心文字/天支线/天池）。
+        // 这一行是「比的对象对不对」的唯一凭据，缺了就没法判两份图能不能互比。
+        sb.append("bare=").append(bare ? 1 : 0).append('\n');
         try (java.io.FileOutputStream os = new java.io.FileOutputStream(dialFile(name))) {
             os.write(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
             os.flush();

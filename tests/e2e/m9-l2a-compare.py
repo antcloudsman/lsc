@@ -415,6 +415,8 @@ def main() -> int:
     ap.add_argument("--control", action="store_true", help="打印同实现控制组基线 B（素材两管线）")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--selftest-space", type=int, default=SPACE_DEFAULT)
+    ap.add_argument("--block-min", type=int, default=30, help="缺陷块最小面积 px（M9-D2 主判）")
+    ap.add_argument("--block-diff", type=int, default=32, help="缺陷块内最小最大通道差（M9-D2 主判）")
     ap.add_argument("--sigma", type=float, default=None, help="绝对 σ（px @ 比较空间）；不给则按物理等效 1.5×space/549")
     ap.add_argument("--exclude-center", type=float, default=0.0,
                     help="排除中心半径分数（×盘面半径）：C 区读数随朝向变，不参与像素比较")
@@ -472,7 +474,7 @@ def main() -> int:
         return 0
     if not (a.canvas and a.native):
         ap.error("需要 --canvas 与 --native（或 --selftest / --control）")
-    return compare(Path(a.canvas), Path(a.native), a.space, a.baseline, a.margin, a.mask, a.exclude_center, sigma_abs=a.sigma)
+    return compare(Path(a.canvas), Path(a.native), a.space, a.baseline, a.margin, a.mask, a.exclude_center, block_min=a.block_min, block_diff=a.block_diff, sigma_abs=a.sigma)
 
 
 if __name__ == "__main__":

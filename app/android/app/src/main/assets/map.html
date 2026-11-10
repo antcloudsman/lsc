@@ -3038,6 +3038,8 @@ var groundAlphaApplied = 1;       /* 最近一次真正传给 shader 的 alpha�
  * 为什么不能只用 groundCanvasSig 当时序锚点：sig 只随 dialType 变，同类型下的一次重绘
  * （透明度重算/纹理重建）不会改 sig ⇒ 守卫会放行旧图。取图前后 seq 相等才算同一状态。 */
 var groundRenderSeq = 0;
+var groundFaceKind = 'none';      /* 画进画布的脸：'bitmap' | 'vector' | 'none'（还没画过） */
+var groundDialUsed = -1;          /* 那一次实际用的盘面档；与期望档不同即“换图还没生效” */
 function setCompassDial(type, alpha) {
   var changed = false;
   var t = Number(type);
@@ -3074,7 +3076,9 @@ function groundCanvasMeta() {
       w: groundCanvas.width, h: groundCanvas.height,
       dialPx: sz.px, off: (sz.px - sz.px * GROUND_DIAL_FRAC) / 2,
       dialType: compassDialType, dialAlpha: compassDialAlpha, alphaApplied: groundAlphaApplied,
-      texDirty: groundTexDirty, sig: groundCanvasSig().sig, renderSeq: groundRenderSeq
+      texDirty: groundTexDirty, sig: groundCanvasSig().sig, renderSeq: groundRenderSeq,
+      faceKind: groundFaceKind,     /* 画布里那张脸：bitmap 才可用于 L2a；vector 是降级盘 */
+      dialTypeUsed: groundDialUsed, /* 画布实际用的档；与期望档不同说明换图还没生效 */
     };
   } catch (e) { return { w: 0, h: 0, err: (e && e.name) || 'error' }; }
 }
@@ -3110,6 +3114,10 @@ function groundRedraw() {
     groundImg.onload = function () { groundTexDirty = true; groundRedraw(); };
     groundImgDial = dialType;
   }
+  /* 这一帧画的是位图还是矢量降级盘？换盘面时 dial_full_N 要异步解码，图没到会先画 vectorFace；
+   * 只按 renderSeq 判断“画过了”会放行这张矢量图（M9 B，审地图指出的时序洞）。
+   * 所以把「这次实际用的是哪个盘的位图」记下来，取图守卫比它，而不是比时间。 */
+  var usingBmp = !!(groundImg && groundImg.complete && groundImg.naturalWidth > 0);
   var rd = null;
   try {
     rd = CompassDataReading(lastHeading);
@@ -3135,11 +3143,15 @@ function groundRedraw() {
     dialAlpha: 1,
     tianzhi: false,
     trustEnabled: false,
-    dialImg: (groundImg && groundImg.complete && groundImg.naturalWidth > 0) ? groundImg : null,
+    dialImg: usingBmp ? groundImg : null,
     reading: rd
   });
   ctx.restore();
-  if (ok) groundRenderSeq++;      /* 只有真正画成功才算一次重绘（M9 B：时序锚点，见 groundCanvasMeta） */
+  if (ok) {
+    groundRenderSeq++;                       /* 只有真正画成功才算一次重绘（M9 B：时序锚点） */
+    groundFaceKind = usingBmp ? 'bitmap' : 'vector';   /* 画时记录，不是读时推断 */
+    groundDialUsed = dialType;               /* 这一帧实际用的档（换图未解码时仍是旧值） */
+  }
   groundTexDirty = true;
   return ok;
 }
@@ -4296,6 +4308,8 @@ window.__LC3D = {
       dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
       alphaApplied: groundAlphaApplied,   /* 实际乘进 shader 的值：应恒等于 dialAlpha */
       renderSeq: groundRenderSeq,        /* 重绘序号：取图前后相等才证明这张图是当前态 */
+      faceKind: groundFaceKind,        /* bitmap | vector | none（vector 不可取图） */
+      dialTypeUsed: groundDialUsed,    /* 画布实际档位；≠ 期望档 = 换图未生效 */
       texDirty: groundTexDirty,
       hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),
       hasRings: !!COMPASS_RINGS,

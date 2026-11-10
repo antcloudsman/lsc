@@ -1,16 +1,23 @@
 # 用户报的 8 条 · 终态表（M7 定版 → M8 贴地兑现后更新）
 
-- 作者：LC产品｜初版 2026-11-09｜本版 **2026-11-10**｜版本：**v1.17**（本行为唯一权威版本号；变更记录只作历史，不重复声明当前版本）
-- 当前基线（**最终冻结点**）：`develop` = **`d260b78`**（`Merge commit 'c3796c0' into develop`，空转规则检查合入后的收官树）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**；`help-center.md` `blob:6a3ebdd988178d52fd0b1d7355f92228ac0833fb` = `index.html` 头部 `@` 串（逐字符相同）；`lc-help` webp **29** 张
-- 上一基线：`d60a61d`（`app` 树 `0c5da8e`，贴地交付树；`fig-32` 尚未入册、`lc-help` 28 张）。**`1bb650c` 与 `d60a61d` 的 `app` 树不同**（`0c5da8e` → `b203750`），但差异**只有两项、都在帮助中心静态资源**：`assets/lc-help/fig-32.webp`（新增 109,944 B）与 `assets/lc-help/index.html`（+4/−2）；`map.html` / `MainActivity` / `KmlIo` / 全部 Java **零改动**（`git diff --name-only d60a61d 1bb650c -- app` 只这两行）。
+- 作者：LC产品｜初版 2026-11-09｜本版 **2026-11-10**｜版本：**v1.18**（本行为唯一权威版本号；变更记录只作历史，不重复声明当前版本）
+- 当前基线（**最终关账树**）：`develop` = **`7579e90`**（`Merge commit 'b13a9c0' into develop`）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**；`help-center.md` `blob:6a3ebdd988178d52fd0b1d7355f92228ac0833fb` = `index.html` 头部 `@` 串（逐字符相同）；`lc-help` webp **29** 张
+- **唯一权威位置声明（本表与关账摘要的分工，2026-11-10 技术总监要求）**：
+  - **版本号** → 本文件第 3 行（唯一权威；变更记录只作历史）
+  - **八条终态与计数**（已验 8／未实现 0／BLOCKED 0／待复跑 1／已知差 3／证据不可得 1／未做 1）→ 本文件 §0 与 §1（唯一权威；关账摘要只引用，不另立数字）
+  - **门禁原文**（五道命令、参数行、退出码、`other`）→ `E:\APPDetector\reports\m8-final-7579e90\exit-codes.txt`（唯一权威；本表只摘结论与关键数）
+  - **覆盖口径 `22+6+1`** → 门禁 ② 输出的 `SIZE-MAP-COVERAGE`（唯一权威；本表与摘要写法必须一致）
+  - 冲突不写成两份：若别处与本表数字不一致，**以本表与 `exit-codes.txt` 为准，另一处改口**，不并列
+- 上一基线：`d260b78`（门禁首跑树，`app` 树同为 `b203750`；其 `exit-codes.txt` 在 `reports\m8-gates-d260b78\`，该树 `③ other=149`，**已被 `7579e90` 取代**）
+- 更早基线：`d60a61d`（`app` 树 `0c5da8e`，贴地交付树；`fig-32` 尚未入册、`lc-help` 28 张）。**`1bb650c` 与 `d60a61d` 的 `app` 树不同**（`0c5da8e` → `b203750`），但差异**只有两项、都在帮助中心静态资源**：`assets/lc-help/fig-32.webp`（新增 109,944 B）与 `assets/lc-help/index.html`（+4/−2）；`map.html` / `MainActivity` / `KmlIo` / 全部 Java **零改动**（`git diff --name-only d60a61d 1bb650c -- app` 只这两行）。
   - **台账禁令**：不得写「门禁包与真机读数是同一棵 `app` 树」——树确实变了；应写「**渲染相关零改动，差异仅在帮助中心静态资源，故贴地/十字经线真机读数继续有效**」。M8 真机读数引用时标「`d60a61d` 树」。
-- 门禁状态（`d260b78` 实测，原件 `E:\APPDetector\reports\m8-gates-d260b78\exit-codes.txt`，**6,532 B / CR=0 / 102 行**，含「第一版把 `fidelity.py` 记成 ③」的更正记录）：**七门 smoke 全 PASS + 五道门禁全 `exit 0`**
-  - 证据头七项：顶点 `d260b788…`｜`app` 树 `b203750`｜APK **12,470,938 B**｜`sha256:123e75f1965fd2c0dcc1a73b0251403c2fd5081f28745dc66d31f636433c2ea3`｜图 **29**｜规则 **7**｜覆盖 **22+6+1**、命中 **7/7**
+- 门禁状态（`7579e90` 实测，原始输出唯一权威 `E:\APPDetector\reports\m8-final-7579e90\exit-codes.txt`，**6,048 B / CR=0**）：**七门 smoke 全 PASS + 五道门禁全 `exit 0`**；本表以下只摘结论与关键数，参数行与完整 stdout 以该文件为准
+  - 证据头七项：顶点 `7579e909…`｜`app` 树 `b203750`｜APK **12,470,930 B**｜`sha256:2632f72e262eadfcabec1ab2cbfcb994965d6e8926a158a28676b7adeb7aaa54`｜图 **29**｜规则 **7**｜覆盖 **22+6+1**、命中 **7/7**（同树重建 sha 会变，判据认 `blob:`；`d260b78` 首跑为 `12,470,938 B`/`sha256:123e75f1…`，已标时点）
   - 七门：`copy / secret / desktop / numeric（85 tests, 0 fail）/ mech-src / android / ground` 全 PASS；`desktop` `cargo_exit=0`、png 1100×780（266,376 B）、`mechanics_values=19 estimated=0`；`ground` `M8-GROUND PASS` + `NEGATIVES PASS`（N0–N5 按预期红/绿）
   - **五道**（不是四道；③ 与③b 是**两套不同检查**，不能互相顶替）：
     - ① `assets.py verify` → `103/103/103 all match`，`exit 0`
     - ② `evidence-lint --root …/lc-help --expect-size 1228x2700 --expect-size-map …` → `rules 7/7`、`by rule=7 by default=22`、`DUP 29/29/0`、`fail=0`，`exit 0`
-    - ③ **`evidence-lint --root docs/fidelity`（任务定义里的那道）** → `ALLOWLIST: 3`、`DUP: files=138 unique=136 duplicated=4 redundant=2`、`EVIDENCE-LINT: scanned xml=155 png=138 other=149 fail=0 warn=0 allowed=3`，`exit 0`（`other=149` 为本树扫描集，只认 `fail=0`/`allowed=3`；M7 那棵树的 `147` 不可比）；**补跑两处独立结果逐项相同**——@LC技术总监 与 @LC测试 各跑一次，都是 `138/136/4/2`、`155/138/149`、`fail=0 warn=0 allowed=3`、`exit 0`（注：此门无尺寸参数，故输出带 `SIZE: SKIP (…images are NOT size-checked)`，属预期，不是漏跑）
+    - ③ **`evidence-lint --root docs/fidelity`（任务定义里的那道）** → `ALLOWLIST: 3`、`DUP: files=138 unique=136 duplicated=4 redundant=2`、`EVIDENCE-LINT: scanned xml=155 png=138 other=150 fail=0 warn=0 allowed=3`，`exit 0`（**`other=150` 为 `7579e90` 口径**；`d260b78` 上是 `149`，差额来自 INDEX 新建，@LC测试 实测并说明；M7 那棵树的 `147` 不可比。判据只认 `fail=0`/`allowed=3`，`other` 只作参照）；此门无尺寸参数，故输出带 `SIZE: SKIP (…images are NOT size-checked)`，属预期，不是漏跑
     - ③b **`fidelity.py report --root docs/fidelity`（额外第五道，不作为 ③）** → `27/65 pair compared`、26 对 known-red、`checksheet_id 29/29`，`exit 0`
     - ④ `--generated-html … --source …` → 头部 `@6a3ebdd9…` = `git hash-object` 同值、`fig` 引用 29、`fail=0`，`exit 0`
   - **③ 的这次替换必须记进台账**：@LC测试 首次记录里写的是 `GATE3 = fidelity.py report`，那不是任务定义的 ③；两套都绿但**验的对象不同**（27/65 对图 vs 144 文件查重）。③ 由 @LC技术总监 补跑，结果如上；`fidelity.py` 改记 `③b`，编号后补，不需要重跑其他门。
@@ -237,7 +244,8 @@ T1/T2/T3 三项行为都 PASS。差的是 **T3「无过渡动画」的逐帧证�
 | 版本 | 日期 | 变更 |
 |---|---|---|
 | v1.17 | 2026-11-10 | ③ 补**双人独立复跑**：@LC技术总监 与 @LC测试 各跑一次，`138/136/4/2`、`155/138/149`、`fail=0 warn=0 allowed=3`、`exit 0` 逐项相同；注明该门无尺寸参数、输出带 `SIZE: SKIP (…images are NOT size-checked)` 属预期而非漏跑；`exit-codes.txt` 更新为 **6,532 B / CR=0 / 102 行**（含「第一版把 `fidelity.py` 记成 ③」的更正记录） |
-| v1.16 | 2026-11-10 | **门禁由「四道」改为「五道」**：③ = `evidence-lint --root docs/fidelity`（任务定义那道，由 @LC技术总监 补跑）、③b = `fidelity.py report`（27/65 pair、checksheet 29/29，**额外第五道，不顶替 ③**）；记「首次记录把 `fidelity.py` 写成 GATE3 属检查替换，两套都绿但验的对象不同」；`other=149` 为本树口径 |
+| v1.18 | 2026-11-10 | 按「同一事实只留一个权威位置」收口：新增**唯一权威位置声明**（版本号→第 3 行；八条终态与计数→§0/§1；门禁原文→`reports\m8-final-7579e90\exit-codes.txt`；覆盖口径→`SIZE-MAP-COVERAGE`）；基线升 **`7579e90`**、证据头改用它那组数（APK `12,470,930 B`／`sha256:2632f72e…`），`d260b78` 标为「门禁首跑树、已被取代」；③ 的 `other` 按最终树改为 **150**（`d260b78` 为 149，差额来自 INDEX 新建），并声明「不一致时以本表与 `exit-codes.txt` 为准，另一处改口，不并列」 |
+| v1.16 | 2026-11-10 | **门禁由「四道」改为「五道」**：③ = `evidence-lint --root docs/fidelity`（任务定义那道，由 @LC技术总监 补跑）、③b = `fidelity.py report`（27/65 pair、checksheet 29/29，**额外第五道，不顶替 ③**）；记「首次记录把 `fidelity.py` 写成 GATE3 属检查替换，两套都绿但验的对象不同」；`other` 当时记 149（`d260b78` 口径，`7579e90` 为 150） |
 | v1.15 | 2026-11-10 | 补**门禁实测**（`d260b78`）：七门 smoke 全 PASS + 门禁 `exit 0`，原件 `reports\m8-gates-d260b78\exit-codes.txt`；写齐证据头七项（顶点／`app` 树 `b203750`／APK `12,470,938 B`／`sha256:123e75f1…`／图 29／规则 7／覆盖 `22+6+1`、命中 `7/7`）；记录 ④ 的两次反证（改头部 sha、删 GENERATED 行均 `exit 1`）与**第 4 门设备段本轮跳过**（真机读数仍为 `d60a61d`/`0c5da8e`，禁写「同一棵 app 树」） |
 | v1.14 | 2026-11-10 | 冻结点定为 **`d260b78`**（`app` 树 `b203750`，空转规则检查已合）；§2.5 把「规则命中 7/7、无空转条目」**写成硬判据**并引用门禁原文（`SIZE-MAP-HIT` 7 行、`SIZE-MAP-COVERAGE rules 7/7 matched; files by rule=7 by default=22`、`DUP 29/29/0`、`fail=0 exit=0`），补该检查的反证（`fig-99` → `FAIL size-rule (idle rule)` exit 1）；「工具边界」段改为**已修留档** |
 | v1.13 | 2026-11-10 | 覆盖写法全组统一为 **`22+6+1`**（不再混用「22 整屏 + 6 裁切 + fig-32 显式入表」变体，便于 grep 核对）；§2.5 接入 @LC测试 `c3796c0` 的**空转规则检查**（规则命中 0 文件 → `FAIL size-rule (idle rule)`；只给表 → `WARN size-default`；两参数都不给 → `SIZE: SKIP` 不再静默 exit 0），并预写门禁三行原文 |

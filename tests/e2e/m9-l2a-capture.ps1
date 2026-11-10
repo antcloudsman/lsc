@@ -32,7 +32,8 @@ param(
     [string]$Apk = '',            # 本次装的包；给了就做「树内↔包内」四步链校验
     [string]$TreeRoot = '',       # 构建用的树；空则用当前工作树
     [string]$Src = 'webp800',     # A′ 同源：export-dial --es src webp800（两侧喂同一文件字节）
-    [switch]$CanvasOnly,   # 只出 canvas 侧（几何+掩膜+指纹）
+    [string]$Artwork = '',       # Android 解码的 artwork PNG（算 B_blocks 用）；不给则打 SKIP
+    [switch]$CanvasOnly,   # 只出 canvas 侧（几何+掩膜+指纹），native 侧不判
     [switch]$Bare,         # 甲方案：两侧都只画位图（bare=1），比「位图绘制是否忠实」
     [double]$SigmaAbs = 1.5, # SIGMA 口径：绝对值 px @ 比较空间（与地图对齐；物理等效=1.5×space/549）
     [switch]$WhatIf
@@ -285,6 +286,13 @@ if ($Thresh -lt $ThreshMin -or $Thresh -gt $ThreshMax) {
 }
 $marginEff = [math]::Max($Thresh, 2 * $bn)
 Write-Output ("THRESH  : Thresh=" + $Thresh + "% ∈ [" + $ThreshMin + "," + $ThreshMax + "]；检出依据 多画20°=2.59%/1.5；误报依据 地板0.6%×1.5")
+# B_BLOCKS：解码底座。判据若要「缺陷块 ≥ max(30px, B_blocks)」，必须每轮重测并写进报告头。
+if ($Artwork -and (Test-Path $Artwork)) {
+    $bb = & python (Join-Path 'E:\APPDetector\reports' 'm9-l2a-bblocks.py') $Artwork --dial $DialType 2>&1 | Select-String 'B_BLOCKS'
+    Write-Output ("B_BLOCKS: " + ($bb -join ' '))
+} else {
+    Write-Output 'B_BLOCKS: SKIP（未提供 -Artwork；解码底座未测，块判据阈值按 30px 硬值）'
+}
 Write-Output ("B_noise = " + $bn.ToString('F3') + "%  → margin = max(" + $Thresh + ", 2×B) = " + $marginEff.ToString('F3') + " pp")
 
 # ---- 正式判定（并集掩膜；参照物 = native）----

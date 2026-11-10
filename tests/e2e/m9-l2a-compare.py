@@ -47,10 +47,20 @@ def sigma_for(space: int) -> float:
 
 
 # ---------- ① + ② 掩膜与差分 ----------
-def diff_with_mask(canvas: Image.Image, native: Image.Image, sigma: float):
+def diff_with_mask(canvas: Image.Image, native: Image.Image, sigma: float, mask_mode: str = "canvas"):
+    """mask_mode:
+      canvas —— 只用 canvas 侧 alpha>250（native 是 screencap 时唯一可用口径）
+      union  —— canvas alpha>250 ∪ native alpha>250（native 必须是带 alpha 的原生导出图）
+    为什么要有 union：canvas 缺画时，缺口落在 canvas 掩膜外，比例恒小（实测缺 350° 环只有 0.20%）。
+    一旦原生侧能直出带 alpha 的 PNG，改并集后比例判据也能抓「缺画」，不必全靠存在性判据。
+    """
     ca = np.asarray(canvas, dtype=np.int16)
     na = np.asarray(native, dtype=np.int16)
-    mask = ca[:, :, 3] > 250                      # ② 只取 canvas 侧
+    mask_c = ca[:, :, 3] > 250
+    if mask_mode == "union":
+        mask = mask_c | (na[:, :, 3] > 250)
+    else:
+        mask = mask_c
     n_mask = int(mask.sum())
     cb = np.asarray(canvas.filter(ImageFilter.GaussianBlur(sigma)), dtype=np.int16)
     nb = np.asarray(native.filter(ImageFilter.GaussianBlur(sigma)), dtype=np.int16)
@@ -206,17 +216,50 @@ def ring_radius_match(canvas: Image.Image, native: Image.Image, space: int, tol_
     return out
 
 
-def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float) -> int:
+def bbox_of(img: Image.Image) -> tuple[int, int, int, int, int] | None:
+    """alpha>250 的外接框 → (x0,y0,x1,y1,直径=max(w,h))。"""
+    a = np.asarray(img, dtype=np.int16)[:, :, 3] > 250
+    ys, xs = np.where(a)
+    if xs.size == 0:
+        return None
+    x0, x1, y0, y1 = int(xs.min()), int(xs.max()), int(ys.min()), int(ys.max())
+    return x0, y0, x1, y1, max(x1 - x0 + 1, y1 - y0 + 1)
+
+
+def alpha_shape_check(img: Image.Image) -> dict:
+    """并集掩膜的前提：native PNG 必须「盘内实、盘外真透明」。
+
+    bbox 尺寸对不代表 alpha 形状对：导出时漏 eraseColor(TRANSPARENT) 或用了 RGB_565，
+    并集会膨胀到整幅 1456²，比例判据失去灵敏度，而 bbox 检查仍然通过（审地图 ②）。
+    """
+    al = np.asarray(img, dtype=np.int16)[:, :, 3]
+    bb = bbox_of(img)
+    if bb is None:
+        return {"ok": False, "why": "全透明"}
+    x0, y0, x1, y1, _ = bb
+    inside = al[y0:y1 + 1, x0:x1 + 1]
+    inner_frac = float((inside > 0).mean())   # alpha>0：线稿盘本就大量镂空，用 >250 会误判
+    outer = al.copy()
+    outer[y0:y1 + 1, x0:x1 + 1] = 0
+    outer_frac_zero = float((outer == 0).mean())
+    cover = ((x1 - x0 + 1) * (y1 - y0 + 1)) / float(al.size)
+    # 全不透明导出时 bbox = 整幅，"盘外"为空集会真空通过——所以先判 bbox 覆盖率：
+    # 覆盖率 >0.99 说明没有透明边界，并集掩膜会膨胀成整幅，alpha 形状判 BAD。
+    ok = inner_frac >= 0.01 and outer_frac_zero >= 0.99 and cover <= 0.99
+    return {"ok": ok, "inner": inner_frac, "outer_zero": outer_frac_zero, "cover": cover}
+
+
+def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float, mask_mode: str = "canvas") -> int:
     canvas = norm(open_rgba(canvas_png), space)
     native = norm(open_rgba(native_png), space)
     sigma = sigma_for(space)
-    mask, d, n_mask = diff_with_mask(canvas, native, sigma)
+    mask, d, n_mask = diff_with_mask(canvas, native, sigma, mask_mode)
     over = (d > 8) & mask
     abs_px = int(over.sum())
     pct = abs_px / n_mask * 100.0 if n_mask else 0.0
     bl = blocks(over)
 
-    print(f"PARAMS  : space={space} sigma={sigma:.2f} thresh=B+{margin}% mask=canvas alpha>250")
+    print(f"PARAMS  : space={space} sigma={sigma:.2f} thresh=B+{margin}% mask={mask_mode} alpha>250")
     print(f"MASK    : {n_mask} px（分母；全画布 {space*space} px，比值 {space*space/max(n_mask,1):.2f}×）")
     print(f"PIXELS  : {abs_px} px over 8 -> {pct:.2f}%   mean={float(d[mask].mean()):.2f} max={int(d[mask].max())}")
     if bl:
@@ -325,7 +368,7 @@ def selftest(space: int) -> int:
     fails = 0
     for name, c, n, expect in cases:
         print(f"--- {name} ---")
-        rc = compare(c, n, space, baseline=0.0, margin=2.0)
+        rc = compare(c, n, space, baseline=0.0, margin=2.0, mask_mode="union")
         ok = rc == expect
         print(f"[{'PASS' if ok else 'FAIL'}] {name}（exit={rc} 期望 {expect}）\n")
         if not ok:
@@ -344,7 +387,53 @@ def main() -> int:
     ap.add_argument("--control", action="store_true", help="打印同实现控制组基线 B（素材两管线）")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--selftest-space", type=int, default=SPACE_DEFAULT)
+    ap.add_argument("--mask", choices=["canvas", "union"], default="canvas",
+                    help="canvas=只取 canvas alpha（screencap 原生图时唯一口径）；union=并集（原生需带 alpha 直出）")
+    ap.add_argument("--bbox", action="store_true", help="打印两侧盘面外接框（几何契约验收用）")
+    ap.add_argument("--expect-dial", type=float, default=None, help="期望盘面直径 px（如 549），±1 判 PASS")
+    ap.add_argument("--expect-center", default=None, help="期望盘心 x,y（如 728,728），±1 判 PASS")
+    ap.add_argument("--noise", nargs=2, metavar=("A", "B"), help="噪声地板模式：同一侧同管线两张图，只打占比")
+    ap.add_argument("--noise-mask", choices=["canvas", "union"], default="union")
     a = ap.parse_args()
+    if a.noise:
+        p1, p2 = Path(a.noise[0]), Path(a.noise[1])
+        im1, im2 = norm(open_rgba(p1), a.space), norm(open_rgba(p2), a.space)
+        m, d, n = diff_with_mask(im1, im2, sigma_for(a.space), a.noise_mask)
+        over = (d > 8) & m
+        pct = int(over.sum()) / n * 100.0 if n else 0.0
+        print(f"NOISE   : mode={a.noise_mask} space={a.space} mask={n} px  pct={pct:.3f}%  "
+              f"max={int(d[m].max()) if n else 0}")
+        return 0
+    if a.bbox:
+        if not (a.canvas and a.native):
+            ap.error("--bbox 需要 --canvas 与 --native")
+        fails = 0
+        for tag, p in (("canvas", a.canvas), ("native", a.native)):
+            im = norm(open_rgba(Path(p)), a.space)
+            bb = bbox_of(im)
+            if bb is None:
+                print(f"BBOX {tag}: 全透明（不可用）")
+                fails += 1
+                continue
+            x0, y0, x1, y1, dia = bb
+            cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+            print(f"BBOX {tag}: x0={x0} y0={y0} x1={x1} y1={y1} 直径={dia} 盘心=({cx:.1f},{cy:.1f})")
+            if a.expect_dial is not None and abs(dia - a.expect_dial) > 1:
+                print(f"       FAIL 直径 {dia} 与期望 {a.expect_dial} 差 >1px")
+                fails += 1
+            if a.expect_center:
+                ex, ey = [float(v) for v in a.expect_center.split(",")]
+                if abs(cx - ex) > 1 or abs(cy - ey) > 1:
+                    print(f"       FAIL 盘心 ({cx:.1f},{cy:.1f}) 与期望 ({ex},{ey}) 差 >1px")
+                    fails += 1
+            asc = alpha_shape_check(im)
+            print(f"ALPHA {tag}: 盘内 alpha>0 占比={asc.get('inner', 0)*100:.1f}%  "
+                  f"盘外 alpha==0 占比={asc.get('outer_zero', 0)*100:.2f}% bbox覆盖率={asc.get('cover', 0)*100:.1f}%  -> {'OK' if asc['ok'] else 'BAD'}")
+            if tag == "native" and not asc["ok"]:
+                print("       FAIL 原生图 alpha 形状不合格：并集掩膜会膨胀，比例判据失去灵敏度")
+                fails += 1
+        print("BBOX-CHECK: " + ("PASS" if fails == 0 else f"FAIL ({fails})"))
+        return 0 if fails == 0 else 1
     if a.selftest:
         return selftest(a.selftest_space)
     if a.control:
@@ -352,7 +441,7 @@ def main() -> int:
         return 0
     if not (a.canvas and a.native):
         ap.error("需要 --canvas 与 --native（或 --selftest / --control）")
-    return compare(Path(a.canvas), Path(a.native), a.space, a.baseline, a.margin)
+    return compare(Path(a.canvas), Path(a.native), a.space, a.baseline, a.margin, a.mask)
 
 
 if __name__ == "__main__":

@@ -2664,6 +2664,72 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         if (wantType >= 0 || wantAlpha >= 0f) pushCompassDial();
 
+        if ("artwork".equals(kind)) {
+            // 归因用：把真正喂给 CompassView 的 Bitmap 原样写 PNG（不经 view.draw）。
+            // 与 assets/compass/dial_full_N.webp 直接比，可一次分开「素材没换进去」
+            // 与「绘制路径不同」——比继续调 L2a 阈值快得多。
+            if (compassView == null) {
+                android.util.Log.d("LCDEBUG", "export-dial skip-A artwork: no compassView");
+                return;
+            }
+            compassView.postDelayed(() -> {
+                android.graphics.Bitmap bmp = null;
+                String srcUsed = "png1024";
+                try {
+                    if ("webp800".equals(wantSrc)) {
+                        int idx = Math.max(0, Math.min(4, prefs.getInt("dial_index", 0)));
+                        try (java.io.InputStream is = getAssets()
+                                .open("compass/dial_full_" + idx + ".webp")) {
+                            bmp = android.graphics.BitmapFactory.decodeStream(is);
+                        }
+                        srcUsed = "webp800";
+                    } else {
+                        bmp = compassView.currentArtwork();
+                    }
+                    if (bmp == null) {
+                        android.util.Log.d("LCDEBUG", "export-dial fail artwork: null bitmap src=" + srcUsed);
+                        return;
+                    }
+                    java.io.File f = dialFile("dial-artwork.png");
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bos);
+                    byte[] png = bos.toByteArray();
+                    try (java.io.FileOutputStream os = new java.io.FileOutputStream(f)) {
+                        os.write(png);
+                        os.flush();
+                    }
+                    String sha;
+                    try {
+                        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                        byte[] h = md.digest(png);
+                        StringBuilder sb = new StringBuilder();
+                        for (byte b : h) sb.append(String.format(java.util.Locale.US, "%02x", b));
+                        sha = sb.toString();
+                    } catch (Throwable t) { sha = "unknown"; }
+                    StringBuilder meta = new StringBuilder();
+                    meta.append("kind=artwork\n");
+                    meta.append("srcUsed=").append(srcUsed).append('\n');
+                    meta.append("artworkW=").append(bmp.getWidth()).append('\n');
+                    meta.append("artworkH=").append(bmp.getHeight()).append('\n');
+                    meta.append("bytes=").append(png.length).append('\n');
+                    meta.append("sha256=").append(sha).append('\n');
+                    meta.append("dialType=").append(prefs.getInt("dial_index", 0)).append('\n');
+                    try (java.io.FileOutputStream os = new java.io.FileOutputStream(
+                            dialFile("dial-artwork.txt"))) {
+                        os.write(meta.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        os.flush();
+                    }
+                    android.util.Log.d("LCDEBUG", "export-dial ok artwork:" + bmp.getWidth()
+                            + "x" + bmp.getHeight() + " srcUsed=" + srcUsed
+                            + " bytes=" + png.length + " sha256=" + sha
+                            + " path=" + f.getAbsolutePath());
+                } catch (Throwable ex) {
+                    android.util.Log.d("LCDEBUG", "export-dial fail artwork " + ex);
+                }
+            }, 400);
+            return;
+        }
+
         if ("native".equals(kind)) {
             if (compassView == null) {
                 android.util.Log.d("LCDEBUG", "export-dial skip-A native: no compassView");

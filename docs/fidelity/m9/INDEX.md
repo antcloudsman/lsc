@@ -6,6 +6,13 @@
 - 顶点：**`d7bd568`**（`app` 树 `63ca60a`）；`map.html` `blob:1a2dbdfb` / `sha256:eb3cb6f9…`（213,187 B）
 - 本阶段五道门禁 + 七门 smoke 的退出码与参数行：`E:\APPDetector\reports\m9-stage4-d7bd568\`
   （`gate1..4.log`、`gate3b.log`、`gate3-def.log`、smoke 摘要见 `E:\APPDetector\reports\m9-stage4-smoke.log`）
+- 证据目录（按事项）：A `reports/m9-a-100ba25\`、`reports/m9-a-verify-541431a\`｜B `reports/m9-l2a-bare-d7bd568\`｜
+  C `reports/m9-c-conflict-marker\`｜门禁 `reports/m9-stage4-d7bd568\`
+- 签名评估：`docs/fidelity/m9/release-signing-eval.md`（结论：**本轮不配 release 签名**；代价=包 sha 全变、必须卸载重装、
+  削弱 debuggable 验收入口；触发条件=给他人安装/上架/过厂商安装器）
+- 快照口径：本文件所列顶点/blob/读数均为 **2026-11-10 快照**；版本与计数以
+  `docs/product/m7-eight-final-states.md` 为唯一权威，本文件只引用、不另立数字
+
 
 ## 三件事的状态
 
@@ -25,7 +32,12 @@
 
 ## 未结与提请注意
 
-- 终态表在树内为 **v1.19**（已知差 2 项，仍含「贴地盘面不跟随」）；产品侧 M9-A 关闭该条的版本未在本顶点，需合并后由产品同步计数。
+- 终态表在树内为 **v1.19**（已知差 2 项，仍含「贴地盘面不跟随」）；产品侧 `2a1c36b`（v1.20）已备好、
+  合入后即 v1.20（已知差 1 项，仅剩 B1）。**合并前不得按 1 项关账，也不得按 2 项结项**。
 - ④⑤（逐环存在性/半径）在真实图上**测不到环**，按裁定记「不可测」，不得据此签「画得像」。
 - 已知缺陷 M9-D1：`groundCanvasMeta().dialPx` 输出画布边长、`off` 未取整；取数一律用 `w×0.37725`，修法进 M10。
 - 帮助中心图数 29、尺寸规则 7 条（覆盖 22+6+1），门禁② 全绿。
+- 关账备注（范围限定）：`挂起/待核对/未验证` 在**终态表与本 INDEX 为 0**；仓库历史文献
+  （`m3-plan.md`、`00-FINAL.md`、`checksheet.md` 规则原文等）仍有这些字样，属历史记录与规则引用，
+  **不得宣称「全仓命中 0」**——清零需改冻结文献，违反纪律。
+

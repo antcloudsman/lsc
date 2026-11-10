@@ -1930,6 +1930,31 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         js("setUiMode('" + mode + "')");
     }
 
+    /**
+     * M9-A：把当前盘面类型与透明度推给页面，让**贴地画布**跟随切换与透明度。
+     *
+     * <p>根因（地图 2026-11-09 查实）：{@code compassDialType}/{@code compassDialAlpha}
+     * 在 map.html 里只有读方（三处 {@code typeof} 守卫），全仓没有赋值方 ——
+     * 所以贴地画布永远画 {@code dial_full_0} + alpha 1，用户换盘面它不变。
+     *
+     * <p>为什么由原生推而不是页面自己取：页面拿不到原生的「切换 / 透明度」控件状态，
+     * 那两处改的是原生 {@code CompassView}。
+     *
+     * <p>页面侧没有 {@code setCompassDial} 时静默跳过（守卫），不影响老页面。
+     */
+    private void pushCompassDial() {
+        if (compassMapView == null) return;
+        int type = prefs.getInt("dial_index", 0);
+        int pct = (compassDisplay != null) ? compassDisplay.alphaPercent() : 100;
+        // 钳到页面契约的取值域（页面侧也会钳位，这里只是不给它超界值）
+        if (type < 0) type = 0;
+        else if (type > 4) type = 4;
+        float alpha = pct / 100f;
+        js("(typeof setCompassDial==='function')&&setCompassDial(" + type + "," + alpha + ")");
+        android.util.Log.d("LCCOMPASS", "push dial type=" + type + " alpha=" + alpha
+                + " (pct=" + pct + ")");
+    }
+
     /** 应用落盘值；flag 关闭时回退默认（100% / 天支线关），不出现任何控件。 */
     private void applyCompassDisplay() {
         if (compassView == null || compassDisplay == null) return;
@@ -1939,6 +1964,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         android.util.Log.d("LCCOMPASS", "apply display f17=" + on + " alpha=" + alpha + " tianzhi=" + tianzhi);
         compassView.setDialAlpha(alpha / 100f);
         compassView.setTianzhiLines(tianzhi);
+        pushCompassDial();   // M9-A：贴地画布跟随
     }
 
     /** 罗盘工具条「透明度 / 天支线」打开的 LC 自建面板：滑杆 + 开关，即时生效并持久化。 */
@@ -1992,6 +2018,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 alphaValue.setText(percent + "%");
                 if (compassView != null) compassView.setDialAlpha(percent / 100f);
                 compassDisplay.setAlphaPercent(percent);
+                pushCompassDial();   // M9-A：透明度实时同步到贴地画布
             }
 
             @Override
@@ -4571,6 +4598,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     view.evaluateJavascript("try{setRidge(" + ridgeOn + ")}catch(e){}", null);
                     view.evaluateJavascript("try{setContour(" + contourOn + ")}catch(e){}", null);
                     view.evaluateJavascript("(typeof setGround==='function')&&setGround(" + groundOn + ")", null);
+                    // M9-A：页面重载后把盘面类型/透明度补推一次（onResume 那次可能早于页面就绪）
+                    pushCompassDial();
                     // M8：重放后回读一次贴地态，避免重载后原生盘面显隐停在旧值
                     syncGroundStateFromPage();
                     view.evaluateJavascript("(typeof setSitNorth==='function')&&setSitNorth(" + sitMode + ")", null);
@@ -4960,6 +4989,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // F-18：本机导入盘面优先（文件不存在时回退内置 dial_index）。
             String customDial = prefs.getString("dial_custom_path", "");
             compassView.setDialType(dial);
+            // M9-A：盘面切换（CompassListActivity 写回 dial_index 后返回）也要同步给贴地画布
+            pushCompassDial();
             if (customDial != null && !customDial.isEmpty()
                     && new java.io.File(customDial).exists()) {
                 compassView.setArtworkPath(customDial);

@@ -161,6 +161,17 @@ function staticChecks(src) {
     /groundDialUsed = dialType;/.test(stripComments(src))]);
   ls.push(["取图对账口给 faceKind / dialTypeUsed",
     /faceKind: groundFaceKind/.test(src) && /dialTypeUsed: groundDialUsed/.test(src)]);
+  /* M9-B bare 开关（总监批准解冻一次）：只画位图，默认关，产品不碰 */
+  var dc = stripComments(fnSource(src, "drawCompass"));
+  ls.push(["bare 时跳过外环/内环/刻度", /if \(!bare\) drawOutlineRings/.test(dc)]);
+  ls.push(["bare 时跳过天池与中心读数",
+    /if \(!bare && opts\.trustEnabled\)/.test(dc) && /if \(!bare && rd\)/.test(dc)]);
+  ls.push(["bare 默认关且只有显式开启才生效",
+    /var groundBareMode = false;/.test(src) &&
+    /function setGroundBare\(on\) \{[\s\S]{0,200}?groundBareMode = !!\(on === 1/.test(src)]);
+  ls.push(["bare 开关已导出，且两个读数口都带 bare",
+    /setGroundBare: setGroundBare/.test(src) &&
+    (src.match(/bare: groundBareMode/g) || []).length >= 2]);
   // 回退条件用页面 ground，不用原生镜像：页面侧只认 groundMode
   ls.push(["回退依据是页面状态（groundMode），不读原生 groundOn",
     !/groundOn/.test(setState) && !/groundOn/.test(stripComments(fnSource(src, "drawGroundCompass")))]);
@@ -316,7 +327,12 @@ var MUTATIONS = [
     "画布不烘透明度（dialAlpha 恒 1）"],  ["不置 dirty（画布不会重画/重传）",
     function (s) { return s.replace("  if (changed) groundTexDirty = true;   /* 只有真的变了才置脏：没变不白传一次纹理 */\n", ""); },
     "有变化 ⇒ changed=true 且置脏"],
-  ["只加函数不赋值（typeof 野变量重演）",
+  ["bare 时仍画叠加层（L2a 比较对象被污染）",
+    function (s) { return s.replace("    if (!bare) drawOutlineRings(ctx, cx, cy, r, u);", "    drawOutlineRings(ctx, cx, cy, r, u);"); },
+    "bare 时跳过外环/内环/刻度"],
+  ["bare 时仍画中心读数",
+    function (s) { return s.replace("  if (!bare && rd) {", "  if (rd) {"); },
+    "bare 时跳过天池与中心读数"],  ["只加函数不赋值（typeof 野变量重演）",
     function (s) { return s.replace(/if \(t !== compassDialType\) \{ compassDialType = t; changed = true; \}/, "if (t !== compassDialType) { changed = true; }"); },
     "setCompassDial 真赋值"],
   ["去掉钳位（type/alpha 越界）",

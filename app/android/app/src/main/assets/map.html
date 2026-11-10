@@ -2803,6 +2803,10 @@ function drawCompass(ctx, size, opts) {
   var WUXING = tab.wuxing || [];
   var RINGS = D.rings || [];
   var alpha = (opts.dialAlpha == null) ? 1 : Number(opts.dialAlpha);
+  /* bare=1：只画底盘位图，不画外环/内环/30° 刻度/天池/中心读数（M9-B L2a 方法用，默认关）。
+   * 用途：让「canvas 的位图绘制」与「原生 artwork 裸绘制」成为可比对象；
+   * 产品路径永不带这个开关，绘制语义不受影响。 */
+  var bare = !!opts.bare;
 
   ctx.clearRect(0, 0, size, size);
   ctx.save();
@@ -2811,14 +2815,14 @@ function drawCompass(ctx, size, opts) {
   /* 1) 底盘位图（dial_full_N） */
   if (opts.dialImg) {
     ctx.drawImage(opts.dialImg, cx - r, cy - r, r * 2, r * 2);
-    drawOutlineRings(ctx, cx, cy, r, u);
+    if (!bare) drawOutlineRings(ctx, cx, cy, r, u);
   } else {
     /* 无位图时走矢量路径（与原生命令一致），保证任何档位都不是空盘 */
     vectorFace(ctx, cx, cy, r, u, heading, dialType, MOUNTAINS, WUXING, RINGS);
   }
 
   /* 2) 天池 + 中心读数（位图/矢量两条路都要） */
-  if (opts.trustEnabled) {
+  if (!bare && opts.trustEnabled) {
     ctx.beginPath();
     ctx.arc(cx, cy, r * 0.085, 0, Math.PI * 2);
     ctx.lineWidth = 1.5 * u;
@@ -2833,7 +2837,7 @@ function drawCompass(ctx, size, opts) {
 
   /* 3) 中心读数：向 xx.x° / 山·五行 / 坐·阴阳（原样 30/17/13sp） */
   var rd = opts.reading;
-  if (rd) {
+  if (!bare && rd) {
     compassText(ctx, rd.heading.toFixed(1) + '°', cx, cy - 22 * 3.375 * u, 30 * 3.375 * u, '#ffffff', u);
     compassText(ctx, MOUNTAINS[rd.mountain] + '山 · ' + WUXING[rd.mountain],
       cx, cy + 10 * 3.375 * u, 17 * 3.375 * u, compassWuxingColor(WUXING[rd.mountain]), u);
@@ -3038,6 +3042,7 @@ var groundAlphaApplied = 1;       /* 最近一次真正传给 shader 的 alpha�
  * 为什么不能只用 groundCanvasSig 当时序锚点：sig 只随 dialType 变，同类型下的一次重绘
  * （透明度重算/纹理重建）不会改 sig ⇒ 守卫会放行旧图。取图前后 seq 相等才算同一状态。 */
 var groundRenderSeq = 0;
+var groundBareMode = false;       /* L2a 方法开关：只画位图（默认关；产品永不打开） */
 var groundFaceKind = 'none';      /* 画进画布的脸：'bitmap' | 'vector' | 'none'（还没画过） */
 var groundDialUsed = -1;          /* 那一次实际用的盘面档；与期望档不同即“换图还没生效” */
 function setCompassDial(type, alpha) {
@@ -3054,6 +3059,15 @@ function setCompassDial(type, alpha) {
   }
   if (changed) groundTexDirty = true;   /* 只有真的变了才置脏：没变不白传一次纹理 */
   return { type: compassDialType, alpha: compassDialAlpha, changed: changed, texDirty: groundTexDirty };
+}
+
+/* L2a 方法开关（M9-B，总监批准解冻一次）：bare=1 时贴地画布只画位图。
+ * 只影响 groundRedraw 的绘制分支；默认关，产品路径不会打开；不落盘、不改计数。 */
+function setGroundBare(on) {
+  groundBareMode = !!(on === 1 || on === true || on === '1' || on === 'true');
+  groundTexDirty = true;
+  if (groundMode && groundRenderer === 'canvas') { try { groundRedraw(); } catch (e) { } }
+  return groundBareMode;
 }
 
 /* 只读：贴地画布内容的数值指纹（验收用，不改渲染）。
@@ -3077,6 +3091,7 @@ function groundCanvasMeta() {
       dialPx: sz.px, off: (sz.px - sz.px * GROUND_DIAL_FRAC) / 2,
       dialType: compassDialType, dialAlpha: compassDialAlpha, alphaApplied: groundAlphaApplied,
       texDirty: groundTexDirty, sig: groundCanvasSig().sig, renderSeq: groundRenderSeq,
+      bare: groundBareMode,         /* L2a 方法开关当前值（两侧都必须为 true 才可比） */
       faceKind: groundFaceKind,     /* 画布里那张脸：bitmap 才可用于 L2a；vector 是降级盘 */
       dialTypeUsed: groundDialUsed, /* 画布实际用的档；与期望档不同说明换图还没生效 */
     };
@@ -3143,6 +3158,7 @@ function groundRedraw() {
     dialAlpha: 1,
     tianzhi: false,
     trustEnabled: false,
+    bare: groundBareMode,           /* 见 drawCompass：只画位图，不画环/刻度/读数 */
     dialImg: usingBmp ? groundImg : null,
     reading: rd
   });
@@ -4308,6 +4324,7 @@ window.__LC3D = {
       dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
       alphaApplied: groundAlphaApplied,   /* 实际乘进 shader 的值：应恒等于 dialAlpha */
       renderSeq: groundRenderSeq,        /* 重绘序号：取图前后相等才证明这张图是当前态 */
+      bare: groundBareMode,            /* L2a bare 模式是否生效 */
       faceKind: groundFaceKind,        /* bitmap | vector | none（vector 不可取图） */
       dialTypeUsed: groundDialUsed,    /* 画布实际档位；≠ 期望档 = 换图未生效 */
       texDirty: groundTexDirty,
@@ -4323,6 +4340,8 @@ window.__LC3D = {
   groundCanvasSig: groundCanvasSig,
   /* L2a 取图入口：小 JSON 对账 + 真实画布 PNG（不重画；大 payload 走回调落盘，别走 logcat） */
   groundCanvasMeta: groundCanvasMeta,
+  /* L2a：只画位图的开关（默认关）+ 当前值可读 */
+  setGroundBare: setGroundBare,
   groundCanvasPNG: groundCanvasPNG,
   setGroundBaseline: setGroundBaseline,
   /* 失败注入（审核验 G5/N6，11-09）：'glinit'|'upload'|'rings' 造失败态，null/false 复位。

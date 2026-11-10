@@ -3150,7 +3150,7 @@ function groundRedraw() {
   if (ok) {
     groundRenderSeq++;                       /* 只有真正画成功才算一次重绘（M9 B：时序锚点） */
     groundFaceKind = usingBmp ? 'bitmap' : 'vector';   /* 画时记录，不是读时推断 */
-    groundDialUsed = dialType;               /* 这一帧实际用的档（换图未解码时仍是旧值） */
+    groundDialUsed = dialType;               /* 目标档；未就绪时 faceKind='vector'，不要用本字段单独判就绪 */
   }
   groundTexDirty = true;
   return ok;

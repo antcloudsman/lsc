@@ -100,6 +100,40 @@ public class CompassView extends View {
         invalidate();
     }
 
+    /**
+     * M9-B（L2a 前置）：只读诊断 —— 当前是否成功加载**位图盘面**。
+     *
+     * <p>为什么需要它：{@code artwork == null} 时 {@link #onDraw} 走矢量线稿降级，
+     * 那时导出的 PNG 与 canvas 的位图盘面**不是同一种东西**，像素差异无法归因。
+     * 判据要求两侧 {@code faceKind} 都是 bitmap 才比（产品 2026-11-10 定）。
+     */
+    /**
+     * M9-B：仅供 export-dial 使用的临时位图替换。
+     *
+     * <p>**故意不调用 invalidate()**：替换只影响下一次 draw(Canvas)，不改屏幕显示。
+     * 导出结束必须用 {@link #currentArtwork()} 拿到的原图换回，否则后续 onDraw 会用导出版。
+     *
+     * <p>用途：L2a 要求两侧输入同一文件同一字节（审地图 2026-11-10）——
+     * 产品路径仍用 1024 png，导出时临时换成 assets 的 800 webp。
+     */
+    public void swapArtworkForExport(android.graphics.Bitmap bmp) {
+        this.artwork = bmp;
+    }
+
+    /** M9-B：当前位图引用（导出前保存、导出后换回）。 */
+    public android.graphics.Bitmap currentArtwork() {
+        return artwork;
+    }
+
+    public boolean hasArtwork() {
+        return artwork != null;
+    }
+
+    /** M9-B：位图盘面边长（无位图返回 0），供元数据与掩膜核对。 */
+    public int artworkWidth() {
+        return artwork == null ? 0 : artwork.getWidth();
+    }
+
     /** F-18：加载本机导入的盘面图（按长边 ≤1200 采样，防 OOM）；失败退回线稿。 */
     public void setArtworkPath(String path) {
         try {

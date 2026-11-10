@@ -163,6 +163,49 @@ def ring_runs(canvas: Image.Image, native: Image.Image, space: int) -> dict[str,
     return report
 
 
+def ring_radius_match(canvas: Image.Image, native: Image.Image, space: int, tol_px: float = 1.5) -> list[str]:
+    """逐环估半径：存在性判「有没有」，这条判「位置对不对」。
+
+    对每条环，在半径 r0±10px 内找「该半径上平均亮度最高」的位置作为实测半径，
+    两侧各估一次，|Δr| > tol_px 即判 FAIL（审地图建议的第 4 条，Δr ≤ 1.5px）。
+    """
+    ca = np.asarray(canvas.convert("L"), dtype=np.float64)
+    na = np.asarray(native.convert("L"), dtype=np.float64)
+    cx = cy = space / 2.0
+    angs = np.linspace(0, 2 * math.pi, 720, endpoint=False)
+    out = []
+
+    def best_radius(img: np.ndarray, r0: float) -> tuple[float, float]:
+        best_r, best_v = r0, -1.0
+        for dr in np.arange(-10.0, 10.01, 0.5):
+            r = r0 + dr
+            vals = []
+            for th in angs:
+                x = int(round(cx + r * math.cos(th)))
+                y = int(round(cy - r * math.sin(th)))
+                if 0 <= x < space and 0 <= y < space:
+                    vals.append(img[y, x])
+            v = float(np.mean(vals)) if vals else 0.0
+            if v > best_v:
+                best_v, best_r = v, r
+        return best_r, best_v
+
+    for frac in DIAL_RADII:
+        r0 = frac * (space / 2.0) - 1.0
+        rn, vn = best_radius(na, r0)
+        rc, vc = best_radius(ca, r0)
+        if vn < 20 or vc < 20:      # 该半径任一侧几乎没描边 → 不判（存在性判据负责）
+            continue
+        delta = abs(rn - rc)
+        flag = ""
+        if delta > tol_px:
+            flag = "  <-- FAIL"
+            out.append(f"r={frac:.2f} native={rn:.1f}px canvas={rc:.1f}px Δ={delta:.1f}px{flag}")
+        else:
+            out.append(f"r={frac:.2f} native={rn:.1f}px canvas={rc:.1f}px Δ={delta:.1f}px")
+    return out
+
+
 def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float) -> int:
     canvas = norm(open_rgba(canvas_png), space)
     native = norm(open_rgba(native_png), space)
@@ -191,6 +234,9 @@ def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | No
     runs = ring_runs(canvas, native, space)
     print("RING    : native_only=" + ("; ".join(runs["native_only"]) or "无") +
           " | canvas_only=" + ("; ".join(runs["canvas_only"]) or "无"))
+    rad = ring_radius_match(canvas, native, space)
+    print("RADIUS  : " + ("; ".join(rad) if rad else "无可测环（存在性判据负责）"))
+    radius_fail = [x for x in rad if "FAIL" in x]
 
     fails = []
     if baseline is None:
@@ -212,6 +258,11 @@ def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | No
         print("         ④环 FAIL（双向）")
     else:
         print("         ④环 PASS（双向无 ≥3° 段）")
+    if radius_fail:
+        fails.append("环半径 Δ>1.5px")
+        print(f"         ⑤半径 FAIL（{len(radius_fail)} 条超差）")
+    else:
+        print("         ⑤半径 PASS（Δ≤1.5px 或不可测）")
 
     print("L2A: " + ("FAIL — " + "; ".join(fails) if fails else "PASS"))
     return 1 if fails else 0
@@ -256,11 +307,20 @@ def selftest(space: int) -> int:
     de.arc([size / 2 - r, size / 2 - r, size / 2 + r, size / 2 + r], 0, 20, fill=(255, 255, 255, 255), width=6)
     extra.save(tmp / "extra20.png")
 
+    # 半径变异：把环整体外扩 3px（位置对、半径不对），Δr 判据必须红
+    rad3 = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    dr3 = ImageDraw.Draw(rad3)
+    for frac in DIAL_RADII:
+        r = frac * (size / 2.0) - 2 + 3
+        dr3.ellipse([size / 2 - r, size / 2 - r, size / 2 + r, size / 2 + r], outline=(212, 175, 55, 255), width=3)
+    rad3.save(tmp / "radius3.png")
+
     cases = [
         ("同图（绿）", tmp / "canvas.png", tmp / "same.png", 0),
         ("错位 1px（红）", tmp / "canvas.png", tmp / "shift1.png", 1),
         ("缺 10° 弧（红）", tmp / "gap10.png", tmp / "same.png", 1),
         ("多画 20° 弧（红，双向判）", tmp / "extra20.png", tmp / "same.png", 1),
+        ("环外扩 3px（红，半径判）", tmp / "radius3.png", tmp / "same.png", 1),
     ]
     fails = 0
     for name, c, n, expect in cases:

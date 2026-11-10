@@ -141,6 +141,16 @@ if ($m1.dialType -ne $DialType -or $m1.dialTypeUsed -ne $DialType) {
     Write-Output ("SKIP-C: 档位未生效 dialType=" + $m1.dialType + " dialTypeUsed=" + $m1.dialTypeUsed + " 期望 " + $DialType)
     exit 12
 }
+# 几何口径（地图 2026-11-10 确认）：groundCanvasMeta().dialPx 当前输出的是画布尺寸、off 未取整，
+# 不能直接引用；一律用 w × GROUND_DIAL_FRAC 自算，off 用取整后的 dial 反推（与 groundRedraw 逐位一致）。
+if ($null -ne $m1.w) {
+    $w = [int]$m1.w
+    $dial = [int][math]::Round($w * 0.37725)
+    $off = ($w - $dial) / 2.0
+    Write-Output ("GEOMETRY: canvas w=$w dial=$dial off=$off 盘心=(" + ($w / 2) + "," + ($w / 2) + ")  ← 由 w×0.37725 自算")
+}
+Write-Output ("KNOWN-DEFECT: groundCanvasMeta().dialPx 当前=画布尺寸、off 未取整 → 取数一律用 w×0.37725；修法进 M10")
+
 Write-Output ("META-LOCK = dialType=" + $m1.dialType + " dialTypeUsed=" + $m1.dialTypeUsed +
               " alphaApplied=" + $m1.alphaApplied + " faceKind=" + $m1.faceKind +
               " texDirty=" + $m1.texDirty + " seq=" + $m1.renderSeq + " sig=" + $m1.sig)

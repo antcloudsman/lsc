@@ -188,6 +188,14 @@ foreach ($side in 'canvas', 'native') {
         Write-Output "SKIP-A: $side 侧导出未落盘"; exit 10
     }
 }
+# 甲方案：canvas 侧的 bare 由页面开关承载（客户端 export-dial 的 --es bare 只作用于原生 view），
+# 所以这里显式调 __LC3D.setGroundBare(1)，取图后复位。
+if ($Bare) {
+    $r = JS 'JSON.stringify({ok:(typeof __LC3D.setGroundBare==="function")?String(__LC3D.setGroundBare(1)):"no-hook"})'
+    Write-Output "BARE-SET(canvas): $r"
+    Start-Sleep -Milliseconds 400
+}
+
 foreach ($side in 'canvas', 'native') {
     if ($CanvasOnly -and $side -eq 'native') { continue }
     if (-not (Export $side (Join-Path $OutDir "run2-$side.png"))) {

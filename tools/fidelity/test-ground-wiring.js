@@ -141,6 +141,26 @@ function staticChecks(src) {
     /groundAlphaApplied = \(typeof compassDialAlpha === 'number'\) \? compassDialAlpha : 1;/.test(src) &&
     /uniform1f\(groundLoc\.alpha, groundAlphaApplied\)/.test(src) &&
     /alphaApplied: groundAlphaApplied/.test(src)]);
+  /* L2a 取图入口（M9 B）：只读、不重画；PNG 只序列化现有像素 */
+  var meta = stripComments(fnSource(src, "groundCanvasMeta"));
+  var png = stripComments(fnSource(src, "groundCanvasPNG"));
+  ls.push(["groundCanvasMeta 给出画布尺寸/盘面偏移/alphaApplied（对账用）",
+    /dialPx:/.test(meta) && /off:/.test(meta) && /alphaApplied:/.test(meta)]);
+  ls.push(["groundCanvasPNG 只序列化、不重画（不许出现 groundRedraw）",
+    png.length > 0 && /toDataURL/.test(png) && !/groundRedraw/.test(png)]);
+  /* 时序锚点（M9 B，审地图第④条）：sig 只随 dialType 变，同类型重绘不改 sig ⇒ 必须有 renderSeq */
+  ls.push(["groundRenderSeq 在重绘成功后自增（时序锚点）",
+    /if \(ok\) \{[\s\S]{0,120}?groundRenderSeq\+\+;/.test(stripComments(src))]);
+  ls.push(["取图对账口同时给 sig 与 renderSeq",
+    /sig: groundCanvasSig\(\)\.sig, renderSeq: groundRenderSeq/.test(src) &&
+    /renderSeq: groundRenderSeq,/.test(src)]);
+  /* 换盘面时图要异步解码，没到会先画矢量降级盘（M9 B 时序洞）：必须记录“画进去的是哪一档位图” */
+  ls.push(["画时记录 faceKind（bitmap/vector，挡住矢量降级盘）",
+    /groundFaceKind = usingBmp \? 'bitmap' : 'vector';/.test(stripComments(src))]);
+  ls.push(["记录画布实际用的档 dialTypeUsed",
+    /groundDialUsed = dialType;/.test(stripComments(src))]);
+  ls.push(["取图对账口给 faceKind / dialTypeUsed",
+    /faceKind: groundFaceKind/.test(src) && /dialTypeUsed: groundDialUsed/.test(src)]);
   // 回退条件用页面 ground，不用原生镜像：页面侧只认 groundMode
   ls.push(["回退依据是页面状态（groundMode），不读原生 groundOn",
     !/groundOn/.test(setState) && !/groundOn/.test(stripComments(fnSource(src, "drawGroundCompass")))]);
@@ -285,7 +305,13 @@ var MUTATIONS = [
     function (s) { return s.replace("    try { tileOfflineBanner(); } catch (e) { }\n", ""); },
     "状态变化时刷新提示条"],  ["seq 不再递增（跨次读取无法判新旧）",
     function (s) { return s.replace("    groundSeq++;\n", ""); },
-    "状态变化才递增 seq"],  ["画布也烘 alpha（双重叠加 α²）",
+    "状态变化才递增 seq"],  ["不记录实际档位（矢量降级盘会被当位图）",
+    function (s) { return s.replace("    groundFaceKind = usingBmp ? 'bitmap' : 'vector';", "    groundFaceKind = 'bitmap';"); },
+    "画时记录 faceKind"],  ["重绘不自增 seq（旧图会被当新图）",
+    function (s) { return s.replace(/if \(ok\) \{[\s\S]{0,200}?groundRenderSeq\+\+;/, "if (ok) {"); },
+    "groundRenderSeq 在重绘成功后自增"],  ["取图口偷偷重画（图与读数不再对应）",
+    function (s) { return s.replace("    return groundCanvas.toDataURL('image/png');", "    try { groundRedraw(); } catch (e) { }\n    return groundCanvas.toDataURL('image/png');"); },
+    "groundCanvasPNG 只序列化、不重画"],  ["画布也烘 alpha（双重叠加 α²）",
     function (s) { return s.replace("    dialAlpha: 1,\n", "    dialAlpha: compassDialAlpha,\n"); },
     "画布不烘透明度（dialAlpha 恒 1）"],  ["不置 dirty（画布不会重画/重传）",
     function (s) { return s.replace("  if (changed) groundTexDirty = true;   /* 只有真的变了才置脏：没变不白传一次纹理 */\n", ""); },

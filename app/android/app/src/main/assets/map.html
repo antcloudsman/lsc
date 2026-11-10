@@ -3034,6 +3034,12 @@ var GROUND_CAM_COMPRESS = 0.35;
 var compassDialType = 0;          /* 0..4，对应 assets/compass/dial_full_<n>.webp */
 var compassDialAlpha = 1;         /* 0..1，用户选的透明度（画布不烘它，由 shader 乘） */
 var groundAlphaApplied = 1;       /* 最近一次真正传给 shader 的 alpha（读值=绘制值的证据） */
+/* 贴地画布重绘序号（M9 B）：每次 groundRedraw 成功自增。
+ * 为什么不能只用 groundCanvasSig 当时序锚点：sig 只随 dialType 变，同类型下的一次重绘
+ * （透明度重算/纹理重建）不会改 sig ⇒ 守卫会放行旧图。取图前后 seq 相等才算同一状态。 */
+var groundRenderSeq = 0;
+var groundFaceKind = 'none';      /* 画进画布的脸：'bitmap' | 'vector' | 'none'（还没画过） */
+var groundDialUsed = -1;          /* 那一次实际用的盘面档；与期望档不同即“换图还没生效” */
 function setCompassDial(type, alpha) {
   var changed = false;
   var t = Number(type);
@@ -3056,6 +3062,33 @@ function setCompassDial(type, alpha) {
  * ——画得对不对由 A1 区与 L2a 那些判据管，两者不要混用。
  * 注意：M9 A 起透明度**不进画布**（由 shader 乘），所以本指纹只随 dialType 变；
  * 验透明度请看 getGroundDebug().alphaApplied 或屏幕亮度比，不要指望 sig 变化。 */
+/* 只读取图入口（M9 B / L2a）：
+ *  - groundCanvasMeta()  小 JSON，给「这张图是不是当前态」的对账用（过 logcat 也不丢）
+ *  - groundCanvasPNG()   真实贴地画布的 PNG dataURL（**不重画**，只序列化现有像素）
+ * 传输注意：整幅 1456² PNG 的 base64 有上百 KB，**不能走 LCJS logcat**（行长会截断）；
+ * 应由原生用 evaluateJavascript 回调接收后解码落盘（adb pull 取走），或用复现台取。
+ * 这里只负责“给得出来”，不负责“塞回日志”。 */
+function groundCanvasMeta() {
+  try {
+    if (!groundCanvas) return { w: 0, h: 0, err: 'no-canvas' };
+    var sz = groundEnsureCanvas();
+    return {
+      w: groundCanvas.width, h: groundCanvas.height,
+      dialPx: sz.px, off: (sz.px - sz.px * GROUND_DIAL_FRAC) / 2,
+      dialType: compassDialType, dialAlpha: compassDialAlpha, alphaApplied: groundAlphaApplied,
+      texDirty: groundTexDirty, sig: groundCanvasSig().sig, renderSeq: groundRenderSeq,
+      faceKind: groundFaceKind,     /* 画布里那张脸：bitmap 才可用于 L2a；vector 是降级盘 */
+      dialTypeUsed: groundDialUsed, /* 画布实际用的档；与期望档不同说明换图还没生效 */
+    };
+  } catch (e) { return { w: 0, h: 0, err: (e && e.name) || 'error' }; }
+}
+function groundCanvasPNG() {
+  try {
+    if (!groundCanvas) return '';
+    return groundCanvas.toDataURL('image/png');   /* 只读快照，不触发任何重画 */
+  } catch (e) { return ''; }
+}
+
 function groundCanvasSig() {
   try {
     if (!groundCanvas) return { w: 0, h: 0, sig: 0, err: 'no-canvas' };
@@ -3081,6 +3114,10 @@ function groundRedraw() {
     groundImg.onload = function () { groundTexDirty = true; groundRedraw(); };
     groundImgDial = dialType;
   }
+  /* 这一帧画的是位图还是矢量降级盘？换盘面时 dial_full_N 要异步解码，图没到会先画 vectorFace；
+   * 只按 renderSeq 判断“画过了”会放行这张矢量图（M9 B，审地图指出的时序洞）。
+   * 所以把「这次实际用的是哪个盘的位图」记下来，取图守卫比它，而不是比时间。 */
+  var usingBmp = !!(groundImg && groundImg.complete && groundImg.naturalWidth > 0);
   var rd = null;
   try {
     rd = CompassDataReading(lastHeading);
@@ -3106,10 +3143,15 @@ function groundRedraw() {
     dialAlpha: 1,
     tianzhi: false,
     trustEnabled: false,
-    dialImg: (groundImg && groundImg.complete && groundImg.naturalWidth > 0) ? groundImg : null,
+    dialImg: usingBmp ? groundImg : null,
     reading: rd
   });
   ctx.restore();
+  if (ok) {
+    groundRenderSeq++;                       /* 只有真正画成功才算一次重绘（M9 B：时序锚点） */
+    groundFaceKind = usingBmp ? 'bitmap' : 'vector';   /* 画时记录，不是读时推断 */
+    groundDialUsed = dialType;               /* 目标档；未就绪时 faceKind='vector'，不要用本字段单独判就绪 */
+  }
   groundTexDirty = true;
   return ok;
 }
@@ -4265,6 +4307,9 @@ window.__LC3D = {
       dialType: (typeof compassDialType === 'number') ? compassDialType : 0,
       dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
       alphaApplied: groundAlphaApplied,   /* 实际乘进 shader 的值：应恒等于 dialAlpha */
+      renderSeq: groundRenderSeq,        /* 重绘序号：取图前后相等才证明这张图是当前态 */
+      faceKind: groundFaceKind,        /* bitmap | vector | none（vector 不可取图） */
+      dialTypeUsed: groundDialUsed,    /* 画布实际档位；≠ 期望档 = 换图未生效 */
       texDirty: groundTexDirty,
       hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),
       hasRings: !!COMPASS_RINGS,
@@ -4276,6 +4321,9 @@ window.__LC3D = {
   setCompassDial: setCompassDial,
   /* 只读画布指纹：验收判「画布有没有真的变」，不判「画得对不对」 */
   groundCanvasSig: groundCanvasSig,
+  /* L2a 取图入口：小 JSON 对账 + 真实画布 PNG（不重画；大 payload 走回调落盘，别走 logcat） */
+  groundCanvasMeta: groundCanvasMeta,
+  groundCanvasPNG: groundCanvasPNG,
   setGroundBaseline: setGroundBaseline,
   /* 失败注入（审核验 G5/N6，11-09）：'glinit'|'upload'|'rings' 造失败态，null/false 复位。
    * 只影响贴地绘制通道的判定，不碰相机/贴地状态/产品按钮；复位后下一帧走真实路径。 */

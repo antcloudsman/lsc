@@ -249,7 +249,7 @@ def alpha_shape_check(img: Image.Image) -> dict:
     return {"ok": ok, "inner": inner_frac, "outer_zero": outer_frac_zero, "cover": cover}
 
 
-def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float, mask_mode: str = "canvas", exclude_center: float = 0.0) -> int:
+def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float, mask_mode: str = "canvas", exclude_center: float = 0.0, block_min: int = 30, block_diff: int = 32) -> int:
     canvas = norm(open_rgba(canvas_png), space)
     native = norm(open_rgba(native_png), space)
     sigma = sigma_for(space)
@@ -289,19 +289,30 @@ def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | No
     print("RING    : native_only=" + ("; ".join(runs["native_only"]) or "无") +
           " | canvas_only=" + ("; ".join(runs["canvas_only"]) or "无"))
     rad = ring_radius_match(canvas, native, space)
-    print("RADIUS  : " + ("; ".join(rad) if rad else "无可测环（存在性判据负责）"))
+    print("RADIUS  : " + ("; ".join(rad) if rad else "无可测环（存在性判据不可测，不计 PASS）"))
     radius_fail = [x for x in rad if "FAIL" in x]
+    ring_measurable = bool(rad)          # 真实图上标不出环 ⇒ 该项不可测（M9-D2）
+
+    # M9-D2（总监 2026-11-10 裁定）：主判改为「缺陷块绝对面积」——真实掩膜 215,021 px 下
+    # 多画 10° 弧只有 0.32%，比例阈值会放过多达 40° 的局部缺陷；块判据对局部缺陷更紧。
+    block_fail_detail = []
+    for area, bx, by, x0, y0, x1, y1 in bl:
+        if area < block_min:
+            continue
+        sub = d[y0:y1 + 1, x0:x1 + 1]
+        if sub.size and int(sub.max()) >= block_diff:
+            block_fail_detail.append((area, bx, by, int(sub.max())))
+    block_fail = bool(block_fail_detail)
 
     fails = []
-    if baseline is None:
-        fails.append("缺少控制组基线 B（--baseline 未给）：阈值不可判")
-        print("VERDICT : ①比例 SKIP（无 B）  ②环 " + ("FAIL" if (runs["native_only"] or runs["canvas_only"]) else "PASS"))
-    else:
-        lim = baseline + margin
-        pct_fail = pct > lim
-        print(f"VERDICT : ①比例 {'FAIL' if pct_fail else 'PASS'}（{pct:.2f}% vs B+{margin}={lim:.2f}%，B={baseline:.2f}%）")
-        if pct_fail:
-            fails.append(f"比例 {pct:.2f}% > {lim:.2f}%")
+    if block_fail:
+        a0, x0_, y0_, mx = block_fail_detail[0]
+        fails.append(f"缺陷块 {a0}px@({x0_:.0f},{y0_:.0f}) maxdiff={mx} ≥{block_min}px/≥{block_diff}")
+    print(f"VERDICT : ①缺陷块 {'FAIL' if block_fail else 'PASS'}"
+          f"（阈值 面积≥{block_min}px 且 块内最大通道差≥{block_diff}）"
+          + (f"；首个 {block_fail_detail[0][0]}px@({block_fail_detail[0][1]:.0f},{block_fail_detail[0][2]:.0f}) "
+             f"max={block_fail_detail[0][3]}" if block_fail else ""))
+    print(f"          （报告项，不作签署依据）占比 {pct:.2f}%、mean {float(d[mask].mean()):.2f}、max {int(d[mask].max())}")
     if best != (0, 0) or margin_pct < 15.0:
         fails.append(f"对齐 最佳={best} 余量={margin_pct:.1f}%")
         print(f"         ③对齐 FAIL（最佳 {best}，余量 {margin_pct:.1f}% < 15%）")
@@ -310,15 +321,20 @@ def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | No
     if runs["native_only"] or runs["canvas_only"]:
         fails.append("环存在性有 ≥3° 差异段")
         print("         ④环 FAIL（双向）")
+    elif not ring_measurable:
+        print("         ④环 不可测（真实图未标出环半径，不计 PASS，也不判 FAIL）")
     else:
         print("         ④环 PASS（双向无 ≥3° 段）")
     if radius_fail:
         fails.append("环半径 Δ>1.5px")
         print(f"         ⑤半径 FAIL（{len(radius_fail)} 条超差）")
+    elif not ring_measurable:
+        print("         ⑤半径 不可测（同 ④）")
     else:
-        print("         ⑤半径 PASS（Δ≤1.5px 或不可测）")
+        print("         ⑤半径 PASS（Δ≤1.5px）")
 
-    print("L2A: " + ("FAIL — " + "; ".join(fails) if fails else "PASS"))
+    print("L2A: " + ("FAIL — " + "; ".join(fails) if fails else
+                    ("PASS" if ring_measurable else "PASS(①③) / ④⑤ 不可测，不得据此签「画得像」")))
     return 1 if fails else 0
 
 

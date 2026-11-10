@@ -213,7 +213,52 @@ backend/docker-compose.yml（develop 上已跟踪）
 
 ## 8. 未覆盖 / 待补
 
+<<<<<<< HEAD
 - **门禁与七门 smoke 在 `1bb650c` 上由 LC测试 执行（本节留槽，不预填结果）**：命令 = 七门 smoke + 四道门禁，其中 ② 必须带双参数 `--expect-size 1228x2700 --expect-size-map tools/fidelity/evidence-size-map.json`，按 **29 张 + 7 条规则**判；证据头须含：顶点 sha、`app` 树、APK 字节+`sha256:`、图数 29、规则数 7、覆盖情况（22 默认 + 6 裁切 + 1 显式）、以及**规则命中数 7/7**（待工具补「命中 0 文件即 WARN/FAIL」后可写）。**输出未到之前本文件不写任何门禁结论。**
+=======
+- **门禁是五道，不是四道（技术总监 2026-11-10 纠正）**。原文：任务定义里 ③ = `evidence-lint --root docs/fidelity`；而 LC测试 首版记录里 `GATE3_CMD` 写的是 `fidelity.py report --root docs/fidelity`——**两套检查，都 exit 0，但验的不是同一件事**（前者扫 144 个文件查重复与 allowlist，后者比 27/65 对图并校验 checksheet_id）。按定义 ③ 在首版记录里**没跑过**，故 `fidelity.py report` 单列为 **③b**，不顶替 ③：
+
+```
+① assets.py verify                          ⑤ 之外的第一道
+② evidence-lint --root …/lc-help（双参数）
+③ evidence-lint --root docs/fidelity        ← 任务定义里的那道
+③b fidelity.py report --root docs/fidelity  ← 额外那道，单独编号，不顶替 ③
+④ help sha（--generated-html + --source）
+```
+
+- **七门 smoke（LC测试，`d260b78`，`pwsh -NoProfile -File scripts\smoke.ps1 -SkipDevice`，exit 0）**：`copy / secret / desktop / numeric（85 tests，0 fail）/ mech-src / android / ground` 全 PASS；`desktop`：`cargo_exit=0`、png `1100×780` / 266,376 B、`mechanics_values=19`、`estimated=0`；`android`：`assembleDebug BUILD SUCCESSFUL in 43s`；`ground`：`M8-GROUND PASS`、`NEGATIVES PASS（N0–N5）`。
+- **门禁包（门禁副产物，非关账基线）**：`12,470,938 B` / `sha256:123e75f1965fd2c0dcc1a73b0251403c2fd5081f28745dc66d31f636433c2ea3`；原件 `E:\APPDetector\reports\m8-gates-d260b78\exit-codes.txt`（5,525 B、LF、无 BOM）。
+- **四道门禁我在 `d260b78` 干净树（`git status --porcelain` = 0 行）上本人复跑，exit 全 0**：
+
+```
+① python tools/fidelity/assets.py verify
+   [PASS] verify: 103 file(s), 103 manifest entr(ies), 103 provenance row(s); sha256 + provenance + APK source all match   exit=0
+② python tools/fidelity/evidence-lint.py --root app/android/app/src/main/assets/lc-help \
+     --expect-size 1228x2700 --expect-size-map tools/fidelity/evidence-size-map.json
+   SIZE-MAP: 7 rule(s)
+   SIZE-MAP-COVERAGE: rules 7/7 matched; files by rule=7 by default=22
+   DUP: files=29 unique=29 duplicated=0 redundant=0
+   EVIDENCE-LINT: scanned xml=0 png=29 other=1 fail=0 warn=0 allowed=0        exit=0
+③ python tools/fidelity/evidence-lint.py --root docs/fidelity
+   SIZE: SKIP (no --expect-size and no --expect-size-map: images are NOT size-checked)
+   DUP: files=138 unique=136 duplicated=4 redundant=2
+   EVIDENCE-LINT: scanned xml=155 png=138 other=149 fail=0 warn=0 allowed=3    exit=0
+   ↑ LC测试 按定义补跑后与我本人这次输出**逐项相同**（138/136/4/2、155/138/149、fail=0 warn=0 allowed=3），互证成立。
+   注：③ 里出现 `SIZE: SKIP` 属**设计如此**——尺寸检查在 ② 用双参数做，③ 不做尺寸；这行是「不静默冒充通过」的提示，不是漏检。
+③b python tools/fidelity/fidelity.py report --root docs/fidelity   （LC测试 记录）
+   27/65 pair compared，26 对登记 known-red 未比较，checksheet_id 29/29        exit=0
+④ python tools/fidelity/evidence-lint.py --generated-html …/lc-help/index.html --source docs/product/help-center.md
+   ROOT: SKIP evidence scan
+   EVIDENCE-LINT: scanned xml=0 png=0 other=0 fail=0 warn=0 allowed=0          exit=0
+   头部 @ 6a3ebdd988178d52fd0b1d7355f92228ac0833fb == md blob 6a3ebdd9…
+```
+
+- **④ 的正向输出只有 `fail=0`，不能自证它比了什么** —— LC测试 补了两次反证才敢判绿：改坏头部 sha → `FAIL generated … stale/mismatched (regenerate)` `exit 1`；删掉 `GENERATED` 整行 → `FAIL … missing header` `exit 1`。**且第一次反证是假绿**（替换模式漏了 `@` 后的空格，文件根本没被改到），加 `CHANGED=True` 断言后才变红——这与「参数给了没执行」「规则指向不存在的文件」同族，已记入 `exit-codes.txt` 第三节。
+
+- **「覆盖」现在能数出来，不再是一句「全过」**：`rules 7/7 matched` + `files by rule=7` + `by default=22` ⇒ **29 = 22 + 6 + 1**，其中 `fig-32` 走显式表条目。
+- **空转检查已有反证（我本人跑）**：把规则指向不存在的 `fig-99.*` → `SIZE-MAP-MISS … <- (0 files)` + `FAIL size-rule … declared-but-never-compared (idle rule)`，`exit=1`。⇒ 「无空转条目」这条现在有判据撑着。
+- **③ `other=149` 是本次实测值**，与 M7 时期的 `147` **不可比**（`docs/fidelity` 内容已变）；判据只认 `fail=0` 与 `allowed=3`，`other` 只作参照。
+>>>>>>> 1dea29c (docs(fidelity): M8 关账摘要 v1.4——门禁改记五道(③ evidence-lint + ③b fidelity.py 分列)；补七门 smoke/门禁包 sha256/④ 两次反证与假绿记录 [LC审成文])
 - **终态表第 7 条已改判**：`docs/product/m7-eight-final-states.md` **v1.5（`33cb119`，`blob:08fa04beca07d0e2723bba154d23f617b8e51274`，24,949 B / 187 行 / CR=0）**把第 7 条从「未实现」改为 **已验**，并附 G1/G2-A1/G3/G4/G5⑤ 读数。**规范文本以该表为准**，本文件只做索引。
 - **八条计数（按终态表 v1.5/v1.6）**：已验 **8**｜未实现 **0**｜原版不可得 **0**｜**BLOCKED 0 / 待复跑 1（账户页五判据）**｜已知差 **3 项**｜证据不可得 **1 项（3D 逐帧）**｜未做 **1 项（L2a）**。
 - **账户页已按技术总监裁定分两件事写**（见 §5）：采证障碍**已解除**，但五判据**未在登录态下复跑** ⇒ 记「已采证，五判据待复跑」，**不写「账户页已验」**。

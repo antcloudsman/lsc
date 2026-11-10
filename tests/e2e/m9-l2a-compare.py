@@ -249,10 +249,11 @@ def alpha_shape_check(img: Image.Image) -> dict:
     return {"ok": ok, "inner": inner_frac, "outer_zero": outer_frac_zero, "cover": cover}
 
 
-def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float, mask_mode: str = "canvas", exclude_center: float = 0.0, block_min: int = 30, block_diff: int = 32) -> int:
+def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float, mask_mode: str = "canvas", exclude_center: float = 0.0, block_min: int = 30, block_diff: int = 32, sigma_abs: float | None = None) -> int:
     canvas = norm(open_rgba(canvas_png), space)
     native = norm(open_rgba(native_png), space)
-    sigma = sigma_for(space)
+    # SIGMA 口径（2026-11-10 与地图对齐）：默认 σ=1.5 px @ 比较空间（绝对像素）；--sigma 可覆盖
+    sigma = sigma_abs if sigma_abs is not None else sigma_for(space)
     mask, d, n_mask = diff_with_mask(canvas, native, sigma, mask_mode)
     # C 区排除：中心三行读数随朝向实时变化（实测帧间 sig 就变），比它等于比「两个不同时刻的朝向」。
     # 判据表原文：C 文字区只判「三行都在、不叠字」，不比像素。
@@ -414,6 +415,7 @@ def main() -> int:
     ap.add_argument("--control", action="store_true", help="打印同实现控制组基线 B（素材两管线）")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--selftest-space", type=int, default=SPACE_DEFAULT)
+    ap.add_argument("--sigma", type=float, default=None, help="绝对 σ（px @ 比较空间）；不给则按物理等效 1.5×space/549")
     ap.add_argument("--exclude-center", type=float, default=0.0,
                     help="排除中心半径分数（×盘面半径）：C 区读数随朝向变，不参与像素比较")
     ap.add_argument("--mask", choices=["canvas", "union"], default="canvas",
@@ -470,7 +472,7 @@ def main() -> int:
         return 0
     if not (a.canvas and a.native):
         ap.error("需要 --canvas 与 --native（或 --selftest / --control）")
-    return compare(Path(a.canvas), Path(a.native), a.space, a.baseline, a.margin, a.mask, a.exclude_center)
+    return compare(Path(a.canvas), Path(a.native), a.space, a.baseline, a.margin, a.mask, a.exclude_center, sigma_abs=a.sigma)
 
 
 if __name__ == "__main__":

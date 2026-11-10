@@ -32,7 +32,9 @@ param(
     [string]$Apk = '',            # 本次装的包；给了就做「树内↔包内」四步链校验
     [string]$TreeRoot = '',       # 构建用的树；空则用当前工作树
     [string]$Src = 'webp800',     # A′ 同源：export-dial --es src webp800（两侧喂同一文件字节）
-    [switch]$CanvasOnly,   # 只出 canvas 侧（几何+掩膜+指纹），native 侧待 cmd mode 落地
+    [switch]$CanvasOnly,   # 只出 canvas 侧（几何+掩膜+指纹）
+    [switch]$Bare,         # 甲方案：两侧都只画位图（bare=1），比「位图绘制是否忠实」
+    [double]$SigmaAbs = 1.5, # SIGMA 口径：绝对值 px @ 比较空间（与地图对齐；物理等效=1.5×space/549）
     [switch]$WhatIf
 )
 
@@ -40,6 +42,7 @@ $ErrorActionPreference = 'Stop'
 $pkg = 'com.luopan.fengshui'
 $remoteDir = "/sdcard/Android/data/$pkg/files"
 $cmp = Join-Path $PSScriptRoot 'm9-l2a-compare.py'
+$bareArg = if ($Bare) { ' --es bare 1' } else { '' }
 
 function JS([string]$code) {
     & adb -s $Device logcat -c | Out-Null
@@ -112,7 +115,7 @@ if ($Apk) {
 
 # ---- 契约探测：export-dial 是否落地（不落地 → SKIP-A）----
 $probeMissing = $false
-& adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value canvas:$Space --es src $Src" 2>&1 | Out-Null
+& adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value canvas:$Space --es src $Src$bareArg" 2>&1 | Out-Null
 Start-Sleep -Milliseconds 900
 if (((& adb -s $Device shell "ls $remoteDir/dial-canvas.png 2>/dev/null") -join '') -notmatch 'dial-') {
     $probeMissing = $true
@@ -150,6 +153,9 @@ if ($null -ne $m1.w) {
     $off = ($w - $dial) / 2.0
     Write-Output ("GEOMETRY: canvas w=$w dial=$dial off=$off 盘心=(" + ($w / 2) + "," + ($w / 2) + ")  ← 由 w×0.37725 自算")
 }
+if ($Bare) { Write-Output 'BARE   : 甲方案生效（两侧 bare=1，只画位图；环/刻度/中心文字/天支线/天池均不画）' }
+Write-Output ("SIGMA  : σ=$SigmaAbs px @ 比较空间（绝对像素；物理等效 $([math]::Round($SigmaAbs*$Space/549,2))）")
+Write-Output 'MASK   : union(canvas alpha>250 ∪ native alpha>250)，分母=掩膜像素数'
 Write-Output ("KNOWN-DEFECT: groundCanvasMeta().dialPx 当前=画布尺寸、off 未取整 → 取数一律用 w×0.37725；修法进 M10")
 
 Write-Output ("META-LOCK = dialType=" + $m1.dialType + " dialTypeUsed=" + $m1.dialTypeUsed +
@@ -158,7 +164,8 @@ Write-Output ("META-LOCK = dialType=" + $m1.dialType + " dialTypeUsed=" + $m1.di
 
 # ---- 取图：两轮（第二轮用于 B_noise）----
 function Export([string]$side, [string]$dst) {
-    & adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value $side`:$Space --es src $Src" 2>&1 | Out-Null
+    $bareArg = if ($Bare) { ' --es bare 1' } else { '' }
+    & adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value $side`:$Space --es src $Src$bareArg" 2>&1 | Out-Null
     Start-Sleep -Milliseconds 1200
     & adb -s $Device pull "$remoteDir/dial-$side.png" $dst 2>&1 | Out-Null
     return (Test-Path $dst)
@@ -264,7 +271,7 @@ Write-Output ("B_noise = " + $bn.ToString('F3') + "%  → margin = max(" + $Thre
 # ---- 正式判定（并集掩膜；参照物 = native）----
 Write-Output '--- L2a 判定 ---'
 & python $cmp --canvas (Join-Path $OutDir 'run1-canvas.png') --native (Join-Path $OutDir 'run1-native.png') `
-    --space $Space --baseline ([math]::Round($bn, 3)) --margin ([math]::Round($marginEff, 3)) --mask union --exclude-center 0.30 2>&1 |
+    --space $Space --baseline ([math]::Round($bn, 3)) --margin ([math]::Round($marginEff, 3)) --mask union --exclude-center 0.30 --sigma $SigmaAbs 2>&1 |
     ForEach-Object { Write-Output "  $_" }
 $rc = $LASTEXITCODE
 

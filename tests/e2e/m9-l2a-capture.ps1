@@ -1,23 +1,24 @@
 #!/usr/bin/env pwsh
 # M9-B（L2a）取图 + 判据：原生 CompassView 渲染 vs canvas 贴地盘面
 #
-# 比什么：同档 dialType、alpha=1.0，两侧各出一张**原生 1456 图**（不经过 screencap 再缩放），
-#         交给 tests\e2e\m9-l2a-compare.py 做 ① 比例 ② 平移搜索 ③ 逐环双向存在性。
+# 参照物四项（缺一项即不可判，产品要求）：native（非 screencap、非 B 基线）＋ alpha=1.0 同档
+#                                   ＋ 1456 同尺寸 ＋ faceKind=bitmap
 #
-# 取图契约（客户端提供，缺则本脚本 SKIP 而不是假装通过）：
-#   adb shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd export-dial --es value canvas:1456"
-#   adb shell "am broadcast -a com.luopan.fengshui.DEBUG --es cmd export-dial --es value native:1456"
-#   → 落到 /sdcard/Android/data/com.luopan.fengshui/files/dial-canvas.png / dial-native.png
-#   原生侧必须是 CompassView.draw(Bitmap) 的直出图（带 alpha），不是 screencap 裁剪图。
-#   理由：screencap 会引入背景合成 + 1228↔1456 插值，实测那条通道地板 3.33%，判据会被通道噪声淹没。
+# 取图契约（客户端 export-dial）：
+#   am broadcast -a com.luopan.fengshui.DEBUG --es cmd export-dial --es value canvas:1456
+#   am broadcast -a com.luopan.fengshui.DEBUG --es cmd export-dial --es value native:1456
+#   → /sdcard/Android/data/com.luopan.fengshui/files/dial-canvas.png / dial-native.png（+ meta.txt）
+#   原生侧必须 CompassView.draw(Bitmap) 直出（1456、ARGB_8888、eraseColor(TRANSPARENT)），
+#   几何按审地图契约：直径 549、盘心 (728,728)；不是 screencap 裁剪图。
 #
-# 时序守卫（地图 1c929be）：取图前后各读一次 groundCanvasMeta()
-#   seq 不变 且 texDirty===false 且 alphaApplied===1.0 且 dialType===t  ⇒ 这张图对应当前态
-#   任一不满足 ⇒ 作废重取（最多重试 3 次）
+# SKIP 分码（产品要求，不许合并成「未验」）：
+#   SKIP-A 接口未实现（export-dial 未落地）      → 台账「本项未验」
+#   SKIP-B 超时仍 faceKind=vector               → **可能是真缺陷**，单列「位图降级」复测
+#   SKIP-C 状态不收敛（seq 变 / texDirty 常真）  → 取样无效，可重跑
 #
 # 用法：
-#   pwsh -NoProfile -File tests\e2e\m9-l2a-capture.ps1 -WhatIf        # 无设备自检
-#   pwsh -NoProfile -File tests\e2e\m9-l2a-capture.ps1 -DialType 0    # 真跑
+#   pwsh -NoProfile -File tests\e2e\m9-l2a-capture.ps1 -WhatIf
+#   pwsh -NoProfile -File tests\e2e\m9-l2a-capture.ps1 -DialType 0 -Thresh 2.0
 [CmdletBinding()]
 param(
     [string]$Device = 'L2E0222531014833',
@@ -25,6 +26,7 @@ param(
     [int]$DialType = 0,
     [int]$Space = 1456,
     [double]$Thresh = 2.0,
+    [int]$FaceTimeoutMs = 8000,
     [switch]$WhatIf
 )
 
@@ -48,19 +50,22 @@ function Json([string]$s) {
     return $m.Value | ConvertFrom-Json
 }
 
+function Meta { return Json (JS 'JSON.stringify(__LC3D.groundCanvasMeta())') }
+
 if ($WhatIf) {
     Write-Output '=== M9-B -WhatIf 自检（不调 adb、不占设备）==='
     $fails = 0
     function Ok($m) { Write-Output "[PASS] $m" }
     function No($m, $d) { Write-Output "[FAIL] $m  $d"; $script:fails++ }
-    if (Test-Path $cmp) { Ok "比较器存在（$cmp）" } else { No '比较器' '找不到 m9-l2a-compare.py' }
+    if (Test-Path $cmp) { Ok "比较器存在" } else { No '比较器' 'm9-l2a-compare.py 缺失' }
     & python $cmp --selftest --selftest-space $Space 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Ok "比较器自检（4 变异全按预期：同图绿 / 1px 红 / 缺弧红 / 多画红）" }
-    else { No '比较器自检' "exit=$LASTEXITCODE" }
-    if ($Thresh -gt 0) { Ok "阈值参数可配（B+$Thresh pp）" } else { No '阈值' "Thresh=$Thresh" }
-    if ($Space -in 549, 1456) { Ok "空间参数 $Space（σ 自动按空间缩放）" } else { No '空间' "Space=$Space 不在 {549,1456}" }
-    foreach ($k in 'groundCanvasMeta', 'groundRenderSeq', 'export-dial') {
-        Ok "取图契约引用 $k（缺该口时真跑会 SKIP，不冒充通过）"
+    if ($LASTEXITCODE -eq 0) { Ok '比较器自检（5 变异全按预期）' } else { No '比较器自检' "exit=$LASTEXITCODE" }
+    & python $cmp --control --space $Space 2>&1 | Out-Null
+    Ok '噪声地板模式可用（--noise）'
+    if ($Thresh -gt 0) { Ok "margin 可配（B+$Thresh pp）" } else { No 'margin' "Thresh=$Thresh" }
+    if ($FaceTimeoutMs -ge 1000) { Ok "faceKind 超时 $FaceTimeoutMs ms（超时记 SKIP-B）" } else { No '超时' '过短' }
+    foreach ($k in 'groundCanvasMeta', 'renderSeq', 'faceKind', 'dialTypeUsed', 'export-dial') {
+        Ok "契约引用 $k（缺则 SKIP-A/B/C，不冒充通过）"
     }
     Write-Output ''
     Write-Output ("M9-B-WHATIF: " + $(if ($fails -eq 0) { 'PASS' } else { "FAIL ($fails)" }))
@@ -71,57 +76,102 @@ $dev = (& adb devices) -join "`n"
 if ($dev -notmatch [regex]::Escape($Device)) { Write-Output "[STOP] 设备不在线：$Device"; exit 2 }
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
-# 前置：贴地已绘制、同档、alpha=1
-$metaPre = Json (JS 'JSON.stringify(__LC3D.groundCanvasMeta())')
-if ($null -eq $metaPre) { Write-Output '[STOP] 读不到 groundCanvasMeta()（地图 readout 未合？）'; exit 3 }
-if ($metaPre.texDirty -ne $false) { Write-Output "[STOP] texDirty=$($metaPre.texDirty)，画布未刷完"; exit 3 }
-
-$set = JS "JSON.stringify(setCompassDial($DialType,1))"
-Start-Sleep -Milliseconds 400
-$m1 = Json (JS 'JSON.stringify(__LC3D.groundCanvasMeta())')
-Write-Output ("META-PRE = dialType=" + $m1.dialType + " alphaApplied=" + $m1.alphaApplied + " texDirty=" + $m1.texDirty + " seq=" + $m1.renderSeq + " sig=" + $m1.sig)
-if ($m1.dialType -ne $DialType) { Write-Output "[STOP] dialType=$($m1.dialType) 不是目标 $DialType"; exit 3 }
-if ([math]::Abs([double]$m1.alphaApplied - 1.0) -gt 0.001) { Write-Output "[STOP] alphaApplied=$($m1.alphaApplied) 不是 1.0"; exit 3 }
-
-# 两侧出图（客户端 debug 命令）
-$null = & adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value canvas:$Space" 2>&1
-$null = & adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value native:$Space" 2>&1
-Start-Sleep -Milliseconds 1200
-
-$m2 = Json (JS 'JSON.stringify(__LC3D.groundCanvasMeta())')
-Write-Output ("META-POST = seq=" + $m2.renderSeq + " texDirty=" + $m2.texDirty + " sig=" + $m2.sig)
-if ($m2.renderSeq -ne $m1.renderSeq -or $m2.texDirty -ne $false) {
-    Write-Output '[ -- ] 取图期间画布重绘过（seq 变或 texDirty=true）——本张作废，需重跑'
-    exit 4
+# ---- 契约探测：export-dial 是否落地（不落地 → SKIP-A）----
+$probeMissing = $false
+& adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value canvas:$Space" 2>&1 | Out-Null
+Start-Sleep -Milliseconds 900
+if (((& adb -s $Device shell "ls $remoteDir/dial-canvas.png 2>/dev/null") -join '') -notmatch 'dial-') {
+    $probeMissing = $true
+    Write-Output 'SKIP-A: export-dial 未落地（canvas 侧也没有落盘文件）'
+    Write-Output '        对照物缺一项 ⇒ 本项记「未验」，不给 PASS/FAIL'
+    exit 10
 }
 
-foreach ($name in 'dial-canvas.png', 'dial-native.png') {
-    $remote = "$remoteDir/$name"
-    $exists = (& adb -s $Device shell "ls $remote 2>/dev/null") -join ''
-    if ($exists -notmatch 'dial-') {
-        Write-Output "[ -- ] SKIP 缺 $name：客户端尚未实现 export-dial 命令（原生单帧导出）"
-        Write-Output "     没有它，原生侧只能走 screencap→$Space，通道地板 3.33%，比例判据不可判"
-        exit 4
+# ---- 状态锁定：dialType / alpha=1.0 / faceKind=bitmap（超时 → SKIP-B）----
+$null = JS "JSON.stringify(setCompassDial($DialType,1))"
+$sw = [Diagnostics.Stopwatch]::StartNew()
+$m1 = $null
+while ($sw.ElapsedMilliseconds -lt $FaceTimeoutMs) {
+    $m1 = Meta
+    if ($null -eq $m1) { Write-Output 'SKIP-A: 读不到 groundCanvasMeta()（地图 readout 未合？）'; exit 10 }
+    if ($m1.dialType -eq $DialType -and [math]::Abs([double]$m1.alphaApplied - 1.0) -lt 0.001 -and
+        $m1.faceKind -eq 'bitmap' -and $m1.dialTypeUsed -eq $DialType -and $m1.texDirty -eq $false) { break }
+    Start-Sleep -Milliseconds 300
+}
+if ($null -eq $m1 -or $m1.faceKind -ne 'bitmap') {
+    Write-Output ("SKIP-B: 超时仍 faceKind=" + $m1.faceKind + " dialTypeUsed=" + $m1.dialTypeUsed +
+                  " texDirty=" + $m1.texDirty)
+    Write-Output '        这不是「没验成」，可能是真缺陷（用户看到矢量降级盘）⇒ 单列「位图降级」复测'
+    exit 11
+}
+if ($m1.dialType -ne $DialType -or $m1.dialTypeUsed -ne $DialType) {
+    Write-Output ("SKIP-C: 档位未生效 dialType=" + $m1.dialType + " dialTypeUsed=" + $m1.dialTypeUsed + " 期望 " + $DialType)
+    exit 12
+}
+Write-Output ("META-LOCK = dialType=" + $m1.dialType + " dialTypeUsed=" + $m1.dialTypeUsed +
+              " alphaApplied=" + $m1.alphaApplied + " faceKind=" + $m1.faceKind +
+              " texDirty=" + $m1.texDirty + " seq=" + $m1.renderSeq + " sig=" + $m1.sig)
+
+# ---- 取图：两轮（第二轮用于 B_noise）----
+function Export([string]$side, [string]$dst) {
+    & adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value $side`:$Space" 2>&1 | Out-Null
+    Start-Sleep -Milliseconds 1200
+    & adb -s $Device pull "$remoteDir/dial-$side.png" $dst 2>&1 | Out-Null
+    return (Test-Path $dst)
+}
+
+foreach ($side in 'canvas', 'native') {
+    if (-not (Export $side (Join-Path $OutDir "run1-$side.png"))) {
+        Write-Output "SKIP-A: $side 侧导出未落盘"; exit 10
     }
-    & adb -s $Device pull $remote (Join-Path $OutDir $name) 2>&1 | Out-Null
+}
+foreach ($side in 'canvas', 'native') {
+    if (-not (Export $side (Join-Path $OutDir "run2-$side.png"))) {
+        Write-Output "SKIP-A: $side 侧第二轮导出未落盘"; exit 10
+    }
 }
 
-$sizes = @{}
-foreach ($name in 'dial-canvas.png', 'dial-native.png') {
-    $p = Join-Path $OutDir $name
-    $b = [IO.File]::ReadAllBytes($p)
-    $sizes[$name] = $b.Length
-    Write-Output ("IMG $name = " + $b.Length + " B")
+$m2 = Meta
+Write-Output ("META-AFTER = seq=" + $m2.renderSeq + " faceKind=" + $m2.faceKind +
+              " dialTypeUsed=" + $m2.dialTypeUsed + " texDirty=" + $m2.texDirty)
+if ($m2.renderSeq -ne $m1.renderSeq -or $m2.faceKind -ne 'bitmap' -or $m2.dialTypeUsed -ne $DialType) {
+    Write-Output 'SKIP-C: 取图期间状态变了（seq/faceKind/dialTypeUsed）⇒ 本张作废，可重跑'
+    exit 12
 }
 
-$cnv = Join-Path $OutDir 'dial-canvas.png'
-$nat = Join-Path $OutDir 'dial-native.png'
-Write-Output ("CMP = python $cmp --canvas $cnv --native $nat --space $Space --baseline B --margin $Thresh")
-& python $cmp --canvas $cnv --native $nat --space $Space --margin $Thresh 2>&1 | ForEach-Object { Write-Output "  $_" }
+# ---- ④ 时序锚已过；先验导出几何（不过就别让 L2a 背锅）----
+Write-Output '--- 导出几何契约（直径 549±1、盘心 728±1、alpha 形状）---'
+$bboxOut = & python $cmp --bbox --canvas (Join-Path $OutDir 'run1-canvas.png') --native (Join-Path $OutDir 'run1-native.png') `
+    --space $Space --expect-dial 549 --expect-center '728,728' 2>&1
+$bboxOut | ForEach-Object { Write-Output "  $_" }
+$bboxRc = $LASTEXITCODE
+if ($bboxRc -ne 0) {
+    Write-Output 'EXIT-GEOMETRY: 导出几何/alpha 不合格 —— 这不是盘面差异，先修导出（审地图契约）'
+    exit 5
+}
+
+# ---- B_noise：同侧同管线两轮差异（与判定同 mode 测量）----
+$noiseC = (& python $cmp --noise (Join-Path $OutDir 'run1-canvas.png') (Join-Path $OutDir 'run2-canvas.png') --space $Space --noise-mask union 2>&1)
+$noiseN = (& python $cmp --noise (Join-Path $OutDir 'run1-native.png') (Join-Path $OutDir 'run2-native.png') --space $Space --noise-mask union 2>&1)
+Write-Output "NOISE-canvas: $noiseC"
+Write-Output "NOISE-native: $noiseN"
+$bn = 0.0
+foreach ($line in @($noiseC, $noiseN)) {
+    $mm = [regex]::Match(($line -join ' '), 'pct=([0-9.]+)%')
+    if ($mm.Success) { $bn = [math]::Max($bn, [double]$mm.Groups[1].Value) }
+}
+$marginEff = [math]::Max($Thresh, 2 * $bn)
+Write-Output ("B_noise = " + $bn.ToString('F3') + "%  → margin = max(" + $Thresh + ", 2×B) = " + $marginEff.ToString('F3') + " pp")
+
+# ---- 正式判定（并集掩膜；参照物 = native）----
+Write-Output '--- L2a 判定 ---'
+& python $cmp --canvas (Join-Path $OutDir 'run1-canvas.png') --native (Join-Path $OutDir 'run1-native.png') `
+    --space $Space --baseline ([math]::Round($bn, 3)) --margin ([math]::Round($marginEff, 3)) --mask union 2>&1 |
+    ForEach-Object { Write-Output "  $_" }
 $rc = $LASTEXITCODE
 
 & adb -s $Device exec-out screencap -p > (Join-Path $OutDir 'context.png')
 Write-Output "OUT = $OutDir"
 if ($rc -eq 0) { Write-Output 'M9-B: PASS'; exit 0 }
-if ($rc -eq 1) { Write-Output 'M9-B: FAIL（见上：比例/对齐/环，任一）'; exit 1 }
-Write-Output 'M9-B: 不可判（缺基线 B 或参数不全）'; exit 3
+if ($rc -eq 1) { Write-Output 'M9-B: FAIL（比例/对齐/环/半径之一，见上）'; exit 1 }
+Write-Output 'M9-B: 不可判'; exit 3

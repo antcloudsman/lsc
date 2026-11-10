@@ -158,6 +158,17 @@ Write-Output ("SIGMA  : σ=$SigmaAbs px @ 比较空间（绝对像素；物理�
 Write-Output 'MASK   : union(canvas alpha>250 ∪ native alpha>250)，分母=掩膜像素数'
 Write-Output ("KNOWN-DEFECT: groundCanvasMeta().dialPx 当前=画布尺寸、off 未取整 → 取数一律用 w×0.37725；修法进 M10")
 
+# 甲方案守卫（地图 265e986 的三处读数）：bare 必须是页面真值，不靠人说。
+if ($Bare) {
+    $bareMeta = $m1.bare
+    $bareDbg = (Json (JS 'JSON.stringify({bare:__LC3D.getGroundDebug().bare})')).bare
+    Write-Output ("BARE-CHECK: meta.bare=" + $bareMeta + " getGroundDebug().bare=" + $bareDbg)
+    if ($bareMeta -ne $true -or $bareDbg -ne $true) {
+        Write-Output 'SKIP-C: -Bare 要求两侧都只画位图，但页面 bare 未生效（读数不是 true）'
+        exit 12
+    }
+}
+
 Write-Output ("META-LOCK = dialType=" + $m1.dialType + " dialTypeUsed=" + $m1.dialTypeUsed +
               " alphaApplied=" + $m1.alphaApplied + " faceKind=" + $m1.faceKind +
               " texDirty=" + $m1.texDirty + " seq=" + $m1.renderSeq + " sig=" + $m1.sig)

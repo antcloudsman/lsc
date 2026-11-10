@@ -269,7 +269,7 @@ backend/docker-compose.yml（develop 上已跟踪）
 - **空转检查已有反证（我本人跑）**：把规则指向不存在的 `fig-99.*` → `SIZE-MAP-MISS … <- (0 files)` + `FAIL size-rule … declared-but-never-compared (idle rule)`，`exit=1`。⇒ 「无空转条目」这条现在有判据撑着。
 - **③ `other=150` 为最终树 `7579e90` 实测值**（`d260b78` 时点值为 149，已被取代；M7 时期的 147 不可比）；判据只认 `fail=0` 与 `allowed=3`，`other` 只作参照。
 - **终态表第 7 条已改判为「已验」**：规范文本为 `docs/product/m7-eight-final-states.md`（**版本号与计数以该文件头部/§0 为准，本文件不另立数字**；该表已声明「唯一权威位置」）。本文件只做索引。
-- **八条计数**：以终态表为准（当前口径 = 已验 8｜未实现 0｜原版不可得 0｜BLOCKED 0｜待复跑 0｜已知差 3｜证据不可得 1｜未做 1 L2a）。**账户页五判据已于 2026-11-10 由 LC技术总监 复量签认（见 `docs/fidelity/m8/INDEX.md` 已结节），终态表改口「待复跑 0」尚待产品落笔**——两边不一致时以终态表为计数权威，此处不抢先改数。
+- **八条计数**：**纯引用** `docs/product/m7-eight-final-states.md` 的计数行（版本与计数以该表为唯一权威，本文件不抄数字、不另立口径）。账户页五判据已于 2026-11-10 由 LC技术总监 复量签认（见 `docs/fidelity/m8/INDEX.md` 已结节）。
 - **账户页**：采证障碍已解除；五判据（BOUNDS/STEP/THEME/CARRIER/TEXT + 红按钮像素）已由 LC技术总监 于 2026-11-10 复量签认 ⇒ 记「已采证 + 已签认」，见 `docs/fidelity/m8/INDEX.md`。
 - **L2a 强检验未做**（原生 `CompassView` vs canvas），记下一轮。
 - **贴地盘面不跟随 `dialType`/`dialAlpha`** 属真缺陷，下轮修，不改判据。

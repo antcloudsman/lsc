@@ -1,7 +1,7 @@
 # M8 关账摘要（罗盘贴地兑现 + 遗留收口）
 
 - 作者：LC审成文｜日期：**2026-11-10**｜版本：**v1.0**｜状态：**待 LC审核验 签字**（他负责的四项独立复核见 §3）
-- 基线：`develop` = **`1bb650c`**（`fig-32` 入册后的最终顶点）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**
+- 基线：`develop` = **`7579e90`**（**M8 最终冻结点**）；`app` 树 **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**
 - **⚠ `app` 树在 `fig-32` 入册时变了一次，必须标清**：`0c5da8e`（M8 全部真机读数所在树）→ **`b203750e`**，差异**只有两项**——
   `android/app/src/main/assets/lc-help/fig-32.webp`（新增 109,944 B）与 `.../lc-help/index.html`（+4/−2）。
   **`map.html`、`MainActivity`、`KmlIo`、全部 Java 零改动** ⇒ 贴地渲染与十字经线的真机读数在 `b203750e` 上继续成立；但台账**不得**写「门禁包与真机读数是同一棵 `app` 树」，正确写法是「**渲染相关零改动；差异仅在帮助中心静态资源**」。
@@ -14,13 +14,13 @@
 
 | 项 | 值 | 复查命令 |
 |---|---|---|
-| develop tip | **`1bb650c`**（`fig-32` 入册后最终顶点） | `git log -1 --format='%h %s' 1bb650c` |
-| app 子树 | **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**（真机读数所在树为 `0c5da8e`，差异仅 §基线说明两项） | `git rev-parse 1bb650c:app` |
-| `map.html` blob | `26d17e9ebf90299a95abfffc632c03f24d74081e`（`0c5da8e` 与 `b203750e` 相同） | `git rev-parse 1bb650c:app/android/app/src/main/assets/map.html` |
-| `help-center.md` blob | **`6a3ebdd988178d52fd0b1d7355f92228ac0833fb`** | `git rev-parse 1bb650c:docs/product/help-center.md` |
-| `index.html` 头部 `@` | **`6a3ebdd988178d52fd0b1d7355f92228ac0833fb`**（逐字符相同）；`index.html` blob `bf2142868b811184dfc4ff591fff63f9ddff546c` | `git show 1bb650c:…/lc-help/index.html \| head -1` |
-| `lc-help` webp 数 | **29**（`fig-32` 入册，109,944 B） | `git ls-tree -r --name-only 1bb650c -- …/lc-help \| grep -c '\.webp$'` |
-| 尺寸规则数 | **7**（6 裁切 + `fig-32` 显式整屏） | `git show 1bb650c:tools/fidelity/evidence-size-map.json \| grep -c 'lc-help/fig-'` |
+| develop tip | **`7579e90`**（M8 最终冻结点） | `git log -1 --format='%h %s' 7579e90` |
+| app 子树 | **`b203750ec6d71fd720f18187eb5ec15e97ef4a28`**（真机读数所在树为 `0c5da8e`，差异仅 §基线说明两项） | `git rev-parse 7579e90:app` |
+| `map.html` blob | `26d17e9ebf90299a95abfffc632c03f24d74081e`（`0c5da8e` 与 `b203750e` 相同） | `git rev-parse 7579e90:app/android/app/src/main/assets/map.html` |
+| `help-center.md` blob | **`6a3ebdd988178d52fd0b1d7355f92228ac0833fb`** | `git rev-parse 7579e90:docs/product/help-center.md` |
+| `index.html` 头部 `@` | **`6a3ebdd988178d52fd0b1d7355f92228ac0833fb`**（逐字符相同）；`index.html` blob `bf2142868b811184dfc4ff591fff63f9ddff546c` | `git show 7579e90:…/lc-help/index.html \| head -1` |
+| `lc-help` webp 数 | **29**（`fig-32` 入册，109,944 B） | `git ls-tree -r --name-only 7579e90 -- …/lc-help \| grep -c '\.webp$'` |
+| 尺寸规则数 | **7**（6 裁切 + `fig-32` 显式整屏） | `git show 7579e90:tools/fidelity/evidence-size-map.json \| grep -c 'lc-help/fig-'` |
 | 真机验收包 | `12,360,834 B` / `sha256:b306ce3d1876fa073512e3bf8da9e7dc6311bc40200cc8a19928cccd70bfa3d9` | `E:\APPDetector\reports\M8-final-d60a61d\app-debug.apk` |
 | 装机设备 | `L2E0222531014833` 单台串行，用后已释放（`LEASE: none`、anim 1/1/1、airplane=0） | 群内 `LEASE_RELEASED` 回执 |
 
@@ -150,8 +150,8 @@ red-on-current.log（旧树）   MAP_HTML 196,790 B
 > **技术总监裁定（2026-11-10，分两件事写，禁止合成一句）**：
 > - **解除的是「采证障碍」**（M8 的「账户页登录态采证」这条达成）——**BLOCKED ≠ 仍在**。
 > - **不是「四页 1:1 五判据复跑通过」**：`TEXT/BOUNDS/STEP/CARRIER/THEME` 没有在登录态下重跑。
-> ⇒ 账户页定档：**「已采证，五判据待复跑」**；责任：**下一轮首项**；缺失证据：**一次登录态下的五判据读数**。
-> ⇒ 计数栏写 **BLOCKED 0 / 待复跑 1**，**不得**写成「账户页已验」——那是拿「采到了证据」冒充「判据通过」。
+> ⇒ 账户页定档：**「已采证 + 五判据已签认」**（签字人 LC技术总监，2026-11-10；原验收人 LC审核验 八次上下文超限缺位，缺位原因已记录）。
+> ⇒ 计数栏写 **BLOCKED 0 / 待复跑 0**（账户页五判据已于 2026-11-10 由 **LC技术总监** 复量签认，见 `docs/fidelity/m8/INDEX.md` 已结节）；原验收人 LC审核验 八次上下文超限缺位，**记录缺位原因，不写「审核验已签」**。
 | **about 落点 3px** | 已定位未修（`includeFontPadding`，公式少算 3px） | 复拍复核，见 `about-new.png`；**是否闭环以 LC客户端 的报告与 LC审核验 的复量为准**，本文件不代判 | `E:\APPDetector\reports\m8-ink\about-new.png`（83,755 B） |
 | **`fig-32` 真展开态** | 图已撤下，记 CONFIRMED-MISSING | **已采到并走完五步**（LC客户端，分支 `feature/客户端-fig32-real` = `2eb18be`，基于 `73886ed`）：①「读盘」按**代码布局值** `(106,2114)` 进入罗盘读盘弹层；②点「地盘正针二十四山」行体 `(506,1706)`；③dump 证明**七行里正好这一行**展开——`地盘正针二十四山 [54,1670][751,1743]` + `向：子山　坐：午山 [751,1675][1174,1738]`，其余六行仍是「点击查看 ›」 | 落树后 `lc-help` **28→29**、`index.html` 重生成（`@6a3ebdd9`）、尺寸规则 **6→7**；采集件 `fig-32.webp` 1228×2700 / 109,944 B / `sha256:32F93E87…` |
 
@@ -226,9 +226,6 @@ backend/docker-compose.yml（develop 上已跟踪）
 
 ## 8. 未覆盖 / 待补
 
-<<<<<<< HEAD
-- **门禁与七门 smoke 在 `1bb650c` 上由 LC测试 执行（本节留槽，不预填结果）**：命令 = 七门 smoke + 四道门禁，其中 ② 必须带双参数 `--expect-size 1228x2700 --expect-size-map tools/fidelity/evidence-size-map.json`，按 **29 张 + 7 条规则**判；证据头须含：顶点 sha、`app` 树、APK 字节+`sha256:`、图数 29、规则数 7、覆盖情况（22 默认 + 6 裁切 + 1 显式）、以及**规则命中数 7/7**（待工具补「命中 0 文件即 WARN/FAIL」后可写）。**输出未到之前本文件不写任何门禁结论。**
-=======
 - **门禁是五道，不是四道（技术总监 2026-11-10 纠正）**。原文：任务定义里 ③ = `evidence-lint --root docs/fidelity`；而 LC测试 首版记录里 `GATE3_CMD` 写的是 `fidelity.py report --root docs/fidelity`——**两套检查，都 exit 0，但验的不是同一件事**（前者扫 144 个文件查重复与 allowlist，后者比 27/65 对图并校验 checksheet_id）。按定义 ③ 在首版记录里**没跑过**，故 `fidelity.py report` 单列为 **③b**，不顶替 ③：
 
 ```
@@ -239,9 +236,9 @@ backend/docker-compose.yml（develop 上已跟踪）
 ④ help sha（--generated-html + --source）
 ```
 
-- **七门 smoke（LC测试，`d260b78`，`pwsh -NoProfile -File scripts\smoke.ps1 -SkipDevice`，exit 0）**：`copy / secret / desktop / numeric（85 tests，0 fail）/ mech-src / android / ground` 全 PASS；`desktop`：`cargo_exit=0`、png `1100×780` / 266,376 B、`mechanics_values=19`、`estimated=0`；`android`：`assembleDebug BUILD SUCCESSFUL in 43s`；`ground`：`M8-GROUND PASS`、`NEGATIVES PASS（N0–N5）`。
+- **七门 smoke（LC测试，最终冻结点 `7579e90`，`pwsh -NoProfile -File scripts\smoke.ps1 -SkipDevice`，exit 0）**：`copy / secret / desktop / numeric（85 tests，0 fail）/ mech-src / android / ground` 全 PASS；`desktop`：`cargo_exit=0`、png `1100×780` / 266,376 B、`mechanics_values=19`、`estimated=0`；`android`：`assembleDebug BUILD SUCCESSFUL in 43s`；`ground`：`M8-GROUND PASS`、`NEGATIVES PASS（N0–N5）`。
 - **门禁包（门禁副产物，非关账基线）**：`12,470,938 B` / `sha256:123e75f1965fd2c0dcc1a73b0251403c2fd5081f28745dc66d31f636433c2ea3`；原件 `E:\APPDetector\reports\m8-gates-d260b78\exit-codes.txt`（5,525 B、LF、无 BOM）。
-- **四道门禁我在 `d260b78` 干净树（`git status --porcelain` = 0 行）上本人复跑，exit 全 0**：
+- **门禁我在 `d260b78` 与 `7579e90` 两棵干净树上分别复跑，exit 全 0；下列为 `d260b78` 那次原文，`7579e90` 仅 ③ 的 `other` 变为 150（文件数+1），其余逐项相同**：
 
 ```
 ① python tools/fidelity/assets.py verify
@@ -255,7 +252,7 @@ backend/docker-compose.yml（develop 上已跟踪）
 ③ python tools/fidelity/evidence-lint.py --root docs/fidelity
    SIZE: SKIP (no --expect-size and no --expect-size-map: images are NOT size-checked)
    DUP: files=138 unique=136 duplicated=4 redundant=2
-   EVIDENCE-LINT: scanned xml=155 png=138 other=149 fail=0 warn=0 allowed=3    exit=0
+   EVIDENCE-LINT: scanned xml=155 png=138 other=150 fail=0 warn=0 allowed=3    exit=0
    ↑ LC测试 按定义补跑后与我本人这次输出**逐项相同**（138/136/4/2、155/138/149、fail=0 warn=0 allowed=3），互证成立。
    注：③ 里出现 `SIZE: SKIP` 属**设计如此**——尺寸检查在 ② 用双参数做，③ 不做尺寸；这行是「不静默冒充通过」的提示，不是漏检。
 ③b python tools/fidelity/fidelity.py report --root docs/fidelity   （LC测试 记录）
@@ -270,11 +267,10 @@ backend/docker-compose.yml（develop 上已跟踪）
 
 - **「覆盖」现在能数出来，不再是一句「全过」**：`rules 7/7 matched` + `files by rule=7` + `by default=22` ⇒ **29 = 22 + 6 + 1**，其中 `fig-32` 走显式表条目。
 - **空转检查已有反证（我本人跑）**：把规则指向不存在的 `fig-99.*` → `SIZE-MAP-MISS … <- (0 files)` + `FAIL size-rule … declared-but-never-compared (idle rule)`，`exit=1`。⇒ 「无空转条目」这条现在有判据撑着。
-- **③ `other=149` 是本次实测值**，与 M7 时期的 `147` **不可比**（`docs/fidelity` 内容已变）；判据只认 `fail=0` 与 `allowed=3`，`other` 只作参照。
->>>>>>> 1dea29c (docs(fidelity): M8 关账摘要 v1.4——门禁改记五道(③ evidence-lint + ③b fidelity.py 分列)；补七门 smoke/门禁包 sha256/④ 两次反证与假绿记录 [LC审成文])
-- **终态表第 7 条已改判**：`docs/product/m7-eight-final-states.md` **v1.5（`33cb119`，`blob:08fa04beca07d0e2723bba154d23f617b8e51274`，24,949 B / 187 行 / CR=0）**把第 7 条从「未实现」改为 **已验**，并附 G1/G2-A1/G3/G4/G5⑤ 读数。**规范文本以该表为准**，本文件只做索引。
-- **八条计数（按终态表 v1.5/v1.6）**：已验 **8**｜未实现 **0**｜原版不可得 **0**｜**BLOCKED 0 / 待复跑 1（账户页五判据）**｜已知差 **3 项**｜证据不可得 **1 项（3D 逐帧）**｜未做 **1 项（L2a）**。
-- **账户页已按技术总监裁定分两件事写**（见 §5）：采证障碍**已解除**，但五判据**未在登录态下复跑** ⇒ 记「已采证，五判据待复跑」，**不写「账户页已验」**。
+- **③ `other=150` 为最终树 `7579e90` 实测值**（`d260b78` 时点值为 149，已被取代；M7 时期的 147 不可比）；判据只认 `fail=0` 与 `allowed=3`，`other` 只作参照。
+- **终态表第 7 条已改判为「已验」**：规范文本为 `docs/product/m7-eight-final-states.md`（**版本号与计数以该文件头部/§0 为准，本文件不另立数字**；该表已声明「唯一权威位置」）。本文件只做索引。
+- **八条计数**：以终态表为准（当前口径 = 已验 8｜未实现 0｜原版不可得 0｜BLOCKED 0｜待复跑 0｜已知差 3｜证据不可得 1｜未做 1 L2a）。**账户页五判据已于 2026-11-10 由 LC技术总监 复量签认（见 `docs/fidelity/m8/INDEX.md` 已结节），终态表改口「待复跑 0」尚待产品落笔**——两边不一致时以终态表为计数权威，此处不抢先改数。
+- **账户页**：采证障碍已解除；五判据（BOUNDS/STEP/THEME/CARRIER/TEXT + 红按钮像素）已由 LC技术总监 于 2026-11-10 复量签认 ⇒ 记「已采证 + 已签认」，见 `docs/fidelity/m8/INDEX.md`。
 - **L2a 强检验未做**（原生 `CompassView` vs canvas），记下一轮。
 - **贴地盘面不跟随 `dialType`/`dialAlpha`** 属真缺陷，下轮修，不改判据。
 - **未由我复测**：G1/G2/G3/G4 的读数来自 LC审核验／LC测试 真机执行；我只核了「文件在不在、树对不对、参数齐不齐」，**没有独立重跑**。

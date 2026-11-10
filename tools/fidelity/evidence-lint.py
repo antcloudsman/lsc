@@ -423,6 +423,58 @@ def walk(root: str, skip_dirs: set[str]):
             yield os.path.join(dirpath, name)
 
 
+CONFLICT_MARKER_RE = re.compile(rb"^(<{7}|={7}|>{7})(?:\s|$)")
+
+
+def check_conflict_markers(path: str) -> list[dict]:
+    """文本文件里出现 git 冲突标记（行首 7 个 <、7 个 =、7 个 >）→ fail。
+
+    为什么必须进这道门禁（2026-11-10 的教训）：一份**带 `<<<<<<<` 冲突标记的 markdown
+    文档**通过了全部五道门禁——因为五道门禁都不看 markdown 结构，绿只代表它检查过的
+    那几个维度没问题。文件本身是坏的，工具一句话没说。
+
+    三个标记各自单独判 fail，不做「成套才算」：常见漏法是只查开头标记，那等于只验一半；
+    `<<<<<<<` 与 `>>>>>>>` 各插一次都要能红（见本轮两处反证）。
+
+    边界：`=======` 单独一行也判 fail。它在 markdown 里是 setext 标题下划线，属于合法写法，
+    但仓库约定一律用 `#` 开头标题（`0c420e1` 全仓实测 `^=======$` 命中 0），所以这条不会
+    误伤现存文件；将来要写下划线标题，需改用 `#`。宁可让人改写法，不可让冲突标记混过去。
+    """
+    out: list[dict] = []
+    try:
+        size = os.path.getsize(path)
+        if size == 0:
+            return out
+        with open(path, "rb") as fh:
+            head = fh.read(8192)
+            if b"\x00" in head:  # 二进制（png/webp/apk/…）不按文本扫
+                return out
+            fh.seek(0)
+            for lineno, line in enumerate(fh, 1):
+                m = CONFLICT_MARKER_RE.match(line)
+                if not m:
+                    continue
+                marker = m.group(1).decode()
+                out.append(
+                    {
+                        "level": "fail",
+                        "kind": "conflict",
+                        "path": path,
+                        "size": size,
+                        "first_line": f"line {lineno}: {marker}",
+                        "reason": (
+                            f"git conflict marker {marker!r} at line {lineno} "
+                            "(unresolved merge; file is not a valid source document)"
+                        ),
+                    }
+                )
+                if len(out) >= 5:  # 同一个坏文件不必刷几百行；5 条足够定位
+                    break
+    except OSError:
+        return out
+    return out
+
+
 def _sha256_file(path: str) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -592,6 +644,7 @@ def main(argv: list[str] | None = None) -> int:
 
     findings: list[dict] = []
     counts = {"xml": 0, "png": 0, "other": 0}
+    conflict_scanned = 0
     skip = {s.strip() for s in args.skip_dirs.split(",") if s.strip()}
     rule_hits: dict[str, list[str]] = {p: [] for p, _ in size_rules}
     default_hits: list[str] = []
@@ -613,6 +666,9 @@ def main(argv: list[str] | None = None) -> int:
                 )
             else:
                 counts["other"] += 1
+            # 文本文件（含 md/json/py/ps1/js/html/xml）一律扫冲突标记：图片由函数内部按 NUL 跳过
+            conflict_scanned += 1
+            findings.extend(check_conflict_markers(path))
         except FileNotFoundError:
             continue
 
@@ -673,6 +729,8 @@ def main(argv: list[str] | None = None) -> int:
             print("ERROR: --generated-html and --source must be used together", file=sys.stderr)
             return 2
         findings.extend(check_generated(args.generated_html, args.source))
+        # 生成物自己也要扫冲突标记：只跑 --generated-html 时没有 --root，别让这条漏掉
+        findings.extend(check_conflict_markers(args.generated_html))
 
     if args.magic:
         for raw in [x.strip() for x in args.magic.split(",") if x.strip()]:
@@ -723,6 +781,25 @@ def main(argv: list[str] | None = None) -> int:
         f"DUP: files={dup_stats['files']} unique={dup_stats['unique']} "
         f"duplicated={dup_stats['duplicated']} redundant={dup_stats['redundant']}"
     )
+    conflict_hits = sum(1 for f in fails + warns + alloweds if f["kind"] == "conflict")
+    if scan_evidence:
+        print(
+            f"CONFLICT: scanned={conflict_scanned} file(s) hits={conflict_hits} "
+            "(markers <<<<<<< / >>>>>>> / bare ======= at line start)"
+        )
+    elif args.generated_html:
+        gh = sum(
+            1
+            for f in fails + warns + alloweds
+            if f["kind"] == "conflict"
+            and os.path.abspath(f["path"]) == os.path.abspath(resolve(args.generated_html))
+        )
+        print(
+            f"CONFLICT: SKIP evidence scan (no --root); generated html scanned=1 hits={gh} "
+            "(markers <<<<<<< / >>>>>>> / bare ======= at line start)"
+        )
+    else:
+        print("CONFLICT: SKIP (no --root and no --generated-html)")
     print(
         f"EVIDENCE-LINT: scanned xml={counts['xml']} png={counts['png']} other={counts['other']} "
         f"fail={len(fails)} warn={len(warns)} allowed={len(alloweds)}"

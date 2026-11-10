@@ -549,6 +549,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 break;
             }
+            case "export-dial": {
+                // TEST HOOK（M9-B / L2a 前置）：原生单帧导出与贴地画布导出。
+                // 不用 screencap 的原因：它有背景合成、1228↔1456 插值、掩膜只能取 canvas
+                // 三个混淆源，实测地板 3.33%，会把判据淹没。
+                String spec = it.getStringExtra("value");
+                if (spec == null || spec.isEmpty()) spec = "native:1456";
+                exportDial(spec, it.getIntExtra("type", -1), it.getFloatExtra("alpha", -1f));
+                break;
+            }
             case "js": {
                 String code = it.getStringExtra("value");
                 if (code != null && compassMapView != null) {
@@ -2607,6 +2616,201 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     // ---------------- B 轮 P0：KML 导入导出 ----------------
 
     /** 调试用 KML 落盘位置：相对 getExternalFilesDir；绝对路径原样用。 */
+    /**
+     * M9-B：原生单帧导出（native:<px>）与贴地画布导出（canvas:<px>）。
+     *
+     * <p>几何必须与 canvas 侧同口径，否则 L2a 量到的是导出误差不是盘面差异：
+     * canvas 1456 画布里 dialPx=549（GROUND_DIAL_FRAC 0.37725）、盘心 (728,728)、半径 274.5；
+     * 原生 CompassView 盘面半径 = min(cx,cy)-8。于是
+     * <pre>k = (px*0.37725/2) / viewR</pre>
+     * 用**半径比**（不用直径比取整，避免 906/549 不整除的半像素），再把 view 中心映射到画布中心。
+     *
+     * <p>盘外必须透明（eraseColor(TRANSPARENT)）：两侧都带 alpha 后掩膜才能取并集，
+     * 否则 alpha>250 掩膜退化成全屏，比例判据失去意义。
+     *
+     * <p>同档：给了 type/alpha 就先设原生并 pushCompassDial，两侧同一档才可比。
+     */
+    private void exportDial(String spec, int wantType, float wantAlpha) {
+        final String sp = (spec == null) ? "native:1456" : spec.trim();
+        int colon = sp.indexOf(':');
+        final String kind = (colon > 0) ? sp.substring(0, colon) : sp;
+        final int px;
+        try {
+            px = (colon > 0) ? Integer.parseInt(sp.substring(colon + 1).trim()) : 1456;
+        } catch (Throwable t) {
+            android.util.Log.d("LCDEBUG", "export-dial fail bad spec=" + sp);
+            return;
+        }
+        if (wantType >= 0 && compassView != null) {
+            int t = Math.max(0, Math.min(4, wantType));
+            compassView.setDialType(t);
+            prefs.edit().putInt("dial_index", t).remove("dial_custom_path").apply();
+            compassView.setArtwork(t);   // 同步加载位图，避免线稿降级（L2a 要求 faceKind=bitmap）
+        }
+        if (wantAlpha >= 0f && compassView != null) {
+            compassView.setDialAlpha(Math.max(0f, Math.min(1f, wantAlpha)));
+        }
+        if (wantType >= 0 || wantAlpha >= 0f) pushCompassDial();
+
+        if ("native".equals(kind)) {
+            if (compassView == null) {
+                android.util.Log.d("LCDEBUG", "export-dial skip-A native: no compassView");
+                return;
+            }
+            compassView.postDelayed(() -> {
+                try {
+                    int vw = compassView.getWidth();
+                    int vh = compassView.getHeight();
+                    float viewR = Math.min(vw, vh) / 2f - 8f;   // 与 onDraw 同口径
+                    float dialPx = Math.round(px * 0.37725f);
+                    float targetR = dialPx / 2f;
+                    float k = (viewR > 0f) ? (targetR / viewR) : 1f;
+                    android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(
+                            px, px, android.graphics.Bitmap.Config.ARGB_8888);
+                    bmp.eraseColor(android.graphics.Color.TRANSPARENT);
+                    android.graphics.Canvas c = new android.graphics.Canvas(bmp);
+                    c.translate(px / 2f - vw * k / 2f, px / 2f - vh * k / 2f);
+                    c.scale(k, k);
+                    compassView.draw(c);
+                    java.io.File f = dialFile("dial-native.png");
+                    try (java.io.FileOutputStream os = new java.io.FileOutputStream(f)) {
+                        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os);
+                        os.flush();
+                    }
+                    // alpha 形状自检（审地图 2026-11-10）：并集掩膜的唯一前提。
+                    // 漏 eraseColor 或用 RGB_565 时 bbox 仍会是 549，但盘外不透明 ⇒ 掩膜膨胀成整幅。
+                    int cx0 = px / 2;
+                    int insideTot = 0, insideOpaque = 0, outsideTot = 0, outsideOpaque = 0;
+                    for (int y = 0; y < px; y += 4) {
+                        for (int x = 0; x < px; x += 4) {
+                            int a = (bmp.getPixel(x, y) >>> 24);
+                            double dx = x - cx0;
+                            double dy = y - cx0;
+                            boolean in = Math.sqrt(dx * dx + dy * dy) <= targetR;
+                            if (in) {
+                                insideTot++;
+                                if (a > 250) insideOpaque++;
+                            } else {
+                                outsideTot++;
+                                if (a > 0) outsideOpaque++;
+                            }
+                        }
+                    }
+                    double inPct = insideTot > 0 ? (100.0 * insideOpaque / insideTot) : 0.0;
+                    double outOpaquePct = outsideTot > 0 ? (100.0 * outsideOpaque / outsideTot) : 100.0;
+                    boolean alphaOk = (inPct >= 95.0) && (outOpaquePct <= 1.0);
+                    bmp.recycle();
+                    boolean art = compassView.hasArtwork();
+                    int used = prefs.getInt("dial_index", 0);
+                    float a = (wantAlpha >= 0f) ? wantAlpha : 1f;
+                    writeDialMeta("dial-native.txt", px, dialPx, viewR, k,
+                            used, a, art, true, alphaOk, inPct, outOpaquePct);
+                    if (!alphaOk) {
+                        android.util.Log.e("LCDEBUG", "export-dial ERROR alphaShape=bad inside="
+                                + String.format(java.util.Locale.US, "%.2f", inPct)
+                                + "% outsideOpaque="
+                                + String.format(java.util.Locale.US, "%.2f", outOpaquePct)
+                                + "% → 并集掩膜不可用，L2a 必须 SKIP 而非出数");
+                    }
+                    android.util.Log.d("LCDEBUG", "export-dial ok native:" + px
+                            + " dial=" + Math.round(dialPx) + " viewR=" + Math.round(viewR)
+                            + " k=" + String.format(java.util.Locale.US, "%.5f", k)
+                            + " type=" + used + " alpha=" + String.format(java.util.Locale.US, "%.2f", a)
+                            + " artwork=" + art + " faceKind=" + (art ? "bitmap" : "vector")
+                            + " alphaShape=" + (alphaOk ? "ok" : "bad")
+                            + " bytes=" + f.length() + " path=" + f.getAbsolutePath());
+                } catch (Throwable ex) {
+                    android.util.Log.d("LCDEBUG", "export-dial fail native " + ex);
+                }
+            }, 400);
+            return;
+        }
+
+        if ("canvas".equals(kind)) {
+            if (compassMapView == null) {
+                android.util.Log.d("LCDEBUG", "export-dial skip-A canvas: no map view");
+                return;
+            }
+            compassMapView.postDelayed(() -> {
+                compassMapView.evaluateJavascript(
+                        "(function(){if(!(window.__LC3D&&typeof __LC3D.exportCanvasDataURL==='function'))"
+                        + "return 'SKIP-A:no-export-api';"
+                        + "try{return __LC3D.exportCanvasDataURL();}catch(e){return 'ERR:'+e;}})()",
+                        v -> {
+                            String s = (v == null) ? "null" : v;
+                            if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+                                s = s.substring(1, s.length() - 1);
+                            }
+                            if (s.startsWith("SKIP")) {
+                                android.util.Log.d("LCDEBUG", "export-dial " + s
+                                        + " (页面缺 __LC3D.exportCanvasDataURL，需地图补)");
+                                return;
+                            }
+                            if (s.startsWith("ERR") || !s.startsWith("data:image")) {
+                                android.util.Log.d("LCDEBUG", "export-dial fail canvas: " + s);
+                                return;
+                            }
+                            try {
+                                int comma = s.indexOf(',');
+                                byte[] png = android.util.Base64.decode(s.substring(comma + 1),
+                                        android.util.Base64.DEFAULT);
+                                java.io.File f = dialFile("dial-canvas.png");
+                                try (java.io.FileOutputStream os = new java.io.FileOutputStream(f)) {
+                                    os.write(png);
+                                    os.flush();
+                                }
+                                android.util.Log.d("LCDEBUG", "export-dial ok canvas:" + px
+                                        + " bytes=" + f.length() + " path=" + f.getAbsolutePath());
+                            } catch (Throwable ex) {
+                                android.util.Log.d("LCDEBUG", "export-dial fail canvas write " + ex);
+                            }
+                        });
+            }, 400);
+            return;
+        }
+
+        android.util.Log.d("LCDEBUG", "export-dial fail unknown kind=" + kind + " spec=" + sp);
+    }
+
+    /**
+     * M9-B：导出元数据（产品 2026-11-10 要求）。
+     *
+     * <p>为什么必须落这个：L2a 报告要能区分「盘面不同」与「一边是线稿降级」，
+     * 没有 {@code faceKind} 就只能靠猜。两侧同名字段便于对账。
+     */
+    private void writeDialMeta(String name, int px, float dialPx, float viewR, float k,
+                               int type, float alpha, boolean artwork, boolean nativeSide,
+                               boolean alphaOk, double inPct, double outOpaquePct) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("kind=").append(nativeSide ? "native" : "canvas").append('\n');
+        sb.append("px=").append(px).append('\n');
+        sb.append("dialPx=").append(Math.round(dialPx)).append('\n');
+        sb.append("viewR=").append(Math.round(viewR)).append('\n');
+        sb.append("scale=").append(String.format(java.util.Locale.US, "%.5f", k)).append('\n');
+        sb.append("dialType=").append(type).append('\n');
+        sb.append("dialTypeUsed=").append(type).append('\n');
+        sb.append("alpha=").append(String.format(java.util.Locale.US, "%.2f", alpha)).append('\n');
+        sb.append("artwork=").append(artwork).append('\n');
+        sb.append("faceKind=").append(artwork ? "bitmap" : "vector").append('\n');
+        // alpha 形状（审地图 2026-11-10）：并集掩膜能不能用的唯一前提
+        sb.append("alphaShape=").append(alphaOk ? "ok" : "bad").append('\n');
+        sb.append("insideOpaquePct=").append(String.format(java.util.Locale.US, "%.2f", inPct)).append('\n');
+        sb.append("outsideOpaquePct=").append(String.format(java.util.Locale.US, "%.2f", outOpaquePct)).append('\n');
+        sb.append("artworkWidth=").append(compassView == null ? 0 : compassView.artworkWidth()).append('\n');
+        try (java.io.FileOutputStream os = new java.io.FileOutputStream(dialFile(name))) {
+            os.write(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            os.flush();
+        } catch (Throwable t) {
+            android.util.Log.d("LCDEBUG", "export-dial meta write fail " + t);
+        }
+    }
+
+    /** 导出目录：与 KML 同一处（getExternalFilesDir，adb 可直接读写）。 */
+    private java.io.File dialFile(String name) {
+        java.io.File dir = getExternalFilesDir(null);
+        return dir == null ? new java.io.File(name) : new java.io.File(dir, name);
+    }
+
     private java.io.File kmlFile(String path) {
         java.io.File f = new java.io.File(path);
         if (f.isAbsolute()) return f;

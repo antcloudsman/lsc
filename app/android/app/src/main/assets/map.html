@@ -3032,7 +3032,8 @@ var GROUND_CAM_COMPRESS = 0.35;
  * 于是「不置脏 ⇒ 画布不变、置脏 ⇒ 画布必变」这条反证才成立、可被单测和真机同时验证。
  * ------------------------------------------------------------------------------ */
 var compassDialType = 0;          /* 0..4，对应 assets/compass/dial_full_<n>.webp */
-var compassDialAlpha = 1;         /* 0..1，画布合成与 GL uniform 共用同一个值 */
+var compassDialAlpha = 1;         /* 0..1，用户选的透明度（画布不烘它，由 shader 乘） */
+var groundAlphaApplied = 1;       /* 最近一次真正传给 shader 的 alpha（读值=绘制值的证据） */
 function setCompassDial(type, alpha) {
   var changed = false;
   var t = Number(type);
@@ -3052,7 +3053,9 @@ function setCompassDial(type, alpha) {
 /* 只读：贴地画布内容的数值指纹（验收用，不改渲染）。
  * 用途：证明「换盘面/改透明度后画布真的变了」，以及反证「不置脏时逐像素不变」。
  * 采样步长 97 字节（1456² 画布约取 8.7 万个字节），只判"变没变"，不判"画得对不对"
- * ——画得对不对由 A1 区与 L2a 那些判据管，两者不要混用。 */
+ * ——画得对不对由 A1 区与 L2a 那些判据管，两者不要混用。
+ * 注意：M9 A 起透明度**不进画布**（由 shader 乘），所以本指纹只随 dialType 变；
+ * 验透明度请看 getGroundDebug().alphaApplied 或屏幕亮度比，不要指望 sig 变化。 */
 function groundCanvasSig() {
   try {
     if (!groundCanvas) return { w: 0, h: 0, sig: 0, err: 'no-canvas' };
@@ -3097,7 +3100,10 @@ function groundRedraw() {
     /* 画布路径按原版 edge-to-edge 画（updateCompass 里就是 drawImage(img, a, n, e, e)，
      * 没有原生 CompassView 那圈 8u 内缩），否则盘径会少 1.7%（905 vs 921 device px）。 */
     dialBleed: true,
-    dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
+    /* 透明度不进画布（M9 A 修正）：画布按不透明纹理画，纹理只随 dialType 变 ⇒ 换透明度
+     * 不必重画 549² 画布、也不必重传纹理；alpha 由 shader 的 uAlpha 乘一次（下方 uniform）。
+     * 若这里传真 alpha，画布与 shader 会各乘一次，屏幕变成 α²（0.5 ⇒ 0.25）。 */
+    dialAlpha: 1,
     tianzhi: false,
     trustEnabled: false,
     dialImg: (groundImg && groundImg.complete && groundImg.naturalWidth > 0) ? groundImg : null,
@@ -3267,7 +3273,11 @@ function drawGroundCompass(vp, target) {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, groundTex);
   gl.uniform1i(groundLoc.tex, 0);
-  gl.uniform1f(groundLoc.alpha, (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1);
+  /* 透明度只应用一次（M9 A 自查修正）：`drawCompass` 已经在画布上用 `ctx.globalAlpha = alpha`
+   * 把 alpha 烘进像素（0.5 ⇒ 画布 a≈127），这里再乘一次就会变成 0.25——用户看到的比选中的淡一倍。
+   * 所以 uniform 恒为 1，**alpha 的唯一真相在画布像素里**，这样像素读数口也能直接验它。 */
+  groundAlphaApplied = (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1;
+  gl.uniform1f(groundLoc.alpha, groundAlphaApplied);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.enable(gl.DEPTH_TEST);
@@ -4249,11 +4259,12 @@ window.__LC3D = {
       seq: groundSeq, changedAt: groundChangedAt,
       failInject: groundFailInject,
       /* G2 锁基线用（审核验 11-09）：贴地画布**实际**用的盘面类型与透明度。
-       * 注意口径：这是页面的渲染输入，不是原生 CompassView 的当前档位——
-       * 两个变量在页面里没有赋值方，恒为 0 / 1（见 tickGround 的 typeof 守卫）。
-       * 暴露真值而不是"应该是"，判据才不会被"原生按钮改了但页面没跟"误导。 */
+       * 注意口径：这是**页面渲染输入**，由 setCompassDial() 赋值（M9 A 起原生会推）。
+       * dialAlpha 是"用户选的值"，alphaApplied 是"最近一次真正乘进 shader 的值"——
+       * 两者应恒等；不等说明赋值没走到绘制（假通过），判据据此可分。 */
       dialType: (typeof compassDialType === 'number') ? compassDialType : 0,
       dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
+      alphaApplied: groundAlphaApplied,   /* 实际乘进 shader 的值：应恒等于 dialAlpha */
       texDirty: groundTexDirty,
       hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),
       hasRings: !!COMPASS_RINGS,

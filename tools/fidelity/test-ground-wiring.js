@@ -133,6 +133,14 @@ function staticChecks(src) {
     /if \(changed\) groundTexDirty = true;/.test(setDial)]);
   ls.push(["setCompassDial 与 groundCanvasSig 已导出（验收只走只读口）",
     /setCompassDial: setCompassDial/.test(src) && /groundCanvasSig: groundCanvasSig/.test(src)]);
+  /* 透明度只应用一次（M9 A 自查抓到 α² = 0.25）：画布不烘 alpha，只让 shader 乘一次 */
+  var redraw = stripComments(fnSource(src, "groundRedraw"));
+  ls.push(["画布不烘透明度（dialAlpha 恒 1）",
+    /dialAlpha:\s*1,/.test(redraw) && !/dialAlpha:\s*\(typeof compassDialAlpha/.test(redraw)]);
+  ls.push(["shader uniform 用真实 alpha，并记录 applied（读值=绘制值）",
+    /groundAlphaApplied = \(typeof compassDialAlpha === 'number'\) \? compassDialAlpha : 1;/.test(src) &&
+    /uniform1f\(groundLoc\.alpha, groundAlphaApplied\)/.test(src) &&
+    /alphaApplied: groundAlphaApplied/.test(src)]);
   // 回退条件用页面 ground，不用原生镜像：页面侧只认 groundMode
   ls.push(["回退依据是页面状态（groundMode），不读原生 groundOn",
     !/groundOn/.test(setState) && !/groundOn/.test(stripComments(fnSource(src, "drawGroundCompass")))]);
@@ -277,7 +285,9 @@ var MUTATIONS = [
     function (s) { return s.replace("    try { tileOfflineBanner(); } catch (e) { }\n", ""); },
     "状态变化时刷新提示条"],  ["seq 不再递增（跨次读取无法判新旧）",
     function (s) { return s.replace("    groundSeq++;\n", ""); },
-    "状态变化才递增 seq"],  ["不置 dirty（画布不会重画/重传）",
+    "状态变化才递增 seq"],  ["画布也烘 alpha（双重叠加 α²）",
+    function (s) { return s.replace("    dialAlpha: 1,\n", "    dialAlpha: compassDialAlpha,\n"); },
+    "画布不烘透明度（dialAlpha 恒 1）"],  ["不置 dirty（画布不会重画/重传）",
     function (s) { return s.replace("  if (changed) groundTexDirty = true;   /* 只有真的变了才置脏：没变不白传一次纹理 */\n", ""); },
     "有变化 ⇒ changed=true 且置脏"],
   ["只加函数不赋值（typeof 野变量重演）",

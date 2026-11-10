@@ -249,11 +249,22 @@ def alpha_shape_check(img: Image.Image) -> dict:
     return {"ok": ok, "inner": inner_frac, "outer_zero": outer_frac_zero, "cover": cover}
 
 
-def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float, mask_mode: str = "canvas") -> int:
+def compare(canvas_png: Path, native_png: Path, space: int, baseline: float | None, margin: float, mask_mode: str = "canvas", exclude_center: float = 0.0) -> int:
     canvas = norm(open_rgba(canvas_png), space)
     native = norm(open_rgba(native_png), space)
     sigma = sigma_for(space)
     mask, d, n_mask = diff_with_mask(canvas, native, sigma, mask_mode)
+    # C 区排除：中心三行读数随朝向实时变化（实测帧间 sig 就变），比它等于比「两个不同时刻的朝向」。
+    # 判据表原文：C 文字区只判「三行都在、不叠字」，不比像素。
+    if exclude_center > 0:
+        yy, xx = np.mgrid[0:space, 0:space]
+        cx = cy = space / 2.0
+        r_dial = space * 0.37725 / 2.0          # 盘面半径（549/2）
+        inside = ((xx - cx) ** 2 + (yy - cy) ** 2) <= (exclude_center * r_dial) ** 2
+        dropped = int((mask & inside).sum())
+        mask = mask & ~inside
+        n_mask = int(mask.sum())
+        print(f"EXCLUDE : 中心 r<{exclude_center:.2f}·r_dial 排除 {dropped} px（C 区读数不比）")
     over = (d > 8) & mask
     abs_px = int(over.sum())
     pct = abs_px / n_mask * 100.0 if n_mask else 0.0
@@ -368,7 +379,7 @@ def selftest(space: int) -> int:
     fails = 0
     for name, c, n, expect in cases:
         print(f"--- {name} ---")
-        rc = compare(c, n, space, baseline=0.0, margin=2.0, mask_mode="union")
+        rc = compare(c, n, space, baseline=0.0, margin=2.0, mask_mode="union", exclude_center=0.0)
         ok = rc == expect
         print(f"[{'PASS' if ok else 'FAIL'}] {name}（exit={rc} 期望 {expect}）\n")
         if not ok:
@@ -387,6 +398,8 @@ def main() -> int:
     ap.add_argument("--control", action="store_true", help="打印同实现控制组基线 B（素材两管线）")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--selftest-space", type=int, default=SPACE_DEFAULT)
+    ap.add_argument("--exclude-center", type=float, default=0.0,
+                    help="排除中心半径分数（×盘面半径）：C 区读数随朝向变，不参与像素比较")
     ap.add_argument("--mask", choices=["canvas", "union"], default="canvas",
                     help="canvas=只取 canvas alpha（screencap 原生图时唯一口径）；union=并集（原生需带 alpha 直出）")
     ap.add_argument("--bbox", action="store_true", help="打印两侧盘面外接框（几何契约验收用）")
@@ -441,7 +454,7 @@ def main() -> int:
         return 0
     if not (a.canvas and a.native):
         ap.error("需要 --canvas 与 --native（或 --selftest / --control）")
-    return compare(Path(a.canvas), Path(a.native), a.space, a.baseline, a.margin, a.mask)
+    return compare(Path(a.canvas), Path(a.native), a.space, a.baseline, a.margin, a.mask, a.exclude_center)
 
 
 if __name__ == "__main__":

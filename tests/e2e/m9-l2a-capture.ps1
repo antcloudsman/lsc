@@ -177,12 +177,44 @@ foreach ($side in 'canvas', 'native') {
 $m2 = Meta
 Write-Output ("META-AFTER = seq=" + $m2.renderSeq + " faceKind=" + $m2.faceKind +
               " dialTypeUsed=" + $m2.dialTypeUsed + " texDirty=" + $m2.texDirty)
-if ($m2.renderSeq -ne $m1.renderSeq -or $m2.faceKind -ne 'bitmap' -or $m2.dialTypeUsed -ne $DialType) {
-    Write-Output 'SKIP-C: 取图期间状态变了（seq/faceKind/dialTypeUsed）⇒ 本张作废，可重跑'
+# 稳定性锚点：用 sig（内容指纹），不用 renderSeq。
+# 实测 2026-11-10：贴地画布约 40fps 每帧重绘，renderSeq 稳定增长（782→809/0.7s），
+# 但内容完全不变（sig 两次相同）——把 seq 当锚点会把「每帧重绘」误判成「状态漂移」。
+$stateOk = ($m2.faceKind -eq 'bitmap') -and ($m2.dialTypeUsed -eq $DialType) -and
+           ([math]::Abs([double]$m2.alphaApplied - 1.0) -lt 0.001) -and ($m2.texDirty -eq $false)
+# 内容不做「必须相同」的硬守卫：中心三行读数随朝向实时更新，两次导出天然不同帧（实测 sig 330→426 帧间变化）。
+# L2a 判据本就把 C 区文字排除在像素比较之外（比较器 --exclude-center），所以这里只记录，不作废。
+$contentOk = $true
+if ($m2.sig -ne $m1.sig) {
+    Write-Output ("SIG-INFO: 中心读数随朝向更新，sig " + $m1.sig + "→" + $m2.sig + "（预期现象，C 区已在比较器中排除）")
+}
+if (-not $stateOk) {
+    Write-Output ("SKIP-C: 取图期间状态/内容变了（state=" + $stateOk + " content(sig)=" + $contentOk +
+                  " seq " + $m1.renderSeq + "→" + $m2.renderSeq + " sig " + $m1.sig + "→" + $m2.sig + "）⇒ 本张作废，可重跑")
     exit 12
 }
+Write-Output ("SEQ-INFO: renderSeq " + $m1.renderSeq + "→" + $m2.renderSeq + "（每帧重绘，仅记录不作锚点）；sig 稳定=" + $m2.sig)
 
 # ---- ④ 时序锚已过；先验导出几何（不过就别让 L2a 背锅）----
+# 原生导出的前置状态守卫：贴地态下 CompassView 未被布局（B1 会隐藏原生盘面），
+# 实测此时 meta 里 viewR=-8、scale=1.0、alphaShape=bad、bbox 279 —— 这张图不是「画得不像」，是没画。
+# 用 metadata 的 alphaShape 与 viewR 判定，命中即 SKIP（接口前置不满足），不判 FAIL。
+$natMeta = Join-Path $OutDir 'native-meta.txt'
+& adb -s $Device pull "$remoteDir/dial-native.txt" $natMeta 2>&1 | Out-Null
+if (Test-Path $natMeta) {
+    $mt = Get-Content $natMeta -Raw
+    $mView = [regex]::Match($mt, 'viewR=(-?\d+)')
+    $mAlpha = [regex]::Match($mt, 'alphaShape=(\w+)')
+    $viewR = if ($mView.Success) { [int]$mView.Groups[1].Value } else { 0 }
+    $alphaShape = if ($mAlpha.Success) { $mAlpha.Groups[1].Value } else { 'unknown' }
+    Write-Output ("NATIVE-META: viewR=$viewR alphaShape=$alphaShape srcUsed=" + ([regex]::Match($mt,'srcUsed=(\w+)').Groups[1].Value))
+    if ($viewR -le 0 -or $alphaShape -ne 'ok') {
+        Write-Output 'SKIP-C: 原生导出前置不满足（CompassView 未布局或 alphaShape=bad）'
+        Write-Output '        贴地态下原生盘面被 B1 隐藏；取原生图必须在「原生盘面可见且已布局」的状态（客户端 10:49 那次 viewR=453）'
+        exit 12
+    }
+}
+
 Write-Output '--- 导出几何契约（直径 549±1、盘心 728±1、alpha 形状）---'
 $bboxOut = & python $cmp --bbox --canvas (Join-Path $OutDir 'run1-canvas.png') --native (Join-Path $OutDir 'run1-native.png') `
     --space $Space --expect-dial 549 --expect-center '728,728' 2>&1
@@ -220,7 +252,7 @@ Write-Output ("B_noise = " + $bn.ToString('F3') + "%  → margin = max(" + $Thre
 # ---- 正式判定（并集掩膜；参照物 = native）----
 Write-Output '--- L2a 判定 ---'
 & python $cmp --canvas (Join-Path $OutDir 'run1-canvas.png') --native (Join-Path $OutDir 'run1-native.png') `
-    --space $Space --baseline ([math]::Round($bn, 3)) --margin ([math]::Round($marginEff, 3)) --mask union 2>&1 |
+    --space $Space --baseline ([math]::Round($bn, 3)) --margin ([math]::Round($marginEff, 3)) --mask union --exclude-center 0.30 2>&1 |
     ForEach-Object { Write-Output "  $_" }
 $rc = $LASTEXITCODE
 

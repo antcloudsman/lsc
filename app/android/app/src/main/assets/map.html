@@ -3034,6 +3034,10 @@ var GROUND_CAM_COMPRESS = 0.35;
 var compassDialType = 0;          /* 0..4，对应 assets/compass/dial_full_<n>.webp */
 var compassDialAlpha = 1;         /* 0..1，用户选的透明度（画布不烘它，由 shader 乘） */
 var groundAlphaApplied = 1;       /* 最近一次真正传给 shader 的 alpha（读值=绘制值的证据） */
+/* 贴地画布重绘序号（M9 B）：每次 groundRedraw 成功自增。
+ * 为什么不能只用 groundCanvasSig 当时序锚点：sig 只随 dialType 变，同类型下的一次重绘
+ * （透明度重算/纹理重建）不会改 sig ⇒ 守卫会放行旧图。取图前后 seq 相等才算同一状态。 */
+var groundRenderSeq = 0;
 function setCompassDial(type, alpha) {
   var changed = false;
   var t = Number(type);
@@ -3070,7 +3074,7 @@ function groundCanvasMeta() {
       w: groundCanvas.width, h: groundCanvas.height,
       dialPx: sz.px, off: (sz.px - sz.px * GROUND_DIAL_FRAC) / 2,
       dialType: compassDialType, dialAlpha: compassDialAlpha, alphaApplied: groundAlphaApplied,
-      texDirty: groundTexDirty, sig: groundCanvasSig().sig
+      texDirty: groundTexDirty, sig: groundCanvasSig().sig, renderSeq: groundRenderSeq
     };
   } catch (e) { return { w: 0, h: 0, err: (e && e.name) || 'error' }; }
 }
@@ -3135,6 +3139,7 @@ function groundRedraw() {
     reading: rd
   });
   ctx.restore();
+  if (ok) groundRenderSeq++;      /* 只有真正画成功才算一次重绘（M9 B：时序锚点，见 groundCanvasMeta） */
   groundTexDirty = true;
   return ok;
 }
@@ -4290,6 +4295,7 @@ window.__LC3D = {
       dialType: (typeof compassDialType === 'number') ? compassDialType : 0,
       dialAlpha: (typeof compassDialAlpha === 'number') ? compassDialAlpha : 1,
       alphaApplied: groundAlphaApplied,   /* 实际乘进 shader 的值：应恒等于 dialAlpha */
+      renderSeq: groundRenderSeq,        /* 重绘序号：取图前后相等才证明这张图是当前态 */
       texDirty: groundTexDirty,
       hasQuad: !!(lastGroundQuad && lastGroundQuad.vp),
       hasRings: !!COMPASS_RINGS,

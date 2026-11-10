@@ -25,8 +25,13 @@ param(
     [string]$OutDir = 'E:\APPDetector\reports\m9-l2a-run',
     [int]$DialType = 0,
     [int]$Space = 1456,
-    [double]$Thresh = 2.0,
+    [double]$Thresh = 1.2,          # 两侧夹：检出下界 0.9 / 误报上界 1.7，见 -ThreshMin/-ThreshMax
+    [double]$ThreshMin = 0.9,      # = 0.6%（同管线抗锯齿地板）×1.5
+    [double]$ThreshMax = 1.7,      # = 2.59%（多画 20° 最小必抓缺陷）/1.5
     [int]$FaceTimeoutMs = 8000,
+    [string]$Apk = '',            # 本次装的包；给了就做「树内↔包内」四步链校验
+    [string]$TreeRoot = '',       # 构建用的树；空则用当前工作树
+    [string]$Src = 'webp800',     # A′ 同源：export-dial --es src webp800（两侧喂同一文件字节）
     [switch]$WhatIf
 )
 
@@ -76,9 +81,37 @@ $dev = (& adb devices) -join "`n"
 if ($dev -notmatch [regex]::Escape($Device)) { Write-Output "[STOP] 设备不在线：$Device"; exit 2 }
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
+# ---- 四步链：树内 blob / 树内 sha256 / 包内 sha256（审地图契约，断链即不出数）----
+if ($Apk) {
+    if (-not $TreeRoot) { $TreeRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) }
+    $rel = 'app/android/app/src/main/assets/map.html'
+    $blob = (& git -C $TreeRoot rev-parse "HEAD:$rel").Trim()
+    $treeFile = Join-Path $TreeRoot $rel
+    $shaTree = (Get-FileHash $treeFile -Algorithm SHA256).Hash.ToLower()
+    $tmpHtml = Join-Path $env:TEMP ('apk-map-' + [Guid]::NewGuid().ToString('N').Substring(0, 8) + '.html')
+    & python -c "import zipfile,sys;open(sys.argv[1],'wb').write(zipfile.ZipFile(sys.argv[2]).read('assets/map.html'))" $tmpHtml $Apk 2>&1 | Out-Null
+    if (-not (Test-Path $tmpHtml)) {
+        Write-Output "EXIT-CHAIN: 包内取不到 assets/map.html（$Apk）"
+        exit 7
+    }
+    $shaApk = (Get-FileHash $tmpHtml -Algorithm SHA256).Hash.ToLower()
+    Remove-Item $tmpHtml -Force -ErrorAction SilentlyContinue
+    Write-Output ("CHAIN   : blob:" + $blob)
+    Write-Output ("CHAIN   : 树内 sha256:" + $shaTree)
+    Write-Output ("CHAIN   : 包内 sha256:" + $shaApk + "  MATCH=" + ($shaTree -eq $shaApk))
+    if ($shaTree -ne $shaApk) {
+        Write-Output 'EXIT-CHAIN: 树内与包内 map.html 不是同一份 → 装的是别的构建，L2a 不能出数'
+        exit 7
+    }
+    $chainLine = "map.html blob:" + $blob + "  sha256:" + $shaTree
+    $chainLine | Set-Content (Join-Path $OutDir 'run-meta.txt') -Encoding utf8
+} else {
+    Write-Output 'CHAIN   : SKIP（未给 -Apk；四步链缺第 3 步，结果不得作为签署依据）'
+}
+
 # ---- 契约探测：export-dial 是否落地（不落地 → SKIP-A）----
 $probeMissing = $false
-& adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value canvas:$Space" 2>&1 | Out-Null
+& adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value canvas:$Space --es src $Src" 2>&1 | Out-Null
 Start-Sleep -Milliseconds 900
 if (((& adb -s $Device shell "ls $remoteDir/dial-canvas.png 2>/dev/null") -join '') -notmatch 'dial-') {
     $probeMissing = $true
@@ -114,7 +147,7 @@ Write-Output ("META-LOCK = dialType=" + $m1.dialType + " dialTypeUsed=" + $m1.di
 
 # ---- 取图：两轮（第二轮用于 B_noise）----
 function Export([string]$side, [string]$dst) {
-    & adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value $side`:$Space" 2>&1 | Out-Null
+    & adb -s $Device shell "am broadcast -a $pkg.DEBUG --es cmd export-dial --es value $side`:$Space --es src $Src" 2>&1 | Out-Null
     Start-Sleep -Milliseconds 1200
     & adb -s $Device pull "$remoteDir/dial-$side.png" $dst 2>&1 | Out-Null
     return (Test-Path $dst)
@@ -160,7 +193,18 @@ foreach ($line in @($noiseC, $noiseN)) {
     $mm = [regex]::Match(($line -join ' '), 'pct=([0-9.]+)%')
     if ($mm.Success) { $bn = [math]::Max($bn, [double]$mm.Groups[1].Value) }
 }
+# 阈值两侧夹（审地图 2026-11-10）：B_noise=0 时 margin 会退化成写死的 Thresh，等于「拍阈值」。
+# 所以 Thresh 必须同时满足：
+#   检出下界  ≥ 0.6%（同管线抗锯齿地板）×1.5 = 0.9%   ← 太低会把抗锯齿误报成缺陷
+#   误报上界  ≤ 2.59%（多画 20°，① 必须抓住的最小缺陷）/1.5 = 1.7%
+# 缺 350° 环(0.20%) 与错位 1px(0.35%) 分别由 ③ 和 ② 抓，① 不必压到 0.2%。
+if ($Thresh -lt $ThreshMin -or $Thresh -gt $ThreshMax) {
+    Write-Output ("EXIT-THRESH: Thresh=" + $Thresh + " 落在两侧夹区间 [" + $ThreshMin + ", " + $ThreshMax + "] 之外")
+    Write-Output '              0.9% = 抗锯齿地板 0.6%×1.5；1.7% = 最小必抓缺陷 2.59%/1.5。越界视为调参，不出数'
+    exit 6
+}
 $marginEff = [math]::Max($Thresh, 2 * $bn)
+Write-Output ("THRESH  : Thresh=" + $Thresh + "% ∈ [" + $ThreshMin + "," + $ThreshMax + "]；检出依据 多画20°=2.59%/1.5；误报依据 地板0.6%×1.5")
 Write-Output ("B_noise = " + $bn.ToString('F3') + "%  → margin = max(" + $Thresh + ", 2×B) = " + $marginEff.ToString('F3') + " pp")
 
 # ---- 正式判定（并集掩膜；参照物 = native）----

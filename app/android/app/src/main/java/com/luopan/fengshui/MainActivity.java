@@ -555,7 +555,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 // 三个混淆源，实测地板 3.33%，会把判据淹没。
                 String spec = it.getStringExtra("value");
                 if (spec == null || spec.isEmpty()) spec = "native:1456";
-                exportDial(spec, it.getIntExtra("type", -1), it.getFloatExtra("alpha", -1f));
+                exportDial(spec, it.getIntExtra("type", -1), it.getFloatExtra("alpha", -1f),
+                        it.getStringExtra("src"));
                 break;
             }
             case "js": {
@@ -2630,7 +2631,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      *
      * <p>同档：给了 type/alpha 就先设原生并 pushCompassDial，两侧同一档才可比。
      */
-    private void exportDial(String spec, int wantType, float wantAlpha) {
+    private void exportDial(String spec, int wantType, float wantAlpha, String wantSrc) {
         final String sp = (spec == null) ? "native:1456" : spec.trim();
         int colon = sp.indexOf(':');
         final String kind = (colon > 0) ? sp.substring(0, colon) : sp;
@@ -2671,7 +2672,35 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     android.graphics.Canvas c = new android.graphics.Canvas(bmp);
                     c.translate(px / 2f - vw * k / 2f, px / 2f - vh * k / 2f);
                     c.scale(k, k);
-                    compassView.draw(c);
+                    // M9-B（A′）：调试期同源覆盖。webp800 时临时换 artwork，导出后换回，
+                    // 不 invalidate ⇒ 屏幕显示零影响（审地图/测试 2026-11-10 定）。
+                    String srcUsed = "png1024";
+                    android.graphics.Bitmap prevArt = null;
+                    if ("webp800".equals(wantSrc)) {
+                        try {
+                            int idx = Math.max(0, Math.min(4, prefs.getInt("dial_index", 0)));
+                            android.graphics.Bitmap tmp;
+                            try (java.io.InputStream is = getAssets()
+                                    .open("compass/dial_full_" + idx + ".webp")) {
+                                tmp = android.graphics.BitmapFactory.decodeStream(is);
+                            }
+                            if (tmp != null) {
+                                prevArt = compassView.currentArtwork();
+                                compassView.swapArtworkForExport(tmp);
+                                srcUsed = "webp800";
+                            }
+                        } catch (Throwable t) {
+                            android.util.Log.e("LCDEBUG", "export-dial src=webp800 读取失败 " + t);
+                            return;
+                        }
+                    }
+                    try {
+                        compassView.draw(c);
+                    } finally {
+                        if (prevArt != null) compassView.swapArtworkForExport(prevArt);
+                    }
+                    // 漂移校验：本机算出的 dialPx 必须与页面渲染用的一致，否则不出数
+                    checkDialPxAgainstPage(dialPx);
                     java.io.File f = dialFile("dial-native.png");
                     try (java.io.FileOutputStream os = new java.io.FileOutputStream(f)) {
                         bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os);
@@ -2704,7 +2733,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     int used = prefs.getInt("dial_index", 0);
                     float a = (wantAlpha >= 0f) ? wantAlpha : 1f;
                     writeDialMeta("dial-native.txt", px, dialPx, viewR, k,
-                            used, a, art, true, alphaOk, inPct, outOpaquePct);
+                            used, a, art, true, alphaOk, inPct, outOpaquePct, srcUsed);
                     if (!alphaOk) {
                         android.util.Log.e("LCDEBUG", "export-dial ERROR alphaShape=bad inside="
                                 + String.format(java.util.Locale.US, "%.2f", inPct)
@@ -2717,6 +2746,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             + " k=" + String.format(java.util.Locale.US, "%.5f", k)
                             + " type=" + used + " alpha=" + String.format(java.util.Locale.US, "%.2f", a)
                             + " artwork=" + art + " faceKind=" + (art ? "bitmap" : "vector")
+                            + " srcUsed=" + srcUsed
                             + " alphaShape=" + (alphaOk ? "ok" : "bad")
                             + " bytes=" + f.length() + " path=" + f.getAbsolutePath());
                 } catch (Throwable ex) {
@@ -2733,9 +2763,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             compassMapView.postDelayed(() -> {
                 compassMapView.evaluateJavascript(
-                        "(function(){if(!(window.__LC3D&&typeof __LC3D.exportCanvasDataURL==='function'))"
+                        "(function(){if(!(window.__LC3D&&typeof __LC3D.groundCanvasPNG==='function'))"
                         + "return 'SKIP-A:no-export-api';"
-                        + "try{return __LC3D.exportCanvasDataURL();}catch(e){return 'ERR:'+e;}})()",
+                        + "try{return __LC3D.groundCanvasPNG();}catch(e){return 'ERR:'+e;}})()",
                         v -> {
                             String s = (v == null) ? "null" : v;
                             if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
@@ -2773,6 +2803,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
+     * M9-B：dialPx 漂移校验（我自己标注的硬编码点：0.37725）。
+     *
+     * <p>本机按 `px * 0.37725` 算盘面直径；页面按 `GROUND_DIAL_FRAC` 算。
+     * 两者一旦不一致，导出几何看着对（548×548）但**比的是两张不同大小的盘面**——
+     * 正是这轮反复出现的「比较对象选错」。所以这里读页面的真值比对，不一致就 ERROR。
+     */
+    private void checkDialPxAgainstPage(float myDialPx) {
+        if (compassMapView == null) return;
+        final int mine = Math.round(myDialPx);
+        // 注意：groundCanvasMeta().dialPx 实际是**画布尺寸**（sz.px），不是盘面直径；
+        // 真实盘面直径 = dialPx - 2*off（1456 - 2*453.5 = 549）。字段名有误导，别按名字取。
+        compassMapView.evaluateJavascript(
+                "(function(){if(!(window.__LC3D&&typeof __LC3D.groundCanvasMeta==='function'))"
+                + "return 'SKIP';var m=__LC3D.groundCanvasMeta();"
+                + "if(!m||typeof m.dialPx!=='number'||typeof m.off!=='number')return 'NA';"
+                + "return String(Math.round(m.dialPx-2*m.off));})()",
+                v -> {
+                    String s = (v == null) ? "null" : v.replace("\"", "").trim();
+                    if ("SKIP".equals(s) || "NA".equals(s) || "null".equals(s)) {
+                        android.util.Log.d("LCDEBUG", "dialPx-check SKIP page=" + s + " mine=" + mine);
+                        return;
+                    }
+                    try {
+                        int page = Math.round(Float.parseFloat(s));
+                        if (page != mine) {
+                            android.util.Log.e("LCDEBUG", "dialPx MISMATCH mine=" + mine
+                                    + " page=" + page + " ⇒ 几何基准漂移，本次导出不得作为判据");
+                        } else {
+                            android.util.Log.d("LCDEBUG", "dialPx-check ok " + mine);
+                        }
+                    } catch (Throwable t) {
+                        android.util.Log.w("LCDEBUG", "dialPx-check parse fail " + s);
+                    }
+                });
+    }
+
+    /**
      * M9-B：导出元数据（产品 2026-11-10 要求）。
      *
      * <p>为什么必须落这个：L2a 报告要能区分「盘面不同」与「一边是线稿降级」，
@@ -2780,7 +2847,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      */
     private void writeDialMeta(String name, int px, float dialPx, float viewR, float k,
                                int type, float alpha, boolean artwork, boolean nativeSide,
-                               boolean alphaOk, double inPct, double outOpaquePct) {
+                               boolean alphaOk, double inPct, double outOpaquePct,
+                               String srcUsed) {
         StringBuilder sb = new StringBuilder();
         sb.append("kind=").append(nativeSide ? "native" : "canvas").append('\n');
         sb.append("px=").append(px).append('\n');
@@ -2797,6 +2865,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         sb.append("insideOpaquePct=").append(String.format(java.util.Locale.US, "%.2f", inPct)).append('\n');
         sb.append("outsideOpaquePct=").append(String.format(java.util.Locale.US, "%.2f", outOpaquePct)).append('\n');
         sb.append("artworkWidth=").append(compassView == null ? 0 : compassView.artworkWidth()).append('\n');
+        // L2a 守卫要求两侧相同才出数（审地图 2026-11-10）
+        sb.append("srcUsed=").append(srcUsed == null ? "png1024" : srcUsed).append('\n');
         try (java.io.FileOutputStream os = new java.io.FileOutputStream(dialFile(name))) {
             os.write(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
             os.flush();
